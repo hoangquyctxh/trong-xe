@@ -1,21 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
-    // Dán URL Web App của bạn đã sao chép ở Phần 1 vào đây
+    // Dán URL Web App của bạn vào đây
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwZFTXRHo-0i2HknQAV4Ja-7lZsH27VimRnDre7DnCL2j04lkSYI1BTmCKWCvcG-0jnFg/exec';
     // =========================================================================
 
     const vehicleForm = document.getElementById('vehicle-form');
     const searchTermInput = document.getElementById('search-term');
     const phoneNumberInput = document.getElementById('phone-number');
+    const phoneInputWrapper = document.getElementById('phone-input-wrapper');
     const actionBtn = document.getElementById('action-btn');
     const statusMessage = document.getElementById('status-message');
     const vehicleListContainer = document.getElementById('vehicle-list-container');
     const vehicleCountSpan = document.getElementById('vehicle-count');
+    const loader = document.getElementById('loader');
 
     let parkedVehicles = [];
 
     const fetchParkedVehicles = async () => {
-        vehicleListContainer.innerHTML = '<p>Đang tải dữ liệu...</p>';
+        loader.style.display = 'flex'; // Hiện loader
+        vehicleListContainer.innerHTML = '';
         try {
             const response = await fetch(WEB_APP_URL, { method: 'GET', mode: 'cors' });
             const result = await response.json();
@@ -24,27 +27,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderVehicleList();
             } else { throw new Error(result.message); }
         } catch (error) {
-            vehicleListContainer.innerHTML = `<p style="color: red;">Lỗi tải dữ liệu: ${error.message}</p>`;
+            vehicleListContainer.innerHTML = `<p style="color: red; padding: 20px;">Lỗi tải dữ liệu: ${error.message}</p>`;
+        } finally {
+            loader.style.display = 'none'; // Ẩn loader
         }
     };
 
     const renderVehicleList = () => {
         vehicleListContainer.innerHTML = '';
-        vehicleCountSpan.textContent = parkedVehicles.length;
+        vehicleCountSpan.textContent = `${parkedVehicles.length} xe`;
         if (parkedVehicles.length === 0) {
-            vehicleListContainer.innerHTML = '<p>Chưa có xe nào trong bãi.</p>';
+            vehicleListContainer.innerHTML = `
+                <div class="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v9c0 .6.4 1 1 1h2"/><path d="M7 12V2H3v10"/><path d="m16 12 3.1 3.9c.1.1.1.3 0 .4l-1.1.9c-.1.1-.3.1-.4 0L16 16v-4"/><path d="M5 18h3"/><path d="M6 18v-4"/></svg>
+                    <p>Bãi xe hiện đang trống!</p>
+                </div>`;
             return;
         }
         parkedVehicles.sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime));
         parkedVehicles.forEach(vehicle => {
             const vehicleItem = document.createElement('div');
             vehicleItem.className = 'vehicle-item';
-            const phoneInfo = vehicle.phone ? `<div class="phone">📞 ${vehicle.phone}</div>` : '';
+            const phoneInfo = vehicle.phone ? `<span>📞 ${vehicle.phone}</span>` : '';
+            const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16.5V18a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-1.5"/><path d="M19 12H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2Z"/><path d="M10.5 12V4.5a2.5 2.5 0 0 1 5 0V12"/><path d="M6 12V9c0-1.7 1.3-3 3-3h1"/></svg>`;
+
             vehicleItem.innerHTML = `
-                <div class="vehicle-info">
+                <div class="icon">${carIcon}</div>
+                <div class="info">
                     <div class="plate">${vehicle.plate}</div>
-                    ${phoneInfo}
-                    <div class="time">Vào lúc: ${new Date(vehicle.entryTime).toLocaleString('vi-VN')}</div>
+                    <div class="details">
+                        ${phoneInfo}
+                        <span>🕒 ${new Date(vehicle.entryTime).toLocaleString('vi-VN')}</span>
+                    </div>
                 </div>`;
             vehicleListContainer.appendChild(vehicleItem);
         });
@@ -53,15 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateFormStatus = () => {
         const searchTerm = searchTermInput.value.trim().toUpperCase();
         statusMessage.textContent = '';
-        statusMessage.className = '';
+        statusMessage.classList.remove('visible');
 
         if (!searchTerm) {
             actionBtn.disabled = true;
             actionBtn.textContent = 'Nhập thông tin';
             actionBtn.className = '';
-            phoneNumberInput.style.display = 'block';
-            phoneNumberInput.disabled = false;
-            phoneNumberInput.value = '';
+            phoneInputWrapper.style.display = 'block';
             return;
         }
 
@@ -69,19 +81,18 @@ document.addEventListener('DOMContentLoaded', () => {
         actionBtn.disabled = false;
 
         if (foundVehicle) {
-            actionBtn.textContent = 'Cho xe ra';
+            actionBtn.textContent = 'Xác nhận cho xe ra';
             actionBtn.className = 'btn-check-out';
             statusMessage.textContent = `Xe [${foundVehicle.plate}] của SĐT [${foundVehicle.phone || 'N/A'}] đang có trong bãi.`;
-            statusMessage.className = 'status-parked';
-            searchTermInput.value = foundVehicle.plate; // Hiển thị BKS chuẩn
-            phoneNumberInput.style.display = 'none'; // Ẩn ô SĐT khi cho xe ra
+            statusMessage.className = 'status-parked visible';
+            searchTermInput.value = foundVehicle.plate;
+            phoneInputWrapper.style.display = 'none';
         } else {
-            actionBtn.textContent = 'Gửi xe';
+            actionBtn.textContent = 'Xác nhận gửi xe';
             actionBtn.className = 'btn-check-in';
             statusMessage.textContent = `Xe [${searchTerm}] chưa có trong bãi, sẵn sàng để gửi.`;
-            statusMessage.className = 'status-ready';
-            phoneNumberInput.style.display = 'block';
-            phoneNumberInput.disabled = false;
+            statusMessage.className = 'status-ready visible';
+            phoneInputWrapper.style.display = 'block';
         }
     };
 
@@ -95,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await response.json();
             if (result.status === 'success') {
-                alert(result.message);
                 await fetchParkedVehicles();
                 searchTermInput.value = '';
                 phoneNumberInput.value = '';
@@ -115,9 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!searchTerm) return;
         const foundVehicle = parkedVehicles.find(v => v.plate === searchTerm || (v.phone && v.phone === searchTerm));
         
-        if (foundVehicle) { // Cho xe ra
+        if (foundVehicle) {
             handleVehicleAction(foundVehicle.plate, '', 'checkOut');
-        } else { // Gửi xe
+        } else {
             const phone = phoneNumberInput.value.trim();
             handleVehicleAction(searchTerm, phone, 'checkIn');
         }
