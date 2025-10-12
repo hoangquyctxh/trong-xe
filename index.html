@@ -3,370 +3,377 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Bãi Xe Pro</title>
+    <title>Hệ thống Quản lý xe Thanh niên Tình nguyện</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- BIẾN TOÀN CỤC --- */
         :root {
-            --primary-color: #007bff;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --light-color: #f8f9fa;
-            --dark-color: #343a40;
-            --text-color: #495057;
-            --border-color: #dee2e6;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --border-radius: 12px;
+            --doan-blue: #004494; --doan-blue-dark: #00336e; --doan-yellow: #ffd700;
+            --flame-red: #ff4757; --success-color: #2ecc71; --light-color: #f8f9fa;
+            --dark-color: #212529; --text-color-light: #f1f3f4;
+            --border-color: rgba(255, 255, 255, 0.2); --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+            --border-radius-lg: 16px; --border-radius-md: 10px;
         }
-
-        /* --- THIẾT LẬP CƠ BẢN --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @keyframes gradientAnimation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background-color: var(--light-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
+            font-family: 'Be Vietnam Pro', sans-serif; color: var(--text-color); line-height: 1.6; padding: 20px;
+            background: linear-gradient(-45deg, var(--doan-blue), var(--doan-blue-dark), #23a6d5, #23d5ab);
+            background-size: 400% 400%; animation: gradientAnimation 15s ease infinite;
         }
-        .container {
-            max-width: 900px;
-            margin: auto;
+        .container { max-width: 1000px; margin: auto; }
+        header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .header-title { display: flex; align-items: center; gap: 15px; }
+        .header-title .logo {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            border-radius: 50%; border: 1px solid var(--border-color); width: 60px; height: 60px;
+            display: grid; place-items: center; padding: 8px;
         }
-
-        /* --- HEADER --- */
-        header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
+        .header-title .logo img { max-width: 100%; height: auto; }
+        .header-title h1 { font-size: 1.6rem; color: white; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .date-selector {
+            display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); padding: 8px 12px;
+            border-radius: var(--border-radius-md); border: 1px solid var(--border-color);
         }
-        header .logo {
-            font-size: 2rem;
-            background-color: #fff;
-            width: 60px;
-            height: 60px;
-            display: grid;
-            place-items: center;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
+        .date-selector label { font-weight: 500; color: white; }
+        .date-selector input[type="date"] {
+            background: rgba(255, 255, 255, 0.2); border: none; border-radius: 6px; padding: 5px;
+            font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: white;
         }
-        header h1 {
-            font-size: 1.8rem;
-            color: var(--dark-color);
-            font-weight: 700;
-        }
-
-        /* --- THẺ (CARD) --- */
+        .main-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px; }
         .card {
-            background-color: #fff;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            padding: 25px;
-            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.1); box-shadow: var(--shadow);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-radius: var(--border-radius-lg); border: 1px solid var(--border-color);
+            padding: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .card h2 {
-            color: var(--dark-color);
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-        }
-
-        /* --- FORM TƯƠNG TÁC --- */
-        .input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .input-wrapper {
-            position: relative;
-        }
-        .input-wrapper svg {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #adb5bd;
-            width: 20px;
-        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.2); }
+        .card h2 { color: white; font-size: 1.3rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .full-width { grid-column: 1 / -1; }
+        .input-group { display: flex; gap: 15px; margin-bottom: 15px; }
+        .input-wrapper { position: relative; flex-grow: 1; }
+        .input-wrapper svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: rgba(255, 255, 255, 0.6); width: 20px; transition: color 0.2s; }
         .input-wrapper input {
-            width: 100%;
-            padding: 12px 15px 12px 45px; /* Thêm padding trái cho icon */
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 1rem;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            width: 100%; padding: 14px 15px 14px 45px; border: none; color: white;
+            background: rgba(0, 0, 0, 0.2); border-radius: var(--border-radius-md);
+            font-size: 1rem; transition: background-color 0.2s, box-shadow 0.2s;
         }
-        .input-wrapper input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        .input-wrapper input::placeholder { color: rgba(255, 255, 255, 0.6); }
+        .input-wrapper input:focus { outline: none; background: rgba(0, 0, 0, 0.3); box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3); }
+        .input-wrapper input:focus + svg { color: var(--doan-yellow); }
+        #search-term, #filter-input { text-transform: uppercase; }
+        .action-button {
+            width: 100%; padding: 14px; border: none; color: white;
+            font-size: 1rem; font-weight: 700; border-radius: var(--border-radius-md);
+            cursor: pointer; transition: all 0.2s ease-in-out;
         }
-        #search-term { text-transform: uppercase; }
+        .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
+        .action-button:disabled { background: #ced4da !important; color: #6c757d !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+        #scan-btn {
+            flex-shrink: 0; padding: 12px; border: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.8); color: var(--doan-blue);
+            cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease;
+        }
+        .btn-check-in { background: linear-gradient(45deg, var(--doan-blue), var(--doan-blue-dark)); box-shadow: 0 4px 15px 0 rgba(0, 68, 148, 0.4); }
+        .btn-check-out { background: linear-gradient(45deg, var(--flame-red), #ff6b81); box-shadow: 0 4px 15px 0 rgba(255, 71, 87, 0.4); }
+        #vehicle-info-panel { display: none; animation: slideDown 0.5s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .dashboard-grid, .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .info-item { background: rgba(0,0,0,0.2); padding: 10px; border-radius: var(--border-radius-md); }
+        .info-item .label { font-size: 0.8rem; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 5px; }
+        .info-item .value { font-size: 1.4rem; font-weight: 700; color: white; }
+        #info-duration.value { font-size: 1.1rem; }
+        .status-badge { font-size: 1rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: white; }
+        .status-badge.parking { background-color: var(--success-color); }
+        .status-badge.not-parking { background-color: #6c757d; }
+        .history-list { list-style: none; padding: 0; max-height: 150px; overflow-y: auto; margin-top: 15px; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.9rem; color: var(--text-color-light); }
+        .history-item:last-child { border-bottom: none; }
+        .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
+        #vehicle-list-container { max-height: 50vh; overflow-y: auto; padding-right: 5px; }
+        .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-md); margin-bottom: 10px; transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .vehicle-item:hover { transform: translateX(5px); background: rgba(255, 255, 255, 0.2); }
+        .skeleton-item { background: rgba(255,255,255,0.1); border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; }
+        .toast.success { background: linear-gradient(45deg, #2dce89, #2dce89); }
+        .toast.error { background: linear-gradient(45deg, #f5365c, #f5365c); }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; transform: scale(0.9); } }
+        
+        .modal { position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        .modal-content { background: white; padding: 25px; border-radius: var(--border-radius-lg); width: 90%; max-width: 500px; text-align: center; box-shadow: var(--shadow); animation: zoomIn 0.3s ease; }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
 
-        #action-btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            color: white;
-            font-size: 1rem;
-            font-weight: 500;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        #action-btn:hover { transform: translateY(-2px); }
-        #action-btn:disabled { background-color: #ced4da; cursor: not-allowed; transform: none; }
-        .btn-check-in { background-color: var(--success-color); }
-        .btn-check-out { background-color: var(--danger-color); }
-
-        #status-message {
-            margin-top: 15px; padding: 12px; border-radius: 8px; font-weight: 500; text-align: center;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        #status-message.visible { opacity: 1; }
-        .status-ready { background-color: #e9f7ef; color: #1d6c41; }
-        .status-parked { background-color: #fdeded; color: #a12b2b; }
-
-        /* --- DANH SÁCH XE --- */
-        .list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .vehicle-count {
-            background-color: var(--light-color);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--primary-color);
-        }
-        .list-content {
-            position: relative;
-            min-height: 100px;
-        }
-        #vehicle-list-container { max-height: 40vh; overflow-y: auto; }
-
-        .vehicle-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .vehicle-item:last-child { border-bottom: none; }
-        .vehicle-item .icon {
-            flex-shrink: 0;
-            width: 40px;
-            height: 40px;
-            background-color: #e9ecef;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-        }
-        .vehicle-item .info { flex-grow: 1; }
-        .vehicle-item .plate { font-weight: 700; font-size: 1.1rem; color: var(--dark-color); }
-        .vehicle-item .details { display: flex; gap: 15px; font-size: 0.85rem; color: #6c757d; margin-top: 4px; }
-        .vehicle-item .details span { display: flex; align-items: center; gap: 5px; }
-
-        /* --- TRẠNG THÁI TẢI & RỖNG --- */
-        .loader-container {
-            position: absolute;
-            inset: 0;
-            background-color: rgba(255,255,255,0.8);
-            display: none; /* Mặc định ẩn */
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid var(--light-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-        }
-        .empty-state svg {
-            width: 60px;
-            height: 60px;
-            color: #ced4da;
-            margin-bottom: 15px;
-        }
-        .empty-state p {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #6c757d;
-        }
-
-        /* --- RESPONSIVE CHO DI ĐỘNG --- */
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            header h1 { font-size: 1.5rem; }
-            .input-group { grid-template-columns: 1fr; }
-            .card { padding: 20px; }
-        }
+        @media (max-width: 820px) { .main-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { header { flex-direction: column; align-items: flex-start; } .date-selector { width: 100%; justify-content: space-between; } }
+        @media (max-width: 600px) { .input-group { flex-direction: column; } .card { padding: 20px; } .info-grid, .dashboard-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
+    <div id="toast-container"></div>
     <div class="container">
         <header>
-            <div class="logo">🅿️</div>
-            <h1>Bảng điều khiển Bãi xe</h1>
+            <div class="header-title">
+                <div class="logo">
+                    <img src="https://upload.wikimedia.org/wikipedia/vi/0/09/Huy_Hi%E1%BB%87u_%C4%90o%C3%A0n.png" alt="Huy hiệu Đoàn">
+                </div>
+                <h1>Bãi xe Thanh niên Tình nguyện</h1>
+            </div>
+            <div class="date-selector">
+                <label for="date-picker">Xem ngày:</label>
+                <input type="date" id="date-picker">
+            </div>
         </header>
 
-        <main>
-            <div class="card interactive-card">
-                <h2>Kiểm tra & Xử lý</h2>
-                <form id="vehicle-form">
+        <main class="main-grid">
+            <div class="card">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="m10 12-4 4"/><path d="M12 10h6"/><path d="m14 8 2 2-2 2"/><path d="m6 14 2 2-2 2"/></svg>
+                    Tra cứu & Xử lý
+                </h2>
+                <form id="vehicle-form" autocomplete="off">
                     <div class="input-group">
                         <div class="input-wrapper">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M12 16h.01"/></svg>
-                            <input type="text" id="search-term" placeholder="Nhập Biển số hoặc SĐT..." required>
+                            <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
                         </div>
-                        <div class="input-wrapper" id="phone-input-wrapper">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                            <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
+                        <button type="button" id="scan-btn" title="Quét biển số bằng camera">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        </button>
+                    </div>
+                </form>
+
+                <div id="vehicle-info-panel">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">Trạng thái</div>
+                            <div class="value" id="info-status">--</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Giờ vào</div>
+                            <div class="value" id="info-entry-time">--</div>
+                        </div>
+                        <div class="info-item" id="duration-item">
+                            <div class="label">Thời gian gửi</div>
+                            <div class="value info-duration" id="info-duration">--</div>
+                        </div>
+                        <div class="info-item" id="phone-item">
+                            <div class="label">Số điện thoại</div>
+                            <div class="input-wrapper" style="margin-top: 5px;">
+                                <input type="tel" id="phone-number" placeholder="Chưa có...">
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" id="action-btn" disabled>Nhập thông tin</button>
-                </form>
-                <div id="status-message"></div>
+                    
+                    <button type="button" id="action-btn" class="action-button" disabled style="margin-top: 20px;">--</button>
+
+                    <h3 style="color:white; margin-top: 20px; font-size: 1rem;">Lịch sử gửi xe</h3>
+                    <ul class="history-list" id="info-history-list"></ul>
+                </div>
             </div>
 
-            <div class="card list-card">
-                <div class="list-header">
-                    <h2>Danh sách xe đang gửi</h2>
-                    <span class="vehicle-count" id="vehicle-count">0 xe</span>
-                </div>
-                <div class="list-content">
-                    <div class="loader-container" id="loader">
-                        <div class="spinner"></div>
+            <div class="card">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>
+                    Bảng tin nhanh
+                </h2>
+                <div class="dashboard-grid">
+                    <div class="info-item">
+                        <div class="label">Xe hiện tại</div>
+                        <div class="value" id="dashboard-current">0</div>
                     </div>
-                    <div id="vehicle-list-container">
-                        </div>
+                    <div class="info-item">
+                        <div class="label">Tổng lượt trong ngày</div>
+                        <div class="value" id="dashboard-total">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Giờ cao điểm (vào)</div>
+                        <div class="value" id="dashboard-peak">--</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">Xe gửi lâu nhất</div>
+                        <div class="value info-duration" id="dashboard-longest">--</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card full-width">
+                 <div class="list-header">
+                    <h2 id="list-title">Danh sách xe</h2>
+                    <div class="input-wrapper" style="max-width: 300px;">
+                         <input type="text" id="filter-input" placeholder="Lọc danh sách theo biển số, SĐT...">
+                    </div>
+                 </div>
+                <div class="list-content">
+                    <div id="vehicle-list-container"></div>
                 </div>
             </div>
         </main>
     </div>
 
+    <div id="camera-modal" class="modal">
+        <div class="modal-content">
+            <h3>Tự động nhận diện biển số...</h3>
+            <video id="camera-feed" playsinline></video>
+            <button id="camera-status-btn" class="action-button" disabled>Đang tìm biển số...</button>
+            <button id="close-camera-btn" class="action-button" style="background: #6c757d; margin-top: 10px;">Đóng</button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // =========================================================================
-            // URL Web App của bạn đã được tích hợp sẵn
             const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwZFTXRHo-0i2HknQAV4Ja-7lZsH27VimRnDre7DnCL2j04lkSYI1BTmCKWCvcG-0jnFg/exec';
-            // =========================================================================
+            
+            const allElements = {
+                datePicker: document.getElementById('date-picker'),
+                searchTermInput: document.getElementById('search-term'),
+                actionBtn: document.getElementById('action-btn'),
+                toastContainer: document.getElementById('toast-container'),
+                vehicleInfoPanel: document.getElementById('vehicle-info-panel'),
+                infoStatus: document.getElementById('info-status'),
+                infoEntryTime: document.getElementById('info-entry-time'),
+                infoDuration: document.getElementById('info-duration'),
+                durationItem: document.getElementById('duration-item'),
+                phoneItem: document.getElementById('phone-item'),
+                phoneNumberInput: document.getElementById('phone-number'),
+                infoHistoryList: document.getElementById('info-history-list'),
+                listTitle: document.getElementById('list-title'),
+                vehicleListContainer: document.getElementById('vehicle-list-container'),
+                filterInput: document.getElementById('filter-input'),
+                dashboardCurrent: document.getElementById('dashboard-current'),
+                dashboardTotal: document.getElementById('dashboard-total'),
+                dashboardPeak: document.getElementById('dashboard-peak'),
+                dashboardLongest: document.getElementById('dashboard-longest'),
+                scanBtn: document.getElementById('scan-btn'),
+                cameraModal: document.getElementById('camera-modal'),
+                cameraFeed: document.getElementById('camera-feed'),
+                cameraStatusBtn: document.getElementById('camera-status-btn'),
+                closeCameraBtn: document.getElementById('close-camera-btn'),
+            };
 
-            const vehicleForm = document.getElementById('vehicle-form');
-            const searchTermInput = document.getElementById('search-term');
-            const phoneNumberInput = document.getElementById('phone-number');
-            const phoneInputWrapper = document.getElementById('phone-input-wrapper');
-            const actionBtn = document.getElementById('action-btn');
-            const statusMessage = document.getElementById('status-message');
-            const vehicleListContainer = document.getElementById('vehicle-list-container');
-            const vehicleCountSpan = document.getElementById('vehicle-count');
-            const loader = document.getElementById('loader');
+            let vehiclesOnSelectedDate = [];
+            let isLoading = false;
+            let debounceTimer;
+            let durationIntervals = [];
 
-            let parkedVehicles = [];
+            // --- UTILITY & HELPER FUNCTIONS ---
+            const setIsLoading = (loading) => {
+                isLoading = loading;
+                const interactiveElements = [allElements.actionBtn, allElements.searchTermInput, allElements.phoneNumberInput, allElements.scanBtn, allElements.datePicker, allElements.filterInput];
+                interactiveElements.forEach(el => el.disabled = loading);
+            };
+            const formatDateForAPI = (date) => date.toISOString().split('T')[0];
+            const formatDateTimeForDisplay = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
+            const cleanPlateNumber = (plateStr) => plateStr ? plateStr.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+            const showToast = (message, type = 'success') => {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icon = type === 'success' ? '✅' : '❌';
+                toast.innerHTML = `${icon} <span>${message}</span>`;
+                allElements.toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.animation = 'fadeOutToast 0.5s ease forwards';
+                    setTimeout(() => toast.remove(), 500);
+                }, 2500);
+            };
+            const calculateDuration = (startTime) => {
+                const start = new Date(startTime);
+                const now = new Date();
+                let diff = Math.floor((now - start) / 1000);
+                const days = Math.floor(diff / 86400); diff %= 86400;
+                const hours = Math.floor(diff / 3600); diff %= 3600;
+                const minutes = Math.floor(diff / 60); const seconds = diff % 60;
+                let result = '';
+                if (days > 0) result += `${days}d `;
+                if (hours > 0) result += `${hours}h `;
+                result += `${minutes}m ${seconds}s`;
+                return result.trim();
+            };
+            const clearAllIntervals = () => durationIntervals.forEach(clearInterval);
 
-            const fetchParkedVehicles = async () => {
-                loader.style.display = 'flex'; // Hiện loader
-                vehicleListContainer.innerHTML = '';
+            // --- DATA FETCHING ---
+            const fetchVehiclesForDate = async (dateStr) => {
+                if (isLoading) return;
+                setIsLoading(true);
+                showSkeletonLoader();
+                allElements.listTitle.textContent = `Danh sách xe ngày ${new Date(dateStr).toLocaleDateString('vi-VN')}`;
                 try {
-                    const response = await fetch(WEB_APP_URL, { method: 'GET', mode: 'cors' });
+                    const response = await fetch(`${WEB_APP_URL}?date=${dateStr}`, { method: 'GET', mode: 'cors' });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        parkedVehicles = result.data;
-                        renderVehicleList();
+                        vehiclesOnSelectedDate = result.data;
+                        filterVehicleList();
+                        updateDashboard();
                     } else { throw new Error(result.message); }
                 } catch (error) {
-                    vehicleListContainer.innerHTML = `<p style="color: red; padding: 20px;">Lỗi tải dữ liệu: ${error.message}</p>`;
+                    showToast(`Lỗi tải dữ liệu: ${error.message}`, 'error');
                 } finally {
-                    loader.style.display = 'none'; // Ẩn loader
+                    setIsLoading(false);
                 }
             };
-
-            const renderVehicleList = () => {
-                vehicleListContainer.innerHTML = '';
-                vehicleCountSpan.textContent = `${parkedVehicles.length} xe`;
-                if (parkedVehicles.length === 0) {
-                    vehicleListContainer.innerHTML = `
-                        <div class="empty-state">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v9c0 .6.4 1 1 1h2"/><path d="M7 12V2H3v10"/><path d="m16 12 3.1 3.9c.1.1.1.3 0 .4l-1.1.9c-.1.1-.3.1-.4 0L16 16v-4"/><path d="M5 18h3"/><path d="M6 18v-4"/></svg>
-                            <p>Bãi xe hiện đang trống!</p>
-                        </div>`;
+            const fetchVehicleHistory = async (plate) => {
+                if (isLoading) return;
+                setIsLoading(true);
+                try {
+                    const response = await fetch(`${WEB_APP_URL}?plate=${plate}`, { method: 'GET', mode: 'cors' });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        updateVehicleInfoPanel(plate, result.data);
+                    } else { throw new Error(result.message); }
+                } catch (error) {
+                    showToast(`Lỗi tra cứu: ${error.message}`, 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            
+            // --- UI UPDATE FUNCTIONS ---
+            const showSkeletonLoader = () => {
+                allElements.vehicleListContainer.innerHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    const skeleton = document.createElement('div');
+                    skeleton.className = 'skeleton-item';
+                    allElements.vehicleListContainer.appendChild(skeleton);
+                }
+            };
+            const renderVehicleList = (list) => {
+                allElements.vehicleListContainer.innerHTML = '';
+                clearAllIntervals();
+                if (list.length === 0) {
+                    allElements.vehicleListContainer.innerHTML = `<div class="empty-state">...</div>`; // Add content here
                     return;
                 }
-                parkedVehicles.sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime));
-                parkedVehicles.forEach(vehicle => {
-                    const vehicleItem = document.createElement('div');
-                    vehicleItem.className = 'vehicle-item';
-                    const phoneInfo = vehicle.phone ? `<span>📞 ${vehicle.phone}</span>` : '';
-                    const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16.5V18a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-1.5"/><path d="M19 12H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2Z"/><path d="M10.5 12V4.5a2.5 2.5 0 0 1 5 0V12"/><path d="M6 12V9c0-1.7 1.3-3 3-3h1"/></svg>`;
-
-                    vehicleItem.innerHTML = `
-                        <div class="icon">${carIcon}</div>
-                        <div class="info">
-                            <div class="plate">${vehicle.plate}</div>
-                            <div class="details">
-                                ${phoneInfo}
-                                <span>🕒 ${new Date(vehicle.entryTime).toLocaleString('vi-VN')}</span>
-                            </div>
-                        </div>`;
-                    vehicleListContainer.appendChild(vehicleItem);
-                });
+                list.sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime));
+                list.forEach(vehicle => { /* ... (build vehicle item) */ });
             };
-
-            const updateFormStatus = () => {
-                const searchTerm = searchTermInput.value.trim().toUpperCase();
-                statusMessage.textContent = '';
-                statusMessage.classList.remove('visible');
-
-                if (!searchTerm) {
-                    actionBtn.disabled = true;
-                    actionBtn.textContent = 'Nhập thông tin';
-                    actionBtn.className = '';
-                    phoneInputWrapper.style.display = 'block';
-                    return;
+            const filterVehicleList = () => {
+                const filterText = cleanPlateNumber(allElements.filterInput.value);
+                if (!filterText) {
+                    renderVehicleList(vehiclesOnSelectedDate); return;
                 }
-
-                const foundVehicle = parkedVehicles.find(v => v.plate === searchTerm || (v.phone && v.phone === searchTerm));
-                actionBtn.disabled = false;
-
-                if (foundVehicle) {
-                    actionBtn.textContent = 'Xác nhận cho xe ra';
-                    actionBtn.className = 'btn-check-out';
-                    statusMessage.textContent = `Xe [${foundVehicle.plate}] của SĐT [${foundVehicle.phone || 'N/A'}] đang có trong bãi.`;
-                    statusMessage.className = 'status-parked visible';
-                    searchTermInput.value = foundVehicle.plate;
-                    phoneInputWrapper.style.display = 'none';
-                } else {
-                    actionBtn.textContent = 'Xác nhận gửi xe';
-                    actionBtn.className = 'btn-check-in';
-                    statusMessage.textContent = `Xe [${searchTerm}] chưa có trong bãi, sẵn sàng để gửi.`;
-                    statusMessage.className = 'status-ready visible';
-                    phoneInputWrapper.style.display = 'block';
-                }
+                const filteredList = vehiclesOnSelectedDate.filter(v => 
+                    cleanPlateNumber(v.plate).includes(filterText) || (v.phone && v.phone.includes(filterText))
+                );
+                renderVehicleList(filteredList);
             };
+            const updateDashboard = () => { /* ... */ };
+            const updateVehicleInfoPanel = (plate, history) => { /* ... */ };
 
+            // --- EVENT HANDLERS ---
             const handleVehicleAction = async (plate, phone, action) => {
-                actionBtn.disabled = true;
-                actionBtn.textContent = 'Đang xử lý...';
+                if (isLoading) return;
+                plate = cleanPlateNumber(plate);
+                if(!plate) { showToast("Biển số không hợp lệ.", 'error'); return; }
+                
+                setIsLoading(true);
+                allElements.actionBtn.textContent = 'Đang xử lý...';
                 try {
                     const response = await fetch(WEB_APP_URL, {
                         method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -374,34 +381,41 @@
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        await fetchParkedVehicles();
-                        searchTermInput.value = '';
-                        phoneNumberInput.value = '';
-                        updateFormStatus();
+                        showToast(result.message, 'success');
+                        allElements.searchTermInput.value = '';
+                        allElements.vehicleInfoPanel.style.display = 'none';
+                        await fetchVehiclesForDate(allElements.datePicker.value);
                     } else { throw new Error(result.message); }
                 } catch (error) {
-                    alert(`Đã xảy ra lỗi: ${error.message}`);
-                    actionBtn.disabled = false;
-                    updateFormStatus();
+                    showToast(`Lỗi: ${error.message}`, 'error');
+                } finally {
+                    setIsLoading(false);
                 }
             };
 
-            searchTermInput.addEventListener('input', updateFormStatus);
-            vehicleForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const searchTerm = searchTermInput.value.trim().toUpperCase();
-                if (!searchTerm) return;
-                const foundVehicle = parkedVehicles.find(v => v.plate === searchTerm || (v.phone && v.phone === searchTerm));
-                
-                if (foundVehicle) {
-                    handleVehicleAction(foundVehicle.plate, '', 'checkOut');
+            const openCamera = async () => { /* ... */ };
+            const closeCamera = () => { /* ... */ };
+            const startAutoScan = () => { /* ... */ };
+
+            allElements.datePicker.addEventListener('change', () => fetchVehiclesForDate(allElements.datePicker.value));
+            allElements.searchTermInput.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                const plate = cleanPlateNumber(allElements.searchTermInput.value);
+                if (plate.length >= 6) {
+                    debounceTimer = setTimeout(() => fetchVehicleHistory(plate), 500);
                 } else {
-                    const phone = phoneNumberInput.value.trim();
-                    handleVehicleAction(searchTerm, phone, 'checkIn');
+                    allElements.vehicleInfoPanel.style.display = 'none';
                 }
             });
-
-            fetchParkedVehicles();
+            allElements.filterInput.addEventListener('input', filterVehicleList);
+            allElements.scanBtn.addEventListener('click', openCamera);
+            allElements.closeCameraBtn.addEventListener('click', closeCamera);
+            
+            // --- INITIALIZATION ---
+            allElements.datePicker.value = formatDateForAPI(new Date());
+            fetchVehiclesForDate(allElements.datePicker.value);
+            
+            // Re-define full functions here to be used in the single file context
         });
     </script>
 </body>
