@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Bãi Xe (Miễn Phí)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🅿️ Hệ Thống Quản Lý Bãi Xe (Miễn Phí)</h1>
+        </header>
+
+        <main>
+            <div class="card check-in-form">
+                <h2>Nhận xe mới</h2>
+                <form id="add-vehicle-form">
+                    <input type="text" id="license-plate" placeholder="Nhập biển số xe..." required>
+                    <button type="submit" id="add-btn">Gửi xe</button>
+                </form>
+            </div>
+
+            <div class="card vehicle-list">
+                <h2>Danh sách xe đang gửi</h2>
+                <p class="note">Lưu ý: Danh sách này sẽ làm mới lại nếu bạn tải lại trang. Toàn bộ lịch sử được lưu trong Google Sheet.</p>
+                <div id="vehicle-list-container">
+                    </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
