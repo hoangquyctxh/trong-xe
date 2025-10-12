@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Bãi Xe (Miễn Phí)</title>
+    <title>Hệ Thống Quản Lý Bãi Xe Thông Minh</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,21 +12,21 @@
 <body>
     <div class="container">
         <header>
-            <h1>🅿️ Hệ Thống Quản Lý Bãi Xe (Miễn Phí)</h1>
+            <h1>🅿️ Hệ Thống Quản Lý Bãi Xe Thông Minh</h1>
         </header>
 
         <main>
             <div class="card check-in-form">
-                <h2>Nhận xe mới</h2>
-                <form id="add-vehicle-form">
-                    <input type="text" id="license-plate" placeholder="Nhập biển số xe..." required>
-                    <button type="submit" id="add-btn">Gửi xe</button>
+                <h2>Kiểm tra & Xử lý</h2>
+                <form id="vehicle-form">
+                    <input type="text" id="license-plate" placeholder="Nhập biển số để kiểm tra..." required>
+                    <button type="submit" id="action-btn" disabled>Nhập biển số</button>
                 </form>
+                <div id="status-message"></div>
             </div>
 
             <div class="card vehicle-list">
-                <h2>Danh sách xe đang gửi</h2>
-                <p class="note">Lưu ý: Danh sách này sẽ làm mới lại nếu bạn tải lại trang. Toàn bộ lịch sử được lưu trong Google Sheet.</p>
+                <h2>Danh sách xe đang gửi (<span id="vehicle-count">0</span>)</h2>
                 <div id="vehicle-list-container">
                     </div>
             </div>
