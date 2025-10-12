@@ -1,0 +1,121 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f7f9;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 25px 30px;
+}
+
+header {
+    text-align: center;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+}
+
+header h1 {
+    color: #007bff;
+    margin: 0;
+}
+
+.card {
+    background-color: #fdfdfd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #343a40;
+}
+
+#add-vehicle-form {
+    display: flex;
+    gap: 10px;
+}
+
+#license-plate {
+    flex-grow: 1;
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 1.1em;
+}
+
+#add-vehicle-form button {
+    padding: 12px 20px;
+    border: none;
+    background-color: #28a745;
+    color: white;
+    font-size: 1.1em;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#add-vehicle-form button:hover {
+    background-color: #218838;
+}
+
+#add-vehicle-form button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+.vehicle-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.vehicle-item:last-child {
+    border-bottom: none;
+}
+
+.vehicle-info .plate {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #0056b3;
+}
+
+.vehicle-info .time {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.checkout-btn {
+    padding: 8px 15px;
+    border: none;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.checkout-btn:hover {
+    background-color: #c82333;
+}
+
+.note {
+    font-size: 0.9em;
+    color: #6c757d;
+    background-color: #e9ecef;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
