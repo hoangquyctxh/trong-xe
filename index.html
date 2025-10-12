@@ -262,16 +262,19 @@
             let isLoading = false;
             let debounceTimer;
             let durationIntervals = [];
+            let cameraStream = null;
+            let scanInterval = null;
 
-            // --- UTILITY & HELPER FUNCTIONS ---
             const setIsLoading = (loading) => {
                 isLoading = loading;
                 const interactiveElements = [allElements.actionBtn, allElements.searchTermInput, allElements.phoneNumberInput, allElements.scanBtn, allElements.datePicker, allElements.filterInput];
                 interactiveElements.forEach(el => el.disabled = loading);
             };
+
             const formatDateForAPI = (date) => date.toISOString().split('T')[0];
             const formatDateTimeForDisplay = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
             const cleanPlateNumber = (plateStr) => plateStr ? plateStr.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+            
             const showToast = (message, type = 'success') => {
                 const toast = document.createElement('div');
                 toast.className = `toast ${type}`;
@@ -283,6 +286,7 @@
                     setTimeout(() => toast.remove(), 500);
                 }, 2500);
             };
+
             const calculateDuration = (startTime) => {
                 const start = new Date(startTime);
                 const now = new Date();
@@ -298,7 +302,6 @@
             };
             const clearAllIntervals = () => durationIntervals.forEach(clearInterval);
 
-            // --- DATA FETCHING ---
             const fetchVehiclesForDate = async (dateStr) => {
                 if (isLoading) return;
                 setIsLoading(true);
@@ -318,6 +321,7 @@
                     setIsLoading(false);
                 }
             };
+
             const fetchVehicleHistory = async (plate) => {
                 if (isLoading) return;
                 setIsLoading(true);
@@ -334,7 +338,6 @@
                 }
             };
             
-            // --- UI UPDATE FUNCTIONS ---
             const showSkeletonLoader = () => {
                 allElements.vehicleListContainer.innerHTML = '';
                 for (let i = 0; i < 5; i++) {
@@ -345,33 +348,86 @@
             };
             const renderVehicleList = (list) => {
                 allElements.vehicleListContainer.innerHTML = '';
-                clearAllIntervals();
                 if (list.length === 0) {
-                    allElements.vehicleListContainer.innerHTML = `<div class="empty-state">...</div>`; // Add content here
+                    allElements.vehicleListContainer.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v9c0 .6.4 1 1 1h2"/><path d="M7 12V2H3v10"/><path d="m16 12 3.1 3.9c.1.1.1.3 0 .4l-1.1.9c-.1.1-.3.1-.4 0L16 16v-4"/><path d="M5 18h3"/><path d="M6 18v-4"/></svg><p>Không có xe nào trong danh sách.</p></div>`;
                     return;
                 }
                 list.sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime));
-                list.forEach(vehicle => { /* ... (build vehicle item) */ });
+                list.forEach(vehicle => {
+                    const vehicleItem = document.createElement('div');
+                    vehicleItem.className = 'vehicle-item';
+                    const phoneInfo = vehicle.phone ? `<span>📞 ${vehicle.phone}</span>` : '';
+                    const statusClass = vehicle.status === 'Đang gửi' ? 'parking' : 'departed';
+                    const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.status}</span>`;
+                    const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
+                    vehicleItem.innerHTML = `<div class="icon">${carIcon}</div><div class="info"><div class="plate">${vehicle.plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle.entryTime)}</span></div></div>`;
+                    allElements.vehicleListContainer.appendChild(vehicleItem);
+                });
             };
             const filterVehicleList = () => {
                 const filterText = cleanPlateNumber(allElements.filterInput.value);
-                if (!filterText) {
-                    renderVehicleList(vehiclesOnSelectedDate); return;
-                }
+                if (!filterText) { renderVehicleList(vehiclesOnSelectedDate); return; }
                 const filteredList = vehiclesOnSelectedDate.filter(v => 
                     cleanPlateNumber(v.plate).includes(filterText) || (v.phone && v.phone.includes(filterText))
                 );
                 renderVehicleList(filteredList);
             };
-            const updateDashboard = () => { /* ... */ };
-            const updateVehicleInfoPanel = (plate, history) => { /* ... */ };
+            const updateDashboard = () => {
+                const currentVehicles = vehiclesOnSelectedDate.filter(v => v.status === 'Đang gửi');
+                allElements.dashboardCurrent.textContent = currentVehicles.length;
+                allElements.dashboardTotal.textContent = vehiclesOnSelectedDate.length;
+                if (vehiclesOnSelectedDate.length > 0) {
+                    const hours = vehiclesOnSelectedDate.map(v => new Date(v.entryTime).getHours());
+                    const hourCounts = hours.reduce((acc, hour) => { acc[hour] = (acc[hour] || 0) + 1; return acc; }, {});
+                    const peakHour = Object.keys(hourCounts).reduce((a, b) => hourCounts[a] > hourCounts[b] ? a : b);
+                    allElements.dashboardPeak.textContent = `${peakHour}h - ${parseInt(peakHour) + 1}h`;
+                } else { allElements.dashboardPeak.textContent = '--'; }
+                if (currentVehicles.length > 0) {
+                    const longest = currentVehicles.reduce((a, b) => new Date(a.entryTime) < new Date(b.entryTime) ? a : b);
+                    allElements.dashboardLongest.textContent = calculateDuration(longest.entryTime);
+                } else { allElements.dashboardLongest.textContent = '--'; }
+            };
+            const updateVehicleInfoPanel = (plate, history) => {
+                clearAllIntervals();
+                const currentEntry = history.find(entry => entry.status === 'Đang gửi');
+                allElements.infoPlateDisplay.textContent = plate;
+                if (currentEntry) {
+                    allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
+                    allElements.infoEntryTime.textContent = formatDateTimeForDisplay(currentEntry.entryTime);
+                    allElements.durationItem.style.display = 'block';
+                    allElements.phoneItem.style.display = 'none';
+                    const interval = setInterval(() => allElements.infoDuration.textContent = calculateDuration(currentEntry.entryTime), 1000);
+                    durationIntervals.push(interval);
+                    allElements.actionBtn.textContent = 'Xác nhận cho xe ra';
+                    allElements.actionBtn.className = 'action-button btn-check-out';
+                    allElements.actionBtn.onclick = () => handleVehicleAction(plate, '', 'checkOut');
+                } else {
+                    allElements.infoStatus.innerHTML = `<span class="status-badge not-parking">Ngoài bãi</span>`;
+                    allElements.infoEntryTime.textContent = '--';
+                    allElements.durationItem.style.display = 'none';
+                    allElements.phoneItem.style.display = 'block';
+                    allElements.phoneNumberInput.value = history[0]?.phone || '';
+                    allElements.actionBtn.textContent = 'Xác nhận gửi xe';
+                    allElements.actionBtn.className = 'action-button btn-check-in';
+                    allElements.actionBtn.onclick = () => handleVehicleAction(plate, allElements.phoneNumberInput.value.trim(), 'checkIn');
+                }
+                const historyList = allElements.infoHistoryList;
+                historyList.innerHTML = '';
+                if (history.length > 0) {
+                    history.slice(0, 5).forEach(entry => {
+                        const li = document.createElement('li'); li.className = 'history-item';
+                        li.innerHTML = `<span>▶️ <strong>Vào:</strong> ${formatDateTimeForDisplay(entry.entryTime)}</span><span>◀️ <strong>Ra:</strong> ${formatDateTimeForDisplay(entry.exitTime)}</span>`;
+                        historyList.appendChild(li);
+                    });
+                } else { historyList.innerHTML = `<li class="history-item">Chưa có lịch sử.</li>`; }
+                allElements.vehicleInfoPanel.style.display = 'block';
+                allElements.actionBtn.disabled = false;
+            };
 
-            // --- EVENT HANDLERS ---
             const handleVehicleAction = async (plate, phone, action) => {
                 if (isLoading) return;
                 plate = cleanPlateNumber(plate);
                 if(!plate) { showToast("Biển số không hợp lệ.", 'error'); return; }
-                
                 setIsLoading(true);
                 allElements.actionBtn.textContent = 'Đang xử lý...';
                 try {
@@ -393,9 +449,43 @@
                 }
             };
 
-            const openCamera = async () => { /* ... */ };
-            const closeCamera = () => { /* ... */ };
-            const startAutoScan = () => { /* ... */ };
+            const openCamera = async () => {
+                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) { showToast('Trình duyệt không hỗ trợ camera.', 'error'); return; }
+                try {
+                    const constraints = { video: { facingMode: 'environment' } };
+                    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    allElements.cameraFeed.srcObject = cameraStream;
+                    allElements.cameraModal.style.display = 'flex';
+                    allElements.cameraFeed.play();
+                    startAutoScan();
+                } catch (err) { showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error'); }
+            };
+            const closeCamera = () => {
+                if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+                if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); }
+                allElements.cameraModal.style.display = 'none';
+            };
+            const startAutoScan = () => {
+                allElements.cameraStatusBtn.textContent = 'Đang tìm biển số...';
+                allElements.cameraStatusBtn.disabled = true;
+                let attempts = 0;
+                scanInterval = setInterval(() => {
+                    attempts++;
+                    if (attempts > 4) {
+                        allElements.cameraStatusBtn.textContent = 'Đã nhận diện!';
+                        const fakePlates = ["29-B1 377.33", "51H-987.65", "30K 00700", "99C12345"];
+                        const randomRawPlate = fakePlates[Math.floor(Math.random() * fakePlates.length)];
+                        const cleanedPlate = cleanPlateNumber(randomRawPlate);
+                        allElements.searchTermInput.value = cleanedPlate;
+                        
+                        setTimeout(() => {
+                            closeCamera();
+                            showToast(`Đã quét biển số: ${cleanedPlate}`, 'success');
+                            fetchVehicleHistory(cleanedPlate);
+                        }, 800);
+                    }
+                }, 500);
+            };
 
             allElements.datePicker.addEventListener('change', () => fetchVehiclesForDate(allElements.datePicker.value));
             allElements.searchTermInput.addEventListener('input', () => {
@@ -411,11 +501,8 @@
             allElements.scanBtn.addEventListener('click', openCamera);
             allElements.closeCameraBtn.addEventListener('click', closeCamera);
             
-            // --- INITIALIZATION ---
             allElements.datePicker.value = formatDateForAPI(new Date());
             fetchVehiclesForDate(allElements.datePicker.value);
-            
-            // Re-define full functions here to be used in the single file context
         });
     </script>
 </body>
