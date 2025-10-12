@@ -19,8 +19,11 @@
             <div class="card check-in-form">
                 <h2>Kiểm tra & Xử lý</h2>
                 <form id="vehicle-form">
-                    <input type="text" id="license-plate" placeholder="Nhập biển số để kiểm tra..." required>
-                    <button type="submit" id="action-btn" disabled>Nhập biển số</button>
+                    <div class="input-group">
+                        <input type="text" id="search-term" placeholder="Nhập Biển số hoặc SĐT..." required>
+                        <input type="tel" id="phone-number" placeholder="Số điện thoại (khi gửi xe)...">
+                    </div>
+                    <button type="submit" id="action-btn" disabled>Nhập thông tin</button>
                 </form>
                 <div id="status-message"></div>
             </div>
