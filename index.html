@@ -144,6 +144,60 @@
         @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
 
+        .toggle-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: var(--bg-main);
+            border-radius: var(--border-radius-md);
+        }
+        .toggle-switch-container label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary-accent);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
         @media (max-width: 820px) { .main-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) { header { flex-direction: column; align-items: flex-start; } .date-selector { width: 100%; justify-content: space-between; } }
         @media (max-width: 600px) { .input-group { flex-direction: column; } .card { padding: 20px; } .info-grid, .dashboard-grid { grid-template-columns: 1fr; } }
@@ -190,6 +244,14 @@
                     </div>
                     <button type="submit" id="action-btn" class="action-button" disabled>Nhập biển số để tiếp tục</button>
                 </form>
+                
+                <div class="toggle-switch-container">
+                    <label for="auto-mode-toggle">Chế độ Rảnh tay</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="auto-mode-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
 
                 <div id="vehicle-info-panel">
                     <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Thông tin chi tiết</h3>
@@ -253,7 +315,7 @@
 
     <div id="camera-modal" class="modal">
         <div class="modal-content">
-            <h3>Căn chỉnh biển số vào khung hình</h3>
+            <h3 id="camera-title">Căn chỉnh biển số vào khung hình</h3>
             <video id="camera-feed" playsinline></video>
             <button type="button" id="capture-btn" class="action-button btn-check-in">Chụp & Quét</button>
             <button type="button" id="close-camera-btn" class="action-button" style="background: #6c757d; margin-top: 10px;">Đóng</button>
@@ -261,7 +323,6 @@
     </div>
 
     <script>
-        // *** Toàn bộ mã Javascript đã được kiểm tra và giữ nguyên như phiên bản hoạt động ổn định trước đó ***
         document.addEventListener('DOMContentLoaded', () => {
             const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZFTXRHo-0i2HknQAV4Ja-7lZsH27VimRnDre7DnCL2j04lkSYI1BTmCKWCvcG-0jnFg/exec';
             const AI_CORE_URL = 'https://hoangquy2003-quan-ly-bai-xe-ai.hf.space/scan_plate'; 
@@ -293,6 +354,8 @@
                 cameraFeed: document.getElementById('camera-feed'),
                 captureBtn: document.getElementById('capture-btn'),
                 closeCameraBtn: document.getElementById('close-camera-btn'),
+                autoModeToggle: document.getElementById('auto-mode-toggle'),
+                cameraTitle: document.getElementById('camera-title'),
             };
 
             let vehiclesOnSelectedDate = [];
@@ -301,6 +364,7 @@
             let durationIntervals = [];
             let cameraStream = null;
             let currentVehicleContext = null;
+            let autoScanInterval = null;
 
             const setIsLoading = (loading, actionText = 'Đang xử lý...') => {
                 isLoading = loading;
@@ -343,10 +407,10 @@
                 durationIntervals = [];
             };
 
-            const fetchVehiclesForDate = async (dateStr) => {
-                if (isLoading) return;
+            const fetchVehiclesForDate = async (dateStr, isSilent = false) => {
+                if (isLoading && !isSilent) return;
                 setIsLoading(true);
-                showSkeletonLoader();
+                if (!isSilent) showSkeletonLoader();
                 allElements.listTitle.textContent = `Danh sách xe ngày ${new Date(dateStr).toLocaleDateString('vi-VN')}`;
                 try {
                     const response = await fetch(`${GOOGLE_SCRIPT_URL}?date=${dateStr}`, { method: 'GET', mode: 'cors' });
@@ -370,7 +434,7 @@
                     const response = await fetch(`${GOOGLE_SCRIPT_URL}?plate=${plate}`, { method: 'GET', mode: 'cors' });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        updateUIBasedOnHistory(plate, result.data);
+                        await updateUIBasedOnHistory(plate, result.data);
                     } else { throw new Error(result.message); }
                 } catch (error) {
                     showToast(`Lỗi tra cứu: ${error.message}`, 'error');
@@ -432,11 +496,19 @@
                 } else { allElements.dashboardLongest.textContent = '--'; }
             };
 
-            const updateUIBasedOnHistory = (plate, history) => {
+            const updateUIBasedOnHistory = async (plate, history) => {
                 clearAllIntervals();
                 currentVehicleContext = { plate, history };
                 const currentEntry = history.find(entry => entry.status === 'Đang gửi');
                 
+                if (allElements.autoModeToggle.checked && !isLoading) {
+                    const action = currentEntry ? 'checkOut' : 'checkIn';
+                    const phone = currentEntry ? '' : ''; // Auto mode doesn't know phone
+                    showToast(`Chế độ rảnh tay: Tự động ${action === 'checkOut' ? 'cho xe ra' : 'gửi xe'}: ${plate}`, 'success');
+                    await handleVehicleAction(plate, phone, action);
+                    return;
+                }
+
                 if (currentEntry) {
                     currentVehicleContext.status = 'parking';
                     allElements.vehicleInfoPanel.style.display = 'block';
@@ -492,7 +564,10 @@
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        showToast(result.message, 'success');
+                        // Only show toast in manual mode, auto mode has its own toast
+                        if (!allElements.autoModeToggle.checked) {
+                            showToast(result.message, 'success');
+                        }
                         allElements.mainForm.reset();
                         resetMainForm();
                         await fetchVehiclesForDate(allElements.datePicker.value);
@@ -505,26 +580,31 @@
             };
 
             const openCamera = async () => {
-                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
-                    showToast('Trình duyệt không hỗ trợ camera.', 'error'); return;
-                }
+                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) { showToast('Trình duyệt không hỗ trợ camera.', 'error'); return; }
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                     allElements.cameraFeed.srcObject = stream;
                     cameraStream = stream;
                     allElements.cameraModal.style.display = 'flex';
                     allElements.cameraFeed.play();
-                } catch(err) {
-                    showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error');
-                }
+                    if (allElements.autoModeToggle.checked) {
+                        allElements.captureBtn.style.display = 'none';
+                        allElements.cameraTitle.textContent = 'Đang tự động tìm biển số...';
+                        startAutoScanLoop();
+                    } else {
+                        allElements.captureBtn.style.display = 'block';
+                        allElements.cameraTitle.textContent = 'Căn chỉnh biển số vào khung hình';
+                    }
+                } catch(err) { showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error'); }
             };
 
             const closeCamera = () => {
                 if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); }
+                if (autoScanInterval) { clearInterval(autoScanInterval); autoScanInterval = null; }
                 allElements.cameraModal.style.display = 'none';
             };
             
-            const performOcrScan = async () => {
+            const performOcrScan = async (isAuto = false) => {
                 if (!cameraStream || isLoading) return;
                 setIsLoading(true, 'Đang quét...');
                 
@@ -546,19 +626,34 @@
 
                         if (result.status === 'success' && result.plate) {
                              allElements.searchTermInput.value = result.plate;
-                            showToast(`Đã nhận diện: ${result.plate}`, 'success');
+                            if(!isAuto) showToast(`Đã nhận diện: ${result.plate}`, 'success');
                             allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            if (isAuto) closeCamera();
                         } else {
-                            showToast(result.message || "Không nhận diện được biển số.", "error");
+                            if (!isAuto) showToast(result.message || "Không nhận diện được biển số.", "error");
                         }
                     } catch (error) {
-                        showToast("Lỗi kết nối đến Lõi AI.", "error");
+                        if (!isAuto) showToast("Lỗi kết nối đến Lõi AI.", "error");
                         console.error(error);
                     } finally {
-                        setIsLoading(false);
-                        closeCamera();
+                         // In auto mode, the interval handles the loading state, so we don't always stop loading here.
+                        if (!isAuto) {
+                            setIsLoading(false);
+                            closeCamera();
+                        } else {
+                            setIsLoading(false); // Allow next scan in the loop
+                        }
                     }
                 }, 'image/jpeg');
+            };
+
+            const startAutoScanLoop = () => {
+                if (autoScanInterval) clearInterval(autoScanInterval);
+                autoScanInterval = setInterval(() => {
+                    if (!isLoading) {
+                        performOcrScan(true);
+                    }
+                }, 2000);
             };
 
             // Event Listeners
@@ -594,12 +689,19 @@
             allElements.filterInput.addEventListener('input', filterVehicleList);
             allElements.scanBtn.addEventListener('click', openCamera);
             allElements.closeCameraBtn.addEventListener('click', closeCamera);
-            allElements.captureBtn.addEventListener('click', performOcrScan);
+            allElements.captureBtn.addEventListener('click', () => performOcrScan(false));
             
             // --- INITIALIZATION ---
             allElements.datePicker.value = formatDateForAPI(new Date());
             fetchVehiclesForDate(allElements.datePicker.value);
             resetMainForm();
+
+            // Real-time update polling
+            setInterval(() => {
+                if (!isLoading && document.visibilityState === 'visible') {
+                    fetchVehiclesForDate(allElements.datePicker.value, true);
+                }
+            }, 15000);
         });
     </script>
 </body>
