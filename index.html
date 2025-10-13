@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Tesseract.js Library -->
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     
     <style>
@@ -78,7 +77,12 @@
             flex-shrink: 0; padding: 12px; border: 1px solid var(--border-color);
             background-color: rgba(255, 255, 255, 0.8); color: var(--doan-blue);
             cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
+        #scan-btn .spinner-icon { display: none; width: 18px; height: 18px; border: 2px solid var(--doan-blue); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+        #scan-btn.loading .scanner-icon { display: none; }
+        #scan-btn.loading .spinner-icon { display: block; }
+        
         .btn-check-in { background: linear-gradient(45deg, var(--doan-blue), var(--doan-blue-dark)); box-shadow: 0 4px 15px 0 rgba(0, 68, 148, 0.4); }
         .btn-check-out { background: linear-gradient(45deg, var(--flame-red), #ff6b81); box-shadow: 0 4px 15px 0 rgba(255, 71, 87, 0.4); }
         #vehicle-info-panel { display: none; animation: slideDown 0.5s ease; margin-top: 20px; }
@@ -151,7 +155,9 @@
                             <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
                         </div>
                         <button type="button" id="scan-btn" title="Quét biển số bằng camera">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                           <span class="spinner-icon"></span>
+                           <svg class="scanner-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                           <span id="scan-btn-text">Quét Biển Số</span>
                         </button>
                     </div>
                      <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
@@ -261,6 +267,7 @@
                 dashboardPeak: document.getElementById('dashboard-peak'),
                 dashboardLongest: document.getElementById('dashboard-longest'),
                 scanBtn: document.getElementById('scan-btn'),
+                scanBtnText: document.getElementById('scan-btn-text'),
                 cameraModal: document.getElementById('camera-modal'),
                 cameraFeed: document.getElementById('camera-feed'),
                 captureBtn: document.getElementById('capture-btn'),
@@ -275,23 +282,23 @@
             let durationIntervals = [];
             let cameraStream = null;
             let currentVehicleContext = null;
-            let tesseractWorker = null; // *** NEW: Persistent worker instance
+            let tesseractWorker = null;
 
-            // *** NEW: Pre-load the AI worker when the page loads ***
             const initializeAI = async () => {
-                showToast('Đang tải Lõi AI, vui lòng đợi...');
+                allElements.scanBtn.classList.add('loading');
+                allElements.scanBtnText.textContent = 'Đang tải AI...';
                 allElements.scanBtn.disabled = true;
                 try {
                     tesseractWorker = await Tesseract.createWorker('eng', 1, {
-                        logger: m => console.log(m) // Optional: for debugging
-                    });
-                    await tesseractWorker.setParameters({
-                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                        logger: m => console.log(m)
                     });
                     showToast('Lõi AI đã sẵn sàng!', 'success');
+                    allElements.scanBtn.classList.remove('loading');
+                    allElements.scanBtnText.textContent = 'Quét Biển Số';
                     allElements.scanBtn.disabled = false;
                 } catch (error) {
                     showToast('Không thể tải Lõi AI. Vui lòng kiểm tra mạng và tải lại trang.', 'error');
+                    allElements.scanBtnText.textContent = 'Lỗi tải AI';
                     console.error('Tesseract worker creation failed:', error);
                 }
             };
@@ -299,9 +306,7 @@
             const setIsLoading = (loading, actionText = 'Đang xử lý...') => {
                 isLoading = loading;
                 const interactiveElements = [allElements.actionBtn, allElements.searchTermInput, allElements.phoneNumberInput, allElements.datePicker, allElements.filterInput, allElements.captureBtn];
-                // Only disable scan button if the AI worker itself is not ready
                 if(tesseractWorker) allElements.scanBtn.disabled = loading;
-
                 interactiveElements.forEach(el => { if (el) el.disabled = loading; });
                 if(loading && document.activeElement.id === 'action-btn') allElements.actionBtn.textContent = actionText;
             };
@@ -498,6 +503,7 @@
                 }
             };
 
+            // *** NEW: Camera and OCR functions as requested ***
             const openCamera = async () => {
                 if (!tesseractWorker) {
                     showToast('Lõi AI chưa sẵn sàng, vui lòng đợi.', 'error');
@@ -510,7 +516,7 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                     allElements.cameraFeed.srcObject = stream;
-                    cameraStream = stream;
+                    cameraStream = stream; // Store stream to stop it later
                     allElements.cameraModal.style.display = 'flex';
                     allElements.cameraFeed.play();
                 } catch(err) {
@@ -525,7 +531,7 @@
                 }
                 allElements.cameraModal.style.display = 'none';
             };
-            
+
             const performOcrScan = async () => {
                 if (!cameraStream || isLoading || !tesseractWorker) return;
                 setIsLoading(true, 'Đang quét...');
@@ -540,7 +546,7 @@
                     
                     let plate = cleanPlateNumber(result.data.text);
                     
-                    if (plate.length >= 6 && plate.length <= 9) {
+                    if (plate.length >= 6 && plate.length <= 9) { // Adjusted length for more flexibility
                         allElements.searchTermInput.value = plate;
                         showToast(`Nhận diện: ${plate}`, 'success');
                         allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -592,7 +598,7 @@
             allElements.captureBtn.addEventListener('click', performOcrScan);
             
             // --- INITIALIZATION ---
-            constinitializeApp = async () => {
+            const initializeApp = async () => {
                 await initializeAI();
                 allElements.datePicker.value = formatDateForAPI(new Date());
                 fetchVehiclesForDate(allElements.datePicker.value);
