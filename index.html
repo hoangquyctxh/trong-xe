@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- *** FIX: Added Tesseract.js Library Script *** -->
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     
     <style>
@@ -104,6 +103,7 @@
         }
         .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+        .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; } /* NEW */
         #scan-btn {
             flex-shrink: 0; padding: 12px; border: 1px solid var(--border-color);
             background-color: white; color: var(--text-secondary);
@@ -111,9 +111,6 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         #scan-btn:hover:not(:disabled) { background-color: var(--bg-main); color: var(--primary-accent); }
-        #scan-btn .spinner-icon { display: none; width: 18px; height: 18px; border: 2px solid var(--primary-accent); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
-        #scan-btn.loading .scanner-icon { display: none; }
-        #scan-btn.loading .spinner-icon { display: block; }
         .btn-check-in { background: linear-gradient(45deg, var(--primary-accent), var(--primary-accent-light)); box-shadow: 0 4px 15px 0 rgba(0, 68, 148, 0.3); }
         .btn-check-out { background: linear-gradient(45deg, var(--danger-color), #fb7185); box-shadow: 0 4px 15px 0 rgba(239, 68, 68, 0.3); }
         #vehicle-info-panel { display: none; animation: slideDown 0.5s ease; margin-top: 20px; }
@@ -144,10 +141,8 @@
         .modal-content { background: white; padding: 25px; border-radius: var(--border-radius-lg); width: 90%; max-width: 500px; text-align: center; box-shadow: var(--shadow-lg); animation: zoomIn 0.3s ease; }
         @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
-        #ocr-progress-container { margin-bottom: 10px; }
-        #ocr-progress-bar { width: 100%; height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; }
-        #ocr-progress-fill { width: 0%; height: 100%; background-color: var(--primary-accent); transition: width 0.2s; }
-        #ocr-status-text { font-weight: 500; color: var(--text-secondary); }
+
+        .hidden { display: none !important; } /* NEW UTILITY CLASS */
 
         @media (max-width: 820px) { .main-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) { header { flex-direction: column; align-items: flex-start; } .date-selector { width: 100%; justify-content: space-between; } }
@@ -179,22 +174,24 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="m10 12-4 4"/><path d="M12 10h6"/><path d="m14 8 2 2-2 2"/><path d="m6 14 2 2-2 2"/></svg>
                     Tra cứu & Xử lý
                 </h2>
-                <form id="main-form" autocomplete="off">
+                <div id="main-form">
                     <div class="input-group">
                         <div class="input-wrapper">
                             <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
                         </div>
                         <button type="button" id="scan-btn" title="Quét biển số bằng camera">
-                           <span class="spinner-icon"></span>
                            <svg class="scanner-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                           <span id="scan-btn-text">Quét Biển Số</span>
                         </button>
                     </div>
                      <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
                         <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
                     </div>
-                    <button type="submit" id="action-btn" class="action-button" disabled>Nhập biển số để tiếp tục</button>
-                </form>
+                    
+                    <div class="action-buttons-container">
+                        <button type="button" id="check-in-btn" class="action-button btn-check-in hidden">Xác nhận gửi xe</button>
+                        <button type="button" id="check-out-btn" class="action-button btn-check-out hidden">Xác nhận cho xe ra</button>
+                    </div>
+                </div>
 
                 <div id="vehicle-info-panel">
                     <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Thông tin chi tiết</h3>
@@ -260,12 +257,6 @@
         <div class="modal-content">
             <h3>Căn chỉnh biển số vào khung hình</h3>
             <video id="camera-feed" playsinline></video>
-            <div id="ocr-progress-container">
-                <div id="ocr-status-text">Sẵn sàng quét</div>
-                <div id="ocr-progress-bar">
-                    <div id="ocr-progress-fill"></div>
-                </div>
-            </div>
             <button type="button" id="capture-btn" class="action-button btn-check-in">Chụp & Quét</button>
             <button type="button" id="close-camera-btn" class="action-button" style="background: #6c757d; margin-top: 10px;">Đóng</button>
         </div>
@@ -274,14 +265,15 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZFTXRHo-0i2HknQAV4Ja-7lZsH27VimRnDre7DnCL2j04lkSYI1BTmCKWCvcG-0jnFg/exec';
+            const AI_CORE_URL = 'https://hoangquy2003-quan-ly-bai-xe-ai.hf.space/scan_plate'; 
             
             const allElements = {
                 datePicker: document.getElementById('date-picker'),
-                mainForm: document.getElementById('main-form'),
                 searchTermInput: document.getElementById('search-term'),
                 phoneNumberInput: document.getElementById('phone-number'),
                 phoneItemMain: document.getElementById('phone-item-main'),
-                actionBtn: document.getElementById('action-btn'),
+                checkInBtn: document.getElementById('check-in-btn'), // NEW
+                checkOutBtn: document.getElementById('check-out-btn'), // NEW
                 toastContainer: document.getElementById('toast-container'),
                 vehicleInfoPanel: document.getElementById('vehicle-info-panel'),
                 infoStatus: document.getElementById('info-status'),
@@ -297,14 +289,10 @@
                 dashboardPeak: document.getElementById('dashboard-peak'),
                 dashboardLongest: document.getElementById('dashboard-longest'),
                 scanBtn: document.getElementById('scan-btn'),
-                scanBtnText: document.getElementById('scan-btn-text'),
                 cameraModal: document.getElementById('camera-modal'),
                 cameraFeed: document.getElementById('camera-feed'),
                 captureBtn: document.getElementById('capture-btn'),
                 closeCameraBtn: document.getElementById('close-camera-btn'),
-                ocrStatusText: document.getElementById('ocr-status-text'),
-                ocrProgressFill: document.getElementById('ocr-progress-fill'),
-                ocrProgressContainer: document.getElementById('ocr-progress-container'),
             };
 
             let vehiclesOnSelectedDate = [];
@@ -312,48 +300,19 @@
             let durationIntervals = [];
             let cameraStream = null;
             let currentVehicleContext = null;
-            let tesseractWorker = null;
 
-            const initializeAI = async () => {
-                allElements.scanBtn.classList.add('loading');
-                allElements.scanBtnText.textContent = 'Đang tải AI...';
-                allElements.scanBtn.disabled = true;
-                try {
-                    tesseractWorker = await Tesseract.createWorker('eng', 1, {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                allElements.ocrStatusText.textContent = `Đang nhận diện... ${Math.round(m.progress * 100)}%`;
-                                allElements.ocrProgressFill.style.width = `${m.progress * 100}%`;
-                            }
-                        }
-                    });
-                    await tesseractWorker.setParameters({
-                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-                    });
-                    showToast('Lõi AI đã sẵn sàng!', 'success');
-                    allElements.scanBtn.classList.remove('loading');
-                    allElements.scanBtnText.textContent = 'Quét Biển Số';
-                    allElements.scanBtn.disabled = false;
-                } catch (error) {
-                    showToast('Không thể tải Lõi AI. Vui lòng kiểm tra mạng và tải lại trang.', 'error');
-                    allElements.scanBtnText.textContent = 'Lỗi tải AI';
-                    console.error('Tesseract worker creation failed:', error);
-                }
-            };
-            
             const setIsLoading = (loading, actionText = 'Đang xử lý...') => {
                 isLoading = loading;
-                const interactiveElements = [allElements.actionBtn, allElements.searchTermInput, allElements.phoneNumberInput, allElements.datePicker, allElements.filterInput, allElements.captureBtn];
-                if(tesseractWorker) allElements.scanBtn.disabled = loading;
+                const interactiveElements = [allElements.checkInBtn, allElements.checkOutBtn, allElements.searchTermInput, allElements.phoneNumberInput, allElements.scanBtn, allElements.datePicker, allElements.filterInput, allElements.captureBtn];
                 interactiveElements.forEach(el => { if (el) el.disabled = loading; });
-                if (loading) {
-                    if (document.activeElement === allElements.actionBtn) {
-                        allElements.actionBtn.textContent = actionText;
-                    }
-                }
             };
 
-            const formatDateForAPI = (date) => date.toISOString().split('T')[0];
+            const formatDateForAPI = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
             const formatDateTimeForDisplay = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
             const cleanPlateNumber = (plateStr) => plateStr ? plateStr.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
             
@@ -473,10 +432,11 @@
 
             const updateUIFromCache = (plate) => {
                 clearAllIntervals();
-                const vehicleInCache = vehiclesOnSelectedDate.find(v => v.plate === plate && v.status === 'Đang gửi');
+                
+                const vehicleInCache = vehiclesOnSelectedDate.find(v => cleanPlateNumber(v.plate) === plate && v.status === 'Đang gửi');
 
                 if (vehicleInCache) {
-                    currentVehicleContext = { plate, status: 'parking' };
+                    currentVehicleContext = { plate: vehicleInCache.plate, status: 'parking' }; 
                     allElements.vehicleInfoPanel.style.display = 'block';
                     allElements.phoneItemMain.style.display = 'none';
                     allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
@@ -484,17 +444,19 @@
                     allElements.durationItem.style.display = 'grid';
                     const interval = setInterval(() => allElements.infoDuration.textContent = calculateDuration(vehicleInCache.entryTime), 1000);
                     durationIntervals.push(interval);
-                    allElements.actionBtn.textContent = 'Xác nhận cho xe ra';
-                    allElements.actionBtn.className = 'action-button btn-check-out';
+
+                    // Show CHECK OUT button, hide CHECK IN button
+                    allElements.checkOutBtn.classList.remove('hidden');
+                    allElements.checkInBtn.classList.add('hidden');
                 } else {
                     currentVehicleContext = { plate, status: 'new' };
                     allElements.vehicleInfoPanel.style.display = 'none';
                     allElements.phoneItemMain.style.display = 'block';
-                    allElements.actionBtn.textContent = 'Xác nhận gửi xe';
-                    allElements.actionBtn.className = 'action-button btn-check-in';
+
+                    // Show CHECK IN button, hide CHECK OUT button
+                    allElements.checkInBtn.classList.remove('hidden');
+                    allElements.checkOutBtn.classList.add('hidden');
                 }
-                
-                allElements.actionBtn.disabled = false;
                 
                 fetchVehicleHistory(plate);
             };
@@ -521,9 +483,8 @@
             const resetMainForm = () => {
                 allElements.vehicleInfoPanel.style.display = 'none';
                 allElements.phoneItemMain.style.display = 'block';
-                allElements.actionBtn.disabled = true;
-                allElements.actionBtn.textContent = 'Nhập biển số để tiếp tục';
-                allElements.actionBtn.className = 'action-button';
+                allElements.checkInBtn.classList.add('hidden');
+                allElements.checkOutBtn.classList.add('hidden');
                 currentVehicleContext = null;
                 clearAllIntervals();
             };
@@ -541,7 +502,8 @@
                     const result = await response.json();
                     if (result.status === 'success') {
                         showToast(result.message, 'success');
-                        allElements.mainForm.reset();
+                        allElements.searchTermInput.value = '';
+                        allElements.phoneNumberInput.value = '';
                         resetMainForm();
                         await fetchVehiclesForDate(allElements.datePicker.value);
                     } else { throw new Error(result.message); }
@@ -553,7 +515,6 @@
             };
 
             const openCamera = async () => {
-                if (!tesseractWorker) { showToast('Lõi AI chưa sẵn sàng, vui lòng đợi.', 'error'); return; }
                 if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
                     showToast('Trình duyệt không hỗ trợ camera.', 'error'); return;
                 }
@@ -565,7 +526,6 @@
                     allElements.cameraFeed.play();
                 } catch(err) {
                     showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error');
-                    console.error(err);
                 }
             };
 
@@ -575,56 +535,57 @@
             };
             
             const performOcrScan = async () => {
-                if (!cameraStream || isLoading || !tesseractWorker) return;
+                if (!cameraStream || isLoading) return;
                 setIsLoading(true, 'Đang quét...');
-                allElements.ocrProgressContainer.style.display = 'block';
                 
-                try {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = allElements.cameraFeed.videoWidth;
-                    canvas.height = allElements.cameraFeed.videoHeight;
-                    canvas.getContext('2d').drawImage(allElements.cameraFeed, 0, 0, canvas.width, canvas.height);
+                const canvas = document.createElement('canvas');
+                canvas.width = allElements.cameraFeed.videoWidth;
+                canvas.height = allElements.cameraFeed.videoHeight;
+                canvas.getContext('2d').drawImage(allElements.cameraFeed, 0, 0, canvas.width, canvas.height);
+                
+                canvas.toBlob(async (blob) => {
+                    const formData = new FormData();
+                    formData.append('image', blob, 'capture.jpg');
                     
-                    const result = await tesseractWorker.recognize(canvas);
-                    
-                    let plate = cleanPlateNumber(result.data.text);
-                    
-                    if (plate.length >= 6 && plate.length <= 9) {
-                        allElements.searchTermInput.value = plate;
-                        showToast(`Nhận diện: ${plate}`, 'success');
-                        allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    } else {
-                        showToast("Không nhận diện rõ ràng, thử lại hoặc chụp gần biển số.", "error");
+                    try {
+                        const response = await fetch(AI_CORE_URL, {
+                            method: 'POST',
+                            body: formData,
+                        });
+                        const result = await response.json();
+
+                        if (result.status === 'success' && result.plate) {
+                             allElements.searchTermInput.value = result.plate;
+                            showToast(`Đã nhận diện: ${result.plate}`, 'success');
+                            allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        } else {
+                            showToast(result.message || "Không nhận diện được biển số.", "error");
+                        }
+                    } catch (error) {
+                        showToast("Lỗi kết nối đến Lõi AI.", "error");
+                        console.error(error);
+                    } finally {
+                        setIsLoading(false);
+                        closeCamera();
                     }
-                } catch (error) {
-                    showToast("Có lỗi khi nhận diện biển số.", "error");
-                    console.error(error);
-                } finally {
-                    setIsLoading(false);
-                    closeCamera();
-                }
+                }, 'image/jpeg');
             };
 
             // Event Listeners
             allElements.datePicker.addEventListener('change', () => fetchVehiclesForDate(allElements.datePicker.value));
-            allElements.mainForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                let plateToSubmit = cleanPlateNumber(allElements.searchTermInput.value);
-                let phoneToSubmit = allElements.phoneNumberInput.value.trim();
-                let action;
-
-                if (currentVehicleContext) {
-                    plateToSubmit = currentVehicleContext.plate;
-                    if (currentVehicleContext.status === 'parking') {
-                        action = 'checkOut';
-                        phoneToSubmit = '';
-                    } else {
-                        action = 'checkIn';
-                    }
+            
+            allElements.checkInBtn.addEventListener('click', () => {
+                const plateToSubmit = cleanPlateNumber(allElements.searchTermInput.value);
+                const phoneToSubmit = allElements.phoneNumberInput.value.trim();
+                handleVehicleAction(plateToSubmit, phoneToSubmit, 'checkIn');
+            });
+            
+            allElements.checkOutBtn.addEventListener('click', () => {
+                if(currentVehicleContext && currentVehicleContext.status === 'parking') {
+                    handleVehicleAction(currentVehicleContext.plate, '', 'checkOut');
                 } else {
-                     action = 'checkIn';
+                    showToast('Không có thông tin xe hợp lệ để check-out.', 'error');
                 }
-                handleVehicleAction(plateToSubmit, phoneToSubmit, action);
             });
 
             allElements.searchTermInput.addEventListener('input', () => {
@@ -642,16 +603,10 @@
             allElements.captureBtn.addEventListener('click', performOcrScan);
             
             // --- INITIALIZATION ---
-            const initializeApp = async () => {
-                await initializeAI();
-                allElements.datePicker.value = formatDateForAPI(new Date());
-                await fetchVehiclesForDate(allElements.datePicker.value);
-                resetMainForm();
-            }
-
-            initializeApp();
+            allElements.datePicker.value = formatDateForAPI(new Date());
+            fetchVehiclesForDate(allElements.datePicker.value);
+            resetMainForm();
         });
     </script>
 </body>
 </html>
-
