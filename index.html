@@ -304,11 +304,11 @@
                 closeCameraBtn: document.getElementById('close-camera-btn'),
                 ocrStatusText: document.getElementById('ocr-status-text'),
                 ocrProgressFill: document.getElementById('ocr-progress-fill'),
+                ocrProgressContainer: document.getElementById('ocr-progress-container'),
             };
 
             let vehiclesOnSelectedDate = [];
             let isLoading = false;
-            let debounceTimer;
             let durationIntervals = [];
             let cameraStream = null;
             let currentVehicleContext = null;
@@ -577,6 +577,7 @@
             const performOcrScan = async () => {
                 if (!cameraStream || isLoading || !tesseractWorker) return;
                 setIsLoading(true, 'Đang quét...');
+                allElements.ocrProgressContainer.style.display = 'block';
                 
                 try {
                     const canvas = document.createElement('canvas');
