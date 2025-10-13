@@ -640,7 +640,6 @@
                             setIsLoading(false);
                             closeCamera();
                         } else {
-                            // In auto mode, setIsLoading is handled by the loop/main action
                             setIsLoading(false);
                         }
                     }
@@ -696,6 +695,7 @@
             fetchVehiclesForDate(allElements.datePicker.value);
             resetMainForm();
 
+            // Real-time update polling
             setInterval(() => {
                 if (!isLoading && document.visibilityState === 'visible') {
                     fetchVehiclesForDate(allElements.datePicker.value, true);
