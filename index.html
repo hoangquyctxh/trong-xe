@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Tesseract.js Library -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     
     <style>
         :root {
@@ -111,6 +113,10 @@
         .modal-content { background: white; padding: 25px; border-radius: var(--border-radius-lg); width: 90%; max-width: 500px; text-align: center; box-shadow: var(--shadow); animation: zoomIn 0.3s ease; }
         @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
+        #ocr-progress-container { margin-bottom: 10px; }
+        #ocr-progress-bar { width: 100%; height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; }
+        #ocr-progress-fill { width: 0%; height: 100%; background-color: var(--doan-yellow); transition: width 0.2s; }
+        #ocr-status-text { font-weight: 500; color: var(--doan-blue); }
 
         @media (max-width: 820px) { .main-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) { header { flex-direction: column; align-items: flex-start; } .date-selector { width: 100%; justify-content: space-between; } }
@@ -218,6 +224,12 @@
         <div class="modal-content">
             <h3>Căn chỉnh biển số vào khung hình</h3>
             <video id="camera-feed" playsinline></video>
+            <div id="ocr-progress-container">
+                <div id="ocr-status-text">Sẵn sàng quét</div>
+                <div id="ocr-progress-bar">
+                    <div id="ocr-progress-fill"></div>
+                </div>
+            </div>
             <button type="button" id="capture-btn" class="action-button btn-check-in">Chụp & Quét</button>
             <button type="button" id="close-camera-btn" class="action-button" style="background: #6c757d; margin-top: 10px;">Đóng</button>
         </div>
@@ -253,6 +265,8 @@
                 cameraFeed: document.getElementById('camera-feed'),
                 captureBtn: document.getElementById('capture-btn'),
                 closeCameraBtn: document.getElementById('close-camera-btn'),
+                ocrStatusText: document.getElementById('ocr-status-text'),
+                ocrProgressFill: document.getElementById('ocr-progress-fill'),
             };
 
             let vehiclesOnSelectedDate = [];
@@ -261,10 +275,33 @@
             let durationIntervals = [];
             let cameraStream = null;
             let currentVehicleContext = null;
+            let tesseractWorker = null; // *** NEW: Persistent worker instance
 
+            // *** NEW: Pre-load the AI worker when the page loads ***
+            const initializeAI = async () => {
+                showToast('Đang tải Lõi AI, vui lòng đợi...');
+                allElements.scanBtn.disabled = true;
+                try {
+                    tesseractWorker = await Tesseract.createWorker('eng', 1, {
+                        logger: m => console.log(m) // Optional: for debugging
+                    });
+                    await tesseractWorker.setParameters({
+                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                    });
+                    showToast('Lõi AI đã sẵn sàng!', 'success');
+                    allElements.scanBtn.disabled = false;
+                } catch (error) {
+                    showToast('Không thể tải Lõi AI. Vui lòng kiểm tra mạng và tải lại trang.', 'error');
+                    console.error('Tesseract worker creation failed:', error);
+                }
+            };
+            
             const setIsLoading = (loading, actionText = 'Đang xử lý...') => {
                 isLoading = loading;
-                const interactiveElements = [allElements.actionBtn, allElements.searchTermInput, allElements.phoneNumberInput, allElements.scanBtn, allElements.datePicker, allElements.filterInput, allElements.captureBtn];
+                const interactiveElements = [allElements.actionBtn, allElements.searchTermInput, allElements.phoneNumberInput, allElements.datePicker, allElements.filterInput, allElements.captureBtn];
+                // Only disable scan button if the AI worker itself is not ready
+                if(tesseractWorker) allElements.scanBtn.disabled = loading;
+
                 interactiveElements.forEach(el => { if (el) el.disabled = loading; });
                 if(loading && document.activeElement.id === 'action-btn') allElements.actionBtn.textContent = actionText;
             };
@@ -347,7 +384,6 @@
                     allElements.vehicleListContainer.appendChild(skeleton);
                 }
             };
-
             const renderVehicleList = (list) => {
                 allElements.vehicleListContainer.innerHTML = '';
                 if (list.length === 0) {
@@ -366,7 +402,6 @@
                     allElements.vehicleListContainer.appendChild(vehicleItem);
                 });
             };
-
             const filterVehicleList = () => {
                 const filterText = cleanPlateNumber(allElements.filterInput.value);
                 if (!filterText) { renderVehicleList(vehiclesOnSelectedDate); return; }
@@ -375,7 +410,6 @@
                 );
                 renderVehicleList(filteredList);
             };
-
             const updateDashboard = () => {
                 const currentVehicles = vehiclesOnSelectedDate.filter(v => v.status === 'Đang gửi');
                 allElements.dashboardCurrent.textContent = currentVehicles.length;
@@ -419,19 +453,14 @@
                     allElements.actionBtn.textContent = 'Xác nhận gửi xe';
                     allElements.actionBtn.className = 'action-button btn-check-in';
                 }
-
-                const historyList = allElements.infoHistoryList;
-                historyList.innerHTML = '';
+                const historyList = allElements.infoHistoryList; historyList.innerHTML = '';
                 if (history.length > 0) {
                     history.slice(0, 5).forEach(entry => {
                         const li = document.createElement('li'); li.className = 'history-item';
                         li.innerHTML = `<span>▶️ <strong>Vào:</strong> ${formatDateTimeForDisplay(entry.entryTime)}</span><span>◀️ <strong>Ra:</strong> ${formatDateTimeForDisplay(entry.exitTime)}</span>`;
                         historyList.appendChild(li);
                     });
-                } else {
-                    historyList.innerHTML = `<li class="history-item">Chưa có lịch sử.</li>`;
-                }
-                
+                } else { historyList.innerHTML = `<li class="history-item">Chưa có lịch sử.</li>`; }
                 allElements.actionBtn.disabled = false;
             };
 
@@ -470,6 +499,10 @@
             };
 
             const openCamera = async () => {
+                if (!tesseractWorker) {
+                    showToast('Lõi AI chưa sẵn sàng, vui lòng đợi.', 'error');
+                    return;
+                }
                 if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
                     showToast('Trình duyệt không hỗ trợ camera.', 'error');
                     return;
@@ -477,7 +510,7 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                     allElements.cameraFeed.srcObject = stream;
-                    cameraStream = stream; // Store stream to stop it later
+                    cameraStream = stream;
                     allElements.cameraModal.style.display = 'flex';
                     allElements.cameraFeed.play();
                 } catch(err) {
@@ -492,51 +525,34 @@
                 }
                 allElements.cameraModal.style.display = 'none';
             };
-
+            
             const performOcrScan = async () => {
-                if (!cameraStream || isLoading) return;
+                if (!cameraStream || isLoading || !tesseractWorker) return;
                 setIsLoading(true, 'Đang quét...');
                 
                 try {
-                    allElements.ocrStatusText.textContent = "Đang nhận diện...";
-                    const worker = await Tesseract.createWorker('eng', 1, {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                allElements.ocrStatusText.textContent = `Đang nhận diện... ${Math.round(m.progress * 100)}%`;
-                                allElements.ocrProgressFill.style.width = `${m.progress * 100}%`;
-                            }
-                        }
-                    });
-
-                    // *** NEW: Add Whitelist for accuracy ***
-                    await worker.setParameters({
-                        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-                    });
-                    
                     const canvas = document.createElement('canvas');
                     canvas.width = allElements.cameraFeed.videoWidth;
                     canvas.height = allElements.cameraFeed.videoHeight;
                     canvas.getContext('2d').drawImage(allElements.cameraFeed, 0, 0, canvas.width, canvas.height);
                     
-                    const result = await worker.recognize(canvas);
-                    await worker.terminate();
+                    const result = await tesseractWorker.recognize(canvas);
                     
                     let plate = cleanPlateNumber(result.data.text);
                     
-                    if (plate.length >= 6 && plate.length <= 9) { // Adjusted length for more flexibility
+                    if (plate.length >= 6 && plate.length <= 9) {
                         allElements.searchTermInput.value = plate;
                         showToast(`Nhận diện: ${plate}`, 'success');
                         allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
                     } else {
                         showToast("Không nhận diện rõ ràng, thử lại hoặc chụp gần biển số.", "error");
                     }
-                    closeCamera();
                 } catch (error) {
                     showToast("Có lỗi khi nhận diện biển số.", "error");
                     console.error(error);
-                    closeCamera();
                 } finally {
                     setIsLoading(false);
+                    closeCamera();
                 }
             };
 
@@ -576,9 +592,14 @@
             allElements.captureBtn.addEventListener('click', performOcrScan);
             
             // --- INITIALIZATION ---
-            allElements.datePicker.value = formatDateForAPI(new Date());
-            fetchVehiclesForDate(allElements.datePicker.value);
-            resetMainForm();
+            constinitializeApp = async () => {
+                await initializeAI();
+                allElements.datePicker.value = formatDateForAPI(new Date());
+                fetchVehiclesForDate(allElements.datePicker.value);
+                resetMainForm();
+            }
+
+            initializeApp();
         });
     </script>
 </body>
