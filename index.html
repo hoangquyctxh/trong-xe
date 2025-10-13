@@ -564,13 +564,13 @@
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        // Only show toast in manual mode, auto mode has its own toast
+                        // Only show toast if not in auto mode, as auto mode has its own toast
                         if (!allElements.autoModeToggle.checked) {
                             showToast(result.message, 'success');
                         }
                         allElements.mainForm.reset();
                         resetMainForm();
-                        await fetchVehiclesForDate(allElements.datePicker.value);
+                        await fetchVehiclesForDate(allElements.datePicker.value, true); // Silent refresh
                     } else { throw new Error(result.message); }
                 } catch (error) {
                     showToast(`Lỗi: ${error.message}`, 'error');
@@ -636,12 +636,12 @@
                         if (!isAuto) showToast("Lỗi kết nối đến Lõi AI.", "error");
                         console.error(error);
                     } finally {
-                         // In auto mode, the interval handles the loading state, so we don't always stop loading here.
                         if (!isAuto) {
                             setIsLoading(false);
                             closeCamera();
                         } else {
-                            setIsLoading(false); // Allow next scan in the loop
+                            // In auto mode, setIsLoading is handled by the loop/main action
+                            setIsLoading(false);
                         }
                     }
                 }, 'image/jpeg');
@@ -681,7 +681,7 @@
                 clearTimeout(debounceTimer);
                 const plate = cleanPlateNumber(allElements.searchTermInput.value);
                 if (plate.length >= 6) {
-                    debounceTimer = setTimeout(() => fetchVehicleHistory(plate), 500);
+                    setTimeout(() => fetchVehicleHistory(plate), 100);
                 } else {
                     resetMainForm();
                 }
@@ -696,7 +696,6 @@
             fetchVehiclesForDate(allElements.datePicker.value);
             resetMainForm();
 
-            // Real-time update polling
             setInterval(() => {
                 if (!isLoading && document.visibilityState === 'visible') {
                     fetchVehiclesForDate(allElements.datePicker.value, true);
