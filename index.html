@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Quản lý xe Tình nguyện</title>
+    <title>Hệ thống Quản lý xe - Đoàn P.Ba Đình, Hà Nội</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -84,6 +84,8 @@
         .info-item .value { font-size: 1.8rem; font-weight: 800; color: var(--primary-accent); line-height: 1.2; }
         .status-badge { font-size: 1rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: white; }
         .status-badge.parking { background-color: var(--success-color); }
+	.status-badge.departed { 
+    background-color: var(--text-secondary); }
         .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
         #vehicle-list-container { max-height: 50vh; overflow-y: auto; padding-right: 5px; }
         .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
@@ -133,6 +135,9 @@
             .input-wrapper {
                 grid-column: 1 / -1; /* Input takes full width */
             }
+            #phone-item-main {
+                grid-column: 1 / -1;
+            }
             .icon-btn {
                 grid-row: 1; /* Place buttons on the first row */
                 height: 52px; /* Match input height */
@@ -156,7 +161,7 @@
                 </div>
                 <div class="title-group">
                     <p class="subtitle">Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
-                    <h1>Hệ thống Quản lý bãi đỗ xe</h1>
+                    <h1>Hệ thống Quản lý bãi xe</h1>
                 </div>
             </div>
             <div class="date-selector">
@@ -413,10 +418,12 @@
             };
 
             // --- DATA & UI FUNCTIONS ---
-            const fetchVehiclesForDate = async (dateStr) => {
-                if (isLoading) return;
-                setIsLoading(true);
-                showSkeletonLoader();
+            const fetchVehiclesForDate = async (dateStr, isSilent = false) => {
+                if (isLoading && !isSilent) return;
+                if (!isSilent) {
+                    setIsLoading(true);
+                    showSkeletonLoader();
+                }
                 allElements.listTitle.textContent = `Danh sách xe ngày ${new Date(dateStr + 'T00:00:00').toLocaleDateString('vi-VN')}`;
                 try {
                     const response = await fetch(`${GOOGLE_SCRIPT_URL}?date=${dateStr}&v=${new Date().getTime()}`, { method: 'GET', mode: 'cors' });
@@ -427,9 +434,10 @@
                         updateDashboard();
                     } else { throw new Error(result.message); }
                 } catch (error) {
-                    showToast(`Lỗi tải dữ liệu: ${error.message}`, 'error');
+                    if (!isSilent) showToast(`Lỗi tải dữ liệu: ${error.message}`, 'error');
+                    console.error("Fetch error:", error);
                 } finally {
-                    setIsLoading(false);
+                    if (!isSilent) setIsLoading(false);
                 }
             };
 
@@ -566,47 +574,60 @@
                 clearAllIntervals();
             };
 
-            const handleVehicleAction = (plateOrUniqueID, phone, action) => {
+            const handleVehicleAction = async (plateOrUniqueID, phone, action) => {
+                if (isLoading) return;
+                setIsLoading(true);
+
                 let originalPlate;
                 let payload;
                 const entryTime = new Date();
-
+                
                 if (action === 'checkIn') {
                     originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
                     if (!originalPlate) {
                         showToast("Biển số không hợp lệ.", 'error');
+                        setIsLoading(false);
                         return;
                     }
                     const uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
                     payload = { action, plate: originalPlate, phone, uniqueID };
-                    showQrCode(originalPlate, entryTime, uniqueID); // Show QR immediately
+                    showQrCode(originalPlate, entryTime, uniqueID);
                 } else { // checkOut
                     payload = { action, plate: plateOrUniqueID };
                     showToast('Đang xử lý cho xe ra...', 'success');
                     vehiclesOnSelectedDate = vehiclesOnSelectedDate.filter(v => v.uniqueID !== plateOrUniqueID);
                     filterVehicleList();
                     updateDashboard();
+                }
+
+                if (navigator.onLine) {
+                    try {
+                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await response.json();
+                        if (result.status !== 'success') throw new Error(result.message);
+                        
+                        if (action === 'checkOut') {
+                           showToast('Xe đã ra khỏi bãi!', 'success');
+                        }
+                        console.log('Google Sheet updated successfully.');
+
+                    } catch (error) {
+                        showToast(`Lỗi đồng bộ: ${error.message}`, 'error');
+                    }
+                } else {
+                     const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
+                    addToOfflineQueue(offlineAction);
+                }
+
+                if (action !== 'checkIn') {
                     resetMainForm();
                     allElements.searchTermInput.value = '';
                     allElements.phoneNumberInput.value = '';
                 }
-
-                if (navigator.onLine) {
-                    fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify(payload)
-                    }).then(r => r.json()).then(result => {
-                        if (result.status === 'success') {
-                            if (action === 'checkOut') {
-                                showToast('Xe đã ra khỏi bãi!', 'success');
-                            }
-                            console.log('Google Sheet updated successfully.');
-                        } else { throw new Error(result.message); }
-                    }).catch(error => showToast(`Lỗi đồng bộ: ${error.message}`, 'error'));
-                } else {
-                    const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
-                    addToOfflineQueue(offlineAction);
-                }
+                 setIsLoading(false);
             };
             
             const showQrCode = (plate, entryTime, uniqueID) => {
