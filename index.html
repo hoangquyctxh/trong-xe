@@ -125,8 +125,6 @@
         @media (max-width: 600px) { 
             .card { padding: 20px; }
             .info-grid { grid-template-columns: 1fr; } 
-            .main-grid { grid-template-columns: 1fr; }
-            /* ====== NEW MOBILE LAYOUT ====== */
             .input-group {
                 display: grid;
                 grid-template-columns: 1fr auto auto; /* Input | Mic | QR */
@@ -568,73 +566,46 @@
                 clearAllIntervals();
             };
 
-            const handleVehicleAction = async (plateOrUniqueID, phone, action) => {
-                if (isLoading) return;
-                setIsLoading(true);
-
+            const handleVehicleAction = (plateOrUniqueID, phone, action) => {
                 let originalPlate;
                 let payload;
                 const entryTime = new Date();
-                
+
                 if (action === 'checkIn') {
                     originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
                     if (!originalPlate) {
                         showToast("Biển số không hợp lệ.", 'error');
-                        setIsLoading(false);
                         return;
                     }
-                    payload = { action, plate: originalPlate, phone };
+                    const uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
+                    payload = { action, plate: originalPlate, phone, uniqueID };
+                    showQrCode(originalPlate, entryTime, uniqueID); // Show QR immediately
                 } else { // checkOut
-                    payload = { action, plate: plateOrUniqueID }; // In checkout, plateOrUniqueID is the uniqueID
-                }
-                
-                if (navigator.onLine) {
-                    try {
-                        const response = await fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                            body: JSON.stringify(payload)
-                        });
-                        const result = await response.json();
-                        if (result.status !== 'success') throw new Error(result.message);
-                        
-                        showToast(result.message, 'success');
-
-                        if (action === 'checkIn' && result.uniqueID) {
-                            showQrCode(originalPlate, entryTime, result.uniqueID);
-                        } else {
-                            await fetchVehiclesForDate(allElements.datePicker.value);
-                        }
-                    } catch (error) {
-                        showToast(`Lỗi đồng bộ: ${error.message}`, 'error');
-                    } finally {
-                        setIsLoading(false);
-                    }
-                } else { // OFFLINE
-                    const offlineUniqueID = '_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-                    const offlineAction = {
-                        action,
-                        plate: action === 'checkIn' ? originalPlate : undefined,
-                        phone: action === 'checkIn' ? phone : undefined,
-                        uniqueID: action === 'checkIn' ? offlineUniqueID : plateOrUniqueID,
-                        timestamp: entryTime.toISOString()
-                    };
-                    addToOfflineQueue(offlineAction);
-
-                    if (action === 'checkIn') {
-                        showQrCode(originalPlate, entryTime, offlineUniqueID);
-                    } else { // Offline checkout
-                        showToast(`Xe sẽ được check-out khi có mạng.`, 'success');
-                        vehiclesOnSelectedDate = vehiclesOnSelectedDate.filter(v => v.uniqueID !== plateOrUniqueID);
-                        filterVehicleList();
-                        updateDashboard();
-                    }
-                    setIsLoading(false);
-                }
-
-                if (action !== 'checkIn') { // Reset immediately for checkout
+                    payload = { action, plate: plateOrUniqueID };
+                    showToast('Đang xử lý cho xe ra...', 'success');
+                    vehiclesOnSelectedDate = vehiclesOnSelectedDate.filter(v => v.uniqueID !== plateOrUniqueID);
+                    filterVehicleList();
+                    updateDashboard();
                     resetMainForm();
                     allElements.searchTermInput.value = '';
                     allElements.phoneNumberInput.value = '';
+                }
+
+                if (navigator.onLine) {
+                    fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    }).then(r => r.json()).then(result => {
+                        if (result.status === 'success') {
+                            if (action === 'checkOut') {
+                                showToast('Xe đã ra khỏi bãi!', 'success');
+                            }
+                            console.log('Google Sheet updated successfully.');
+                        } else { throw new Error(result.message); }
+                    }).catch(error => showToast(`Lỗi đồng bộ: ${error.message}`, 'error'));
+                } else {
+                    const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
+                    addToOfflineQueue(offlineAction);
                 }
             };
             
@@ -778,3 +749,4 @@
     </script>
 </body>
 </html>
+
