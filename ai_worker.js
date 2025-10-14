@@ -1,118 +1,104 @@
-// ai_worker.js - Upgraded AI Core with Advanced Image Pre-processing
-// This worker runs on a separate thread to handle heavy AI tasks without freezing the main UI.
-
-self.importScripts('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
-
-let worker = null;
-let isReady = false;
+// ai_worker.js - Gemini Vision AI Core
+// This worker leverages Google's Gemini model for superior speed and accuracy.
 
 /**
- * Initializes the Tesseract AI worker.
- * This function creates and configures the OCR engine.
+ * Converts ImageData to a Base64-encoded JPEG string.
+ * @param {ImageData} imageData The raw image data from a canvas.
+ * @returns {string} The Base64 encoded string, without the 'data:image/jpeg;base64,' prefix.
  */
-async function initializeAI() {
-    if (isReady) return;
-    try {
-        worker = await Tesseract.createWorker('vie+eng', 1, {
-            logger: m => self.postMessage({ type: 'progress', data: m }),
-        });
-        
-        await worker.setParameters({
-            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
-        });
-        
-        isReady = true;
-        self.postMessage({ type: 'ready' });
-    } catch (error) {
-        self.postMessage({ type: 'error', data: 'Could not initialize AI Core.' });
-        console.error('Tesseract Worker initialization error:', error);
-    }
+function imageDataToBase64(imageData) {
+    // Use an offscreen canvas for performance, if available. Otherwise, a regular canvas.
+    const canvas = typeof OffscreenCanvas !== 'undefined' 
+        ? new OffscreenCanvas(imageData.width, imageData.height) 
+        : document.createElement('canvas');
+    
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext('2d');
+    ctx.putImageData(imageData, 0, 0);
+
+    // Convert canvas to Base64 data URL and strip the prefix.
+    // Using JPEG format for smaller file size and faster API calls.
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    return dataUrl.split(',')[1];
 }
 
 /**
- * **ADVANCED IMAGE PRE-PROCESSING**
- * Cleans the image to improve OCR accuracy.
- * @param {ImageData} imageData - The raw image data from the camera.
- * @returns {ImageData} The processed image data.
+ * Main message handler for the worker.
+ * Listens for 'recognize' messages from the main thread.
  */
-function preprocessImage(imageData) {
-    const data = imageData.data;
-    const contrastFactor = 2.0; // Increase contrast significantly
-
-    for (let i = 0; i < data.length; i += 4) {
-        // 1. Convert to grayscale using the luminosity method (more accurate than averaging)
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        
-        // 2. Apply contrast enhancement
-        let contrastGray = contrastFactor * (gray - 128) + 128;
-        
-        // Clamp the values to ensure they are within the 0-255 range
-        if (contrastGray > 255) contrastGray = 255;
-        if (contrastGray < 0) contrastGray = 0;
-
-        // Apply the new value to all R, G, B channels
-        data[i] = contrastGray;     // red
-        data[i + 1] = contrastGray; // green
-        data[i + 2] = contrastGray; // blue
-    }
-    return imageData;
-}
-
-
-/**
- * Processes the raw text recognized by Tesseract to clean and validate it.
- * @param {string} rawText - The raw text output from Tesseract.
- * @returns {string|null} A cleaned, valid license plate string, or null if invalid.
- */
-function postProcessPlate(rawText) {
-    if (!rawText) return null;
-
-    // Clean the text: Remove all dots, dashes, and whitespace.
-    const cleanedText = rawText.toUpperCase().replace(/[\s.-]/g, '');
-
-    // Validate the result: A valid plate in Vietnam typically has 7 to 9 characters.
-    if (cleanedText.length >= 7 && cleanedText.length <= 9) {
-        return cleanedText;
-    }
-    return null;
-}
-
-// Listen for messages from the main thread (index.html)
 self.onmessage = async (e) => {
     const { type, data } = e.data;
 
-    if (type === 'init') {
-        await initializeAI();
-    } else if (type === 'recognize') {
-        if (!isReady || !worker) {
-            self.postMessage({ type: 'error', data: 'AI Core is not ready. Please wait.' });
-            return;
-        }
+    if (type === 'recognize') {
+        self.postMessage({ type: 'progress', data: { status: 'processing', progress: 0.5 } });
 
-        const { imageData } = data;
-        
         try {
-            // **STEP 1: Pre-process the image for better accuracy**
-            const processedImageData = preprocessImage(imageData);
+            // Step 1: Convert image data to Base64 for the API request.
+            const base64ImageData = imageDataToBase64(data.imageData);
 
-            // **STEP 2: Perform recognition on the cleaned image**
-            const result = await worker.recognize(processedImageData);
+            // Step 2: Prepare the payload for the Gemini API.
+            const apiKey = ""; // Left blank to be handled by the user's environment.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
             
-            // **STEP 3: Post-process the text to validate and format**
-            const processedPlate = postProcessPlate(result.data.text);
+            // This is the "brain" of the operation. We instruct Gemini on exactly what to do.
+            const prompt = `
+                You are an expert Vietnamese license plate recognition system.
+                Analyze this image and return ONLY the characters of the license plate.
+                The result must be a single line of text containing only letters and numbers, with no extra formatting, symbols, explanations, or whitespace.
+                For example, if you see '30T2- 982.23', you must return '30T298223'.
+                If you cannot find a clear license plate, return an empty response.
+            `;
+
+            const payload = {
+                contents: [
+                    {
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: "image/jpeg",
+                                    data: base64ImageData
+                                }
+                            }
+                        ]
+                    }
+                ]
+            };
             
-            if (processedPlate) {
-                // If a valid plate is found, send the final result back.
-                self.postMessage({ type: 'result', data: { text: processedPlate } });
+            // Step 3: Make the API call to Gemini.
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            // Step 4: Extract and clean the result.
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (text && text.trim().length > 0) {
+                // Gemini has already been instructed to return clean text.
+                // We just trim any potential whitespace as a final safety check.
+                const finalPlate = text.trim();
+                self.postMessage({ type: 'result', data: { text: finalPlate } });
             } else {
-                // If the result is invalid, notify the main thread to continue scanning.
-                 self.postMessage({ type: 'no_result' });
+                // If Gemini returns no text, it means no valid plate was found.
+                self.postMessage({ type: 'no_result' });
             }
 
         } catch (error) {
-            self.postMessage({ type: 'error', data: 'Error during recognition.' });
-            console.error('Recognition error:', error);
+            self.postMessage({ type: 'error', data: 'Error during AI recognition.' });
+            console.error('Gemini recognition error:', error);
         }
     }
 };
+
+// Notify the main thread that the worker is ready to receive messages immediately.
+self.postMessage({ type: 'ready' });
 
