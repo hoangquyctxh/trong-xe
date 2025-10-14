@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Quản lý xe - Đoàn P.Ba Đình, Hà Nội</title>
+    <title>Hệ thống Quản lý xe Tình nguyện</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -122,7 +122,26 @@
         #offline-indicator { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background-color: var(--danger-color); color: white; padding: 8px 15px; border-radius: 20px; box-shadow: var(--shadow-lg); z-index: 10000; display: none; align-items: center; gap: 8px; font-weight: 500; animation: fadeIn 0.5s; }
         @media (max-width: 820px) { .main-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) { header { flex-direction: column; align-items: flex-start; } .date-selector { width: 100%; justify-content: space-between; } }
-        @media (max-width: 600px) { .input-group { flex-direction: column; } .card { padding: 20px; } .info-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { 
+            .card { padding: 20px; }
+            .info-grid { grid-template-columns: 1fr; } 
+            .main-grid { grid-template-columns: 1fr; }
+            /* ====== NEW MOBILE LAYOUT ====== */
+            .input-group {
+                display: grid;
+                grid-template-columns: 1fr auto auto; /* Input | Mic | QR */
+                gap: 10px;
+            }
+            .input-wrapper {
+                grid-column: 1 / -1; /* Input takes full width */
+            }
+            .icon-btn {
+                grid-row: 1; /* Place buttons on the first row */
+                height: 52px; /* Match input height */
+            }
+            #mic-btn { grid-column: 2; }
+            #scan-qr-btn { grid-column: 3; }
+        }
     </style>
 </head>
 <body>
@@ -138,8 +157,8 @@
                     <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
                 </div>
                 <div class="title-group">
-                    <p class="subtitle">Đoàn TNCS HCM Phường Ba Đình</p>
-                    <h1>Hệ thống Quản lý xe</h1>
+                    <p class="subtitle">Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
+                    <h1>Hệ thống Quản lý bãi đỗ xe</h1>
                 </div>
             </div>
             <div class="date-selector">
