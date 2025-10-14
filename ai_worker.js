@@ -1,78 +1,98 @@
-// ai_worker.js - Lõi AI độc lập, chạy trên một luồng riêng.
-// Import thư viện Tesseract.js
+// ai_worker.js - Upgraded AI Core
+// This worker runs on a separate thread to handle heavy AI tasks without freezing the main UI.
+
+// Import the Tesseract.js library
 self.importScripts('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
 
 let worker = null;
 let isReady = false;
 
-// Hàm khởi tạo "bộ não" AI
+/**
+ * Initializes the Tesseract AI worker.
+ * This function creates and configures the OCR engine.
+ */
 async function initializeAI() {
+    if (isReady) return;
     try {
-        // Tạo một worker Tesseract mới
-        worker = await Tesseract.createWorker('eng', 1, {
+        // Create a new Tesseract worker with Vietnamese and English languages for better accuracy.
+        worker = await Tesseract.createWorker('vie+eng', 1, {
             logger: m => {
-                // Gửi tiến trình về cho giao diện chính
+                // Send progress updates back to the main thread
                 self.postMessage({ type: 'progress', data: m });
             }
         });
         
-        // *** FIX QUAN TRỌNG NHẤT: Ra lệnh cho AI chỉ đọc các ký tự có trên biển số ***
+        // Configure the worker to only recognize characters found on Vietnamese license plates.
         await worker.setParameters({
-            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
         });
         
         isReady = true;
-        // Báo cho giao diện chính biết AI đã sẵn sàng
+        // Notify the main thread that the AI core is ready.
         self.postMessage({ type: 'ready' });
     } catch (error) {
-        // Báo lỗi nếu không thể khởi tạo
-        self.postMessage({ type: 'error', data: 'Không thể khởi tạo Lõi AI.' });
-        console.error('Lỗi khởi tạo Tesseract Worker:', error);
+        // Report an error if initialization fails.
+        self.postMessage({ type: 'error', data: 'Could not initialize AI Core.' });
+        console.error('Tesseract Worker initialization error:', error);
     }
 }
 
-// Lắng nghe yêu cầu từ giao diện chính
+/**
+ * Processes the raw text recognized by Tesseract to clean and validate it as a Vietnamese license plate.
+ * @param {string} rawText - The raw text output from Tesseract.
+ * @returns {string|null} A cleaned, valid license plate string, or null if invalid.
+ */
+function postProcessPlate(rawText) {
+    if (!rawText) return null;
+
+    // 1. Clean the text: Remove all dots, dashes, and whitespace.
+    const cleanedText = rawText.toUpperCase().replace(/[\s.-]/g, '');
+
+    // 2. Validate the result: A valid plate in Vietnam typically has 7 to 9 characters.
+    // This simple rule helps filter out a lot of noise and incorrect readings.
+    if (cleanedText.length >= 7 && cleanedText.length <= 9) {
+        return cleanedText;
+    }
+
+    // Return null if the text doesn't look like a valid plate.
+    return null;
+}
+
+// Listen for messages from the main thread (index.html)
 self.onmessage = async (e) => {
     const { type, data } = e.data;
 
     if (type === 'init') {
-        // Bắt đầu khởi tạo AI
+        // Initialize the AI when requested.
         await initializeAI();
     } else if (type === 'recognize') {
         if (!isReady || !worker) {
-            self.postMessage({ type: 'error', data: 'Lõi AI chưa sẵn sàng.' });
+            self.postMessage({ type: 'error', data: 'AI Core is not ready. Please wait.' });
             return;
         }
 
         const { imageData } = data;
         
-        // *** TẦNG TIỀN XỬ LÝ ẢNH CHUYÊN SÂU ***
-        // Chuyển ảnh sang dạng đen trắng để tăng độ chính xác
-        const processedImageData = preprocessImage(imageData);
-
         try {
-            // Đưa ảnh đã được "rửa sạch" cho AI đọc
-            const result = await worker.recognize(processedImageData);
-            // Gửi kết quả về cho giao diện chính
-            self.postMessage({ type: 'result', data: result.data });
+            // Perform recognition on the provided image data.
+            const result = await worker.recognize(imageData);
+            
+            // **INTELLIGENT POST-PROCESSING STEP**
+            const processedPlate = postProcessPlate(result.data.text);
+            
+            if (processedPlate) {
+                // If a valid plate is found, send the cleaned result back.
+                self.postMessage({ type: 'result', data: { text: processedPlate } });
+            } else {
+                // If the result is invalid after cleaning, do not send it back.
+                // The main thread will continue scanning.
+                // You can optionally send a 'no_result' message for debugging.
+                 self.postMessage({ type: 'no_result' });
+            }
+
         } catch (error) {
-            self.postMessage({ type: 'error', data: 'Lỗi trong quá trình nhận diện.' });
-            console.error('Lỗi nhận diện:', error);
+            self.postMessage({ type: 'error', data: 'Error during recognition.' });
+            console.error('Recognition error:', error);
         }
     }
 };
-
-// Hàm "rửa ảnh" để tăng độ chính xác
-function preprocessImage(imageData) {
-    const data = imageData.data;
-    // Chuyển sang ảnh thang độ xám (grayscale)
-    for (let i = 0; i < data.length; i += 4) {
-        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        data[i] = avg;     // red
-        data[i + 1] = avg; // green
-        data[i + 2] = avg; // blue
-    }
-    // (Có thể thêm các bước xử lý nâng cao khác như tăng tương phản ở đây)
-    return imageData;
-}
-
