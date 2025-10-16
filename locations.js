@@ -29,6 +29,13 @@ const LOCATIONS_CONFIG = [
         lat: 21.040082771937307,
         lng: 105.84675825624123
     },
+
+{ 
+        id: 'THPTPDP', 
+        name: 'Trung Học Phổ Thông Phan Đình Phùng', 
+        lat: 21.040684,
+        lng: 105.842947
+    },
     // Ví dụ: Thêm một điểm mới ở đây
     // { id: 'CONGVIENLENIN', name: 'Công viên Lênin', lat: 21.0261, lng: 105.8368 }
 ];
