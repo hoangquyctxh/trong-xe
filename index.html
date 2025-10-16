@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="locations.js"></script> <!-- Tải file cấu hình các điểm đỗ xe -->
     
     <style>
         :root {
@@ -91,6 +92,18 @@
         .vehicle-item:hover { transform: translateX(5px); border-color: var(--primary-accent); box-shadow: var(--shadow-md); }
         .skeleton-item { background: #e5e7eb; border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .vehicle-item .details { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; }
+        .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
+        .vehicle-item .icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-main);
+            border-radius: 50%;
+        }
         #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; }
         .toast.success { background-color: var(--success-color); } .toast.error { background-color: var(--danger-color); }
@@ -107,259 +120,94 @@
         @keyframes fadeInBackdrop { from { opacity: 0; } to { opacity: 1; } }
         #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
         .hidden { display: none !important; }
-
-        /* --- UPDATED TICKET STYLES (REPLACED/ENHANCED) --- */
+        .scan-success-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 12px;
+            box-shadow: inset 0 0 0 5px var(--success-color);
+            animation: fadeOutOverlay 0.5s ease-out forwards;
+        }
+        @keyframes fadeOutOverlay { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* --- GIAO DIỆN VÉ ĐIỆN TỬ MỚI (ĐƠN GIẢN & ỔN ĐỊNH) --- */
         #qrcode-modal .modal-content {
-            padding: 0;
-            background: transparent;
-            box-shadow: none;
-            border: none;
+            background-color: var(--bg-card);
+            padding: 25px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 420px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            perspective: 1200px;
-            pointer-events: none;
-        }
-
-        #qrcode-modal .ticket-container {
-            font-family: 'Be Vietnam Pro', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-            width: 100%;
-            max-width: 420px;
-            border-radius: 18px;
-            overflow: visible;
-            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-            box-shadow: 0 28px 60px rgba(2,6,23,0.22), 0 6px 18px rgba(2,6,23,0.06) inset;
-            border: 1px solid rgba(0, 40, 120, 0.06);
-            transform-origin: center;
-            transform: translateY(8px) scale(.98);
-            animation: ticketEntrance 560ms cubic-bezier(.2,.9,.25,1) forwards;
-            position: relative;
-        }
-        @keyframes ticketEntrance {
-            0% { opacity: 0; transform: translateY(30px) rotateX(12deg) scale(.94); }
-            60% { opacity: 1; transform: translateY(-6px) rotateX(-3deg) scale(1.02); }
-            100% { transform: translateY(0) rotateX(0) scale(1); opacity: 1; }
-        }
-
-        /* Header với background động */
-        #qrcode-modal .ticket-header {
-            background: linear-gradient(-45deg, #003e9a, #0051c7, #1e66ff, #3b82f6);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            color: #fff;
-            padding: 24px 18px 20px 18px;
+            max-width: 380px;
             text-align: center;
-            border-top-left-radius: 18px;
-            border-top-right-radius: 18px;
-            position: relative;
-            box-shadow: 0 8px 22px rgba(2,6,23,0.12) inset;
+            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50% }
-            50% { background-position: 100% 50% }
-            100% { background-position: 0% 50% }
-        }
-
-        /* Logo và branding cải tiến */
-        #qrcode-modal .ticket-header .org-logo {
-            width: 72px;
-            height: 72px;
-            border-radius: 16px;
-            margin: 0 auto 12px auto;
-            padding: 2px;
-            background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
-            backdrop-filter: blur(8px);
-            border: 2px solid rgba(255,255,255,0.18);
+        .ticket-header-new {
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 12px 32px rgba(2,6,23,0.24);
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border-color);
         }
-
-        #qrcode-modal .org-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 12px;
+        .ticket-logo-new {
+            width: 45px;
+            height: 45px;
         }
-
-        #qrcode-modal .org-name {
-            font-size: 1.25rem;
-            font-weight: 900;
-            letter-spacing: 0.8px;
+        .ticket-org-name-new {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-primary);
             text-transform: uppercase;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.24);
-            margin-bottom: 2px;
             line-height: 1.4;
+            text-align: left;
         }
-
-        #qrcode-modal .org-dept {
-            font-size: 1.1rem;
+        .ticket-title-new {
+            font-size: 1.5rem;
             font-weight: 800;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-            margin-top: 2px;
-            opacity: 0.96;
-            text-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            color: var(--primary-accent);
+            margin-bottom: 10px;
         }
-
-        #qrcode-modal .ticket-location-small {
-            font-size: 0.88rem;
-            margin-top: 6px;
+        .ticket-subtitle-new {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        #qrcode-canvas-wrapper {
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            margin: 0 auto 20px auto;
+            width: 250px;
+            height: 250px;
+        }
+        #qrcode-canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .ticket-info-new {
+            text-align: left;
+            margin-bottom: 25px;
+        }
+        .ticket-info-new .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .ticket-info-new .info-row:last-child {
+            border-bottom: none;
+        }
+        .ticket-info-new .info-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .ticket-info-new .info-value {
             font-weight: 700;
-            letter-spacing: 0.4px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.92);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.16);
+            color: var(--text-primary);
         }
-
-        /* Gold ribbon/tag */
-        #qrcode-modal .ticket-header::after {
-            content: "VÉ GỬI XE";
-            position: absolute;
-            right: 14px;
-            top: 12px;
-            background: linear-gradient(90deg, #ffd166 0%, #ffb84d 50%, #ff9a00 100%);
-            color: #2b2b2b;
-            font-weight: 800;
-            font-size: 0.72rem;
-            padding: 6px 10px;
-            border-radius: 999px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-        }
-
-        /* Body wrapper */
-        #qrcode-modal .ticket-body { padding: 18px; background: transparent; }
-        #qrcode-modal .ticket-content-wrapper {
-            padding: 18px;
-            border-radius: 12px;
-            background: linear-gradient(180deg,#ffffff,#f8fbff);
-            box-shadow: 0 12px 36px rgba(2,6,23,0.06);
-            border: 1px solid rgba(2,6,23,0.04);
-            text-align: center;
-        }
-
-        /* Plate number prominent */
         #ticket-plate-display {
-            font-size: 2rem;
-            font-weight: 900;
-            color: #0b2447;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-        .ticket-info .label { color: var(--text-secondary); font-size: 0.82rem; font-weight:700; margin-bottom:8px; }
-        .ticket-info .time-value { color: #0b2447; font-weight:800; font-size: 0.98rem; }
-
-        /* QR card with deep soft shadow and inner white mat */
-        #qrcode-modal #qrcode-canvas-wrapper {
-            background: linear-gradient(180deg,#ffffff,#fbfdff);
-            border-radius: 16px;
-            padding: 16px;
-            margin: 10px auto;
-            width: 260px;
-            height: 260px;
-            display:flex; align-items:center; justify-content:center;
-            box-shadow: 0 18px 48px rgba(2,6,23,0.18);
-            border: 1px solid rgba(2,6,23,0.06);
-            transition: transform 240ms ease, box-shadow 240ms ease;
-        }
-        #qrcode-modal #qrcode-canvas {
-            width: 220px; height: 220px; border-radius: 12px; background: #fff;
-            box-shadow: 0 10px 30px rgba(2,6,23,0.08) inset;
-        }
-        #qrcode-modal.open #qrcode-canvas-wrapper { transform: translateY(-6px) scale(1.01); box-shadow: 0 26px 64px rgba(2,6,23,0.22); }
-
-        /* subtle confetti particles (decorative) */
-        #qrcode-modal.open::before {
-            content: "";
-            position: absolute;
-            top: -12%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 420px; height: 420px;
-            background-image: radial-gradient(#ffd166 2px, transparent 2px),
-                              radial-gradient(#90cdf4 2px, transparent 2px),
-                              radial-gradient(#a78bfa 2px, transparent 2px);
-            background-size: 18px 18px, 14px 14px, 22px 22px;
-            opacity: .06;
-            pointer-events: none;
-            border-radius: 50%;
-            animation: confettiFloat 2200ms linear forwards;
-        }
-        @keyframes confettiFloat { 0% { transform: translateX(-50%) translateY(0); opacity:0; } 40% { opacity:.08; } 100% { transform: translateX(-50%) translateY(-28px); opacity:0; } }
-
-        /* perforation (visual separator) */
-        .ticket-perforation { height: 8px; margin: 12px 0; background-image: linear-gradient(90deg, rgba(0,0,0,0.06) 50%, transparent 50%); background-size: 8px 8px; opacity:.45; border-radius:999px; }
-
-        /* Footer: actions (Print + Close) */
-        .ticket-footer { display:flex; flex-direction:column; gap:8px; align-items:center; padding-bottom:6px; }
-        .ticket-actions { display:flex; gap:12px; justify-content:center; width:100%; }
-        .btn-ticket {
-            padding: 12px 24px;
-            border-radius: 999px;
-            border: none;
-            font-weight: 800;
-            font-size: 0.95rem;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(2,6,23,0.12);
-            transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-ticket::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
-            background-repeat: no-repeat;
-            background-position: 50%;
-            transform: scale(10, 10);
-            opacity: 0;
-            transition: transform .5s, opacity 1s;
-        }
-
-        .btn-ticket:active::after {
-            transform: scale(0, 0);
-            opacity: .3;
-            transition: 0s;
-        }
-
-        #print-ticket-btn {
-            background: linear-gradient(45deg, #ffd166, #ffb84d, #ff9a00);
-            background-size: 200% 200%;
-            animation: gradientMove 3s ease infinite;
-            color: #1a1a1a;
-            font-weight: 800;
-        }
-
-        #close-qrcode-btn {
-            background: linear-gradient(45deg, #1e66ff, #3b82f6, #60a5fa);
-            background-size: 200% 200%;
-            animation: gradientMove 3s ease infinite;
-            color: #fff;
-            font-weight: 800;
-        }
-
-        @keyframes gradientMove {
-            0% { background-position: 0% 50% }
-            50% { background-position: 100% 50% }
-            100% { background-position: 0% 50% }
-        }
-
-        .btn-ticket:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 28px rgba(2,6,23,0.18);
-        }
-
-        .btn-ticket:active {
-            transform: translateY(1px);
+            font-family: monospace;
+            font-size: 1.1rem;
         }
 
         /* print stylesheet - only the ticket */
@@ -379,12 +227,11 @@
                 animation: none !important;
                 box-shadow: none !important;
                 border: none !important;
+                max-width: 100%;
             }
-            .ticket-actions, #close-qrcode-btn { display: none !important; }
+            #close-qrcode-btn { display: none !important; }
             @page { margin: 0; }
         }
-
-        /* --- end replaced ticket styles --- */
 
         .site-footer { margin-top: 40px; }
         .footer-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; padding: 30px; }
@@ -407,60 +254,40 @@
             #mic-btn { grid-column: 2; } #scan-qr-btn { grid-column: 3; }
         }
 
-        /* Thêm vào phần CSS cho chữ song ngữ */
-        .bilingual {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-        }
-        .bilingual .vi {
-            font-weight: 800;
-            font-size: 0.9rem;
-        }
-        .bilingual .en {
-            font-size: 0.75rem;
-            opacity: 0.75;
-            font-weight: 500;
-        }
-
-        /* Cập nhật style cho header vé */
-        #qrcode-modal .ticket-header {
-            background: linear-gradient(-45deg, #003e9a, #0051c7, #1e66ff, #3b82f6);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            color: #fff;
-            padding: 24px 18px 20px 18px;
-            text-align: center;
-            border-top-left-radius: 18px;
-            border-top-right-radius: 18px;
+        /* --- CẢI TIẾN GIAO DIỆN LỊCH SỬ GỬI XE (TIMELINE) --- */
+        #info-history-list {
             position: relative;
-            box-shadow: 0 8px 22px rgba(2,6,23,0.12) inset;
+            padding-left: 25px;
+            margin-top: 15px;
         }
-
-        #qrcode-modal .org-name {
-            font-size: 1.25rem;
-            font-weight: 900;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.24);
-            margin-bottom: 2px;
-            line-height: 1.4;
+        #info-history-list::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background-color: var(--border-color);
         }
-
-        /* Thêm style mới cho label song ngữ */
-        .ticket-info .label.bilingual {
-            margin-bottom: 6px;
-            color: var(--text-secondary);
+        .history-item {
+            position: relative;
+            margin-bottom: 15px;
+            background: var(--bg-main);
+            padding: 12px 15px;
+            border-radius: var(--border-radius-md);
+            border-left: 3px solid var(--primary-accent-light);
         }
-        .ticket-info .label.bilingual .vi {
-            font-size: 0.85rem;
-            font-weight: 700;
-        }
-        .ticket-info .label.bilingual .en {
-            font-size: 0.72rem;
-            color: var(--text-secondary);
-            opacity: 0.8;
+        .history-item::before {
+            content: '';
+            position: absolute;
+            left: -24px; /* (25px padding-left) - (10px width / 2) - (1px border) */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid var(--primary-accent-light);
         }
     </style>
 </head>
@@ -607,66 +434,34 @@
 
     <div id="qrcode-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
-            <div class="ticket-container" role="dialog" aria-modal="true" aria-labelledby="ticket-title">
-                <div class="ticket-header">
-                    <div class="org-logo ticket-item">
-                        <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn">
-                    </div>
-                    <div class="ticket-item org-name">ĐOÀN TNCS HỒ CHÍ MINH</div>
-                    <div class="ticket-item org-dept">PHƯỜNG BA ĐÌNH</div>
-                    <div class="ticket-item ticket-location-small bilingual" id="ticket-location-display">
-                        <span class="vi">ĐIỂM TRỰC: ĐIỆN BIÊN PHỦ</span>
-                        <span class="en">LOCATION: DIEN BIEN PHU</span>
-                    </div>
-                    <div class="ticket-item ticket-title bilingual" style="margin-top:8px;">
-                        <span class="vi">VÉ GỬI XE ĐIỆN TỬ</span>
-                        <span class="en">ELECTRONIC PARKING TICKET</span>
-                    </div>
+            <div class="ticket-header-new">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new">
+                <div class="ticket-org-name-new">
+                    Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
                 </div>
+            </div>
+            <h2 class="ticket-title-new">VÉ GỬI XE ĐIỆN TỬ</h2>
+            <p class="ticket-subtitle-new" id="ticket-location-display">--</p>
 
-                <div class="ticket-body">
-                    <div class="ticket-content-wrapper">
-                        <div class="ticket-info ticket-item">
-                            <div class="label bilingual">
-                                <span class="vi">BIỂN SỐ XE</span>
-                                <span class="en">PLATE NUMBER</span>
-                            </div>
-                            <div class="value" id="ticket-plate-display">--</div>
-                        </div>
+            <div id="qrcode-canvas-wrapper">
+                <canvas id="qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
+            </div>
 
-                        <div id="qrcode-canvas-wrapper" class="ticket-item">
-                            <canvas id="qrcode-canvas" aria-label="QR code"></canvas>
-                        </div>
-
-                        <div class="ticket-info ticket-item">
-                            <div class="label bilingual">
-                                <span class="vi">THỜI GIAN VÀO</span>
-                                <span class="en">CHECK-IN TIME</span>
-                            </div>
-                            <div class="time-value" id="ticket-time-display">--</div>
-                        </div>
-
-                        <div class="ticket-perforation" aria-hidden="true"></div>
-
-                        <div class="ticket-footer ticket-item">
-                            <div class="ticket-barcode" aria-hidden="true"></div>
-                            <div class="ticket-actions">
-                                <button id="print-ticket-btn" class="btn-ticket" type="button" title="Print Ticket">
-                                    <span class="vi">In vé</span>
-                                    <span class="en">Print</span>
-                                </button>
-                                <button id="close-qrcode-btn" class="btn-ticket" type="button" title="Close Ticket">
-                                    <span class="vi">Đóng & Hoàn tất</span>
-                                    <span class="en">Close & Finish</span>
-                                </button>
-                            </div>
-                            <div class="bilingual" style="font-size:0.8rem; color:var(--text-secondary); margin-top:8px;">
-                                <span class="vi">Giữ vé để xuất trình khi cần</span>
-                                <span class="en">Please keep this ticket for verification</span>
-                            </div>
-                        </div>
-                    </div>
+            <div class="ticket-info-new">
+                <div class="info-row">
+                    <span class="info-label">Biển số xe:</span>
+                    <span class="info-value" id="ticket-plate-display">--</span>
                 </div>
+                <div class="info-row">
+                    <span class="info-label">Thời gian vào:</span>
+                    <span class="info-value" id="ticket-time-display">--</span>
+                </div>
+            </div>
+
+            <div class="action-buttons-container">
+                <button id="close-qrcode-btn" class="action-button btn-check-in" type="button">
+                    Hoàn tất
+                </button>
             </div>
         </div>
     </div>
@@ -727,8 +522,7 @@
                 ticketTimeDisplay: document.getElementById('ticket-time-display'),
                 offlineIndicator: document.getElementById('offline-indicator'),
                 locationSubtitle: document.getElementById('location-subtitle'), // Mới
-                ticketLocationDisplay: document.getElementById('ticket-location-display'), // Mới
-                printTicketBtn: document.getElementById('print-ticket-btn'), // Nút In
+                ticketLocationDisplay: document.getElementById('ticket-location-display') // Mới
             };
 
             let vehiclesOnSelectedDate = [];
@@ -737,6 +531,7 @@
             let cameraStream = null;
             let currentVehicleContext = null;
             let scanAnimation = null;
+            let recentlyScanned = new Set(); // Chống quét lại liên tục
             let autoRefreshInterval = null;
             let currentLocation = null; // Mới: Lưu thông tin điểm trực
 
@@ -753,15 +548,11 @@
             };
 
             const determineNearestLocation = async () => {
-                // Danh sách điểm mặc định (cập nhật khi cần)
-                const locations = [
-                    { id: 'DIENBIENPHU', name: 'Điểm trực Điện Biên Phủ', lat: 21.032432212532083, lng: 105.83939563968067 },
-                ];
+                const locations = typeof LOCATIONS_CONFIG !== 'undefined' ? LOCATIONS_CONFIG : [];
 
-                if (!navigator.geolocation) {
+                if (!navigator.geolocation || locations.length === 0) {
                     showToast('Trình duyệt không hỗ trợ định vị. Sử dụng điểm mặc định.', 'error');
-                    currentLocation = locations[0];
-                    allElements.locationSubtitle.textContent = `Điểm trực: ${currentLocation.name}`;
+                    allElements.locationSubtitle.textContent = `Chưa có điểm trực nào được cấu hình.`;
                     return;
                 }
 
@@ -790,8 +581,8 @@
                         allElements.locationSubtitle.textContent = `Điểm trực: ${nearest.name}`;
                         showToast(`Đã xác định điểm trực: ${nearest.name}`, 'success');
                     } else {
-                        // fallback to default
-                        currentLocation = locations[0];
+                        // fallback to first location if something goes wrong
+                        currentLocation = locations.length > 0 ? locations[0] : null;
                         allElements.locationSubtitle.textContent = `Điểm trực: ${currentLocation.name}`;
                         showToast('Không tìm thấy điểm gần bạn. Đã chọn điểm mặc định.', 'error');
                     }
@@ -803,8 +594,8 @@
                     if (err.code === 2) message = 'Vị trí không khả dụng.';
                     if (err.code === 3) message = 'Yêu cầu vị trí hết hạn.';
                     showToast(`${message} Sử dụng điểm mặc định.`, 'error');
-                    currentLocation = locations[0];
-                    allElements.locationSubtitle.textContent = `Điểm trực: ${currentLocation.name}`;
+                    currentLocation = locations.length > 0 ? locations[0] : null;
+                    if (currentLocation) allElements.locationSubtitle.textContent = `Điểm trực: ${currentLocation.name}`;
                 }
             };
             // --- KẾT THÚC TÍCH HỢP VỊ TRÍ ---
@@ -868,6 +659,20 @@
                 if (hours > 0) result += `${hours}h `;
                 result += `${minutes}m`;
                 return result.trim();
+            };
+
+            const calculateDurationBetween = (startTime, endTime) => {
+                if (!startTime || !endTime) return '--';
+                const start = new Date(startTime);
+                const end = new Date(endTime);
+                let diff = Math.floor((end - start) / 1000);
+                if (diff < 0) return '0m';
+                const days = Math.floor(diff / 86400); diff %= 86400;
+                const hours = Math.floor(diff / 3600); diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                let result = '';
+                if (days > 0) result += `${days}d `; if (hours > 0) result += `${hours}h `; result += `${minutes}m`;
+                return result.trim() || '0m';
             };
             const clearAllIntervals = () => {
                 durationIntervals.forEach(clearInterval);
@@ -968,7 +773,7 @@
                     const statusClass = vehicle.Status === 'Đang gửi' ? 'parking' : 'departed';
                     const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.Status}</span>`;
                     const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
-                    vehicleItem.innerHTML = `<div class="icon" style="background: transparent; color: var(--text-secondary);">${carIcon}</div><div class="info"><div class="plate" style="color: var(--text-primary);">${vehicle.Plate} ${statusBadge}</div><div class="details" style="color: var(--text-secondary);">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
+                    vehicleItem.innerHTML = `<div class="icon" style="color: var(--text-secondary);">${carIcon}</div><div class="info" style="flex-grow:1;"><div class="plate">${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
                     allElements.vehicleListContainer.appendChild(vehicleItem);
                 });
             };
@@ -1051,12 +856,17 @@
                     }
                     history.slice(0, 5).forEach(entry => {
                         const li = document.createElement('li');
-                        li.className = 'history-item';
-                        li.innerHTML = `<span>▶️ <strong>Vào:</strong> ${formatDateTimeForDisplay(entry['Entry Time'])}</span><span>◀️ <strong>Ra:</strong> ${formatDateTimeForDisplay(entry['Exit Time'])}</span>`;
+                        li.className = 'history-item'; // Sử dụng class mới cho timeline
+                        const duration = calculateDurationBetween(entry['Entry Time'], entry['Exit Time']);
+                        li.innerHTML = `
+                            <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 5px;">Vào: ${formatDateTimeForDisplay(entry['Entry Time'])}</div>
+                            <div style="color: var(--text-secondary); margin-bottom: 5px;">Ra: ${formatDateTimeForDisplay(entry['Exit Time'])}</div>
+                            <div style="font-weight: 700; color: var(--primary-accent);">Tổng thời gian: ${duration}</div>
+                        `;
                         historyList.appendChild(li);
                     });
                 } else {
-                    historyList.innerHTML = `<li class="history-item" style="color: var(--text-secondary);">Chưa có lịch sử.</li>`;
+                    historyList.innerHTML = `<li style="list-style: none; color: var(--text-secondary);">Chưa có lịch sử.</li>`;
                 }
             };
 
@@ -1094,6 +904,7 @@
                     // Thêm locationId vào payload
                     payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id };
                     showQrCode(originalPlate, entryTime, uniqueID);
+                    setIsLoading(false); // *** SỬA LỖI CỐT LÕI: Mở khóa giao diện ngay sau khi hiện vé
                 } else { // checkOut
                     payload = { action, plate: plateOrUniqueID };
                     showToast('Đang xử lý cho xe ra...', 'success');
@@ -1122,23 +933,20 @@
                         allElements.phoneNumberInput.value = '';
                         await fetchVehiclesForDate(allElements.datePicker.value);
                     }
-                    setIsLoading(false);
+                    if (action === 'checkOut') setIsLoading(false); // Chỉ mở khóa cho checkout ở đây
                 }
             };
             
             const showQrCode = (plate, entryTime, uniqueID) => {
                 if (allElements.ticketPlateDisplay) allElements.ticketPlateDisplay.textContent = plate;
                 if (allElements.ticketTimeDisplay) allElements.ticketTimeDisplay.textContent = formatDateTimeForDisplay(entryTime);
-                if (currentLocation && allElements.ticketLocationDisplay) {
-                    if (allElements.ticketLocationDisplay) {
-                        const viSpan = allElements.ticketLocationDisplay.querySelector('.vi');
-                        const enSpan = allElements.ticketLocationDisplay.querySelector('.en');
-                        if (viSpan) viSpan.textContent = currentLocation.name.toUpperCase();
-                        if (enSpan) enSpan.textContent = 'LOCATION: ' + (currentLocation.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
-                    }
+                if (allElements.ticketLocationDisplay && currentLocation) {
+                    allElements.ticketLocationDisplay.textContent = `Điểm trực: ${currentLocation.name}`;
                 }
-                QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 256, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
+
+                QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
                     if (error) { showToast('Lỗi tạo mã QR.', 'error'); return; }
+                    
                     if (allElements.qrcodeModal) {
                         allElements.qrcodeModal.style.display = 'flex';
                         allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.add('open');
@@ -1147,18 +955,22 @@
             };
 
             const closeQrCode = () => {
+                // GIẢI PHÁP TRIỆT ĐỂ: Đảm bảo giao diện luôn được mở khóa và làm mới
+                setIsLoading(false); // 1. Luôn mở khóa tất cả các nút và input
+
+                // 2. Ẩn modal và xóa QR code cũ
                 if (allElements.qrcodeModal) {
                     allElements.qrcodeModal.style.display = 'none';
                     allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.remove('open');
                 }
                 if (allElements.qrcodeCanvas) {
                     try {
-                        const ctx = allElements.qrcodeCanvas.getContext && allElements.qrcodeCanvas.getContext('2d');
-                        if (ctx) ctx.clearRect(0,0,allElements.qrcodeCanvas.width, allElements.qrcodeCanvas.height);
+                        const ctx = allElements.qrcodeCanvas.getContext('2d'); if (ctx) ctx.clearRect(0, 0, allElements.qrcodeCanvas.width, allElements.qrcodeCanvas.height);
                     } catch(e){ /* ignore */ }
                 }
-                if (allElements.searchTermInput) allElements.searchTermInput.value = '';
-                if (allElements.phoneNumberInput) allElements.phoneNumberInput.value = '';
+
+                // 3. Reset form và tải lại dữ liệu
+                if (allElements.searchTermInput) allElements.searchTermInput.value = ''; if (allElements.phoneNumberInput) allElements.phoneNumberInput.value = '';
                 resetMainForm();
                 fetchVehiclesForDate(allElements.datePicker ? allElements.datePicker.value : formatDateForAPI(new Date()));
             };
@@ -1195,20 +1007,35 @@
 
             const tick = () => {
                 if (allElements.cameraFeed.readyState === allElements.cameraFeed.HAVE_ENOUGH_DATA) {
-                    const canvas = document.createElement('canvas'); canvas.width = allElements.cameraFeed.videoWidth; canvas.height = allElements.cameraFeed.videoHeight;
-                    const ctx = canvas.getContext('2d'); ctx.drawImage(allElements.cameraFeed, 0, 0, canvas.width, canvas.height);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = allElements.cameraFeed.videoWidth;
+                    canvas.height = allElements.cameraFeed.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(allElements.cameraFeed, 0, 0, canvas.width, canvas.height);
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-                    if (code) {
-                        allElements.scannerStatus.textContent = `Đã quét: ${code.data}`;
-                        closeQrScanner();
+                    
+                    if (code && !recentlyScanned.has(code.data)) {
+                        recentlyScanned.add(code.data); // Thêm vào danh sách đã quét
+                        allElements.scannerStatus.textContent = `Đã quét: ${code.data.substring(0, 20)}...`;
+                        
+                        // Xử lý cho xe ra mà không đóng camera
                         handleVehicleAction(code.data, '', 'checkOut');
-                        return;
+                        showScanSuccessFeedback();
+                        setTimeout(() => recentlyScanned.delete(code.data), 3000); // Xóa sau 3 giây
                     }
                 }
                 scanAnimation = requestAnimationFrame(tick);
             };
             
+            const showScanSuccessFeedback = () => {
+                const overlay = document.createElement('div');
+                overlay.className = 'scan-success-overlay';
+                allElements.cameraFeed.parentElement.style.position = 'relative';
+                allElements.cameraFeed.parentElement.appendChild(overlay);
+                setTimeout(() => overlay.remove(), 500);
+            };
+
             const startVoiceRecognition = () => {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRecognition) { showToast('Trình duyệt không hỗ trợ nhận dạng giọng nói.', 'error'); return; }
@@ -1266,12 +1093,11 @@
             const initialize = async () => {
                 updateOnlineStatus();
                 const today = new Date();
-                allElements.datePicker.value = formatDateForAPI(today);
-                resetMainForm();
-                setIsLoading(false, true); 
+                if (allElements.datePicker) allElements.datePicker.value = formatDateForAPI(today);
                 
-                await determineNearestLocation(); // Chờ xác định vị trí xong
-                await fetchVehiclesForDate(allElements.datePicker.value, false, true); // Mới tải dữ liệu
+                await determineNearestLocation(); 
+                await fetchVehiclesForDate(allElements.datePicker.value, false, true); 
+                resetMainForm(); 
 
                 if (autoRefreshInterval) clearInterval(autoRefreshInterval);
                 autoRefreshInterval = setInterval(() => {
@@ -1279,7 +1105,7 @@
                         console.log('Tự động làm mới dữ liệu...');
                         fetchVehiclesForDate(allElements.datePicker.value, true);
                     }
-                }, 30000);
+                }, 5000); // Giảm thời gian làm mới xuống 5 giây
             };
 
             window.addEventListener('online', updateOnlineStatus);
@@ -1299,13 +1125,21 @@
             if (allElements.micBtn) allElements.micBtn.addEventListener('click', startVoiceRecognition);
             if (allElements.scanQrBtn) allElements.scanQrBtn.addEventListener('click', openQrScanner);
             if (allElements.closeQrcodeBtn) allElements.closeQrcodeBtn.addEventListener('click', () => {
-                closeQrCode();
-                if (currentVehicleContext && currentVehicleContext.status === 'new') {
-                    fetchVehiclesForDate(allElements.datePicker.value);
-                }
+                closeQrCode(); // Chỉ cần gọi hàm này là đủ
             });
             if (allElements.closeScannerBtn) allElements.closeScannerBtn.addEventListener('click', closeQrScanner);
-            if (allElements.printTicketBtn) allElements.printTicketBtn.addEventListener('click', printTicket);
+            
+            // Nâng cấp: Cho phép checkout trực tiếp từ danh sách
+            if (allElements.vehicleListContainer) {
+                allElements.vehicleListContainer.addEventListener('click', (e) => {
+                    const item = e.target.closest('.vehicle-item');
+                    if (item && item.dataset.status === 'Đang gửi' && item.dataset.uniqueid) {
+                        if (confirm(`Bạn có chắc chắn muốn cho xe [${item.dataset.plate}] ra khỏi bãi?`)) {
+                            handleVehicleAction(item.dataset.uniqueid, '', 'checkOut');
+                        }
+                    }
+                });
+            }
 
             initialize();
         });
