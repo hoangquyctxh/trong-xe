@@ -370,6 +370,24 @@
             border-radius: 50%;
             cursor: pointer;
         }
+        #payment-qrcode-wrapper {
+            position: relative; /* For spinner positioning */
+        }
+        .qr-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--bg-main);
+            border-top-color: var(--primary-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            transform: translate(-50%, -50%);
+            display: none; /* Hidden by default */
+        }
+        @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
 
         /* Bố cục ngang cho Tablet và Desktop */
         @media (min-width: 768px) {
@@ -639,6 +657,7 @@
                 </div>
                 <p class="ticket-subtitle-new">Quét mã VietQR để thanh toán</p>
                 <div id="payment-qrcode-wrapper">
+                    <div class="qr-spinner" id="qr-spinner"></div>
                     <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: 100%; object-fit: contain;">
                 </div>
                 <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center;">Nội dung: <strong id="payment-memo-display" style="font-family: monospace;">--</strong></p>
@@ -707,6 +726,7 @@
                 paymentDuration: document.getElementById('payment-duration'),
                 downloadQrBtn: document.getElementById('download-qr-btn'),
                 printReceiptBtn: document.getElementById('print-receipt-btn'),
+                qrSpinner: document.getElementById('qr-spinner'),
             };
 
 
@@ -1237,6 +1257,11 @@
                 const paymentInfoText = `Thanh toan cho xe ${memo}`;
                 allElements.paymentMemoDisplay.textContent = paymentInfoText;
 
+                // --- TỐI ƯU TỐC ĐỘ: Hiển thị modal ngay lập tức ---
+                allElements.paymentModal.style.display = 'flex';
+                allElements.paymentQrcodeImage.style.opacity = '0'; // Ẩn ảnh cũ
+                allElements.qrSpinner.style.display = 'block'; // Hiện spinner
+
                 // --- CẬP NHẬT: Sử dụng API link ảnh của VietQR ---
                 const encodedAddInfo = encodeURIComponent(paymentInfoText);
                 const accountName = "NGUYEN CAO HOANG QUY"; // Tên tài khoản không dấu
@@ -1244,9 +1269,15 @@
 
                 // Hiển thị ảnh QR
                 allElements.paymentQrcodeImage.src = qrImageUrl;
+                // Sau khi ảnh tải xong
                 allElements.paymentQrcodeImage.onload = () => {
-                     allElements.paymentModal.style.display = 'flex';
+                    allElements.qrSpinner.style.display = 'none'; // Ẩn spinner
+                    allElements.paymentQrcodeImage.style.opacity = '1'; // Hiện ảnh mới
                 };
+                allElements.paymentQrcodeImage.onerror = () => {
+                    allElements.qrSpinner.style.display = 'none';
+                    showToast('Lỗi tải mã QR từ VietQR.', 'error');
+                }
             };
 
             const completePayment = async () => {
@@ -1323,13 +1354,33 @@
                     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
                     
                     if (code && !recentlyScanned.has(code.data)) {
-                        recentlyScanned.add(code.data); // Thêm vào danh sách đã quét
-                        allElements.scannerStatus.textContent = `Đã quét: ${code.data.substring(0, 20)}...`;
+                        const uniqueID = code.data;
+                        recentlyScanned.add(uniqueID); // Thêm vào danh sách đã quét để tránh lặp
                         
-                        // Xử lý cho xe ra mà không đóng camera
-                        handleVehicleAction(code.data, '', 'checkOut');
-                        showScanSuccessFeedback();
-                        setTimeout(() => recentlyScanned.delete(code.data), 3000); // Xóa sau 3 giây
+                        const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === uniqueID && v.Status === 'Đang gửi');
+
+                        if (vehicle) {
+                            const fee = calculateFee(vehicle['Entry Time']);
+
+                            if (fee > 0) {
+                                // CÓ PHÍ: Đóng máy quét và hiển thị biên lai thanh toán
+                                currentVehicleContext = { plate: vehicle.Plate, status: 'parking', uniqueID: vehicle.UniqueID };
+                                closeQrScanner();
+                                showPaymentModal();
+                                // Không cần timeout cho recentlyScanned vì máy quét đã đóng
+                            } else {
+                                // MIỄN PHÍ: Cho xe ra trực tiếp
+                                allElements.scannerStatus.textContent = `Đã quét: ${vehicle.Plate}...`;
+                                handleVehicleAction(uniqueID, '', 'checkOut');
+                                showScanSuccessFeedback();
+                                showToast(`Xe ${vehicle.Plate} ra thành công (miễn phí).`, 'success');
+                                setTimeout(() => recentlyScanned.delete(uniqueID), 3000); // Cho phép quét xe khác sau 3s
+                            }
+                        } else {
+                            // Không tìm thấy xe hoặc xe đã ra
+                            showToast('Mã QR không hợp lệ hoặc xe đã ra khỏi bãi.', 'error');
+                            setTimeout(() => recentlyScanned.delete(uniqueID), 3000); // Cho phép thử lại sau 3s
+                        }
                     }
                 }
                 scanAnimation = requestAnimationFrame(tick);
