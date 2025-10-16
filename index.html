@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="locations.js"></script> <!-- Tải file cấu hình các điểm đỗ xe -->
+    <script src="camera_integration.js" defer></script> <!-- Tích hợp module camera -->
     
     <style>
         :root {
@@ -67,10 +68,10 @@
         .input-wrapper input:focus + svg { color: var(--primary-accent); }
         #search-term, #filter-input { text-transform: uppercase; }
         .action-button { width: 100%; padding: 14px; border: none; color: white; font-size: 1rem; font-weight: 700; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
-        .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
+        .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .icon-btn { flex-shrink: 0; width: 50px; height: 50px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
+        .icon-btn { flex-shrink: 0; width: 52px; height: 52px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
         .icon-btn:hover:not(:disabled) { background-color: var(--bg-main); color: var(--primary-accent); }
         .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); animation: pulse-red 1.5s infinite; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
@@ -325,6 +326,9 @@
                         <div class="input-wrapper">
                             <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
                         </div>
+                        <button type="button" id="scan-plate-btn" class="icon-btn" title="Quét biển số bằng camera">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        </button>
                         <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói">
                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                         </button>
@@ -466,6 +470,22 @@
         </div>
     </div>
 
+    <!-- Modal Camera nhận diện biển số -->
+    <div id="camera-modal" class="modal" aria-hidden="true" style="display:none;">
+        <div class="modal-content" style="max-width: 800px; padding: 1rem;">
+            <h3 style="text-align: center; margin-bottom: 1rem;">Quét biển số xe</h3>
+            <video id="live-camera-feed" autoplay playsinline style="width:100%; height:auto; border-radius:8px; background:#000;"></video>
+            <div id="camera-status" style="margin-top:10px; color:var(--text-secondary); text-align:center;">Chưa bật camera</div>
+            <div class="action-buttons-container" style="margin-top: 1rem; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button id="close-camera-btn" type="button" class="action-button" style="background: var(--text-secondary);">Đóng</button>
+                <button id="capture-btn" type="button" class="action-button btn-check-in" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: middle;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    Chụp & Nhận diện
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Thêm modal quét QR (video) để tránh lỗi nếu script cố dùng phần tử không tồn tại -->
     <div id="qr-scanner-modal" class="modal" aria-hidden="true" style="display:none;">
         <div class="modal-content">
@@ -521,8 +541,14 @@
                 ticketPlateDisplay: document.getElementById('ticket-plate-display'),
                 ticketTimeDisplay: document.getElementById('ticket-time-display'),
                 offlineIndicator: document.getElementById('offline-indicator'),
-                locationSubtitle: document.getElementById('location-subtitle'), // Mới
-                ticketLocationDisplay: document.getElementById('ticket-location-display') // Mới
+                locationSubtitle: document.getElementById('location-subtitle'),
+                ticketLocationDisplay: document.getElementById('ticket-location-display'),
+                scanPlateBtn: document.getElementById('scan-plate-btn'),
+                cameraModal: document.getElementById('camera-modal'),
+                liveCameraFeed: document.getElementById('live-camera-feed'),
+                captureBtn: document.getElementById('capture-btn'),
+                closeCameraBtn: document.getElementById('close-camera-btn'),
+                cameraStatus: document.getElementById('camera-status'),
             };
 
             let vehiclesOnSelectedDate = [];
@@ -603,7 +629,7 @@
             // --- Tối ưu hóa khởi động và xử lý loading ---
             const setIsLoading = (loading, isInitialLoad = false) => {
                 isLoading = loading;
-                const mainInputs = [allElements.searchTermInput, allElements.micBtn, allElements.scanQrBtn];
+                const mainInputs = [allElements.searchTermInput, allElements.micBtn, allElements.scanQrBtn, allElements.scanPlateBtn];
                 const secondaryElements = [allElements.checkInBtn, allElements.checkOutBtn, allElements.phoneNumberInput, allElements.datePicker, allElements.filterInput];
                 
                 if (isInitialLoad && !loading) {
@@ -1089,6 +1115,26 @@
                 }
             };
 
+            const handlePlateRecognitionResult = (result) => {
+                // Lọc bỏ các kết quả nhận diện ngắn, không hợp lệ
+                if (result && result.status === 'success' && result.plate && result.plate.length >= 6) {
+                    showToast(`Nhận diện thành công: ${result.plate}`, 'success');
+                    allElements.searchTermInput.value = result.plate;
+                    // Kích hoạt sự kiện input để UI tự cập nhật
+                    allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                } else {
+                    let message = 'Không nhận diện được biển số hợp lệ.';
+                    if (result.plate && result.plate.length > 0) {
+                        message += ` (Kết quả thô: ${result.plate})`;
+                    }
+                    showToast(message, 'error');
+                    // Giữ lại giá trị cũ nếu có
+                    if (allElements.searchTermInput.value) {
+                         allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+            };
+
             // --- INITIALIZATION & EVENT LISTENERS ---
             const initialize = async () => {
                 updateOnlineStatus();
@@ -1106,6 +1152,18 @@
                         fetchVehiclesForDate(allElements.datePicker.value, true);
                     }
                 }, 5000); // Giảm thời gian làm mới xuống 5 giây
+
+                // Khởi tạo module camera
+                if (typeof initializeCameraIntegration === 'function') {
+                    initializeCameraIntegration({
+                        scanPlateBtn: allElements.scanPlateBtn,
+                        cameraModal: allElements.cameraModal,
+                        liveCameraFeed: allElements.liveCameraFeed,
+                        captureBtn: allElements.captureBtn,
+                        closeCameraBtn: allElements.closeCameraBtn,
+                        cameraStatus: allElements.cameraStatus,
+                    }, { onPlateRecognized: handlePlateRecognitionResult, showToast });
+                }
             };
 
             window.addEventListener('online', updateOnlineStatus);
