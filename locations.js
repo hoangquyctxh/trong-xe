@@ -20,8 +20,14 @@ const LOCATIONS_CONFIG = [
     { 
         id: 'THCSNCT', 
         name: 'Trung Học Cơ Sở Nguyễn Công Trứ', 
-        lat: 21.042373136810653, 
-        lng: 105.84633390821892 
+        lat: 21.04238224912817,
+        lng: 105.84632614752188
+    },
+        { 
+        id: 'VHVANXUAN', 
+        name: 'Vườn Hoa Vạn Xuân', 
+        lat: 21.040082771937307,
+        lng: 105.84675825624123
     },
     // Ví dụ: Thêm một điểm mới ở đây
     // { id: 'CONGVIENLENIN', name: 'Công viên Lênin', lat: 21.0261, lng: 105.8368 }
