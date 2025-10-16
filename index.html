@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Quản lý bãi xe</title>
+    <title>Hệ thống Quản lý xe Tình nguyện</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -105,158 +105,286 @@
             perspective: 1000px;
         }
         @keyframes fadeInBackdrop { from { opacity: 0; } to { opacity: 1; } }
-        .modal-content {
-            background-color: var(--bg-card);
-            border-radius: var(--border-radius-lg);
-            width: 90%;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: var(--shadow-lg);
-            animation: zoomIn 0.3s ease;
-        }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
         .hidden { display: none !important; }
 
-        /* --- BẮT ĐẦU CSS VÉ ĐIỆN TỬ (TỐI ƯU GỌN GÀNG & HIỆU ỨNG MỚI) --- */
+        /* --- UPDATED TICKET STYLES (REPLACED/ENHANCED) --- */
         #qrcode-modal .modal-content {
             padding: 0;
             background: transparent;
             box-shadow: none;
             border: none;
             width: 100%;
-            max-width: 360px;
+            max-width: 420px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1200px;
+            pointer-events: none;
         }
 
         #qrcode-modal .ticket-container {
+            font-family: 'Be Vietnam Pro', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
             width: 100%;
-            background-color: var(--bg-card);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            opacity: 0;
-            transform: scale(0.95) translateY(-20px);
-            animation: popInAndUp 0.5s 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            max-width: 420px;
+            border-radius: 18px;
+            overflow: visible;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            box-shadow: 0 28px 60px rgba(2,6,23,0.22), 0 6px 18px rgba(2,6,23,0.06) inset;
+            border: 1px solid rgba(0, 40, 120, 0.06);
+            transform-origin: center;
+            transform: translateY(8px) scale(.98);
+            animation: ticketEntrance 560ms cubic-bezier(.2,.9,.25,1) forwards;
+            position: relative;
         }
-        @keyframes popInAndUp { 
-            from { opacity: 0; transform: scale(0.95) translateY(-20px); } 
-            to { opacity: 1; transform: scale(1) translateY(0); } 
+        @keyframes ticketEntrance {
+            0% { opacity: 0; transform: translateY(30px) rotateX(12deg) scale(.94); }
+            60% { opacity: 1; transform: translateY(-6px) rotateX(-3deg) scale(1.02); }
+            100% { transform: translateY(0) rotateX(0) scale(1); opacity: 1; }
         }
 
-        #qrcode-modal .ticket-item {
-            opacity: 0;
-            animation: cascadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-        }
-        @keyframes cascadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
+        /* Header với background động */
         #qrcode-modal .ticket-header {
-            padding: 20px;
+            background: linear-gradient(-45deg, #003e9a, #0051c7, #1e66ff, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #fff;
+            padding: 24px 18px 20px 18px;
             text-align: center;
-            color: white;
+            border-top-left-radius: 18px;
+            border-top-right-radius: 18px;
             position: relative;
-            background: linear-gradient(125deg, #0039a6, #1e90ff, #0039a6);
-            background-size: 250% 250%;
-            animation: animatedGradient 8s ease infinite;
+            box-shadow: 0 8px 22px rgba(2,6,23,0.12) inset;
         }
 
-        @keyframes animatedGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        #qrcode-modal .ticket-header img {
-            width: 40px;
-            height: 40px;
-            margin-bottom: 10px;
-            animation-delay: 0.3s;
-            position: relative;
+        @keyframes gradientBG {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
         }
 
-        #qrcode-modal .ticket-header .org-name {
-            font-size: 0.9rem;
-            font-weight: 700;
+        /* Logo và branding cải tiến */
+        #qrcode-modal .ticket-header .org-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            margin: 0 auto 12px auto;
+            padding: 2px;
+            background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 32px rgba(2,6,23,0.24);
+        }
+
+        #qrcode-modal .org-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        #qrcode-modal .org-name {
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
-            line-height: 1.3;
-            animation-delay: 0.4s;
-            position: relative;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.24);
+            margin-bottom: 2px;
+            line-height: 1.4;
         }
-        #qrcode-modal .ticket-header .org-location {
-            font-size: 0.8rem;
-            font-weight: 500;
-            opacity: 0.9;
-            margin-bottom: 10px;
-            animation-delay: 0.5s;
-            position: relative;
-        }
-        #qrcode-modal .ticket-header .ticket-title-vi {
+
+        #qrcode-modal .org-dept {
             font-size: 1.1rem;
             font-weight: 800;
+            letter-spacing: 0.6px;
             text-transform: uppercase;
-            animation-delay: 0.6s;
-            position: relative;
-            letter-spacing: 1px;
-        }
-        #qrcode-modal .ticket-header .ticket-title-en {
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.8;
-            animation-delay: 0.7s;
-            position: relative;
+            margin-top: 2px;
+            opacity: 0.96;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.18);
         }
 
-        #qrcode-modal .ticket-body {
-            padding: 20px;
-            background-color: var(--bg-card);
+        #qrcode-modal .ticket-location-small {
+            font-size: 0.88rem;
+            margin-top: 6px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.92);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.16);
         }
-        
+
+        /* Gold ribbon/tag */
+        #qrcode-modal .ticket-header::after {
+            content: "VÉ GỬI XE";
+            position: absolute;
+            right: 14px;
+            top: 12px;
+            background: linear-gradient(90deg, #ffd166 0%, #ffb84d 50%, #ff9a00 100%);
+            color: #2b2b2b;
+            font-weight: 800;
+            font-size: 0.72rem;
+            padding: 6px 10px;
+            border-radius: 999px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        /* Body wrapper */
+        #qrcode-modal .ticket-body { padding: 18px; background: transparent; }
         #qrcode-modal .ticket-content-wrapper {
-            background-color: var(--bg-card);
-        }
-
-        #qrcode-modal .ticket-info { text-align: center; margin-bottom: 15px; }
-        #qrcode-modal .ticket-info .label { 
-            color: var(--text-secondary); font-size: 0.8rem; 
-            margin-bottom: 2px;
-            font-weight: 500; 
-            animation-delay: 0.8s; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        #qrcode-modal .ticket-info .label .en { margin-left: 5px; opacity: 0.7; }
-
-        #qrcode-modal .ticket-info .value { 
-            font-size: 2.2rem;
-            font-weight: 800; color: var(--text-primary); 
-            letter-spacing: 1.5px; word-break: break-all; line-height: 1.1; 
-            animation-delay: 0.9s;
-        }
-        #qrcode-modal .ticket-info .time-value { font-size: 1.3rem; font-weight: 700; }
-        
-        #qrcode-modal #qrcode-canvas-wrapper {
-            padding: 8px; background: white; border-radius: var(--border-radius-md);
-            box-shadow: 0 0 15px rgba(0,0,0,0.05); margin: 0 auto 15px auto;
-            max-width: 220px; animation-delay: 1.0s;
-        }
-        #qrcode-modal #qrcode-canvas { max-width: 100%; height: auto; display: block; }
-        
-        #qrcode-modal .ticket-footer {
+            padding: 18px;
+            border-radius: 12px;
+            background: linear-gradient(180deg,#ffffff,#f8fbff);
+            box-shadow: 0 12px 36px rgba(2,6,23,0.06);
+            border: 1px solid rgba(2,6,23,0.04);
             text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            animation-delay: 1.1s;
         }
-        
-        #qrcode-modal #close-qrcode-btn {
-            background-color: var(--primary-accent);
-            margin-top: 20px;
-            animation-delay: 1.2s;
+
+        /* Plate number prominent */
+        #ticket-plate-display {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #0b2447;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
         }
-        /* --- KẾT THÚC CSS VÉ ĐIỆN TỬ MỚI --- */
+        .ticket-info .label { color: var(--text-secondary); font-size: 0.82rem; font-weight:700; margin-bottom:8px; }
+        .ticket-info .time-value { color: #0b2447; font-weight:800; font-size: 0.98rem; }
+
+        /* QR card with deep soft shadow and inner white mat */
+        #qrcode-modal #qrcode-canvas-wrapper {
+            background: linear-gradient(180deg,#ffffff,#fbfdff);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 10px auto;
+            width: 260px;
+            height: 260px;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow: 0 18px 48px rgba(2,6,23,0.18);
+            border: 1px solid rgba(2,6,23,0.06);
+            transition: transform 240ms ease, box-shadow 240ms ease;
+        }
+        #qrcode-modal #qrcode-canvas {
+            width: 220px; height: 220px; border-radius: 12px; background: #fff;
+            box-shadow: 0 10px 30px rgba(2,6,23,0.08) inset;
+        }
+        #qrcode-modal.open #qrcode-canvas-wrapper { transform: translateY(-6px) scale(1.01); box-shadow: 0 26px 64px rgba(2,6,23,0.22); }
+
+        /* subtle confetti particles (decorative) */
+        #qrcode-modal.open::before {
+            content: "";
+            position: absolute;
+            top: -12%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 420px; height: 420px;
+            background-image: radial-gradient(#ffd166 2px, transparent 2px),
+                              radial-gradient(#90cdf4 2px, transparent 2px),
+                              radial-gradient(#a78bfa 2px, transparent 2px);
+            background-size: 18px 18px, 14px 14px, 22px 22px;
+            opacity: .06;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: confettiFloat 2200ms linear forwards;
+        }
+        @keyframes confettiFloat { 0% { transform: translateX(-50%) translateY(0); opacity:0; } 40% { opacity:.08; } 100% { transform: translateX(-50%) translateY(-28px); opacity:0; } }
+
+        /* perforation (visual separator) */
+        .ticket-perforation { height: 8px; margin: 12px 0; background-image: linear-gradient(90deg, rgba(0,0,0,0.06) 50%, transparent 50%); background-size: 8px 8px; opacity:.45; border-radius:999px; }
+
+        /* Footer: actions (Print + Close) */
+        .ticket-footer { display:flex; flex-direction:column; gap:8px; align-items:center; padding-bottom:6px; }
+        .ticket-actions { display:flex; gap:12px; justify-content:center; width:100%; }
+        .btn-ticket {
+            padding: 12px 24px;
+            border-radius: 999px;
+            border: none;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(2,6,23,0.12);
+            transition: all 240ms cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-ticket::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10, 10);
+            opacity: 0;
+            transition: transform .5s, opacity 1s;
+        }
+
+        .btn-ticket:active::after {
+            transform: scale(0, 0);
+            opacity: .3;
+            transition: 0s;
+        }
+
+        #print-ticket-btn {
+            background: linear-gradient(45deg, #ffd166, #ffb84d, #ff9a00);
+            background-size: 200% 200%;
+            animation: gradientMove 3s ease infinite;
+            color: #1a1a1a;
+            font-weight: 800;
+        }
+
+        #close-qrcode-btn {
+            background: linear-gradient(45deg, #1e66ff, #3b82f6, #60a5fa);
+            background-size: 200% 200%;
+            animation: gradientMove 3s ease infinite;
+            color: #fff;
+            font-weight: 800;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50% }
+            50% { background-position: 100% 50% }
+            100% { background-position: 0% 50% }
+        }
+
+        .btn-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(2,6,23,0.18);
+        }
+
+        .btn-ticket:active {
+            transform: translateY(1px);
+        }
+
+        /* print stylesheet - only the ticket */
+        @media print {
+            body * { visibility: hidden; }
+            #qrcode-modal, #qrcode-modal * { visibility: visible; }
+            #qrcode-modal { 
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white !important;
+            }
+            .ticket-container {
+                transform: none !important;
+                animation: none !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .ticket-actions, #close-qrcode-btn { display: none !important; }
+            @page { margin: 0; }
+        }
+
+        /* --- end replaced ticket styles --- */
 
         .site-footer { margin-top: 40px; }
         .footer-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; padding: 30px; }
@@ -278,6 +406,62 @@
             .icon-btn { grid-row: 1; height: 52px; }
             #mic-btn { grid-column: 2; } #scan-qr-btn { grid-column: 3; }
         }
+
+        /* Thêm vào phần CSS cho chữ song ngữ */
+        .bilingual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .bilingual .vi {
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+        .bilingual .en {
+            font-size: 0.75rem;
+            opacity: 0.75;
+            font-weight: 500;
+        }
+
+        /* Cập nhật style cho header vé */
+        #qrcode-modal .ticket-header {
+            background: linear-gradient(-45deg, #003e9a, #0051c7, #1e66ff, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #fff;
+            padding: 24px 18px 20px 18px;
+            text-align: center;
+            border-top-left-radius: 18px;
+            border-top-right-radius: 18px;
+            position: relative;
+            box-shadow: 0 8px 22px rgba(2,6,23,0.12) inset;
+        }
+
+        #qrcode-modal .org-name {
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.24);
+            margin-bottom: 2px;
+            line-height: 1.4;
+        }
+
+        /* Thêm style mới cho label song ngữ */
+        .ticket-info .label.bilingual {
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+        .ticket-info .label.bilingual .vi {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .ticket-info .label.bilingual .en {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -293,7 +477,7 @@
                     <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
                 </div>
                 <div class="title-group">
-                    <p class="subtitle">Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
+                    <p class="subtitle" id="location-subtitle">Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
                     <h1>Hệ thống Quản lý bãi xe</h1>
                 </div>
             </div>
@@ -403,7 +587,7 @@
                 </div>
                 <div class="footer-column">
                     <h4>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                         Thông tin liên hệ
                     </h4>
                     <p><strong>Bãi đỗ xe:</strong> 22 Điện Biên Phủ, Hà Nội</p>
@@ -421,54 +605,86 @@
         </footer>
     </div>
 
-    <div id="qrcode-modal" class="modal">
+    <div id="qrcode-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
-            <div class="ticket-container">
+            <div class="ticket-container" role="dialog" aria-modal="true" aria-labelledby="ticket-title">
                 <div class="ticket-header">
-                    <img class="ticket-item" src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
+                    <div class="org-logo ticket-item">
+                        <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn">
+                    </div>
                     <div class="ticket-item org-name">ĐOÀN TNCS HỒ CHÍ MINH</div>
-                    <div class="ticket-item org-location">PHƯỜNG BA ĐÌNH</div>
-                    <div class="ticket-item ticket-title-vi">Vé gửi xe điện tử</div>
-                    <div class="ticket-item ticket-title-en">Electronic Parking Ticket</div>
+                    <div class="ticket-item org-dept">PHƯỜNG BA ĐÌNH</div>
+                    <div class="ticket-item ticket-location-small bilingual" id="ticket-location-display">
+                        <span class="vi">ĐIỂM TRỰC: ĐIỆN BIÊN PHỦ</span>
+                        <span class="en">LOCATION: DIEN BIEN PHU</span>
+                    </div>
+                    <div class="ticket-item ticket-title bilingual" style="margin-top:8px;">
+                        <span class="vi">VÉ GỬI XE ĐIỆN TỬ</span>
+                        <span class="en">ELECTRONIC PARKING TICKET</span>
+                    </div>
                 </div>
+
                 <div class="ticket-body">
                     <div class="ticket-content-wrapper">
                         <div class="ticket-info ticket-item">
-                            <div class="label">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                <span>Biển số xe <span class="en">/ License Plate</span></span>
+                            <div class="label bilingual">
+                                <span class="vi">BIỂN SỐ XE</span>
+                                <span class="en">PLATE NUMBER</span>
                             </div>
                             <div class="value" id="ticket-plate-display">--</div>
                         </div>
-                        <div class="ticket-info ticket-item">
-                            <div class="label">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                                <span>Thời gian vào <span class="en">/ Check-in Time</span></span>
-                            </div>
-                            <div class="value time-value" id="ticket-time-display">--</div>
-                        </div>
+
                         <div id="qrcode-canvas-wrapper" class="ticket-item">
-                            <canvas id="qrcode-canvas"></canvas>
+                            <canvas id="qrcode-canvas" aria-label="QR code"></canvas>
                         </div>
+
+                        <div class="ticket-info ticket-item">
+                            <div class="label bilingual">
+                                <span class="vi">THỜI GIAN VÀO</span>
+                                <span class="en">CHECK-IN TIME</span>
+                            </div>
+                            <div class="time-value" id="ticket-time-display">--</div>
+                        </div>
+
+                        <div class="ticket-perforation" aria-hidden="true"></div>
+
                         <div class="ticket-footer ticket-item">
-                            <div>Vui lòng giữ lại mã QR để lấy xe</div>
-                            <div style="opacity: 0.7;">Please keep this QR code for checkout</div>
+                            <div class="ticket-barcode" aria-hidden="true"></div>
+                            <div class="ticket-actions">
+                                <button id="print-ticket-btn" class="btn-ticket" type="button" title="Print Ticket">
+                                    <span class="vi">In vé</span>
+                                    <span class="en">Print</span>
+                                </button>
+                                <button id="close-qrcode-btn" class="btn-ticket" type="button" title="Close Ticket">
+                                    <span class="vi">Đóng & Hoàn tất</span>
+                                    <span class="en">Close & Finish</span>
+                                </button>
+                            </div>
+                            <div class="bilingual" style="font-size:0.8rem; color:var(--text-secondary); margin-top:8px;">
+                                <span class="vi">Giữ vé để xuất trình khi cần</span>
+                                <span class="en">Please keep this ticket for verification</span>
+                            </div>
                         </div>
-                        <button type="button" id="close-qrcode-btn" class="action-button ticket-item">Đã xong / Done</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="qr-scanner-modal" class="modal">
+    <!-- Thêm modal quét QR (video) để tránh lỗi nếu script cố dùng phần tử không tồn tại -->
+    <div id="qr-scanner-modal" class="modal" aria-hidden="true" style="display:none;">
         <div class="modal-content">
-            <h3>Đưa mã QR của khách vào khung hình</h3>
-            <div style="position: relative; width: 100%;">
-                <video id="camera-feed" playsinline></video>
-                <div id="scanner-status" style="position: absolute; bottom: 10px; left: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; padding: 8px; border-radius: var(--border-radius-md);">Đang tìm mã QR...</div>
+            <div class="ticket-container" role="dialog" aria-modal="true" style="max-width:720px; padding:12px;">
+                <div style="width:100%; background:transparent;">
+                    <div style="background:var(--bg-card); padding:12px; border-radius:12px; box-shadow:var(--shadow-md);">
+                        <video id="camera-feed" autoplay playsinline style="width:100%; height:auto; border-radius:8px; background:#000;"></video>
+                        <div id="scanner-status" style="margin-top:10px; color:var(--text-secondary); text-align:center;">Chưa bật camera</div>
+                        <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
+                            <button id="close-scanner-btn" class="action-button" style="max-width:240px; background:linear-gradient(90deg,#ef4444,#fb7185);">Đóng máy quét</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button type="button" id="close-scanner-btn" class="action-button" style="background: #6c757d; margin-top: 15px;">Đóng</button>
         </div>
     </div>
 
@@ -510,6 +726,9 @@
                 ticketPlateDisplay: document.getElementById('ticket-plate-display'),
                 ticketTimeDisplay: document.getElementById('ticket-time-display'),
                 offlineIndicator: document.getElementById('offline-indicator'),
+                locationSubtitle: document.getElementById('location-subtitle'), // Mới
+                ticketLocationDisplay: document.getElementById('ticket-location-display'), // Mới
+                printTicketBtn: document.getElementById('print-ticket-btn'), // Nút In
             };
 
             let vehiclesOnSelectedDate = [];
@@ -519,6 +738,76 @@
             let currentVehicleContext = null;
             let scanAnimation = null;
             let autoRefreshInterval = null;
+            let currentLocation = null; // Mới: Lưu thông tin điểm trực
+
+            // --- BẮT ĐẦU TÍCH HỢP VỊ TRÍ ---
+            const getDistance = (lat1, lon1, lat2, lon2) => {
+                const R = 6371; // Bán kính Trái đất (km)
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            };
+
+            const determineNearestLocation = async () => {
+                // Danh sách điểm mặc định (cập nhật khi cần)
+                const locations = [
+                    { id: 'DIENBIENPHU', name: 'Điểm trực Điện Biên Phủ', lat: 21.032432212532083, lng: 105.83939563968067 },
+                ];
+
+                if (!navigator.geolocation) {
+                    showToast('Trình duyệt không hỗ trợ định vị. Sử dụng điểm mặc định.', 'error');
+                    currentLocation = locations[0];
+                    allElements.locationSubtitle.textContent = `Điểm trực: ${currentLocation.name}`;
+                    return;
+                }
+
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    });
+
+                    let nearest = null;
+                    let minDistance = Infinity;
+
+                    locations.forEach(loc => {
+                        const distance = getDistance(position.coords.latitude, position.coords.longitude, loc.lat, loc.lng);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearest = loc;
+                        }
+                    });
+
+                    if (nearest) {
+                        currentLocation = nearest;
+                        allElements.locationSubtitle.textContent = `Điểm trực: ${nearest.name}`;
+                        showToast(`Đã xác định điểm trực: ${nearest.name}`, 'success');
+                    } else {
+                        // fallback to default
+                        currentLocation = locations[0];
+                        allElements.locationSubtitle.textContent = `Điểm trực: ${currentLocation.name}`;
+                        showToast('Không tìm thấy điểm gần bạn. Đã chọn điểm mặc định.', 'error');
+                    }
+
+                } catch (err) {
+                    console.error('Lỗi định vị:', err);
+                    let message = 'Không thể xác định vị trí.';
+                    if (err.code === 1) message = 'Vui lòng cho phép truy cập vị trí.';
+                    if (err.code === 2) message = 'Vị trí không khả dụng.';
+                    if (err.code === 3) message = 'Yêu cầu vị trí hết hạn.';
+                    showToast(`${message} Sử dụng điểm mặc định.`, 'error');
+                    currentLocation = locations[0];
+                    allElements.locationSubtitle.textContent = `Điểm trực: ${currentLocation.name}`;
+                }
+            };
+            // --- KẾT THÚC TÍCH HỢP VỊ TRÍ ---
 
             // --- Tối ưu hóa khởi động và xử lý loading ---
             const setIsLoading = (loading, isInitialLoad = false) => {
@@ -567,6 +856,7 @@
             };
 
             const calculateDuration = (startTime) => {
+                if (!startTime) return '--';
                 const start = new Date(startTime);
                 const now = new Date();
                 let diff = Math.floor((now - start) / 1000);
@@ -586,19 +876,33 @@
 
             // --- DATA & UI FUNCTIONS ---
             const fetchVehiclesForDate = async (dateStr, isSilent = false, isInitialLoad = false) => {
+                // Nếu dateStr rỗng hoặc không hợp lệ, gán ngày hiện tại
+                if (!dateStr) {
+                    dateStr = formatDateForAPI(new Date());
+                    if (allElements.datePicker) allElements.datePicker.value = dateStr;
+                }
+                // Kiểm tra hợp lệ của ngày
+                let displayDateObj = new Date(dateStr + 'T00:00:00');
+                if (isNaN(displayDateObj.getTime())) {
+                    displayDateObj = new Date();
+                    dateStr = formatDateForAPI(displayDateObj);
+                    if (allElements.datePicker) allElements.datePicker.value = dateStr;
+                }
+
                 if (isLoading && !isSilent) return;
                 
                 if (!isSilent) {
                     setIsLoading(true, isInitialLoad);
                     showSkeletonLoader();
                 } else {
-                    allElements.datePicker.disabled = true;
+                    if (allElements.datePicker) allElements.datePicker.disabled = true;
                 }
 
-                allElements.listTitle.textContent = `Danh sách xe ngày ${new Date(dateStr + 'T00:00:00').toLocaleDateString('vi-VN')}`;
+                allElements.listTitle.textContent = `Danh sách xe ngày ${displayDateObj.toLocaleDateString('vi-VN')}`;
                 
                 try {
-                    const response = await fetch(`${GOOGLE_SCRIPT_URL}?date=${dateStr}&v=${new Date().getTime()}`, { method: 'GET', mode: 'cors' });
+                    const response = await fetch(`${GOOGLE_SCRIPT_URL}?date=${dateStr}&v=${new Date().getTime()}`);
+                    if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
                     const result = await response.json();
                     if (result.status === 'success') {
                         vehiclesOnSelectedDate = result.data;
@@ -611,17 +915,20 @@
                 } catch (error) {
                     if (!isSilent) showToast(`Lỗi tải dữ liệu: ${error.message}`, 'error');
                     console.error("Fetch error:", error);
+                    vehiclesOnSelectedDate = []; // Clear data on error
+                    filterVehicleList();
+                    updateDashboard();
                 } finally {
                     if (!isSilent) {
                         setIsLoading(false, isInitialLoad);
                     } else {
-                         allElements.datePicker.disabled = false;
+                         if (allElements.datePicker) allElements.datePicker.disabled = false;
                     }
                 }
             };
 
             const fetchVehicleHistory = (plate) => {
-                fetch(`${GOOGLE_SCRIPT_URL}?plate=${plate}&v=${new Date().getTime()}`, { method: 'GET', mode: 'cors' })
+                fetch(`${GOOGLE_SCRIPT_URL}?plate=${plate}&v=${new Date().getTime()}`)
                     .then(response => response.json())
                     .then(result => {
                         if (result.status === 'success') {
@@ -649,18 +956,19 @@
                     allElements.vehicleListContainer.innerHTML = `<div class="empty-state" style="color: var(--text-secondary); text-align: center; padding: 40px 0;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 1rem;"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v9c0 .6.4 1 1 1h2"/><path d="M7 12V2H3v10"/><path d="m16 12 3.1 3.9c.1.1.1.3 0 .4l-1.1.9c-.1.1-.3.1-.4 0L16 16v-4"/><path d="M5 18h3"/><path d="M6 18v-4"/></svg><p>Không có xe nào trong danh sách.</p></div>`;
                     return;
                 }
-                list.sort((a, b) => new Date(b.entryTime) - new Date(a.entryTime));
+                
+                list.sort((a, b) => new Date(b['Entry Time']) - new Date(a['Entry Time']));
                 list.forEach(vehicle => {
                     const vehicleItem = document.createElement('div');
                     vehicleItem.className = 'vehicle-item';
-                    vehicleItem.dataset.plate = vehicle.plate;
-                    vehicleItem.dataset.status = vehicle.status;
-                    vehicleItem.dataset.uniqueid = vehicle.uniqueID; 
-                    const phoneInfo = vehicle.phone ? `<span>📞 ${formatPhoneNumberForDisplay(vehicle.phone)}</span>` : '';
-                    const statusClass = vehicle.status === 'Đang gửi' ? 'parking' : 'departed';
-                    const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.status}</span>`;
+                    vehicleItem.dataset.plate = vehicle.Plate;
+                    vehicleItem.dataset.status = vehicle.Status;
+                    vehicleItem.dataset.uniqueid = vehicle.UniqueID; 
+                    const phoneInfo = vehicle.Phone ? `<span>📞 ${formatPhoneNumberForDisplay(vehicle.Phone)}</span>` : '';
+                    const statusClass = vehicle.Status === 'Đang gửi' ? 'parking' : 'departed';
+                    const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.Status}</span>`;
                     const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
-                    vehicleItem.innerHTML = `<div class="icon" style="background: transparent; color: var(--text-secondary);">${carIcon}</div><div class="info"><div class="plate" style="color: var(--text-primary);">${vehicle.plate} ${statusBadge}</div><div class="details" style="color: var(--text-secondary);">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle.entryTime)}</span></div></div>`;
+                    vehicleItem.innerHTML = `<div class="icon" style="background: transparent; color: var(--text-secondary);">${carIcon}</div><div class="info"><div class="plate" style="color: var(--text-primary);">${vehicle.Plate} ${statusBadge}</div><div class="details" style="color: var(--text-secondary);">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
                     allElements.vehicleListContainer.appendChild(vehicleItem);
                 });
             };
@@ -668,41 +976,50 @@
             const filterVehicleList = () => {
                 const filterText = cleanPlateNumber(allElements.filterInput.value);
                 if (!filterText) { renderVehicleList(vehiclesOnSelectedDate); return; }
+                
                 const filteredList = vehiclesOnSelectedDate.filter(v => 
-                    (v.plate && cleanPlateNumber(v.plate).includes(filterText)) || (v.phone && String(v.phone).includes(filterText))
+                    (v.Plate && cleanPlateNumber(v.Plate).includes(filterText)) || (v.Phone && String(v.Phone).includes(filterText))
                 );
                 renderVehicleList(filteredList);
             };
 
             const updateDashboard = () => {
                 if (!vehiclesOnSelectedDate) return;
-                const currentVehicles = vehiclesOnSelectedDate.filter(v => v.status === 'Đang gửi');
+                
+                const currentVehicles = vehiclesOnSelectedDate.filter(v => v.Status === 'Đang gửi');
+                const vehiclesToday = vehiclesOnSelectedDate.filter(v => v.Date === formatDateForAPI(new Date(allElements.datePicker.value + 'T00:00:00')));
+
                 allElements.dashboardCurrent.textContent = currentVehicles.length;
-                allElements.dashboardTotal.textContent = vehiclesOnSelectedDate.length;
-                if (vehiclesOnSelectedDate.length > 0) {
-                    const hours = vehiclesOnSelectedDate.map(v => new Date(v.entryTime).getHours());
+                allElements.dashboardTotal.textContent = vehiclesToday.length;
+
+                if (vehiclesToday.length > 0) {
+                    const hours = vehiclesToday.map(v => new Date(v['Entry Time']).getHours());
                     const hourCounts = hours.reduce((acc, hour) => { acc[hour] = (acc[hour] || 0) + 1; return acc; }, {});
                     const peakHour = Object.keys(hourCounts).length > 0 ? Object.keys(hourCounts).reduce((a, b) => hourCounts[a] > hourCounts[b] ? a : b) : '--';
                     allElements.dashboardPeak.textContent = peakHour !== '--' ? `${peakHour}h - ${parseInt(peakHour) + 1}h` : '--';
                 } else { allElements.dashboardPeak.textContent = '--'; }
+
                 if (currentVehicles.length > 0) {
-                    const longest = currentVehicles.reduce((a, b) => new Date(a.entryTime) < new Date(b.entryTime) ? a : b);
-                    allElements.dashboardLongest.textContent = calculateDuration(longest.entryTime);
+                    const longest = currentVehicles.reduce((a, b) => new Date(a['Entry Time']) < new Date(b['Entry Time']) ? a : b);
+                    allElements.dashboardLongest.textContent = calculateDuration(longest['Entry Time']);
                 } else { allElements.dashboardLongest.textContent = '--'; }
             };
 
             const updateUIFromCache = (plate) => {
                 clearAllIntervals();
-                const vehicleInCache = vehiclesOnSelectedDate.find(v => v.plate && cleanPlateNumber(v.plate) === plate && v.status === 'Đang gửi');
+                
+                const vehicleInCache = vehiclesOnSelectedDate.find(v => 
+                    v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi'
+                );
 
                 if (vehicleInCache) {
-                    currentVehicleContext = { plate: vehicleInCache.plate, status: 'parking', uniqueID: vehicleInCache.uniqueID }; 
+                    currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID }; 
                     allElements.phoneItemMain.style.display = 'none';
                     allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
-                    allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleInCache.entryTime);
-                    allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleInCache.phone);
+                    allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleInCache['Entry Time']);
+                    allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleInCache.Phone);
                     allElements.durationItem.style.display = 'grid';
-                    const interval = setInterval(() => allElements.infoDuration.textContent = calculateDuration(vehicleInCache.entryTime), 1000);
+                    const interval = setInterval(() => allElements.infoDuration.textContent = calculateDuration(vehicleInCache['Entry Time']), 1000);
                     durationIntervals.push(interval);
 
                     allElements.checkOutBtn.classList.remove('hidden');
@@ -730,12 +1047,12 @@
 
                 if (historyExists) {
                     if(currentVehicleContext && currentVehicleContext.status === 'new') {
-                        allElements.phoneNumberInput.value = history[0]?.phone || '';
+                        allElements.phoneNumberInput.value = history[0]?.Phone || '';
                     }
                     history.slice(0, 5).forEach(entry => {
                         const li = document.createElement('li');
                         li.className = 'history-item';
-                        li.innerHTML = `<span>▶️ <strong>Vào:</strong> ${formatDateTimeForDisplay(entry.entryTime)}</span><span>◀️ <strong>Ra:</strong> ${formatDateTimeForDisplay(entry.exitTime)}</span>`;
+                        li.innerHTML = `<span>▶️ <strong>Vào:</strong> ${formatDateTimeForDisplay(entry['Entry Time'])}</span><span>◀️ <strong>Ra:</strong> ${formatDateTimeForDisplay(entry['Exit Time'])}</span>`;
                         historyList.appendChild(li);
                     });
                 } else {
@@ -761,6 +1078,12 @@
                 const entryTime = new Date();
                 
                 if (action === 'checkIn') {
+                    if (!currentLocation) {
+                        showToast("Chưa xác định được điểm trực. Vui lòng thử lại.", 'error');
+                        setIsLoading(false);
+                        determineNearestLocation(); // Thử lại
+                        return;
+                    }
                     originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
                     if (!originalPlate) {
                         showToast("Biển số không hợp lệ.", 'error');
@@ -768,7 +1091,8 @@
                         return;
                     }
                     const uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
-                    payload = { action, plate: originalPlate, phone, uniqueID };
+                    // Thêm locationId vào payload
+                    payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id };
                     showQrCode(originalPlate, entryTime, uniqueID);
                 } else { // checkOut
                     payload = { action, plate: plateOrUniqueID };
@@ -778,7 +1102,7 @@
                 try {
                     if (navigator.onLine) {
                         const response = await fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            method: 'POST',
                             body: JSON.stringify(payload)
                         });
                         const result = await response.json();
@@ -803,38 +1127,70 @@
             };
             
             const showQrCode = (plate, entryTime, uniqueID) => {
-                allElements.ticketPlateDisplay.textContent = plate;
-                allElements.ticketTimeDisplay.textContent = formatDateTimeForDisplay(entryTime);
+                if (allElements.ticketPlateDisplay) allElements.ticketPlateDisplay.textContent = plate;
+                if (allElements.ticketTimeDisplay) allElements.ticketTimeDisplay.textContent = formatDateTimeForDisplay(entryTime);
+                if (currentLocation && allElements.ticketLocationDisplay) {
+                    if (allElements.ticketLocationDisplay) {
+                        const viSpan = allElements.ticketLocationDisplay.querySelector('.vi');
+                        const enSpan = allElements.ticketLocationDisplay.querySelector('.en');
+                        if (viSpan) viSpan.textContent = currentLocation.name.toUpperCase();
+                        if (enSpan) enSpan.textContent = 'LOCATION: ' + (currentLocation.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+                    }
+                }
                 QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 256, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
                     if (error) { showToast('Lỗi tạo mã QR.', 'error'); return; }
-                    allElements.qrcodeModal.style.display = 'flex';
+                    if (allElements.qrcodeModal) {
+                        allElements.qrcodeModal.style.display = 'flex';
+                        allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.add('open');
+                    }
                 });
             };
 
             const closeQrCode = () => {
-                allElements.qrcodeModal.style.display = 'none';
-                allElements.searchTermInput.value = '';
-                allElements.phoneNumberInput.value = '';
+                if (allElements.qrcodeModal) {
+                    allElements.qrcodeModal.style.display = 'none';
+                    allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.remove('open');
+                }
+                if (allElements.qrcodeCanvas) {
+                    try {
+                        const ctx = allElements.qrcodeCanvas.getContext && allElements.qrcodeCanvas.getContext('2d');
+                        if (ctx) ctx.clearRect(0,0,allElements.qrcodeCanvas.width, allElements.qrcodeCanvas.height);
+                    } catch(e){ /* ignore */ }
+                }
+                if (allElements.searchTermInput) allElements.searchTermInput.value = '';
+                if (allElements.phoneNumberInput) allElements.phoneNumberInput.value = '';
                 resetMainForm();
-                fetchVehiclesForDate(allElements.datePicker.value);
+                fetchVehiclesForDate(allElements.datePicker ? allElements.datePicker.value : formatDateForAPI(new Date()));
             };
 
             const openQrScanner = async () => {
-                if (isLoading) return; if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) { showToast('Trình duyệt không hỗ trợ camera.', 'error'); return; }
+                if (isLoading) return;
+                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) { showToast('Trình duyệt không hỗ trợ camera.', 'error'); return; }
+                if (!allElements.cameraFeed || !allElements.qrScannerModal) { showToast('Không tìm thấy phần tử máy quét trên trang.', 'error'); return; }
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                     cameraStream = stream;
                     allElements.cameraFeed.srcObject = stream;
                     allElements.qrScannerModal.style.display = 'flex';
-                    await allElements.cameraFeed.play();
+                    allElements.qrScannerModal.classList && allElements.qrScannerModal.classList.add('open');
+                    await allElements.cameraFeed.play().catch(()=>{});
                     scanAnimation = requestAnimationFrame(tick);
-                } catch(err) { showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error'); }
+                } catch(err) { 
+                    console.error(err);
+                    showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error'); 
+                }
             };
 
             const closeQrScanner = () => {
                 if (scanAnimation) { cancelAnimationFrame(scanAnimation); scanAnimation = null; }
                 if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); cameraStream = null; }
-                allElements.qrScannerModal.style.display = 'none';
+                if (allElements.qrScannerModal) {
+                    allElements.qrScannerModal.style.display = 'none';
+                    allElements.qrScannerModal.classList && allElements.qrScannerModal.classList.remove('open');
+                }
+                if (allElements.cameraFeed) {
+                    try { allElements.cameraFeed.pause(); allElements.cameraFeed.srcObject = null; } catch(e){/*ignore*/ }
+                }
             };
 
             const tick = () => {
@@ -886,7 +1242,7 @@
                 showToast(`Đang đồng bộ ${queue.length} hành động...`, 'success');
                 try {
                     const response = await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        method: 'POST',
                         body: JSON.stringify({ action: 'sync', queue: queue })
                     });
                     const result = await response.json();
@@ -906,50 +1262,53 @@
                 }
             };
 
+            // --- INITIALIZATION & EVENT LISTENERS ---
+            const initialize = async () => {
+                updateOnlineStatus();
+                const today = new Date();
+                allElements.datePicker.value = formatDateForAPI(today);
+                resetMainForm();
+                setIsLoading(false, true); 
+                
+                await determineNearestLocation(); // Chờ xác định vị trí xong
+                await fetchVehiclesForDate(allElements.datePicker.value, false, true); // Mới tải dữ liệu
+
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                autoRefreshInterval = setInterval(() => {
+                    if (document.activeElement.tagName !== 'INPUT' && !isLoading) {
+                        console.log('Tự động làm mới dữ liệu...');
+                        fetchVehiclesForDate(allElements.datePicker.value, true);
+                    }
+                }, 30000);
+            };
+
             window.addEventListener('online', updateOnlineStatus);
             window.addEventListener('offline', updateOnlineStatus);
-            allElements.datePicker.addEventListener('change', () => fetchVehiclesForDate(allElements.datePicker.value));
-            allElements.checkInBtn.addEventListener('click', () => handleVehicleAction(null, allElements.phoneNumberInput.value.trim(), 'checkIn'));
-            allElements.checkOutBtn.addEventListener('click', () => {
+            if (allElements.datePicker) allElements.datePicker.addEventListener('change', () => fetchVehiclesForDate(allElements.datePicker.value));
+            if (allElements.checkInBtn) allElements.checkInBtn.addEventListener('click', () => handleVehicleAction(null, allElements.phoneNumberInput.value.trim(), 'checkIn'));
+            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', () => {
                 if(currentVehicleContext && currentVehicleContext.status === 'parking') {
                     handleVehicleAction(currentVehicleContext.uniqueID, '', 'checkOut');
                 }
             });
-            allElements.searchTermInput.addEventListener('input', () => {
+            if (allElements.searchTermInput) allElements.searchTermInput.addEventListener('input', () => {
                 const plate = cleanPlateNumber(allElements.searchTermInput.value);
                 if (plate.length >= 6) { updateUIFromCache(plate); } else { resetMainForm(); }
             });
-            allElements.filterInput.addEventListener('input', filterVehicleList);
-            allElements.micBtn.addEventListener('click', startVoiceRecognition);
-            allElements.scanQrBtn.addEventListener('click', openQrScanner);
-            allElements.closeQrcodeBtn.addEventListener('click', closeQrCode);
-            allElements.closeScannerBtn.addEventListener('click', closeQrScanner);
-            allElements.vehicleListContainer.addEventListener('click', (e) => {
-                const item = e.target.closest('.vehicle-item');
-                if (item && item.dataset.uniqueid && item.dataset.status === 'Đang gửi') {
-                    if(confirm(`Bạn có chắc chắn muốn cho xe [${item.dataset.plate}] ra khỏi bãi không?`)) {
-                        handleVehicleAction(item.dataset.uniqueid, '', 'checkOut');
-                    }
+            if (allElements.filterInput) allElements.filterInput.addEventListener('input', filterVehicleList);
+            if (allElements.micBtn) allElements.micBtn.addEventListener('click', startVoiceRecognition);
+            if (allElements.scanQrBtn) allElements.scanQrBtn.addEventListener('click', openQrScanner);
+            if (allElements.closeQrcodeBtn) allElements.closeQrcodeBtn.addEventListener('click', () => {
+                closeQrCode();
+                if (currentVehicleContext && currentVehicleContext.status === 'new') {
+                    fetchVehiclesForDate(allElements.datePicker.value);
                 }
             });
+            if (allElements.closeScannerBtn) allElements.closeScannerBtn.addEventListener('click', closeQrScanner);
+            if (allElements.printTicketBtn) allElements.printTicketBtn.addEventListener('click', printTicket);
 
-            updateOnlineStatus();
-            const today = new Date();
-            allElements.datePicker.value = formatDateForAPI(today);
-            resetMainForm();
-            setIsLoading(false, true); 
-            fetchVehiclesForDate(allElements.datePicker.value, false, true);
-
-
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-            autoRefreshInterval = setInterval(() => {
-                if (document.activeElement.tagName !== 'INPUT' && !isLoading) {
-                    console.log('Tự động làm mới dữ liệu...');
-                    fetchVehiclesForDate(allElements.datePicker.value, true);
-                }
-            }, 30000);
+            initialize();
         });
     </script>
 </body>
 </html>
-
