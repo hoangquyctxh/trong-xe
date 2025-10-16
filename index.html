@@ -303,6 +303,11 @@
             grid-template-columns: 1fr 1fr;
             gap: 8px 15px;
         }
+        .payment-header {
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            margin-bottom: 20px; padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border-color);
+        }
 
         /* --- GIAO DIỆN MODAL THANH TOÁN --- */
         #payment-modal .modal-content {
@@ -313,13 +318,21 @@
             width: 100%;
             max-width: 420px; /* Rộng hơn một chút cho QR */
             text-align: center;
-            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation: slideDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards, fadeIn 0.5s ease;
+            position: relative; /* Cần cho payment-actions */
+            transition: max-width 0.4s ease;
         }
         .payment-title {
             font-size: 1.8rem;
             font-weight: 800;
             color: var(--primary-accent);
             margin-bottom: 15px;
+        }
+        .payment-qr-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         .payment-amount {
             font-size: 2.8rem;
@@ -356,6 +369,43 @@
             color: var(--text-secondary);
             border-radius: 50%;
             cursor: pointer;
+        }
+
+        /* Bố cục ngang cho Tablet và Desktop */
+        @media (min-width: 768px) {
+            #payment-modal .modal-content {
+                max-width: 750px; /* Rộng hơn cho bố cục ngang */
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0 30px;
+                text-align: left;
+            }
+            .payment-info-area { grid-column: 1 / 2; }
+            .payment-qr-area { 
+                grid-column: 2 / 3; 
+                grid-row: 1 / 3;
+                border-left: 1px dashed var(--border-color);
+                padding-left: 30px;
+                align-items: center;
+            }
+            .payment-header, .payment-title { justify-content: flex-start; }
+        }
+
+        /* Responsive cho biên lai thanh toán trên màn hình nhỏ */
+        @media (max-height: 750px), (max-width: 400px) {
+            #payment-modal .modal-content {
+                padding: 20px;
+                max-width: 360px;
+            }
+            .payment-title { font-size: 1.5rem; margin-bottom: 10px; }
+            .payment-amount { font-size: 2.2rem; margin-bottom: 5px; }
+            #payment-qrcode-wrapper {
+                width: 220px;
+                height: 220px;
+                margin: 10px auto;
+            }
+            .action-buttons-container { margin-top: 15px; padding-top: 15px; }
+            .payment-header { margin-bottom: 15px; }
         }
     </style>
 </head>
@@ -558,31 +608,41 @@
     <!-- Modal Thanh toán -->
     <div id="payment-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
-            <div class="payment-actions">
-                <button id="download-qr-btn" type="button" class="icon-btn-small" title="Tải mã QR"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
-                <button id="print-receipt-btn" type="button" class="icon-btn-small" title="In biên lai"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
-            </div>
-            <h2 class="payment-title">Biên lai thu phí</h2>
-            
-            <div class="ticket-info-new payment-info-grid" style="margin-bottom: 15px; text-align:left;">
-                 <div class="info-row" style="grid-column: 1 / -1;">
-                    <span class="info-label">Biển số xe:</span>
-                    <span class="info-value" id="payment-plate-display" style="font-family: monospace; font-size: 1.1rem;">--</span>
+            <div class="payment-info-area">
+                <div class="payment-header">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new">
+                    <div class="ticket-org-name-new">
+                        Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
+                    </div>
                 </div>
-                <div class="info-row"><span class="info-label">Giờ vào:</span><span class="info-value" id="payment-entry-time">--</span></div>
-                <div class="info-row"><span class="info-label">Giờ ra:</span><span class="info-value" id="payment-exit-time">--</span></div>
-                <div class="info-row" style="grid-column: 1 / -1;"><span class="info-label">Tổng thời gian:</span><span class="info-value" id="payment-duration">--</span></div>
+                <h2 class="payment-title">Biên lai thu phí</h2>
+                
+                <div class="ticket-info-new payment-info-grid" style="margin-bottom: 15px; text-align:left;">
+                     <div class="info-row" style="grid-column: 1 / -1;">
+                        <span class="info-label">Biển số xe:</span>
+                        <span class="info-value" id="payment-plate-display" style="font-family: monospace; font-size: 1.1rem;">--</span>
+                    </div>
+                    <div class="info-row"><span class="info-label">Giờ vào:</span><span class="info-value" id="payment-entry-time">--</span></div>
+                    <div class="info-row"><span class="info-label">Giờ ra:</span><span class="info-value" id="payment-exit-time">--</span></div>
+                    <div class="info-row" style="grid-column: 1 / -1;"><span class="info-label">Tổng thời gian:</span><span class="info-value" id="payment-duration">--</span></div>
+                </div>
+
+                <div class="payment-amount">
+                    <span id="payment-amount-display">0</span><sup>đ</sup>
+                </div>
             </div>
 
-            <div class="payment-amount">
-                <span id="payment-amount-display">0</span><sup>đ</sup>
+            <div class="payment-qr-area">
+                <div class="payment-actions">
+                    <button id="download-qr-btn" type="button" class="icon-btn-small" title="Tải mã QR"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                    <button id="print-receipt-btn" type="button" class="icon-btn-small" title="In biên lai"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+                </div>
+                <p class="ticket-subtitle-new">Quét mã VietQR để thanh toán</p>
+                <div id="payment-qrcode-wrapper">
+                    <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center;">Nội dung: <strong id="payment-memo-display" style="font-family: monospace;">--</strong></p>
             </div>
-            <p class="ticket-subtitle-new">Quét mã VietQR để thanh toán</p>
-
-            <div id="payment-qrcode-wrapper">
-                <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-            <p style="font-size: 0.9rem; color: var(--text-secondary);">Nội dung chuyển khoản: <strong id="payment-memo-display" style="font-family: monospace;">--</strong></p>
 
             <div class="action-buttons-container" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; border-top: 1px dashed var(--border-color); padding-top: 20px;">
                 <button id="close-payment-modal-btn" class="action-button" style="background: var(--text-secondary);" type="button">Hủy</button>
