@@ -740,10 +740,10 @@
             let autoRefreshInterval = null;
             let currentLocation = null; // Mới: Lưu thông tin điểm trực
 
+            // Cấu hình mới theo yêu cầu
             const PAYMENT_QR_CONFIG = {
-                bank_bin: "970422", // BIN của ngân hàng (MB Bank)
-                account_no: "888866668822", // Số tài khoản của bạn
-                account_name: "NGUYEN CAO HOANG QUY" // Tên chủ tài khoản
+                base_url: "https://img.vietqr.io/image/MBV-666686989-compact.png",
+                account_name: "NGUYEN CAO HOANG QUY"
             };
 
             // --- BẮT ĐẦU TÍCH HỢP VỊ TRÍ ---
@@ -845,6 +845,14 @@
                 return phone;
             };
             
+            // MỚI: Hàm tiện ích để loại bỏ dấu tiếng Việt
+            const removeDiacritics = (str) => {
+                return str
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+            };
+
             const showToast = (message, type = 'success') => {
                 const toast = document.createElement('div');
                 toast.className = `toast ${type}`;
@@ -1254,18 +1262,21 @@
                 allElements.paymentDuration.textContent = calculateDuration(vehicle['Entry Time']);
                 allElements.paymentAmountDisplay.textContent = fee.toLocaleString('vi-VN');
                 
-                const paymentInfoText = `Thanh toan cho xe ${memo}`;
+                // Cập nhật nội dung chuyển khoản theo yêu cầu mới, lấy tên bãi đỗ từ currentLocation
+                // TỐI ƯU: Rút gọn nội dung chuyển khoản để tương thích với nhiều ngân hàng
+                // Định dạng: TTGX [Biển số] [UniqueID]
+                const paymentInfoText = `TTGX ${vehicle.Plate} ${vehicle.UniqueID}`;
                 allElements.paymentMemoDisplay.textContent = paymentInfoText;
 
                 // --- TỐI ƯU TỐC ĐỘ: Hiển thị modal ngay lập tức ---
                 allElements.paymentModal.style.display = 'flex';
                 allElements.paymentQrcodeImage.style.opacity = '0'; // Ẩn ảnh cũ
                 allElements.qrSpinner.style.display = 'block'; // Hiện spinner
-
-                // --- CẬP NHẬT: Sử dụng API link ảnh của VietQR ---
-                const encodedAddInfo = encodeURIComponent(paymentInfoText);
-                const accountName = "NGUYEN CAO HOANG QUY"; // Tên tài khoản không dấu
-                const qrImageUrl = `https://api.vietqr.io/image/${PAYMENT_QR_CONFIG.bank_bin}-${PAYMENT_QR_CONFIG.account_no}-compact.png?accountName=${accountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
+                                // --- CẬP NHẬT: Sử dụng API link ảnh của VietQR và nội dung không dấu ---
+                const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
+                const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics);
+                const encodedAccountName = encodeURIComponent(PAYMENT_QR_CONFIG.account_name);
+                const qrImageUrl = `${PAYMENT_QR_CONFIG.base_url}?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
 
                 // Hiển thị ảnh QR
                 allElements.paymentQrcodeImage.src = qrImageUrl;
