@@ -97,6 +97,12 @@
         .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); animation: pulse-red 1.5s infinite; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
         .btn-check-in { background: linear-gradient(45deg, var(--primary-accent), var(--primary-accent-light)); box-shadow: 0 4px 15px 0 rgba(59, 130, 246, 0.3); }
+        /* MỚI: Animation cho màu nền động */
+        @keyframes animated-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
         .btn-check-out { background: linear-gradient(45deg, var(--danger-color), #fb7185); box-shadow: 0 4px 15px 0 rgba(239, 68, 68, 0.3); }
         #vehicle-info-panel { display: none; animation: slideDown 0.5s ease; margin-top: 20px; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -684,7 +690,7 @@
                             <span class="value" id="info-fee" style="color: var(--danger-color);">--</span>
                         </div>
                         <div class="info-item">
-                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></span>
                             <span class="label">Số điện thoại</span>
                             <span class="value" id="info-phone-number">--</span>
                         </div>
@@ -900,9 +906,35 @@
         </div>
     </div>
 
+    <!-- MỚI: Modal Xác nhận Chung (REPLACED with modern layout) -->
+    <div id="confirmation-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content" style="max-width: 420px; padding: 0; overflow: hidden;">
+            <div class="receipt-header" style="background: linear-gradient(135deg, var(--primary-accent-light), var(--primary-accent), var(--primary-accent-light)); text-align: left; background-size: 200% 200%; animation: animated-gradient 4s ease infinite;">
+                <div class="ticket-header-new" style="border: none; padding: 0; margin: 0; justify-content: flex-start;">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new" style="width: 40px; height: 40px;">
+                    <div class="ticket-org-name-new" style="color: white; font-size: 0.85rem;">
+                        Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
+                    </div>
+                </div>
+                <h2 id="confirmation-title" style="margin-top: 10px; text-align: center;">Hoàn tất cho xe ra</h2>
+            </div>
+
+            <div class="receipt-body" style="padding:22px; text-align:center; background: var(--bg-card);">
+                <p id="confirmation-message" style="font-size:1.05rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+                    <!-- Nội dung sẽ được chèn bằng JS -->
+                </p>
+                <p style="margin-top:14px; color:var(--text-secondary); font-size:0.9rem;">Hành động này có thể không hoàn tác. Vui lòng kiểm tra kỹ biển số trước khi xác nhận.</p>
+            </div>
+
+            <div class="receipt-footer" style="display:flex; gap:12px; padding:16px; border-top:1px solid var(--border-color); justify-content:flex-end; background:var(--bg-card);">
+                <button id="cancel-confirmation-btn" class="action-button" style="background: var(--bg-main); color: var(--text-secondary); padding:10px 16px; border-radius:10px;" type="button">Hủy bỏ</button>
+                <button id="confirm-action-btn" class="action-button btn-check-out" type="button" style="padding:10px 16px; border-radius:10px;">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            
             const allElements = {
                 datePicker: document.getElementById('date-picker'),
                 searchTermInput: document.getElementById('search-term'),
@@ -971,6 +1003,12 @@
                 footerAddress: document.getElementById('footer-address'),
                 footerHotline: document.getElementById('footer-hotline'),
                 footerHours: document.getElementById('footer-hours'),
+                // MỚI: Các phần tử của Modal xác nhận
+                confirmationModal: document.getElementById('confirmation-modal'),
+                confirmationTitle: document.getElementById('confirmation-title'),
+                confirmationMessage: document.getElementById('confirmation-message'),
+                confirmActionBtn: document.getElementById('confirm-action-btn'),
+                cancelConfirmationBtn: document.getElementById('cancel-confirmation-btn'),
             };
 
 
@@ -984,6 +1022,7 @@
             let recentlyScanned = new Set(); // Chống quét lại liên tục
             let autoRefreshInterval = null;
             let currentLocation = null; // Mới: Lưu thông tin điểm trực
+           
             let currentCapacity = 0; // Mới: Sức chứa của điểm trực hiện tại
 
             // --- BẮT ĐẦU TÍCH HỢP VỊ TRÍ ---
@@ -1186,7 +1225,7 @@
             };
 
             const calculateFee = (startTime, endTime, isVIP = false) => {
-                // --- MỚI: Xử lý trường hợp VIP ---
+                // Xử lý trường hợp VIP
                 if (isVIP) {
                     return 0;
                 }
@@ -1229,6 +1268,25 @@
             const clearAllIntervals = () => {
                 durationIntervals.forEach(clearInterval);
                 durationIntervals = [];
+            };
+
+            // --- MỚI: HÀM HIỂN THỊ MODAL XÁC NHẬN ---
+            const showConfirmationModal = (message, onConfirm) => {
+                // CẬP NHẬT: Điền dữ liệu vào các phần tử riêng biệt
+                allElements.confirmationTitle.textContent = message.title;
+                allElements.confirmationMessage.innerHTML = `Bạn có chắc chắn muốn cho xe <strong style="font-size:1.5rem; color:var(--text-primary); display:block; margin:8px 0;">${message.plate}</strong> ra khỏi bãi không?<br><em>(${message.reason})</em>`;
+                allElements.confirmationModal.style.display = 'flex';
+
+                // Tạo một hàm xử lý duy nhất để tránh gắn nhiều listener
+                const handleConfirmClick = () => {
+                    onConfirm();
+                    allElements.confirmationModal.style.display = 'none';
+                    // Xóa listener sau khi thực hiện để tránh gọi lại
+                    allElements.confirmActionBtn.removeEventListener('click', handleConfirmClick);
+                };
+
+                // Gắn listener mới
+                allElements.confirmActionBtn.addEventListener('click', handleConfirmClick, { once: true });
             };
 
             // --- DATA & UI FUNCTIONS ---
@@ -1317,7 +1375,8 @@
                 list.sort((a, b) => new Date(b['Entry Time']) - new Date(a['Entry Time']));
                 list.forEach(vehicle => {
                     const vehicleItem = document.createElement('div');
-                    vehicleItem.className = vehicle.isVIP ? 'vehicle-item is-vip' : 'vehicle-item'; // MỚI: Thêm class is-vip
+                    const isVehicleVIP = vehicle.VIP === 'Có'; // LOGIC MỚI
+                    vehicleItem.className = isVehicleVIP ? 'vehicle-item is-vip' : 'vehicle-item';
                     vehicleItem.dataset.plate = vehicle.Plate;
                     vehicleItem.dataset.status = vehicle.Status;
                     vehicleItem.dataset.uniqueid = vehicle.UniqueID; 
@@ -1326,7 +1385,7 @@
                     const statusClass = vehicle.Status === 'Đang gửi' ? 'parking' : 'departed';
                     const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.Status}</span>`;
                     const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
-                    const vipIcon = vehicle.isVIP ? '⭐' : ''; // MỚI: Thêm icon ngôi sao
+                    const vipIcon = isVehicleVIP ? '⭐' : ''; // LOGIC MỚI
                     vehicleItem.innerHTML = `<div class="icon">${carIcon}${photoIndicator}</div><div class="info" style="flex-grow:1;"><div class="plate">${vipIcon} ${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
                     allElements.vehicleListContainer.appendChild(vehicleItem);
                 });
@@ -1372,13 +1431,14 @@
                 );
 
                 if (vehicleInCache) {
-                    currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID, isVIP: vehicleInCache.isVIP }; // MỚI: Lưu trạng thái VIP
+                    const isVehicleVIP = vehicleInCache.VIP === 'Có'; // LOGIC MỚI
+                    currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID, isVIP: isVehicleVIP };
                     allElements.phoneItemMain.style.display = 'none';
                     allElements.photoCaptureGroup.style.display = 'none'; // Ẩn nút chụp ảnh
                     allElements.vipCheckboxContainer.style.display = 'none'; // Ẩn checkbox VIP
 
-                    // MỚI: Hiển thị trạng thái VIP
-                    if (vehicleInCache.isVIP) {
+                    // Hiển thị trạng thái VIP
+                    if (isVehicleVIP) {
                         allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi (VIP) ⭐</span>`;
                     } else {
                         allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
@@ -1391,7 +1451,7 @@
 
                     const updateLiveInfo = () => {
                         const duration = calculateDuration(vehicleInCache['Entry Time']) || '--';
-                        const fee = calculateFee(vehicleInCache['Entry Time'], null, vehicleInCache.isVIP);
+                        const fee = calculateFee(vehicleInCache['Entry Time'], null, isVehicleVIP);
                         allElements.infoDuration.textContent = duration;
                         allElements.infoFee.textContent = `${fee.toLocaleString('vi-VN')}đ`;
                     };
@@ -1577,7 +1637,8 @@
                     return;
                 }
 
-                const fee = calculateFee(vehicle['Entry Time'], null, vehicle.isVIP);
+                const isVehicleVIP = vehicle.VIP === 'Có'; // LOGIC MỚI
+                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
                 const memo = cleanPlateNumber(vehicle.Plate);
 
                 // Điền thông tin vào biên lai
@@ -1872,14 +1933,21 @@
                     return;
                 }
 
-                const fee = calculateFee(vehicle['Entry Time'], null, vehicle.isVIP);
+                const isVehicleVIP = vehicle.VIP === 'Có'; // LOGIC MỚI
+                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
 
                 if (fee === 0) {
                     // Bất kỳ xe nào có phí 0đ (VIP hoặc miễn phí) sẽ được cho ra trực tiếp
-                    const reason = vehicle.isVIP ? "xe VIP" : "xe miễn phí";
-                    if (confirm(`Xác nhận cho [${vehicle.Plate}] (${reason}) ra khỏi bãi?`)) {
-                        await completePayment();
-                    }
+                    const reason = isVehicleVIP ? "xe VIP" : "xe miễn phí";
+                    // THAY THẾ `confirm` BẰNG MODAL MỚI
+                    showConfirmationModal(
+                        { // Gửi một đối tượng có cấu trúc thay vì một chuỗi HTML phức tạp
+                            title: 'Hoàn tất cho xe ra',
+                            plate: vehicle.Plate,
+                            reason: reason
+                        },
+                        () => completePayment() // Hàm sẽ được gọi khi người dùng nhấn "Xác nhận"
+                    );
                 } else {
                     // Nếu có phí, hiển thị modal thanh toán
                     showPaymentModal();
@@ -1901,6 +1969,9 @@
             if (allElements.searchTermInput) allElements.searchTermInput.addEventListener('input', () => {
                 const plate = cleanPlateNumber(allElements.searchTermInput.value);
                 if (plate.length >= 6) { updateUIFromCache(plate); } else { resetMainForm(); }
+            });
+            if (allElements.cancelConfirmationBtn) allElements.cancelConfirmationBtn.addEventListener('click', () => {
+                allElements.confirmationModal.style.display = 'none';
             });
             if (allElements.filterInput) allElements.filterInput.addEventListener('input', filterVehicleList);
             if (allElements.micBtn) allElements.micBtn.addEventListener('click', startVoiceRecognition);
