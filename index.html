@@ -728,23 +728,23 @@
         <footer class="site-footer" style="margin-top: 0;">
             <div class="footer-container card">
                 <div class="footer-column">
-                    <h3><img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn"> Đơn vị phụ trách</h3>
-                    <p><strong>Đoàn Thanh niên Phường Ba Đình</strong></p>                    
+                    <h3><img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn"> Đơn vị tổ chức</h3>
+                    <p><strong id="footer-operator">Đoàn Thanh niên Phường Ba Đình</strong></p>                    
                 </div>
                 <div class="footer-column">
                     <h4>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                         Thông tin liên hệ
                     </h4>
-                    <p><strong>Bãi đỗ xe:</strong> 22 Điện Biên Phủ, Hà Nội</p>
-                    <p><strong>Hotline:</strong> 0123.456.789</p>
+                    <p><strong>Địa chỉ:</strong> <span id="footer-address">--</span></p>
+                    <p><strong>Hotline:</strong> <span id="footer-hotline">--</span></p>
                 </div>
                 <div class="footer-column">
                     <h4>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                         Thời gian hoạt động
                     </h4>
-                    <p><strong>Hàng ngày:</strong> 11:00 – 22:00</p>
+                    <p id="footer-hours">--</p>
                     <p><em>Hệ thống online 24/7</em></p>
                 </div>
             </div>
@@ -948,6 +948,10 @@
                 locationSelectModal: document.getElementById('location-select-modal'),
                 locationListContainer: document.getElementById('location-list-container'),
                 useDefaultLocationBtn: document.getElementById('use-default-location-btn'),
+                // MỚI: Các phần tử ở footer
+                footerAddress: document.getElementById('footer-address'),
+                footerHotline: document.getElementById('footer-hotline'),
+                footerHours: document.getElementById('footer-hours'),
             };
 
 
@@ -975,12 +979,26 @@
                 return R * c;
             };
 
+            // --- MỚI: Cập nhật thông tin footer ---
+            const updateFooterInfo = (location) => {
+                if (!location) return;
+                if (allElements.footerAddress) allElements.footerAddress.textContent = location.address || 'Chưa cập nhật';
+                if (allElements.footerHotline) allElements.footerHotline.textContent = location.hotline || 'Chưa cập nhật';
+                if (allElements.footerHours) allElements.footerHours.textContent = location.operatingHours ? `Hàng ngày: ${location.operatingHours}` : 'Chưa cập nhật';
+                // Bạn cũng có thể cập nhật đơn vị phụ trách nếu nó khác nhau
+                // if (allElements.footerOperator) allElements.footerOperator.textContent = location.operator || 'Đoàn TN Phường Ba Đình';
+            };
+
             const selectLocation = (location) => {
                 currentLocation = location;
                 currentCapacity = location.capacity || 0;
                 allElements.locationSubtitle.textContent = `Điểm trực: ${location.name}`;
                 allElements.locationSelectModal.style.display = 'none';
                 showToast(`Đã xác nhận điểm trực: ${location.name}`, 'success');
+                
+                // MỚI: Gọi hàm cập nhật footer
+                updateFooterInfo(location);
+
                 // Sau khi chọn xong, tải dữ liệu cho điểm đó
                 fetchVehiclesForDate(allElements.datePicker.value, false, true);
             };
