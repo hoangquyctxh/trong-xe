@@ -1028,22 +1028,32 @@
                     }).filter(loc => loc.distance < 2.5) // Lọc các điểm trong bán kính 2.5km
                       .sort((a, b) => a.distance - b.distance);
 
-                    if (nearbyLocations.length > 1) {
-                        // Nếu có nhiều hơn 1 điểm ở gần, hiển thị modal để chọn
-                        showLocationSelector(nearbyLocations);
+                    if (nearbyLocations.length === 0) {
+                        // Nếu không có điểm nào gần, dùng điểm mặc định
+                        showToast('Không tìm thấy điểm trực nào ở gần. Sử dụng điểm mặc định.', 'error');
+                        selectLocation(locations[0]);
                     } else if (nearbyLocations.length === 1) {
                         // Nếu chỉ có 1 điểm, tự động chọn
                         selectLocation(nearbyLocations[0]);
                     } else {
-                        // Nếu không có điểm nào gần, dùng điểm mặc định
-                        showToast('Không tìm thấy điểm trực nào ở gần. Sử dụng điểm mặc định.', 'error');
-                        selectLocation(locations[0]);
+                        // Nếu có nhiều hơn 1 điểm, áp dụng logic "thông minh"
+                        const nearest = nearbyLocations[0];
+                        const secondNearest = nearbyLocations[1];
+                        const distanceDifference = secondNearest.distance - nearest.distance; // Khoảng cách chênh lệch (km)
+
+                        // Nếu khoảng cách chênh lệch lớn (ví dụ > 300m), tự tin chọn điểm gần nhất
+                        if (distanceDifference > 0.3) { // Thay đổi ngưỡng thành 300m (0.3km)
+                            selectLocation(nearest);
+                        } else {
+                            // Ngược lại, nếu 2 điểm quá gần nhau, hiển thị modal để người dùng xác nhận
+                            showLocationSelector(nearbyLocations);
+                        }
                     }
 
                 } catch (err) {
                     console.error('Lỗi định vị:', err);
                     let message = 'Không thể xác định vị trí.';
-                    if (err.code === 1) message = 'Vui lòng cấp quyền truy cập vị trí.';
+                    if (err.code === 1) message = 'Vui lòng cấp quyền truy cập vị trí trong cài đặt trình duyệt.';
                     if (err.code === 2) message = 'Vị trí không khả dụng.';
                     if (err.code === 3) message = 'Yêu cầu vị trí hết hạn.';
                     showToast(`${message} Sử dụng điểm mặc định.`, 'error');
