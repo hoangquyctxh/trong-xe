@@ -1862,15 +1862,26 @@
                     if (btn) btn.disabled = false; // Kích hoạt lại nút sau khi xử lý xong, dù thành công hay thất bại
                 }
             });
-            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', () => {
-                // --- MỚI: Logic check-out thông minh ---
-                if (currentVehicleContext && currentVehicleContext.isVIP) {
-                    // Nếu là VIP, cho ra trực tiếp
-                    if (confirm(`Xác nhận cho xe VIP [${currentVehicleContext.plate}] ra khỏi bãi?`)) {
-                        completePayment(); // Gọi hàm hoàn tất (đã được tối ưu cho cả 2 trường hợp)
+            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', async () => {
+                // --- NÂNG CẤP: Logic check-out siêu thông minh ---
+                if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
+
+                const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === currentVehicleContext.uniqueID);
+                if (!vehicle) {
+                    showToast('Không tìm thấy thông tin xe để xử lý.', 'error');
+                    return;
+                }
+
+                const fee = calculateFee(vehicle['Entry Time'], null, vehicle.isVIP);
+
+                if (fee === 0) {
+                    // Bất kỳ xe nào có phí 0đ (VIP hoặc miễn phí) sẽ được cho ra trực tiếp
+                    const reason = vehicle.isVIP ? "xe VIP" : "xe miễn phí";
+                    if (confirm(`Xác nhận cho [${vehicle.Plate}] (${reason}) ra khỏi bãi?`)) {
+                        await completePayment();
                     }
                 } else {
-                    // Nếu không phải VIP, hiển thị modal thanh toán như cũ
+                    // Nếu có phí, hiển thị modal thanh toán
                     showPaymentModal();
                 }
             });
