@@ -2,14 +2,24 @@
 // File cấu hình trung tâm cho toàn bộ ứng dụng.
 // Mọi thay đổi về API, thông tin thanh toán, mức phí... đều được chỉnh sửa tại đây.
 
+// =================================================================================
+// HƯỚNG DẪN: Để bật tính năng thời tiết, hãy đăng ký tài khoản miễn phí tại
+// openweathermap.org, lấy API Key và dán vào mục apiKey bên dưới.
+// =================================================================================
+
 const APP_CONFIG = {
     // URL Google Apps Script để xử lý dữ liệu
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbwRklfEkfokrb6uLpCDcOQNNEsJWuy5HfVOEzatRjAstfdWTHXjbkWiFkQSoXFtK1guxg/exec",
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycby9ykTLoFfBGYMBy-O1jI2QeBsn9q6QlLIKjvrjJjbLv5B1UU3ybw9EzNIJZlgUhfQwPw/exec",
 
     // Cấu hình thanh toán VietQR
     payment: {
         baseUrl: "https://img.vietqr.io/image/MBV-666686989-compact.png",
         accountName: "NGUYEN CAO HOANG QUY"
+    },
+
+    // Cấu hình API thời tiết (MỚI)
+    weather: {
+        apiKey: "c9b24c823032912293817419cb0cd2dc" // <-- DÁN API KEY CỦA BẠN VÀO ĐÂY
     },
 
     // Cấu hình tính phí gửi xe
