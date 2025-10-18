@@ -22,5 +22,5 @@ const APP_CONFIG = {
     },
 
     // Thời gian tự động làm mới dữ liệu (tính bằng mili giây)
-    autoRefreshInterval: 15000 // 15 giây
+    autoRefreshInterval: 5000 // 5 giây
 };
