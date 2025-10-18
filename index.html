@@ -75,6 +75,12 @@
         .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        /* --- MỚI: Checkbox VIP --- */
+        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px 15px; background: #fff8e1; border: 1px solid #ffecb3; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; transition: background 0.2s; }
+        .vip-checkbox-wrapper:hover { background: #ffecb3; }
+        .vip-checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--secondary-accent); }
+        .vip-checkbox-wrapper label { font-weight: 700; color: #b45309; cursor: pointer; }
+
         /* --- MỚI: Nút chụp ảnh --- */
         .photo-capture-group { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
         .btn-capture-photo { flex-grow: 1; padding: 14px; border: 1px dashed var(--primary-accent); background: #eff6ff; color: var(--primary-accent); font-weight: 700; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -113,6 +119,7 @@
         .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
         .vehicle-item .icon {
             position: relative;
+            color: var(--text-secondary);
             flex-shrink: 0;
             width: 40px;
             height: 40px;
@@ -122,6 +129,10 @@
             background-color: var(--bg-main);
             border-radius: 50%;
         }
+        /* --- MỚI: Icon VIP trong danh sách --- */
+        .vehicle-item.is-vip .icon { background-color: #fff8e1; color: var(--secondary-accent); }
+        .vehicle-item.is-vip { border-left: 4px solid var(--secondary-accent); }
+
         /* --- MỚI: Icon camera trên danh sách --- */
         .vehicle-item .photo-indicator { position: absolute; bottom: -2px; right: -2px; background: var(--primary-accent); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
         .vehicle-item .photo-indicator svg { width: 10px; height: 10px; }
@@ -627,6 +638,12 @@
                      <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
                         <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
                     </div>
+                    <!-- ================== MỚI: CHECKBOX KHÁCH MỜI/VIP ================== -->
+                    <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
+                        <input type="checkbox" id="is-vip-checkbox">
+                        <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
+                    </div>
+
                     <!-- ================== MỚI: NÚT CHỤP ẢNH ================== -->
                     <div class="photo-capture-group" id="photo-capture-group">
                         <button type="button" class="btn-capture-photo" id="capture-photo-btn">
@@ -892,6 +909,8 @@
                 phoneNumberInput: document.getElementById('phone-number'),
                 phoneItemMain: document.getElementById('phone-item-main'),
                 photoCaptureGroup: document.getElementById('photo-capture-group'),
+                vipCheckboxContainer: document.getElementById('vip-checkbox-container'), // MỚI
+                isVipCheckbox: document.getElementById('is-vip-checkbox'), // MỚI
                 capturePhotoBtn: document.getElementById('capture-photo-btn'),
                 photoFileInput: document.getElementById('photo-file-input'),
                 photoPreviewThumb: document.getElementById('photo-preview-thumb'),
@@ -1167,6 +1186,12 @@
             };
 
             const calculateFee = (startTime, endTime) => {
+                // --- MỚI: Xử lý trường hợp VIP ---
+                if (isVIP) {
+                    return 0;
+                }
+                // ---------------------------------
+
                 if (!startTime) return 0;
             
                 // Sử dụng cấu hình từ file config.js
@@ -1292,7 +1317,7 @@
                 list.sort((a, b) => new Date(b['Entry Time']) - new Date(a['Entry Time']));
                 list.forEach(vehicle => {
                     const vehicleItem = document.createElement('div');
-                    vehicleItem.className = 'vehicle-item';
+                    vehicleItem.className = vehicle.isVIP ? 'vehicle-item is-vip' : 'vehicle-item'; // MỚI: Thêm class is-vip
                     vehicleItem.dataset.plate = vehicle.Plate;
                     vehicleItem.dataset.status = vehicle.Status;
                     vehicleItem.dataset.uniqueid = vehicle.UniqueID; 
@@ -1301,7 +1326,8 @@
                     const statusClass = vehicle.Status === 'Đang gửi' ? 'parking' : 'departed';
                     const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.Status}</span>`;
                     const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
-                    vehicleItem.innerHTML = `<div class="icon" style="color: var(--text-secondary);">${carIcon}${photoIndicator}</div><div class="info" style="flex-grow:1;"><div class="plate">${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
+                    const vipIcon = vehicle.isVIP ? '⭐' : ''; // MỚI: Thêm icon ngôi sao
+                    vehicleItem.innerHTML = `<div class="icon">${carIcon}${photoIndicator}</div><div class="info" style="flex-grow:1;"><div class="plate">${vipIcon} ${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
                     allElements.vehicleListContainer.appendChild(vehicleItem);
                 });
             };
@@ -1346,18 +1372,28 @@
                 );
 
                 if (vehicleInCache) {
-                    currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID }; 
+                    currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID, isVIP: vehicleInCache.isVIP }; // MỚI: Lưu trạng thái VIP
                     allElements.phoneItemMain.style.display = 'none';
                     allElements.photoCaptureGroup.style.display = 'none'; // Ẩn nút chụp ảnh
-                    allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
+                    allElements.vipCheckboxContainer.style.display = 'none'; // Ẩn checkbox VIP
+
+                    // MỚI: Hiển thị trạng thái VIP
+                    if (vehicleInCache.isVIP) {
+                        allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi (VIP) ⭐</span>`;
+                    } else {
+                        allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
+                    }
+
                     allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleInCache['Entry Time']);
                     allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleInCache.Phone);
                     allElements.durationItem.style.display = 'flex';
                     allElements.feeItem.style.display = 'flex';
 
                     const updateLiveInfo = () => {
-                        allElements.infoDuration.textContent = calculateDuration(vehicleInCache['Entry Time']) || '--';
-                        allElements.infoFee.textContent = `${calculateFee(vehicleInCache['Entry Time']).toLocaleString('vi-VN')}đ`;
+                        const duration = calculateDuration(vehicleInCache['Entry Time']) || '--';
+                        const fee = calculateFee(vehicleInCache['Entry Time'], null, vehicleInCache.isVIP);
+                        allElements.infoDuration.textContent = duration;
+                        allElements.infoFee.textContent = `${fee.toLocaleString('vi-VN')}đ`;
                     };
                     updateLiveInfo();
                     const interval = setInterval(updateLiveInfo, 10000); // Cập nhật mỗi 10s
@@ -1377,6 +1413,7 @@
                     currentVehicleContext = { plate, status: 'new' };
                     allElements.phoneItemMain.style.display = 'block';
                     allElements.photoCaptureGroup.style.display = 'flex'; // Hiện nút chụp ảnh
+                    allElements.vipCheckboxContainer.style.display = 'flex'; // Hiện checkbox VIP
 
                     allElements.checkInBtn.classList.remove('hidden');
                     allElements.checkOutBtn.classList.add('hidden');
@@ -1420,6 +1457,7 @@
                 allElements.phoneItemMain.style.display = 'block';
                 allElements.photoCaptureGroup.style.display = 'flex';
                 allElements.photoPreviewThumb.style.display = 'none';
+                allElements.vipCheckboxContainer.style.display = 'flex';
                 allElements.photoPreviewThumb.src = '';
                 allElements.vehicleImageDisplay.style.display = 'none';
                 capturedImageBase64 = null;
@@ -1427,6 +1465,7 @@
                 allElements.checkOutBtn.classList.add('hidden');
                 allElements.infoPhoneNumber.textContent = '--';
                 // allElements.feeItem.style.display = 'none'; // Không cần ẩn nữa vì bố cục mới
+                allElements.isVipCheckbox.checked = false;
                 currentVehicleContext = null;
                 clearAllIntervals();
             };
@@ -1452,8 +1491,9 @@
                         return;
                     }
                     const uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
-                    // Thêm locationId và imageData (nếu có) vào payload
-                    payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id, imageData: imageBase64 };
+                    // MỚI: Thêm isVIP vào payload
+                    const isVIP = allElements.isVipCheckbox.checked;
+                    payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id, imageData: imageBase64, isVIP: isVIP };
                     showQrCode(originalPlate, entryTime, uniqueID);
                     setIsLoading(false); // *** SỬA LỖI CỐT LÕI: Mở khóa giao diện ngay sau khi hiện vé
                 } else { // checkOut
@@ -1537,7 +1577,7 @@
                     return;
                 }
 
-                const fee = calculateFee(vehicle['Entry Time']);
+                const fee = calculateFee(vehicle['Entry Time'], null, vehicle.isVIP);
                 const memo = cleanPlateNumber(vehicle.Plate);
 
                 // Điền thông tin vào biên lai
@@ -1822,7 +1862,20 @@
                     if (btn) btn.disabled = false; // Kích hoạt lại nút sau khi xử lý xong, dù thành công hay thất bại
                 }
             });
-            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', showPaymentModal);
+            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', () => {
+                // --- MỚI: Logic check-out thông minh ---
+                if (currentVehicleContext && currentVehicleContext.isVIP) {
+                    // Nếu là VIP, cho ra trực tiếp
+                    if (confirm(`Xác nhận cho xe VIP [${currentVehicleContext.plate}] ra khỏi bãi?`)) {
+                        completePayment(); // Gọi hàm hoàn tất (đã được tối ưu cho cả 2 trường hợp)
+                    }
+                } else {
+                    // Nếu không phải VIP, hiển thị modal thanh toán như cũ
+                    showPaymentModal();
+                }
+            });
+            // Bắt sự kiện click vào label của checkbox VIP
+            if (allElements.vipCheckboxContainer) allElements.vipCheckboxContainer.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT') allElements.isVipCheckbox.checked = !allElements.isVipCheckbox.checked; });
             
             // --- Event Listeners cho Modal Thanh toán mới ---
             if (allElements.completePaymentBtn) allElements.completePaymentBtn.addEventListener('click', () => {
