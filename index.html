@@ -469,6 +469,11 @@
             padding: 20px 25px;
             border-top: 1px solid var(--border-color);
         }
+        /* --- MỚI: Bố cục cho các nút trong footer --- */
+        .receipt-footer .action-buttons-container {
+            display: flex;
+            gap: 10px;
+        }
 
         /* --- MỚI: Bố cục cho QR Code Area --- */
         .receipt-qr-area {
@@ -860,10 +865,10 @@
                 </div>
     
                 <div class="receipt-footer">
-                    <div class="action-buttons-container" style="display: flex; gap: 10px;">
+                    <div class="action-buttons-container">
                     <button id="close-payment-modal-btn" class="action-button" style="background: var(--text-secondary);" type="button">Hủy</button>
                     <button id="complete-payment-btn" class="action-button btn-check-in" type="button">
-                        Hoàn tất
+                        Hoàn tất & Cho xe ra
                     </button>
                     </div>
                 </div>
@@ -1580,7 +1585,7 @@
                 if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
 
                 allElements.paymentModal.style.display = 'none'; // Đóng modal ngay
-                await handleVehicleAction(currentVehicleContext.uniqueID, '', 'checkOut', null);
+                await handleVehicleAction(currentVehicleContext.uniqueID, '', 'checkOut', null);                
                 
                 showToast('Đã hoàn tất cho xe ra!', 'success');
 
