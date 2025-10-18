@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="config.js"></script> <!-- Tải file cấu hình chung của ứng dụng -->
     <script src="locations.js"></script> <!-- Tải file cấu hình các điểm đỗ xe -->
     
     <style>
@@ -70,6 +71,17 @@
         .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        /* --- MỚI: Nút chụp ảnh --- */
+        .photo-capture-group { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .btn-capture-photo { flex-grow: 1; padding: 14px; border: 1px dashed var(--primary-accent); background: #eff6ff; color: var(--primary-accent); font-weight: 700; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-capture-photo:hover { background: #dbeafe; }
+        #photo-preview-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); display: none; }
+        #vehicle-image-display {
+            width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--border-radius-md);
+            margin-top: 15px; border: 1px solid var(--border-color); display: none;
+            cursor: pointer;
+        }
+
         .icon-btn { flex-shrink: 0; width: 52px; height: 52px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
         .icon-btn:hover:not(:disabled) { background-color: var(--bg-main); color: var(--primary-accent); }
         .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); animation: pulse-red 1.5s infinite; }
@@ -95,6 +107,7 @@
         .vehicle-item .details { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; }
         .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
         .vehicle-item .icon {
+            position: relative;
             flex-shrink: 0;
             width: 40px;
             height: 40px;
@@ -104,6 +117,10 @@
             background-color: var(--bg-main);
             border-radius: 50%;
         }
+        /* --- MỚI: Icon camera trên danh sách --- */
+        .vehicle-item .photo-indicator { position: absolute; bottom: -2px; right: -2px; background: var(--primary-accent); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+        .vehicle-item .photo-indicator svg { width: 10px; height: 10px; }
+
         #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; }
         .toast.success { background-color: var(--success-color); } .toast.error { background-color: var(--danger-color); }
@@ -425,6 +442,11 @@
             .action-buttons-container { margin-top: 15px; padding-top: 15px; }
             .payment-header { margin-bottom: 15px; }
         }
+        /* --- MỚI: Ảnh xe trong modal thanh toán --- */
+        #payment-image-container img {
+            width: 100%; border-radius: var(--border-radius-md); border: 1px solid var(--border-color);
+            max-height: 200px; object-fit: cover; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -471,6 +493,15 @@
                      <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
                         <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
                     </div>
+                    <!-- ================== MỚI: NÚT CHỤP ẢNH ================== -->
+                    <div class="photo-capture-group" id="photo-capture-group">
+                        <button type="button" class="btn-capture-photo" id="capture-photo-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            Chụp ảnh xe
+                        </button>
+                        <img id="photo-preview-thumb" src="" alt="Ảnh xe xem trước">
+                        <input type="file" id="photo-file-input" accept="image/*" capture="environment" class="hidden">
+                    </div>
                     
                     <div class="action-buttons-container">
                         <button type="button" id="check-in-btn" class="action-button btn-check-in hidden">Xác nhận gửi xe</button>
@@ -502,6 +533,8 @@
                             <div class="value" id="info-phone-number">--</div>
                         </div>
                     </div>
+                    <!-- ================== MỚI: HIỂN THỊ ẢNH ĐÃ CHỤP ================== -->
+                    <img id="vehicle-image-display" src="" alt="Ảnh xe đã chụp">
                     <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1rem;">Lịch sử gửi xe</h3>
                     <ul class="history-list" id="info-history-list"></ul>
                 </div>
@@ -648,6 +681,11 @@
                 <div class="payment-amount">
                     <span id="payment-amount-display">0</span><sup>đ</sup>
                 </div>
+
+                <div id="payment-image-container" class="hidden" style="margin-top: 15px;">
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px; text-align: left;">Ảnh xe lúc vào:</p>
+                    <img id="payment-vehicle-image" src="" alt="Ảnh xe lúc vào">
+                </div>
             </div>
 
             <div class="payment-qr-area">
@@ -674,13 +712,17 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZFTXRHo-0i2HknQAV4Ja-7lZsH27VimRnDre7DnCL2j04lkSYI1BTmCKWCvcG-0jnFg/exec'; // Thay URL của bạn vào đây
             
             const allElements = {
                 datePicker: document.getElementById('date-picker'),
                 searchTermInput: document.getElementById('search-term'),
                 phoneNumberInput: document.getElementById('phone-number'),
                 phoneItemMain: document.getElementById('phone-item-main'),
+                photoCaptureGroup: document.getElementById('photo-capture-group'),
+                capturePhotoBtn: document.getElementById('capture-photo-btn'),
+                photoFileInput: document.getElementById('photo-file-input'),
+                photoPreviewThumb: document.getElementById('photo-preview-thumb'),
+                vehicleImageDisplay: document.getElementById('vehicle-image-display'),
                 checkInBtn: document.getElementById('check-in-btn'),
                 checkOutBtn: document.getElementById('check-out-btn'),
                 toastContainer: document.getElementById('toast-container'),
@@ -727,6 +769,8 @@
                 downloadQrBtn: document.getElementById('download-qr-btn'),
                 printReceiptBtn: document.getElementById('print-receipt-btn'),
                 qrSpinner: document.getElementById('qr-spinner'),
+                paymentImageContainer: document.getElementById('payment-image-container'),
+                paymentVehicleImage: document.getElementById('payment-vehicle-image'),
             };
 
 
@@ -736,15 +780,10 @@
             let cameraStream = null;
             let currentVehicleContext = null;
             let scanAnimation = null;
+            let capturedImageBase64 = null; // Mới: Lưu ảnh dưới dạng base64
             let recentlyScanned = new Set(); // Chống quét lại liên tục
             let autoRefreshInterval = null;
             let currentLocation = null; // Mới: Lưu thông tin điểm trực
-
-            // Cấu hình mới theo yêu cầu
-            const PAYMENT_QR_CONFIG = {
-                base_url: "https://img.vietqr.io/image/MBV-666686989-compact.png",
-                account_name: "NGUYEN CAO HOANG QUY"
-            };
 
             // --- BẮT ĐẦU TÍCH HỢP VỊ TRÍ ---
             const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -894,36 +933,28 @@
                 return result.trim() || '0m';
             };
 
-            // Cấu hình phí mới theo yêu cầu
-            const FEE_CONFIG_NEW = {
-                free_minutes: 15,       // Số phút gửi xe miễn phí
-                day_rate: 5000,         // Phí mỗi giờ ban ngày
-                night_rate: 8000,       // Phí mỗi giờ ban đêm
-                night_start_hour: 18,   // Giờ bắt đầu tính phí đêm (6 PM)
-                night_end_hour: 6       // Giờ kết thúc tính phí đêm (6 AM)
-            };
-
             const calculateFee = (startTime, endTime) => {
                 if (!startTime) return 0;
             
-                const config = FEE_CONFIG_NEW;
+                // Sử dụng cấu hình từ file config.js
+                const config = APP_CONFIG.fee;
                 const start = new Date(startTime);
                 const end = endTime ? new Date(endTime) : new Date();
             
                 const diffMinutes = Math.floor((end - start) / (1000 * 60));
             
                 // 1. Miễn phí trong 15 phút đầu
-                if (diffMinutes <= config.free_minutes) {
+                if (diffMinutes <= config.freeMinutes) {
                     return 0;
                 }
             
                 // 2. Nâng cấp logic: Tính phí theo từng giờ, áp dụng mức giá ngày/đêm tương ứng
                 let totalFee = 0;
                 // Thời điểm bắt đầu tính phí là sau 15 phút miễn phí
-                let chargeableStartTime = new Date(start.getTime() + config.free_minutes * 60 * 1000);
+                let chargeableStartTime = new Date(start.getTime() + config.freeMinutes * 60 * 1000);
             
                 // Tính tổng số block giờ cần trả phí (làm tròn lên)
-                const chargeableMinutes = diffMinutes - config.free_minutes;
+                const chargeableMinutes = diffMinutes - config.freeMinutes;
                 const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
             
                 for (let i = 0; i < totalChargeableHours; i++) {
@@ -931,8 +962,8 @@
                     let currentBlockStartHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
                     
                     // Kiểm tra xem block giờ này thuộc ban đêm hay ban ngày
-                    const isNight = currentBlockStartHour >= config.night_start_hour || currentBlockStartHour < config.night_end_hour;
-                    totalFee += isNight ? config.night_rate : config.day_rate;
+                    const isNight = currentBlockStartHour >= config.nightStartHour || currentBlockStartHour < config.nightEndHour;
+                    totalFee += isNight ? config.nightRate : config.dayRate;
                 }
             
                 return totalFee;
@@ -969,7 +1000,7 @@
                 allElements.listTitle.textContent = `Danh sách xe ngày ${displayDateObj.toLocaleDateString('vi-VN')}`;
                 
                 try {
-                    const response = await fetch(`${GOOGLE_SCRIPT_URL}?date=${dateStr}&v=${new Date().getTime()}`);
+                    const response = await fetch(`${APP_CONFIG.googleScriptUrl}?date=${dateStr}&v=${new Date().getTime()}`);
                     if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
                     const result = await response.json();
                     if (result.status === 'success') {
@@ -996,7 +1027,7 @@
             };
 
             const fetchVehicleHistory = (plate) => {
-                fetch(`${GOOGLE_SCRIPT_URL}?plate=${plate}&v=${new Date().getTime()}`)
+                fetch(`${APP_CONFIG.googleScriptUrl}?plate=${plate}&v=${new Date().getTime()}`)
                     .then(response => response.json())
                     .then(result => {
                         if (result.status === 'success') {
@@ -1033,10 +1064,11 @@
                     vehicleItem.dataset.status = vehicle.Status;
                     vehicleItem.dataset.uniqueid = vehicle.UniqueID; 
                     const phoneInfo = vehicle.Phone ? `<span>📞 ${formatPhoneNumberForDisplay(vehicle.Phone)}</span>` : '';
+                    const photoIndicator = vehicle.ImageUrl ? `<div class="photo-indicator"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>` : '';
                     const statusClass = vehicle.Status === 'Đang gửi' ? 'parking' : 'departed';
                     const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.Status}</span>`;
                     const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
-                    vehicleItem.innerHTML = `<div class="icon" style="color: var(--text-secondary);">${carIcon}</div><div class="info" style="flex-grow:1;"><div class="plate">${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
+                    vehicleItem.innerHTML = `<div class="icon" style="color: var(--text-secondary);">${carIcon}${photoIndicator}</div><div class="info" style="flex-grow:1;"><div class="plate">${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
                     allElements.vehicleListContainer.appendChild(vehicleItem);
                 });
             };
@@ -1083,6 +1115,7 @@
                 if (vehicleInCache) {
                     currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID }; 
                     allElements.phoneItemMain.style.display = 'none';
+                    allElements.photoCaptureGroup.style.display = 'none'; // Ẩn nút chụp ảnh
                     allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
                     allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleInCache['Entry Time']);
                     allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleInCache.Phone);
@@ -1097,11 +1130,20 @@
                     const interval = setInterval(updateLiveInfo, 10000); // Cập nhật mỗi 10s
                     durationIntervals.push(interval);
 
+                    // Hiển thị ảnh nếu có
+                    if (vehicleInCache.ImageUrl) {
+                        allElements.vehicleImageDisplay.src = vehicleInCache.ImageUrl;
+                        allElements.vehicleImageDisplay.style.display = 'block';
+                    } else {
+                        allElements.vehicleImageDisplay.style.display = 'none';
+                    }
+
                     allElements.checkOutBtn.classList.remove('hidden');
                     allElements.checkInBtn.classList.add('hidden');
                 } else {
                     currentVehicleContext = { plate, status: 'new' };
                     allElements.phoneItemMain.style.display = 'block';
+                    allElements.photoCaptureGroup.style.display = 'flex'; // Hiện nút chụp ảnh
 
                     allElements.checkInBtn.classList.remove('hidden');
                     allElements.checkOutBtn.classList.add('hidden');
@@ -1143,6 +1185,11 @@
             const resetMainForm = () => {
                 allElements.vehicleInfoPanel.style.display = 'none';
                 allElements.phoneItemMain.style.display = 'block';
+                allElements.photoCaptureGroup.style.display = 'flex';
+                allElements.photoPreviewThumb.style.display = 'none';
+                allElements.photoPreviewThumb.src = '';
+                allElements.vehicleImageDisplay.style.display = 'none';
+                capturedImageBase64 = null;
                 allElements.checkInBtn.classList.add('hidden');
                 allElements.checkOutBtn.classList.add('hidden');
                 allElements.infoPhoneNumber.textContent = '--';
@@ -1151,7 +1198,7 @@
                 clearAllIntervals();
             };
 
-            const handleVehicleAction = async (plateOrUniqueID, phone, action) => {
+            const handleVehicleAction = async (plateOrUniqueID, phone, action, imageBase64) => {
                 if (isLoading) return;
                 setIsLoading(true);
                 let originalPlate;
@@ -1172,8 +1219,8 @@
                         return;
                     }
                     const uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
-                    // Thêm locationId vào payload
-                    payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id };
+                    // Thêm locationId và imageData (nếu có) vào payload
+                    payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id, imageData: imageBase64 };
                     showQrCode(originalPlate, entryTime, uniqueID);
                     setIsLoading(false); // *** SỬA LỖI CỐT LÕI: Mở khóa giao diện ngay sau khi hiện vé
                 } else { // checkOut
@@ -1182,7 +1229,7 @@
 
                 try {
                     if (navigator.onLine) {
-                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        const response = await fetch(APP_CONFIG.googleScriptUrl, {
                             method: 'POST',
                             body: JSON.stringify(payload)
                         });
@@ -1234,11 +1281,16 @@
                 if (allElements.qrcodeCanvas) {
                     try {
                         const ctx = allElements.qrcodeCanvas.getContext('2d'); if (ctx) ctx.clearRect(0, 0, allElements.qrcodeCanvas.width, allElements.qrcodeCanvas.height);
+                        capturedImageBase64 = null;
+                        allElements.photoPreviewThumb.style.display = 'none';
                     } catch(e){ /* ignore */ }
                 }
 
                 // 3. Reset form và tải lại dữ liệu
-                if (allElements.searchTermInput) allElements.searchTermInput.value = ''; if (allElements.phoneNumberInput) allElements.phoneNumberInput.value = '';
+                if (allElements.searchTermInput) allElements.searchTermInput.value = ''; 
+                if (allElements.phoneNumberInput) allElements.phoneNumberInput.value = '';
+                capturedImageBase64 = null;
+                allElements.photoPreviewThumb.style.display = 'none';
                 resetMainForm();
                 fetchVehiclesForDate(allElements.datePicker ? allElements.datePicker.value : formatDateForAPI(new Date()));
             };
@@ -1262,6 +1314,15 @@
                 allElements.paymentDuration.textContent = calculateDuration(vehicle['Entry Time']);
                 allElements.paymentAmountDisplay.textContent = fee.toLocaleString('vi-VN');
                 
+                // --- MỚI: HIỂN THỊ ẢNH XE LÚC VÀO ---
+                if (vehicle.ImageUrl) {
+                    allElements.paymentVehicleImage.src = vehicle.ImageUrl;
+                    allElements.paymentImageContainer.classList.remove('hidden');
+                } else {
+                    allElements.paymentImageContainer.classList.add('hidden');
+                }
+                // ------------------------------------
+
                 // Cập nhật nội dung chuyển khoản theo yêu cầu mới, lấy tên bãi đỗ từ currentLocation
                 // TỐI ƯU: Rút gọn nội dung chuyển khoản để tương thích với nhiều ngân hàng
                 // Định dạng: TTGX [Biển số] [UniqueID]
@@ -1274,9 +1335,9 @@
                 allElements.qrSpinner.style.display = 'block'; // Hiện spinner
                                 // --- CẬP NHẬT: Sử dụng API link ảnh của VietQR và nội dung không dấu ---
                 const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
-                const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics);
-                const encodedAccountName = encodeURIComponent(PAYMENT_QR_CONFIG.account_name);
-                const qrImageUrl = `${PAYMENT_QR_CONFIG.base_url}?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
+                const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics); // e.g. TTGX%2030F12345%20_abcdef123
+                const encodedAccountName = encodeURIComponent(APP_CONFIG.payment.accountName);
+                const qrImageUrl = `${APP_CONFIG.payment.baseUrl}?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
 
                 // Hiển thị ảnh QR
                 allElements.paymentQrcodeImage.src = qrImageUrl;
@@ -1295,7 +1356,7 @@
                 if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
 
                 allElements.paymentModal.style.display = 'none'; // Đóng modal ngay
-                await handleVehicleAction(currentVehicleContext.uniqueID, '', 'checkOut');
+                await handleVehicleAction(currentVehicleContext.uniqueID, '', 'checkOut', null);
                 
                 showToast('Đã hoàn tất cho xe ra!', 'success');
 
@@ -1303,6 +1364,8 @@
                 resetMainForm();
                 allElements.searchTermInput.value = '';
                 allElements.phoneNumberInput.value = '';
+                capturedImageBase64 = null;
+                allElements.photoPreviewThumb.style.display = 'none';
                 await fetchVehiclesForDate(allElements.datePicker.value);
             };
 
@@ -1382,7 +1445,7 @@
                             } else {
                                 // MIỄN PHÍ: Cho xe ra trực tiếp
                                 allElements.scannerStatus.textContent = `Đã quét: ${vehicle.Plate}...`;
-                                handleVehicleAction(uniqueID, '', 'checkOut');
+                                handleVehicleAction(uniqueID, '', 'checkOut', null);
                                 showScanSuccessFeedback();
                                 showToast(`Xe ${vehicle.Plate} ra thành công (miễn phí).`, 'success');
                                 setTimeout(() => recentlyScanned.delete(uniqueID), 3000); // Cho phép quét xe khác sau 3s
@@ -1424,6 +1487,38 @@
                 r.start();
             };
 
+            // --- MỚI: XỬ LÝ CHỤP ẢNH ---
+            const handlePhotoCapture = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // Hiển thị ảnh thumbnail
+                const readerForPreview = new FileReader();
+                readerForPreview.onload = (e) => {
+                    allElements.photoPreviewThumb.src = e.target.result;
+                    allElements.photoPreviewThumb.style.display = 'block';
+                };
+                readerForPreview.readAsDataURL(file);
+
+                // Chuyển ảnh sang base64 để gửi đi
+                const readerForUpload = new FileReader();
+                readerForUpload.onload = (e) => {
+                    // e.target.result là một chuỗi base64 dạng "data:image/jpeg;base64,..."
+                    // Ta chỉ cần phần dữ liệu sau dấu phẩy
+                    const base64Data = e.target.result.split(',')[1];
+                    const mimeType = e.target.result.match(/:(.*?);/)[1];
+                    capturedImageBase64 = JSON.stringify({
+                        mimeType: mimeType,
+                        data: base64Data
+                    });
+                    showToast('Đã đính kèm ảnh!', 'success');
+                };
+                readerForUpload.readAsDataURL(file);
+
+                // Reset input để có thể chụp lại ảnh khác
+                event.target.value = '';
+            };
+
             const getOfflineQueue = () => JSON.parse(localStorage.getItem('offlineQueue') || '[]');
             const saveOfflineQueue = (queue) => localStorage.setItem('offlineQueue', JSON.stringify(queue));
             const addToOfflineQueue = (action) => {
@@ -1437,7 +1532,7 @@
                 if (queue.length === 0) return;
                 showToast(`Đang đồng bộ ${queue.length} hành động...`, 'success');
                 try {
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    const response = await fetch(APP_CONFIG.googleScriptUrl, {
                         method: 'POST',
                         body: JSON.stringify({ action: 'sync', queue: queue })
                     });
@@ -1470,14 +1565,24 @@
 
                 if (autoRefreshInterval) clearInterval(autoRefreshInterval);
                 autoRefreshInterval = setInterval(() => {
-                    if (document.activeElement.tagName !== 'INPUT' && !isLoading) { fetchVehiclesForDate(allElements.datePicker.value, true); }
-                }, 15000); // Làm mới sau mỗi 15 giây
+                    // Chỉ làm mới khi người dùng không nhập liệu
+                    if (document.activeElement.tagName !== 'INPUT' && !isLoading) { fetchVehiclesForDate(allElements.datePicker.value, true); } 
+                }, APP_CONFIG.autoRefreshInterval);
             };
 
             window.addEventListener('online', updateOnlineStatus);
             window.addEventListener('offline', updateOnlineStatus);
             if (allElements.datePicker) allElements.datePicker.addEventListener('change', () => fetchVehiclesForDate(allElements.datePicker.value));
-            if (allElements.checkInBtn) allElements.checkInBtn.addEventListener('click', () => handleVehicleAction(null, allElements.phoneNumberInput.value.trim(), 'checkIn'));
+            if (allElements.checkInBtn) allElements.checkInBtn.addEventListener('click', async (e) => {
+                const btn = e.target;
+                btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
+                try {
+                    const phone = allElements.phoneNumberInput.value.trim();
+                    await handleVehicleAction(null, phone, 'checkIn', capturedImageBase64);
+                } finally {
+                    if (btn) btn.disabled = false; // Kích hoạt lại nút sau khi xử lý xong, dù thành công hay thất bại
+                }
+            });
             if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', showPaymentModal);
             
             // --- Event Listeners cho Modal Thanh toán mới ---
@@ -1488,6 +1593,7 @@
             if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => allElements.paymentModal.style.display = 'none');
             if (allElements.downloadQrBtn) allElements.downloadQrBtn.addEventListener('click', downloadQRCode);
             if (allElements.printReceiptBtn) allElements.printReceiptBtn.addEventListener('click', () => window.print());
+            if (allElements.paymentVehicleImage) allElements.paymentVehicleImage.addEventListener('click', () => window.open(allElements.paymentVehicleImage.src, '_blank'));
 
             if (allElements.searchTermInput) allElements.searchTermInput.addEventListener('input', () => {
                 const plate = cleanPlateNumber(allElements.searchTermInput.value);
@@ -1499,6 +1605,11 @@
             if (allElements.closeQrcodeBtn) allElements.closeQrcodeBtn.addEventListener('click', () => {
                 closeQrCode(); // Chỉ cần gọi hàm này là đủ
             });
+            // --- MỚI: Event Listeners cho chụp ảnh ---
+            if (allElements.capturePhotoBtn) allElements.capturePhotoBtn.addEventListener('click', () => allElements.photoFileInput.click());
+            if (allElements.photoFileInput) allElements.photoFileInput.addEventListener('change', handlePhotoCapture);
+            if (allElements.vehicleImageDisplay) allElements.vehicleImageDisplay.addEventListener('click', () => window.open(allElements.vehicleImageDisplay.src, '_blank'));
+
             if (allElements.closeScannerBtn) allElements.closeScannerBtn.addEventListener('click', closeQrScanner);
             
             // Nâng cấp: Cho phép checkout trực tiếp từ danh sách
