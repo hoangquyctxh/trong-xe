@@ -32,36 +32,6 @@
             --border-radius-lg: 1rem;
             --border-radius-md: 0.5rem;
         }
-
-        /* --- MỚI: Chế độ tối (Dark Mode) --- */
-        body.dark-mode {
-            --bg-main: #111827;
-            --bg-card: #1f2937;
-            --bg-header: #1f2937;
-            --border-color: #374151;
-            --text-primary: #f9fafb;
-            --text-secondary: #9ca3af;
-        }
-        body.dark-mode .input-wrapper input {
-            background: #374151;
-            color: var(--text-primary);
-            border-color: #4b5567;
-        }
-        body.dark-mode .input-wrapper input:focus { background: #1f2937; }
-        body.dark-mode .stat-item, body.dark-mode .history-item { background: #374151; }
-        body.dark-mode .gauge-bg { border-color: #374151 #374151 transparent transparent; }
-        body.dark-mode .receipt-footer { background-color: #111827; }
-        body.dark-mode .location-option { background: #374151; }
-        body.dark-mode .location-option .icon-wrapper { background: #3b82f630; }
-        body.dark-mode .icon-btn:not(.active) { background-color: #374151; border-color: #4b5567; }
-        body.dark-mode .icon-btn:hover:not(:disabled) { background-color: #4b5567; }
-        body.dark-mode .date-selector { background: var(--bg-card); }
-        body.dark-mode .date-selector input[type="date"] { background: var(--bg-main); }
-        body.dark-mode #payment-qrcode-wrapper, body.dark-mode #qrcode-canvas-wrapper { background-color: #fff; }
-        body.dark-mode .vehicle-item { background: #374151; }
-        body.dark-mode .vehicle-item:hover { border-color: var(--primary-accent); }
-        body.dark-mode .vehicle-item .icon { background-color: #1f2937; }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body {
@@ -70,7 +40,6 @@
             color: var(--text-primary);
             line-height: 1.6;
             padding: 0;
-            transition: background-color 0.3s ease, color 0.3s ease; /* Hiệu ứng chuyển mượt */
         }
         .container { max-width: 1280px; margin: auto; padding: 25px; }
         header { 
@@ -86,8 +55,7 @@
         .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
         .header-title h1 { font-size: 1.9rem; color: var(--primary-accent); font-weight: 800; line-height: 1.2; margin: 0; }
         .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
-        .date-selector label { font-weight: 700; color: var(--text-secondary); white-space: nowrap; }
-        .date-selector .icon-btn { height: 36px; width: 36px; } /* Style cho nút Xuất Excel */
+        .date-selector label { font-weight: 700; color: var(--text-secondary); }
         .date-selector input[type="date"] { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
         .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
         .card { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-lg); padding: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
@@ -633,11 +601,6 @@
         <div class="date-selector">
             <label for="date-picker">Xem ngày:</label>
             <input type="date" id="date-picker">
-            <!-- MỚI: Nút chuyển đổi Chế độ Sáng/Tối -->
-            <button type="button" id="theme-toggle-btn" class="icon-btn" title="Chuyển đổi giao diện Sáng/Tối">
-                <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                <svg id="theme-icon-dark" class="hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-            </button>
         </div>
         </div>
     </header>
@@ -950,9 +913,6 @@
                 filterInput: document.getElementById('filter-input'),
                 dashboardCurrent: document.getElementById('dashboard-current'),
                 dashboardTotal: document.getElementById('dashboard-total'),
-                themeToggleBtn: document.getElementById('theme-toggle-btn'), // MỚI
-                themeIconLight: document.getElementById('theme-icon-light'), // MỚI
-                themeIconDark: document.getElementById('theme-icon-dark'), // MỚI
                 dashboardPeak: document.getElementById('dashboard-peak'),
                 dashboardLongest: document.getElementById('dashboard-longest'),
                 micBtn: document.getElementById('mic-btn'),
@@ -1807,27 +1767,6 @@
                 }
             };
 
-            // --- MỚI: XỬ LÝ CHẾ ĐỘ TỐI ---
-            const applyTheme = (theme) => {
-                if (theme === 'dark') {
-                    document.body.classList.add('dark-mode');
-                    allElements.themeIconLight.classList.add('hidden');
-                    allElements.themeIconDark.classList.remove('hidden');
-                } else {
-                    document.body.classList.remove('dark-mode');
-                    allElements.themeIconLight.classList.remove('hidden');
-                    allElements.themeIconDark.classList.add('hidden');
-                }
-            };
-
-            const toggleTheme = () => {
-                const currentTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
-                applyTheme(currentTheme);
-                localStorage.setItem('parkingAppTheme', currentTheme);
-            };
-
-
-
             // --- INITIALIZATION & EVENT LISTENERS ---
             const initialize = async () => {
                 updateOnlineStatus();
@@ -1844,10 +1783,6 @@
                 autoRefreshInterval = setInterval(() => {
                     // Chỉ làm mới khi người dùng không nhập liệu
                     if (document.activeElement.tagName !== 'INPUT' && !isLoading) { fetchVehiclesForDate(allElements.datePicker.value, true); } 
-                }, APP_CONFIG.autoRefreshInterval);
-
-                // MỚI: Áp dụng theme đã lưu
-                applyTheme(localStorage.getItem('parkingAppTheme') || 'light');
                 }, APP_CONFIG.autoRefreshInterval);
             };
 
