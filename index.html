@@ -1185,7 +1185,7 @@
                 return result.trim() || '0m';
             };
 
-            const calculateFee = (startTime, endTime) => {
+            const calculateFee = (startTime, endTime, isVIP = false) => {
                 // --- MỚI: Xử lý trường hợp VIP ---
                 if (isVIP) {
                     return 0;
