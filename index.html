@@ -14,23 +14,25 @@
     
     <style>
         :root {
-            --bg-main: #f3f4f6;
+            /* --- BẢNG MÀU MỚI: Hiện đại & Chuyên nghiệp --- */
+            --bg-main: #f8f9fa; /* Nền chính sáng hơn, sạch sẽ hơn */
             --bg-card: #ffffff;
-            --bg-header: #ffffff;
-            --border-color: #e5e7eb;
-            --primary-accent: #1d4ed8; /* Youth Union Blue - Deeper */
-            --primary-accent-light: #3b82f6;
-            --secondary-accent: #f59e0b; /* Star Yellow */
-            --text-primary: #111827;
-            --text-secondary: #4b5567;
+            --bg-header: #ffffff; /* Giữ nguyên header trắng */
+            --border-color: #dee2e6; /* Viền nhẹ nhàng hơn */
+            --primary-accent: #0056b3; /* Xanh đậm, sang trọng hơn */
+            --primary-accent-light: #007bff; /* Xanh sáng hơn, năng động */
+            --secondary-accent: #ffc107; /* Vàng amber cho các điểm nhấn */
+            --text-primary: #212529; /* Đen đậm hơn cho văn bản chính */
+            --text-secondary: #6c757d; /* Xám cho văn bản phụ */
             --text-light: #f9fafb;
-            --danger-color: #ef4444;
-            --success-color: #10b981;
+            --danger-color: #dc3545; /* Đỏ an toàn hơn */
+            --success-color: #28a745; /* Xanh lá cây rõ ràng */
+            /* --- Hiệu ứng đổ bóng & bo góc được tinh chỉnh --- */
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-            --border-radius-lg: 1rem;
-            --border-radius-md: 0.5rem;
+            --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.075);
+            --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.1);
+            --border-radius-lg: 0.75rem; /* Giảm nhẹ bo góc lớn */
+            --border-radius-md: 0.375rem; /* Bo góc vừa phải, sắc nét hơn */
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
@@ -44,10 +46,11 @@
         .container { max-width: 1280px; margin: auto; padding: 25px; }
         header { 
             background: var(--bg-header);
-            padding: 20px 25px;
+            padding: 15px 0; /* Giảm padding dọc */
             border-bottom: 1px solid var(--border-color);
-            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; 
-            gap: 20px; 
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.85);
         }
         .header-title { display: flex; align-items: center; gap: 15px; }
         .header-title .logo img { width: 50px; height: auto; }
@@ -55,12 +58,30 @@
         .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
         .header-title h1 { font-size: 1.9rem; color: var(--primary-accent); font-weight: 800; line-height: 1.2; margin: 0; }
         .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
-        .date-selector label { font-weight: 700; color: var(--text-secondary); }
-        .date-selector input[type="date"] { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
+        .date-selector label { font-weight: 600; color: var(--text-secondary); }
+        .date-selector input[type="date"] { background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
+        /* --- MỚI: Thiết kế lại cụm điều khiển header --- */
+        .header-controls { display: flex; align-items: center; gap: 12px; }
+        .clock-widget, .weather-widget {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-main);
+            padding: 8px 12px;
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .clock-widget .icon, #weather-icon { color: var(--primary-accent); width: 20px; }
+        #clock-display { font-weight: 600; color: var(--text-primary); }
+        #weather-temp { font-weight: 600; color: var(--text-primary); }
+        #weather-icon { height: 20px; width: auto; }
+
         .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
         .card { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-lg); padding: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
-        .card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary-accent), var(--secondary-accent)); }
-        .card h2 { color: var(--text-primary); font-size: 1.25rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 700; }
+        /* --- MỚI: Thay thế dải màu gradient bằng một đường viền tinh tế --- */
+        .card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: var(--primary-accent); }
+        
+        .card h2 { color: var(--text-primary); font-size: 1.25rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
         .card h2 svg { color: var(--primary-accent); }
         .full-width { grid-column: 1 / -1; }
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -68,15 +89,17 @@
         .input-wrapper svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 20px; transition: color 0.2s; }
         .input-wrapper input { width: 100%; padding: 14px 15px 14px 45px; border: 1px solid var(--border-color); color: var(--text-primary); background: #f9fafb; border-radius: var(--border-radius-md); font-size: 1rem; transition: all 0.2s; }
         .input-wrapper input::placeholder { color: #9ca3af; }
-        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent-light); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
         .input-wrapper input:focus + svg { color: var(--primary-accent); }
         #search-term, #filter-input { text-transform: uppercase; }
-        .action-button { width: 100%; padding: 14px; border: none; color: white; font-size: 1rem; font-weight: 700; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
+        .action-button { width: 100%; padding: 14px; border: none; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
         .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
+        /* --- MỚI: Hiệu ứng nhấn nút --- */
+        .action-button:active:not(:disabled) { transform: translateY(-1px) scale(0.98); filter: brightness(0.95); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
         /* --- MỚI: Checkbox VIP --- */
-        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px 15px; background: #fff8e1; border: 1px solid #ffecb3; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; transition: background 0.2s; }
+        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px 15px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; transition: background 0.2s; }
         .vip-checkbox-wrapper:hover { background: #ffecb3; }
         .vip-checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--secondary-accent); }
         .vip-checkbox-wrapper label { font-weight: 700; color: #b45309; cursor: pointer; }
@@ -94,24 +117,26 @@
 
         .icon-btn { flex-shrink: 0; width: 52px; height: 52px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
         .icon-btn:hover:not(:disabled) { background-color: var(--bg-main); color: var(--primary-accent); }
+        .icon-btn:active:not(:disabled) { transform: scale(0.95); }
         .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); animation: pulse-red 1.5s infinite; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .btn-check-in { background: linear-gradient(45deg, var(--primary-accent), var(--primary-accent-light)); box-shadow: 0 4px 15px 0 rgba(59, 130, 246, 0.3); }
+        .btn-check-in { background: linear-gradient(45deg, var(--primary-accent), var(--primary-accent-light)); box-shadow: 0 4px 15px 0 rgba(0, 123, 255, 0.3); }
         /* MỚI: Animation cho màu nền động */
         @keyframes animated-gradient {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        .btn-check-out { background: linear-gradient(45deg, var(--danger-color), #fb7185); box-shadow: 0 4px 15px 0 rgba(239, 68, 68, 0.3); }
-        #vehicle-info-panel { display: none; animation: slideDown 0.5s ease; margin-top: 20px; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-check-out { background: linear-gradient(45deg, var(--danger-color), #fd7e14); box-shadow: 0 4px 15px 0 rgba(220, 53, 69, 0.3); }
+        /* --- MỚI: Hiệu ứng xuất hiện mượt mà hơn --- */
+        #vehicle-info-panel { display: none; animation: fadeIn 0.4s ease; margin-top: 20px; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .info-grid { display: flex; flex-direction: column; gap: 15px; }
         .info-item { display: flex; align-items: center; gap: 15px; background: var(--bg-main); padding: 12px 15px; border-radius: var(--border-radius-md); }
         .info-item .icon { color: var(--primary-accent); }
         .info-item .label { font-size: 0.9rem; color: var(--text-secondary); }
         .info-item .value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-left: auto; }
-        .status-badge { font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: white; }
+        .status-badge { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white; }
         .status-badge.parking { background-color: var(--success-color); }
         .status-badge.departed { background-color: var(--text-secondary); }
         .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
@@ -119,10 +144,11 @@
         .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .vehicle-item:hover { transform: translateX(5px); border-color: var(--primary-accent); box-shadow: var(--shadow-md); }
-        .skeleton-item { background: #e5e7eb; border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        /* --- MỚI: Cải thiện hiệu ứng hover cho danh sách --- */
+        .vehicle-item:hover { transform: translateY(-3px) translateX(3px); box-shadow: var(--shadow-md); border-color: var(--primary-accent-light); }        .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .vehicle-item .details { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; }
-        .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
+        .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1.1rem; margin-bottom: 5px; }
         .vehicle-item .icon {
             position: relative;
             color: var(--text-secondary);
@@ -136,7 +162,7 @@
             border-radius: 50%;
         }
         /* --- MỚI: Icon VIP trong danh sách --- */
-        .vehicle-item.is-vip .icon { background-color: #fff8e1; color: var(--secondary-accent); }
+        .vehicle-item.is-vip .icon { background-color: #fff3cd; color: var(--secondary-accent); }
         .vehicle-item.is-vip { border-left: 4px solid var(--secondary-accent); }
 
         /* --- MỚI: Icon camera trên danh sách --- */
@@ -153,7 +179,7 @@
             overflow: auto; background-color: rgba(17, 24, 39, 0.6); 
             display: none; align-items: center; justify-content: center; 
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
-            animation: fadeInBackdrop 0.4s ease forwards;
+            animation: fadeInBackdrop 0.3s ease forwards;
             perspective: 1000px;
         }
         @keyframes fadeInBackdrop { from { opacity: 0; } to { opacity: 1; } }
@@ -175,7 +201,8 @@
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 380px;
-            text-align: center;
+            text-align: center;            
+            /* --- MỚI: Hiệu ứng modal nảy lên --- */
             animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
         .ticket-header-new {
@@ -281,14 +308,23 @@
         .footer-column p strong { color: var(--text-primary); font-weight: 700; }
         .copyright { margin-top: 20px !important; font-size: 0.9rem; color: #9ca3af; text-align: center; }
         #offline-indicator { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: var(--danger-color); color: white; padding: 8px 15px; border-radius: 20px; box-shadow: var(--shadow-lg); z-index: 10000; display: none; align-items: center; gap: 8px; font-weight: 500; animation: fadeIn 0.5s; }
-        
-        /* --- REDESIGN: DASHBOARD --- */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .stat-item { background: var(--bg-main); padding: 20px; border-radius: var(--border-radius-md); text-align: center; }
-        .stat-item .label { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; }
-        .stat-item .value { font-size: 2.2rem; font-weight: 800; color: var(--primary-accent); line-height: 1.1; }
+
+        /* --- REDESIGN: DASHBOARD (Bảng tin nhanh) --- */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-item { 
+            background: var(--bg-main); 
+            padding: 20px; 
+            border-radius: var(--border-radius-lg); /* Bo góc lớn hơn */
+            text-align: left; /* Căn trái */
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        .stat-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
+        .stat-item .label { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+        .stat-item .value { font-size: 2rem; font-weight: 700; color: var(--primary-accent); line-height: 1.1; }
         .stat-item .info-duration { font-size: 1.5rem; }
         .dashboard-gauge { grid-column: 1 / -1; text-align: center; }
+        
         .gauge-container { position: relative; width: 180px; height: 90px; overflow: hidden; margin: 0 auto 10px auto; }
         .gauge-bg, .gauge-fill {
             position: absolute;
@@ -296,13 +332,13 @@
             border-radius: 50%;
             border: 20px solid;
         }
-        .gauge-bg { border-color: #e5e7eb #e5e7eb transparent transparent; transform: rotate(135deg); }
+        .gauge-bg { border-color: #e9ecef #e9ecef transparent transparent; transform: rotate(135deg); }
         .gauge-fill {
             border-color: var(--primary-accent) var(--primary-accent) transparent transparent;
             transform: rotate(135deg);
             transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
         }
-        .gauge-text { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 2.5rem; font-weight: 800; color: var(--text-primary); }
+        .gauge-text { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
         .gauge-label { font-size: 1rem; color: var(--text-secondary); font-weight: 500; }
 
         @media (max-width: 960px) { .main-grid { grid-template-columns: 1fr; } }
@@ -551,6 +587,25 @@
         }
         #payment-thumb-image:hover { transform: scale(1.1); }
 
+        /* --- MỚI: Spinner tải QR code --- */
+        .qr-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -20px;
+            margin-left: -20px;
+            display: none; /* Ẩn mặc định */
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* ================================================== */
         /* --- REDESIGN: Modal chọn điểm trực - TOP 1 --- */
         /* ================================================== */
@@ -604,6 +659,29 @@
             font-weight: 700;
             color: var(--text-secondary);
         }
+        /* --- MỚI: Modal xác nhận chung --- */
+        #confirmation-modal .modal-content {
+            max-width: 420px; padding: 0; overflow: hidden;
+        }
+        #confirmation-modal .receipt-header {
+            background: linear-gradient(135deg, var(--primary-accent-light), var(--primary-accent));
+            text-align: center;
+        }
+        #confirmation-modal .receipt-body {
+            padding: 25px; text-align: center;
+        }
+        #confirmation-modal #confirmation-message {
+            font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6; margin: 0;
+        }
+        #confirmation-modal .receipt-footer {
+            display: flex; gap: 12px; padding: 20px;
+        }
+        #confirmation-modal #cancel-confirmation-btn {
+            background: var(--bg-main); color: var(--text-secondary); flex-grow: 1;
+        }
+        #confirmation-modal #confirm-action-btn {
+            flex-grow: 1;
+        }
     </style>
 </head>
 <body>
@@ -614,7 +692,7 @@
     </div>
 
     <header>
-        <div class="container" style="padding: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
+        <div class="container" style="padding-top: 0; padding-bottom: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
             <div class="header-title">
                 <div class="logo">
                     <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
@@ -630,15 +708,15 @@
                 <input type="date" id="date-picker">
             </div>
             <!-- CỘT PHẢI: ĐỒNG HỒ & THỜI TIẾT -->
-            <div class="header-controls">
+            <div class="header-controls"> <!-- Cấu trúc HTML mới cho cụm này -->
+                <div id="clock-widget" class="clock-widget" title="Thời gian thực">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span id="clock-display">--:--:--</span>
+                </div>
                 <div id="weather-widget" class="weather-widget" title="Thời tiết tại điểm trực">
                     <img id="weather-icon" src="" alt="Thời tiết" style="display: none;">
                     <span id="weather-temp">--°C</span>
                     <span id="weather-desc">Đang tải...</span>
-                </div>
-                <div id="clock-widget" class="clock-widget" title="Thời gian thực">
-                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <span id="clock-display">--:--:--</span>
                 </div>
             </div>
         </div>
@@ -648,7 +726,7 @@
         <main class="main-grid">
             <div class="card">
                 <h2>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="m10 12-4 4"/><path d="M12 10h6"/><path d="m14 8 2 2-2 2"/><path d="m6 14 2 2-2 2"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="m10 12-4 4"/><path d="M12 10h6"/><path d="m14 8 2 2-2 2"/><path d="m6 14 2 2-2 2"/></svg>
                     Tra cứu & Xử lý
                 </h2>
                 <div id="main-form">
@@ -657,10 +735,10 @@
                             <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
                         </div>
                         <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                         </button>
                         <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để check-out">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         </button>
                     </div>
                      <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
@@ -726,7 +804,7 @@
 
             <div class="card">
                 <h2>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>
                     Bảng tin nhanh
                 </h2>
                 <div class="dashboard-gauge">
@@ -1048,6 +1126,7 @@
             let cameraStream = null;
             let currentVehicleContext = null;
             let scanAnimation = null;
+            let paymentChannel = null; // MỚI: Kênh giao tiếp giữa các cửa sổ
             let capturedImageBase64 = null; // Mới: Lưu ảnh dưới dạng base64
             let recentlyScanned = new Set(); // Chống quét lại liên tục
             let autoRefreshInterval = null;
@@ -1747,6 +1826,31 @@
                 // MỚI: Vô hiệu hóa nút hoàn tất khi chưa chọn phương thức
                 allElements.completePaymentBtn.disabled = true;
                 allElements.qrSpinner.style.display = 'block'; // Hiện spinner
+
+                // MỚI: Tạo kênh giao tiếp nếu chưa có
+                if (!paymentChannel) {
+                    paymentChannel = new BroadcastChannel('parking_payment_channel');
+                    paymentChannel.onmessage = (event) => {
+                        const { type, method, uid } = event.data;
+                        if (type === 'PAYMENT_METHOD_SELECTED') {
+                            if (method === 'qr') {
+                                allElements.selectQrBtn.click();
+                            } else if (method === 'cash') {
+                                allElements.selectCashBtn.click();
+                            }
+                        } else if (type === 'REQUEST_INITIAL_DATA' && uid) {
+                            // SỬA LỖI: Trả lời yêu cầu từ cửa sổ phụ
+                            const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === uid);
+                            if (vehicle) {
+                                const initialData = createInitialDataForConfirmation(vehicle);
+                                if (paymentChannel) {
+                                    paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: initialData });
+                                }
+                            }
+                        }
+                    };
+                }
+
                                 // --- CẬP NHẬT: Sử dụng API link ảnh của VietQR và nội dung không dấu ---
                 const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
                 const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics); // e.g. TTGX%2030F12345%20_abcdef123
@@ -1766,55 +1870,9 @@
                 }
             };
 
-            // =================================================================
-            // --- MỚI: HÀM MỞ CỬA SỔ XÁC NHẬN TRÊN MÀN HÌNH THỨ 2 ---
-            // =================================================================
-            const openConfirmationOnSecondScreen = async (confirmationData) => {
-                // 1. Kiểm tra xem trình duyệt có hỗ trợ Window Management API không
-                if ('getScreenDetails' in window) {
-                    try {
-                        // Yêu cầu quyền truy cập thông tin màn hình
-                        const screenDetails = await window.getScreenDetails();
-                        
-                        // Tìm màn hình thứ hai (không phải màn hình chính)
-                        const secondaryScreen = screenDetails.screens.find(screen => !screen.isPrimary);
-
-                        let windowFeatures = 'popup,width=800,height=600';
-
-                        if (secondaryScreen) {
-                            console.log('Phát hiện màn hình thứ hai. Mở cửa sổ trên đó.');
-                            // screen.availLeft và screen.availTop là tọa độ góc trên bên trái của màn hình
-                            windowFeatures += `,left=${secondaryScreen.availLeft},top=${secondaryScreen.availTop}`;
-                        } else {
-                            console.log('Chỉ có một màn hình. Mở cửa sổ popup bình thường.');
-                        }
-
-                        const confirmationWindow = window.open('confirmation.html', 'ConfirmationWindow', windowFeatures);
-
-                        // Đợi cửa sổ mới tải xong rồi gửi dữ liệu qua
-                        if (confirmationWindow) {
-                            confirmationWindow.addEventListener('load', () => {
-                                confirmationWindow.postMessage({
-                                    type: 'VEHICLE_EXIT_CONFIRMATION',
-                                    payload: confirmationData
-                                }, '*');
-                            });
-                        }
-
-                    } catch (err) {
-                        console.error('Không thể mở cửa sổ trên màn hình phụ:', err);
-                    }
-                } else {
-                    console.log('Trình duyệt không hỗ trợ Window Management API. Tính năng màn hình phụ bị bỏ qua.');
-                }
-            };
-
-            const completePayment = async () => { // ĐÃ SỬA LỖI POPUP BLOCKER
+            const completePayment = async () => {
                 if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
             
-                allElements.paymentModal.style.display = 'none'; // Đóng modal ngay
-            
-                // Lấy thông tin phí và phương thức thanh toán
                 const fee = parseFloat(allElements.paymentAmountDisplay.textContent.replace(/\./g, '')) || 0;
                 let paymentMethod = 'Chưa chọn';
                 if (allElements.selectCashBtn.classList.contains('active')) {
@@ -1822,9 +1880,12 @@
                 } else if (allElements.selectQrBtn.classList.contains('active')) {
                     paymentMethod = 'Chuyển khoản QR';
                 }
+                
+                // Đóng modal thanh toán ngay lập tức
+                allElements.paymentModal.style.display = 'none';
             
-                // --- SỬA LỖI: Mở cửa sổ ngay lập tức trước khi await ---
-                const confirmationData = {
+                // 1. Chuẩn bị dữ liệu biên lai cuối cùng
+                const finalReceiptData = {
                     licensePlate: currentVehicleContext.plate,
                     timeIn: allElements.paymentEntryTime.textContent,
                     timeOut: formatDateTimeForDisplay(new Date()),
@@ -1832,28 +1893,25 @@
                     paymentMethod: paymentMethod,
                     totalAmount: `${fee.toLocaleString('vi-VN')}đ`
                 };
-            
-                // Mở cửa sổ ngay lập tức và lưu tham chiếu lại
-                const confirmationWindow = window.open('confirmation.html', 'ConfirmationWindow', 'popup,width=800,height=600');
-                // ---------------------------------------------------------
-            
-                // SỬ DỤNG HÀM MỚI, ĐÁNG TIN CẬY
+
+                // 2. Gửi yêu cầu xử lý check-out lên server (chạy ngầm)
                 const checkoutResult = await processCheckOut({
                     uniqueID: currentVehicleContext.uniqueID,
-                    plate: currentVehicleContext.plate, // Gửi cả biển số để xử lý offline
+                    plate: currentVehicleContext.plate,
                     fee: fee,
                     paymentMethod: paymentMethod
                 });
             
-                if (!checkoutResult) return; // Nếu có lỗi, dừng lại, không reset form
+                // 3. Nếu xử lý thất bại, dừng lại và thông báo lỗi
+                if (!checkoutResult) return; 
             
-                // --- SỬA LỖI: Bây giờ mới gọi hàm để định vị và gửi dữ liệu ---
-                if (confirmationWindow) {
-                    // Hàm này giờ chỉ có nhiệm vụ định vị lại cửa sổ và gửi dữ liệu
-                    openConfirmationOnSecondScreen(confirmationData, confirmationWindow);
+                // 4. Nếu thành công, gửi thông báo hoàn tất đến cửa sổ phụ
+                if (paymentChannel) {
+                    paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
                 }
-                // -----------------------------------------------------------
-            
+
+
+                // 5. Hiển thị thông báo và reset form
                 showToast('Đã hoàn tất cho xe ra!', 'success');
             
                 // Reset và tải lại dữ liệu sau khi hoàn tất
@@ -2096,34 +2154,36 @@
                     if (btn) btn.disabled = false; // Kích hoạt lại nút sau khi xử lý xong, dù thành công hay thất bại
                 }
             });
-            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', async () => {
-                // --- NÂNG CẤP: Logic check-out siêu thông minh ---
-                if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
+            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', async (e) => {
+                // ==================================================================
+                // --- QUY TRÌNH CHECK-OUT 2 MÀN HÌNH HOÀN TOÀN MỚI ---
+                // ==================================================================
+                const btn = e.target;
+                btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
+                try {
+                    if (!currentVehicleContext || currentVehicleContext.status !== 'parking') {
+                        showToast('Vui lòng chọn một xe đang gửi để xử lý.', 'error');
+                        return;
+                    }
 
-                const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === currentVehicleContext.uniqueID);
-                if (!vehicle) {
-                    showToast('Không tìm thấy thông tin xe để xử lý.', 'error');
-                    return;
-                }
+                    const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === currentVehicleContext.uniqueID);
+                    if (!vehicle) {
+                        showToast('Không tìm thấy thông tin xe để xử lý.', 'error');
+                        return;
+                    }
 
-                const isVehicleVIP = vehicle.VIP === 'Có'; // LOGIC MỚI
-                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
+                    // 1. Mở cửa sổ phụ và TRUYỀN ID QUA URL
+                    const confirmationWindow = window.open(`confirmation.html?uid=${vehicle.UniqueID}`, 'ConfirmationWindow', 'popup,width=800,height=600');
+                    if (!confirmationWindow) {
+                        showToast('Không thể mở cửa sổ thanh toán. Vui lòng cho phép pop-up.', 'error');
+                        return;
+                    }
 
-                if (fee === 0) {
-                    // Bất kỳ xe nào có phí 0đ (VIP hoặc miễn phí) sẽ được cho ra trực tiếp
-                    const reason = isVehicleVIP ? "xe VIP" : "xe miễn phí";
-                    // THAY THẾ `confirm` BẰNG MODAL MỚI
-                    showConfirmationModal(
-                        { // Gửi một đối tượng có cấu trúc thay vì một chuỗi HTML phức tạp
-                            title: 'Hoàn tất cho xe ra',
-                            plate: vehicle.Plate,
-                            reason: reason
-                        },
-                        () => completePayment() // Hàm sẽ được gọi khi người dùng nhấn "Xác nhận"
-                    );
-                } else {
-                    // Nếu có phí, hiển thị modal thanh toán
+                    // 2. Hiển thị modal thanh toán trên màn hình chính
                     showPaymentModal();
+
+                } finally {
+                    btn.disabled = false; // Kích hoạt lại nút
                 }
             });
             // Bắt sự kiện click vào label của checkbox VIP
@@ -2139,17 +2199,51 @@
                 allElements.selectQrBtn.classList.add('active');
                 allElements.selectCashBtn.classList.remove('active');
                 document.getElementById('payment-qrcode-wrapper').style.display = 'block';
-                document.getElementById('payment-memo-display').parentElement.style.display = 'block';
+                const memoEl = document.getElementById('payment-memo-display');
+                if (memoEl) memoEl.parentElement.style.display = 'block';
                 allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
+                // Gửi thông báo cho cửa sổ phụ
+                if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'qr' });
             });
             if (allElements.selectCashBtn) allElements.selectCashBtn.addEventListener('click', () => {
                 allElements.selectCashBtn.classList.add('active');
                 allElements.selectQrBtn.classList.remove('active');
                 document.getElementById('payment-qrcode-wrapper').style.display = 'none';
-                document.getElementById('payment-memo-display').parentElement.style.display = 'none';
+                const memoEl = document.getElementById('payment-memo-display');
+                if (memoEl) memoEl.parentElement.style.display = 'none';
                 allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
+                // Gửi thông báo cho cửa sổ phụ
+                if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
             });
             if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => allElements.paymentModal.style.display = 'none');
+
+            // HÀM MỚI: Tạo dữ liệu để gửi sang cửa sổ phụ
+            const createInitialDataForConfirmation = (vehicle) => {
+                if (!vehicle) return null;
+                const isVehicleVIP = vehicle.VIP === 'Có';
+                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
+                
+                const paymentInfoText = `TTGX ${vehicle.Plate} ${vehicle.UniqueID}`;
+                const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
+                const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics);
+                const encodedAccountName = encodeURIComponent(APP_CONFIG.payment.accountName);
+                const qrImageUrl = `${APP_CONFIG.payment.baseUrl}?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
+
+                // MỚI: Tìm tên điểm trực từ ID
+                const location = LOCATIONS_CONFIG.find(loc => loc.id === vehicle.LocationID);
+                const locationName = location ? location.name : 'Không xác định';
+
+
+                return {
+                    licensePlate: vehicle.Plate,
+                    timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
+                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`,
+                    qrImageUrl: qrImageUrl,
+                    paymentMemo: paymentInfoText,
+                    locationName: locationName // Thêm tên điểm trực vào payload
+                };
+            };
+
             if (allElements.downloadQrBtn) allElements.downloadQrBtn.addEventListener('click', downloadQRCode);
             if (allElements.printReceiptBtn) allElements.printReceiptBtn.addEventListener('click', () => window.print());
             if (allElements.paymentThumbImage) allElements.paymentThumbImage.addEventListener('click', () => window.open(allElements.paymentThumbImage.src, '_blank'));
