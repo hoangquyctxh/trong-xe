@@ -55,8 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!fullAdminData) return;
         updateDashboardUI(fullAdminData); // Vẽ lại mọi thứ với dữ liệu đầy đủ
         elements.resetFilterBtn.style.display = 'none';
-        elements.revenueChartTitle.textContent = 'Doanh thu theo điểm';
-        elements.vehiclesChartTitle.textContent = 'Lượt xe theo điểm';
+        elements.revenueChartTitle.textContent = 'Doanh thu theo bãi đỗ xe';
+        elements.vehiclesChartTitle.textContent = 'Lượt xe theo bãi đỗ xe';
     };
 
     // MỚI: Hàm tiện ích để làm nổi bật một phần của biểu đồ

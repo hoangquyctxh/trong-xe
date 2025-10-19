@@ -607,7 +607,7 @@
         }
 
         /* ================================================== */
-        /* --- REDESIGN: Modal chọn điểm trực - TOP 1 --- */
+        /* --- REDESIGN: Modal chọn bãi đỗ xe - TOP 1 --- */
         /* ================================================== */
         #location-select-modal .modal-content {
             max-width: 480px; /* Tăng nhẹ độ rộng */
@@ -994,11 +994,11 @@
         </div>
     </div>
 
-    <!-- MỚI: Modal chọn điểm trực -->
+    <!-- MỚI: Modal chọn bãi đỗ xe -->
     <div id="location-select-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
             <div class="location-select-header">
-                <h2 class="ticket-title-new" style="text-align: left; margin-bottom: 5px;">Xác nhận Điểm trực</h2>
+                <h2 class="ticket-title-new" style="text-align: left; margin-bottom: 5px;">Xác nhận Bãi đỗ xe</h2>
                 <p class="ticket-subtitle-new" style="text-align: left; margin: 0;">Vui lòng chọn đúng điểm bạn đang có mặt từ danh sách bên dưới.</p>
             </div>
             <div class="location-select-body">
@@ -1006,7 +1006,7 @@
                     <!-- Danh sách các điểm trực sẽ được chèn vào đây bằng JS -->
                 </div>
                 <div class="action-buttons-container" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                    <button id="use-default-location-btn" class="action-button" style="background: var(--text-secondary);" type="button">Sử dụng điểm mặc định</button>
+                    <button id="use-default-location-btn" class="action-button" style="background: var(--text-secondary);" type="button">Sử dụng bãi đỗ xe mặc định</button>
                 </div>
             </div>
         </div>
@@ -1128,9 +1128,10 @@
             let scanAnimation = null;
             let paymentChannel = null; // MỚI: Kênh giao tiếp giữa các cửa sổ
             let capturedImageBase64 = null; // Mới: Lưu ảnh dưới dạng base64
+            let confirmationWindow = null; // MỚI: Giữ tham chiếu đến cửa sổ phụ
             let recentlyScanned = new Set(); // Chống quét lại liên tục
             let autoRefreshInterval = null;
-            let currentLocation = null; // Mới: Lưu thông tin điểm trực
+            let currentLocation = null; // Mới: Lưu thông tin bãi đỗ xe
            
             let currentCapacity = 0; // Mới: Sức chứa của điểm trực hiện tại
 
@@ -1156,12 +1157,12 @@
                 // if (allElements.footerOperator) allElements.footerOperator.textContent = location.operator || 'Đoàn TN Phường Ba Đình';
             };
 
-            const selectLocation = (location) => {
+            const selectLocation = async (location) => {
                 currentLocation = location;
                 currentCapacity = location.capacity || 0;
-                allElements.locationSubtitle.textContent = `Điểm trực: ${location.name}`;
+                allElements.locationSubtitle.textContent = `Bãi đỗ xe: ${location.name}`;
                 allElements.locationSelectModal.style.display = 'none';
-                showToast(`Đã xác nhận điểm trực: ${location.name}`, 'success');
+                showToast(`Đã xác nhận bãi đỗ xe: ${location.name}`, 'success');
                 
                 // MỚI: Gọi hàm cập nhật footer
                 updateFooterInfo(location);
@@ -1169,7 +1170,19 @@
                 // MỚI: Tải thời tiết cho vị trí đã chọn
                 if (typeof fetchWeather === 'function') fetchWeather(location.lat, location.lng);
 
-                // Sau khi chọn xong, tải dữ liệu cho điểm đó
+                // Sau khi chọn xong, tải dữ liệu cho bãi đỗ xe đó
+                // MỚI: Mở cửa sổ phụ ngay sau khi chọn bãi đỗ xe (chỉ trên desktop)
+                if (!isMobileDevice() && !confirmationWindow) {
+                    const url = `confirmation.html?lat=${location.lat}&lng=${location.lng}&locationName=${encodeURIComponent(location.name)}`;
+                    confirmationWindow = await openWindowOnSecondaryScreen(url, 'ConfirmationWindow', 'popup,width=950,height=700');
+                }
+
+                // SỬA LỖI QUAN TRỌNG: Khởi tạo kênh giao tiếp ngay khi có bãi đỗ xe
+                // để đảm bảo tín hiệu check-in không bị lỡ.
+                if (!paymentChannel) {
+                    paymentChannel = new BroadcastChannel('parking_payment_channel');
+                }
+
                 fetchVehiclesForDate(allElements.datePicker.value, false, true);
             };
 
@@ -1217,8 +1230,8 @@
                       .sort((a, b) => a.distance - b.distance);
 
                     if (nearbyLocations.length === 0) {
-                        // Nếu không có điểm nào gần, dùng điểm mặc định
-                        showToast('Không tìm thấy điểm trực nào ở gần. Sử dụng điểm mặc định.', 'error');
+                        // Nếu không có bãi đỗ xe nào gần, dùng điểm mặc định
+                        showToast('Không tìm thấy bãi đỗ xe nào ở gần. Sử dụng điểm mặc định.', 'error');
                         selectLocation(locations[0]);
                     } else if (nearbyLocations.length === 1) {
                         // Nếu chỉ có 1 điểm, tự động chọn
@@ -1386,7 +1399,7 @@
             const showConfirmationModal = (message, onConfirm) => {
                 // CẬP NHẬT: Điền dữ liệu vào các phần tử riêng biệt
                 allElements.confirmationTitle.textContent = message.title;
-                allElements.confirmationMessage.innerHTML = `Bạn có chắc chắn muốn cho xe <strong style="font-size:1.5rem; color:var(--text-primary); display:block; margin:8px 0;">${message.plate}</strong> ra khỏi bãi không?<br><em>(${message.reason})</em>`;
+                allElements.confirmationMessage.innerHTML = `Xác nhận cho xe <strong style="font-size:1.5rem; color:var(--text-primary); display:block; margin:8px 0;">${message.plate}</strong> ra khỏi bãi.<br>Lý do: <strong>${message.reason}</strong>`;
                 allElements.confirmationModal.style.display = 'flex';
 
                 // Tạo một hàm xử lý duy nhất để tránh gắn nhiều listener
@@ -1719,6 +1732,14 @@
                         const result = await response.json();
                         if (result.status === 'success') {
                             if (action === 'checkIn') {
+                                // =================================================================
+                                // GIẢI PHÁP MỚI: Sử dụng sessionStorage để giao tiếp
+                                // =================================================================
+                                const checkinSuccessPayload = {
+                                    licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime),
+                                };
+                                // GIẢI PHÁP MỚI: Gửi trực tiếp payload qua BroadcastChannel
+                                if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKIN_COMPLETE', payload: checkinSuccessPayload });
                                 showQrCode(originalPlate, entryTime, uniqueID);
                             }
                         } else { throw new Error(result.message); }
@@ -1726,6 +1747,12 @@
                         if (action === 'checkIn') {
                             const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
                             addToOfflineQueue(offlineAction);
+                            // GIẢI PHÁP MỚI (cho offline)
+                            const checkinSuccessPayload = {
+                                licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime),
+                            };
+                            // GIẢI PHÁP MỚI (cho offline)
+                            if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKIN_COMPLETE', payload: checkinSuccessPayload });
                             showQrCode(originalPlate, entryTime, uniqueID);
                         }
                     }
@@ -1740,7 +1767,7 @@
                 if (allElements.ticketPlateDisplay) allElements.ticketPlateDisplay.textContent = plate;
                 if (allElements.ticketTimeDisplay) allElements.ticketTimeDisplay.textContent = formatDateTimeForDisplay(entryTime);
                 if (allElements.ticketLocationDisplay && currentLocation) {
-                    allElements.ticketLocationDisplay.textContent = `Điểm trực: ${currentLocation.name}`;
+                    allElements.ticketLocationDisplay.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
                 }
 
                 QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
@@ -1827,29 +1854,16 @@
                 allElements.completePaymentBtn.disabled = true;
                 allElements.qrSpinner.style.display = 'block'; // Hiện spinner
 
-                // MỚI: Tạo kênh giao tiếp nếu chưa có
+                // =================================================================
+                // SỬA LỖI QUAN TRỌNG: Đảm bảo kênh được tạo trước khi gửi tin
+                // =================================================================
                 if (!paymentChannel) {
                     paymentChannel = new BroadcastChannel('parking_payment_channel');
-                    paymentChannel.onmessage = (event) => {
-                        const { type, method, uid } = event.data;
-                        if (type === 'PAYMENT_METHOD_SELECTED') {
-                            if (method === 'qr') {
-                                allElements.selectQrBtn.click();
-                            } else if (method === 'cash') {
-                                allElements.selectCashBtn.click();
-                            }
-                        } else if (type === 'REQUEST_INITIAL_DATA' && uid) {
-                            // SỬA LỖI: Trả lời yêu cầu từ cửa sổ phụ
-                            const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === uid);
-                            if (vehicle) {
-                                const initialData = createInitialDataForConfirmation(vehicle);
-                                if (paymentChannel) {
-                                    paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: initialData });
-                                }
-                            }
-                        }
-                    };
                 }
+                // Sau khi đảm bảo kênh đã tồn tại, tạo dữ liệu và gửi đi
+                const initialData = createInitialDataForConfirmation(vehicle);
+                if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: initialData });
+                // =================================================================
 
                                 // --- CẬP NHẬT: Sử dụng API link ảnh của VietQR và nội dung không dấu ---
                 const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
@@ -1906,9 +1920,7 @@
                 if (!checkoutResult) return; 
             
                 // 4. Nếu thành công, gửi thông báo hoàn tất đến cửa sổ phụ
-                if (paymentChannel) {
-                    paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
-                }
+                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
 
 
                 // 5. Hiển thị thông báo và reset form
@@ -1922,6 +1934,9 @@
                 allElements.photoPreviewThumb.style.display = 'none';
                 await fetchVehiclesForDate(allElements.datePicker.value);
             };
+
+            // MỚI: Hàm kiểm tra thiết bị di động
+            const isMobileDevice = () => window.innerWidth < 1024;
 
             // =================================================================
             // --- MỚI: HÀM MỞ CỬA SỔ TRÊN MÀN HÌNH PHỤ ---
@@ -2202,15 +2217,49 @@
                         return;
                     }
 
-                    // 1. MỞ CỬA SỔ TRÊN MÀN HÌNH PHỤ (NẾU CÓ)
-                    const confirmationWindow = await openWindowOnSecondaryScreen(`confirmation.html?uid=${vehicle.UniqueID}`, 'ConfirmationWindow', 'popup,width=950,height=700');
-                    if (!confirmationWindow) {
-                        showToast('Không thể mở cửa sổ thanh toán. Vui lòng cho phép pop-up.', 'error');
-                        return;
-                    }
+                    const isVehicleVIP = vehicle.VIP === 'Có';
+                    const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
 
-                    // 2. Hiển thị modal thanh toán trên màn hình chính
-                    showPaymentModal();
+                    if (fee > 0) {
+                        // --- QUY TRÌNH CÓ TÍNH PHÍ (như cũ) ---
+                        if (isMobileDevice()) {
+                            showPaymentModal();
+                        } else {
+                            if (!confirmationWindow || confirmationWindow.closed) {
+                                const url = `confirmation.html?lat=${currentLocation.lat}&lng=${currentLocation.lng}&locationName=${encodeURIComponent(currentLocation.name)}`;
+                                confirmationWindow = await openWindowOnSecondaryScreen(url, 'ConfirmationWindow', 'popup,width=950,height=700');
+                            }
+                            showPaymentModal();
+                        }
+                    } else {
+                        // --- QUY TRÌNH MIỄN PHÍ (MỚI) ---
+                        const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
+                        showConfirmationModal(
+                            {
+                                title: 'XÁC NHẬN CHO XE RA',
+                                plate: vehicle.Plate,
+                                reason: paymentMethod
+                            },
+                            async () => {
+                                const finalReceiptData = {
+                                    licensePlate: vehicle.Plate,
+                                    timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
+                                    timeOut: formatDateTimeForDisplay(new Date()),
+                                    duration: calculateDuration(vehicle['Entry Time']),
+                                    paymentMethod: paymentMethod,
+                                    totalAmount: '0đ'
+                                };
+                                const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
+                                if (checkoutResult) {
+                                    if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+                                    showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success');
+                                    resetMainForm();
+                                    allElements.searchTermInput.value = '';
+                                    await fetchVehiclesForDate(allElements.datePicker.value);
+                                }
+                            }
+                        );
+                    }
 
                 } finally {
                     btn.disabled = false; // Kích hoạt lại nút
@@ -2243,9 +2292,15 @@
                 if (memoEl) memoEl.parentElement.style.display = 'none';
                 allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
                 // Gửi thông báo cho cửa sổ phụ
-                if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
+                if (paymentChannel) {
+                    paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
+                }
             });
-            if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => allElements.paymentModal.style.display = 'none');
+            if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => {
+                allElements.paymentModal.style.display = 'none';
+                // MỚI: Gửi tín hiệu hủy giao dịch đến cửa sổ phụ
+                if (paymentChannel) paymentChannel.postMessage({ type: 'TRANSACTION_CANCELED' });
+            });
 
             // HÀM MỚI: Tạo dữ liệu để gửi sang cửa sổ phụ
             const createInitialDataForConfirmation = (vehicle) => {
@@ -2259,7 +2314,7 @@
                 const encodedAccountName = encodeURIComponent(APP_CONFIG.payment.accountName);
                 const qrImageUrl = `${APP_CONFIG.payment.baseUrl}?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
 
-                // MỚI: Tìm tên điểm trực từ ID
+                // MỚI: Tìm tên bãi đỗ xe từ ID
                 const location = LOCATIONS_CONFIG.find(loc => loc.id === vehicle.LocationID);
                 const locationName = location ? location.name : 'Không xác định';
 
@@ -2270,7 +2325,9 @@
                     totalAmount: `${fee.toLocaleString('vi-VN')}đ`,
                     qrImageUrl: qrImageUrl,
                     paymentMemo: paymentInfoText,
-                    locationName: locationName // Thêm tên điểm trực vào payload
+                    locationName: locationName, // Thêm tên bãi đỗ xe vào payload
+                    lat: location ? location.lat : null, // MỚI: Thêm tọa độ
+                    lng: location ? location.lng : null  // MỚI: Thêm tọa độ
                 };
             };
 
