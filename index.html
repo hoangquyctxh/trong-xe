@@ -1767,31 +1767,49 @@
             };
 
             // =================================================================
-            // --- ĐÃ CẬP NHẬT: HÀM MỞ CỬA SỔ POPUP XÁC NHẬN ---
+            // --- MỚI: HÀM MỞ CỬA SỔ XÁC NHẬN TRÊN MÀN HÌNH THỨ 2 ---
             // =================================================================
-            const openConfirmationPopup = (confirmationData) => {
-                // Các thuộc tính cho cửa sổ popup: có thể thay đổi kích thước, có thanh cuộn, vị trí và kích thước ban đầu.
-                const windowFeatures = 'popup,width=700,height=550,resizable=yes,scrollbars=yes';
+            const openConfirmationOnSecondScreen = async (confirmationData) => {
+                // 1. Kiểm tra xem trình duyệt có hỗ trợ Window Management API không
+                if ('getScreenDetails' in window) {
+                    try {
+                        // Yêu cầu quyền truy cập thông tin màn hình
+                        const screenDetails = await window.getScreenDetails();
+                        
+                        // Tìm màn hình thứ hai (không phải màn hình chính)
+                        const secondaryScreen = screenDetails.screens.find(screen => !screen.isPrimary);
 
-                // Mở cửa sổ popup
-                const confirmationWindow = window.open('confirmation.html', 'ConfirmationWindow', windowFeatures);
+                        let windowFeatures = 'popup,width=800,height=600';
 
-                // Đợi cửa sổ mới tải xong rồi gửi dữ liệu qua
-                if (confirmationWindow) {
-                    // Dùng setTimeout nhỏ để đảm bảo cửa sổ đã sẵn sàng nhận message
-                    setTimeout(() => {
-                        confirmationWindow.postMessage({
-                            type: 'VEHICLE_EXIT_CONFIRMATION',
-                            payload: confirmationData
-                        }, '*'); // Trong thực tế, nên thay '*' bằng domain của bạn để tăng bảo mật
-                    }, 100);
+                        if (secondaryScreen) {
+                            console.log('Phát hiện màn hình thứ hai. Mở cửa sổ trên đó.');
+                            // screen.availLeft và screen.availTop là tọa độ góc trên bên trái của màn hình
+                            windowFeatures += `,left=${secondaryScreen.availLeft},top=${secondaryScreen.availTop}`;
+                        } else {
+                            console.log('Chỉ có một màn hình. Mở cửa sổ popup bình thường.');
+                        }
+
+                        const confirmationWindow = window.open('confirmation.html', 'ConfirmationWindow', windowFeatures);
+
+                        // Đợi cửa sổ mới tải xong rồi gửi dữ liệu qua
+                        if (confirmationWindow) {
+                            confirmationWindow.addEventListener('load', () => {
+                                confirmationWindow.postMessage({
+                                    type: 'VEHICLE_EXIT_CONFIRMATION',
+                                    payload: confirmationData
+                                }, '*');
+                            });
+                        }
+
+                    } catch (err) {
+                        console.error('Không thể mở cửa sổ trên màn hình phụ:', err);
+                    }
                 } else {
-                    // Thông báo nếu người dùng chặn popup
-                    showToast('Vui lòng cho phép mở cửa sổ popup để xem xác nhận.', 'error');
+                    console.log('Trình duyệt không hỗ trợ Window Management API. Tính năng màn hình phụ bị bỏ qua.');
                 }
             };
 
-            const completePayment = async () => {
+            const completePayment = async () => { // ĐÃ SỬA LỖI POPUP BLOCKER
                 if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
             
                 allElements.paymentModal.style.display = 'none'; // Đóng modal ngay
@@ -1805,7 +1823,7 @@
                     paymentMethod = 'Chuyển khoản QR';
                 }
             
-                // Chuẩn bị dữ liệu để hiển thị trên popup
+                // --- SỬA LỖI: Mở cửa sổ ngay lập tức trước khi await ---
                 const confirmationData = {
                     licensePlate: currentVehicleContext.plate,
                     timeIn: allElements.paymentEntryTime.textContent,
@@ -1814,6 +1832,10 @@
                     paymentMethod: paymentMethod,
                     totalAmount: `${fee.toLocaleString('vi-VN')}đ`
                 };
+            
+                // Mở cửa sổ ngay lập tức và lưu tham chiếu lại
+                const confirmationWindow = window.open('confirmation.html', 'ConfirmationWindow', 'popup,width=800,height=600');
+                // ---------------------------------------------------------
             
                 // SỬ DỤNG HÀM MỚI, ĐÁNG TIN CẬY
                 const checkoutResult = await processCheckOut({
@@ -1825,9 +1847,12 @@
             
                 if (!checkoutResult) return; // Nếu có lỗi, dừng lại, không reset form
             
-                // --- CẬP NHẬT: Gọi hàm mở popup sau khi đã xử lý xong nghiệp vụ ---
-                openConfirmationPopup(confirmationData);
-                // --------------------------------------------------------------------
+                // --- SỬA LỖI: Bây giờ mới gọi hàm để định vị và gửi dữ liệu ---
+                if (confirmationWindow) {
+                    // Hàm này giờ chỉ có nhiệm vụ định vị lại cửa sổ và gửi dữ liệu
+                    openConfirmationOnSecondScreen(confirmationData, confirmationWindow);
+                }
+                // -----------------------------------------------------------
             
                 showToast('Đã hoàn tất cho xe ra!', 'success');
             
@@ -1839,6 +1864,7 @@
                 allElements.photoPreviewThumb.style.display = 'none';
                 await fetchVehiclesForDate(allElements.datePicker.value);
             };
+
 
             const downloadQRCode = async () => {
                 const imageUrl = allElements.paymentQrcodeImage.src;
