@@ -32,5 +32,15 @@ const APP_CONFIG = {
     },
 
     // Thời gian tự động làm mới dữ liệu (tính bằng mili giây)
-    autoRefreshInterval: 5000 // 5 giây
+    autoRefreshInterval: 5000, // 5 giây
+
+    // MỚI: Danh sách video quảng cáo cho màn hình chờ
+    // Dán các đường link video của bạn vào đây.
+    // Hệ thống sẽ tự động phát lần lượt.
+    adVideos: [
+        // LƯU Ý: Phải dùng link trực tiếp đến file video .mp4.
+        // Ví dụ link từ Cloudflare R2: "https://ten-bucket.id-tai-khoan.r2.dev/ten-video.mp4"
+        // Ví dụ link từ các trang video miễn phí:
+        "https://pub-e8b9f290d56545b29e32c494b6ec8f86.r2.dev/video_20251019_222646.mp4"
+    ]
 };
