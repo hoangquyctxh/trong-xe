@@ -113,27 +113,7 @@
             animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
         }
         @keyframes stroke {
-            100% { stroke-dashoffset: 0; }
-        }
-        @keyframes scale {
-            0%, 100% { transform: none; }
-            50% { transform: scale3d(1.1, 1.1, 1); }
-        }
-        @keyframes fill {
-            100% { box-shadow: inset 0px 0px 0px 40px var(--success-color); }
-        }
-
-        .plate-number {
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: var(--primary-accent);
-            margin-bottom: 1em;
-            font-family: monospace;
-            background: var(--bg-main);
-            padding: 10px 25px;
-            border-radius: var(--border-radius-md);
-            display: inline-block;
-            border: 1px solid var(--border-color);
+            100% { stroke-dashoffset: 0; } } @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } } @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 40px var(--success-color); }
         }
         .info-grid {
             margin-top: 2em;
@@ -161,6 +141,15 @@
             font-size: 1.2em;
         }
         .hidden { display: none !important; }
+        .total-fee-container .label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
 
         /* --- GIAO DIỆN CHỌN THANH TOÁN --- */
         /* ================================================== */
@@ -178,15 +167,7 @@
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        .total-fee-container .label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
+        
         .total-fee-container .amount {
             font-size: 4rem;
             font-weight: 800;
@@ -301,22 +282,6 @@
             height: 0;
             padding: 0; margin: 0; overflow: hidden;
         }
-        /* MỚI: CSS cho phần tổng phí trên màn hình thành công */
-        .success-fee-display {
-            margin-bottom: 1.5em;
-        }
-        .success-fee-display .label {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-        }
-        .success-fee-display .amount {
-            font-size: 4rem; font-weight: 800; color: var(--danger-color); line-height: 1;
-        }
-        .success-fee-display .amount sup {
-            font-size: 2rem;
-            font-weight: 700;
-            vertical-align: top;
-        }
         /* MỚI: Bố cục hiển thị thông tin chính */
         .main-info-display {
             background: var(--bg-main);
@@ -408,6 +373,146 @@
             font-weight: 700;
             color: var(--primary-accent);
         }
+
+        /* ================================================== */
+        /* --- REDESIGN: GIAO DIỆN THÀNH CÔNG - TOP 1 --- */
+        /* ================================================== */
+        #success-view .card-title { animation: fadeInDown 0.5s 1s backwards; }
+
+        .success-main-content {
+            animation: fadeIn 0.5s 1.2s backwards;
+        }
+
+        .success-amount-display {
+            margin: 0.5em 0;
+        }
+        .success-amount-display .label {
+            font-size: 1.3rem; /* Giảm nhẹ */
+            color: var(--text-secondary);
+            animation: fadeInUp 0.5s 1.4s backwards;
+        }
+        .success-amount-display .amount { /* Giảm nữa */
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--success-color);
+            line-height: 1.1;
+            animation: popInAmount 0.6s 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+        }
+        .success-amount-display .amount sup { /* Giảm nữa */
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .success-plate-display { /* Giảm nữa */
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: monospace;
+            color: var(--text-primary);
+            background: var(--bg-main);
+            padding: 10px 25px;
+            border-radius: var(--border-radius-md);
+            display: inline-block;
+            border: 1px solid var(--border-color);
+            margin-top: 0.8em;
+            animation: fadeInUp 0.5s 1.8s backwards;
+        }
+
+        /* ================================================== */
+        /* --- MỚI: TÁI CẤU TRÚC CHI TIẾT THANH TOÁN --- */
+        /* ================================================== */
+        .success-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6em 2em; /* Giảm khoảng cách */
+            margin-top: 1.5em; /* Giảm khoảng cách */
+            padding: 1.2em 1.5em; /* Giảm padding */
+            background: var(--bg-main);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            text-align: left;
+            animation: fadeInUp 0.5s 2s backwards;
+        }
+        .success-details-grid .detail-item {
+            font-size: 1.1rem;
+        }
+        .success-details-grid .detail-item .label {
+            color: var(--text-secondary);
+            display: block;
+            font-size: 0.9rem;
+        }
+        .success-details-grid .detail-item .value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .success-duration-highlight {
+            grid-column: 1 / -1; /* Trải dài toàn bộ grid */
+            text-align: center;
+            margin-top: 0.8em;
+            padding-top: 0.8em;
+            border-top: 1px dashed var(--border-color);
+        }
+        .success-duration-highlight .label {
+            font-size: 1.1rem;
+        }
+        .success-duration-highlight .value {
+            font-size: 1.6rem; /* Giảm nữa */
+            font-weight: 800;
+            color: var(--primary-accent);
+        }
+
+        .thank-you-message {
+            margin-top: 1.2em; /* Giảm nữa */
+            font-size: 1.3rem; /* Giảm nữa */
+            font-weight: 700;
+            color: var(--text-secondary);
+            animation: fadeInUp 0.5s 2.2s backwards;
+        }
+
+        /* ================================================== */
+        /* --- MỚI: GIAO DIỆN MÀN HÌNH CHỜ (IDLE) --- */
+        /* ================================================== */
+        #idle-view .confirmation-card::after {
+            background: var(--primary-accent);
+        }
+        .idle-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+        .idle-org-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 1.5em;
+        }
+        .idle-logo {
+            width: 120px;
+            height: 120px;
+            animation: float 4s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .idle-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--primary-accent);
+            margin-top: 1.5em;
+            line-height: 1.3;
+        }
+        .idle-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 1em;
+        }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -483,27 +588,53 @@
                 <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
             </svg>
         </div>
-        <h1 class="card-title success" style="margin-bottom: 0.8em;">THANH TOÁN THÀNH CÔNG</h1>
+        <h1 class="card-title success" style="margin-bottom: 0;">THANH TOÁN THÀNH CÔNG</h1>
         
-        <!-- MỚI: Phần hiển thị tổng phí được thiết kế lại -->
-        <div class="success-fee-display">
-            <div class="label">Tổng phí đã thanh toán</div>
-            <div class="amount">
-                <span id="success-total-amount">0</span><sup>đ</sup>
+        <div class="success-main-content">
+            <div class="success-amount-display">
+                <div class="label">Tổng phí đã thanh toán</div>
+                <div class="amount">
+                    <span id="success-total-amount">0</span><sup>đ</sup>
+                </div>
+            </div>
+            <div class="success-plate-display" id="success-plate">--</div>
+            
+            <!-- ================================================== -->
+            <!-- --- KHU VỰC CHI TIẾT ĐÃ ĐƯỢC THIẾT KẾ LẠI --- -->
+            <!-- ================================================== -->
+            <div class="success-details-grid">
+                <div class="detail-item">
+                    <span class="label">Phương thức</span><span class="value" id="success-payment-method">--</span>
+                </div>
+                <div class="detail-item" style="text-align: right;">
+                    <span class="label">Giờ vào</span><span class="value" id="success-time-in">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Giờ ra</span><span class="value" id="success-time-out">--</span>
+                </div>
+                <div class="success-duration-highlight detail-item">
+                    <span class="label">Tổng thời gian</span><span class="value" id="success-duration">--</span>
+                </div>
             </div>
         </div>
-
-        <div class="plate-number" id="success-plate">--</div>
-        <div class="info-grid">
-            <div class="info-item"><span class="label">Giờ vào</span><span class="value" id="success-time-in">--</span></div>
-            <div class="info-item"><span class="label">Giờ ra</span><span class="value" id="success-time-out">--</span></div>
-            <div class="info-item"><span class="label">Tổng thời gian</span><span class="value" id="success-duration">--</span></div>
-            <div class="info-item"><span class="label">Phương thức</span><span class="value" id="success-payment-method">--</span></div>
-        </div>
+        <p class="thank-you-message">Cảm ơn quý khách & Hẹn gặp lại!</p>
         <div class="action-buttons">
             <button class="btn btn-primary" onclick="window.close()">Đóng</button>
         </div>
-        <p class="auto-close-note">Cửa sổ này sẽ tự động đóng sau 10 giây.</p>
+        <p class="auto-close-note">Sẽ tự động chuyển sang màn hình chờ sau 10 giây.</p>
+        <div id="confetti-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;"></div>
+    </div>
+
+    <!-- MỚI: View 3 - Màn hình chờ -->
+    <div id="idle-view" class="confirmation-card hidden">
+        <div class="idle-content">
+            <div>
+                <p class="idle-org-name">ĐOÀN TNCS HỒ CHÍ MINH - PHƯỜNG BA ĐÌNH</p>
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="idle-logo">
+            </div>
+            <h1 class="idle-title">Bãi đỗ xe Thanh niên<br>Kính chào Quý khách!</h1>
+            <p class="idle-subtitle">Sẵn sàng cho lượt xe tiếp theo...</p>
+        </div>
     </div>
 
     <script>
@@ -516,8 +647,44 @@
             const cashPaymentAction = document.getElementById('cash-payment-action');
             const completeCashPaymentBtn = document.getElementById('complete-cash-payment-btn');
             const rightPanel = document.getElementById('right-panel-content');
+            const idleView = document.getElementById('idle-view'); // MỚI
 
             const paymentChannel = new BroadcastChannel('parking_payment_channel');
+
+            // --- MỚI: HÀM HIỆU ỨNG CONFETTI ---
+            function startConfetti() {
+                const container = document.getElementById('confetti-container');
+                if (!container) return;
+                const confettiCount = 150;
+                const colors = ['#0056b3', '#007bff', '#ffc107', '#28a745', '#dc3545'];
+
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'absolute';
+                    confetti.style.width = `${Math.random() * 10 + 5}px`;
+                    confetti.style.height = `${Math.random() * 6 + 4}px`;
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.opacity = '1';
+                    
+                    // Vị trí ban đầu ở trung tâm
+                    const startX = 50;
+                    const startY = 50;
+                    confetti.style.left = `${startX}%`;
+                    confetti.style.top = `${startY}%`;
+
+                    // Tính toán quỹ đạo bay ra ngoài
+                    const angle = Math.random() * 360;
+                    const radius = Math.random() * 300 + 150;
+                    const endX = startX + radius * Math.cos(angle * Math.PI / 180);
+                    const endY = startY + radius * Math.sin(angle * Math.PI / 180);
+                    
+                    confetti.style.transition = `transform 1.5s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 1.5s ease-out`;
+                    container.appendChild(confetti);
+
+                    setTimeout(() => { confetti.style.transform = `translate(${endX - startX}vw, ${endY - startY}vh) rotate(${Math.random() * 720}deg)`; confetti.style.opacity = '0'; }, 10);
+                    setTimeout(() => confetti.remove(), 1600);
+                }
+            }
 
             // SỬA LỖI: Chủ động yêu cầu dữ liệu từ trang chính
             const urlParams = new URLSearchParams(window.location.search);
@@ -560,6 +727,7 @@
                 } else if (type === 'CHECKOUT_COMPLETE') {
                     paymentView.classList.add('hidden');
                     successView.classList.remove('hidden');
+                    startConfetti(); // Kích hoạt hiệu ứng
                     document.getElementById('success-plate').textContent = payload.licensePlate;
                     document.getElementById('success-time-in').textContent = payload.timeIn;
                     document.getElementById('success-time-out').textContent = payload.timeOut;
@@ -567,9 +735,17 @@
                     document.getElementById('success-payment-method').textContent = payload.paymentMethod;
                     document.getElementById('success-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
 
+                    // THAY ĐỔI: Chuyển sang màn hình chờ thay vì đóng
                     setTimeout(() => {
-                        window.close();
-                    }, 10000); // Tự động đóng sau 10 giây
+                        successView.style.animation = 'fadeOut 0.5s ease forwards';
+                        
+                        setTimeout(() => {
+                            successView.classList.add('hidden');
+                            successView.style.animation = ''; // Reset animation
+                            idleView.classList.remove('hidden');
+                            idleView.style.animation = 'fadeIn 0.5s ease';
+                        }, 500); // Đợi hiệu ứng fadeOut hoàn tất
+                    }, 10000); // Chuyển sang màn hình chờ sau 10 giây
                 }
             };
 
