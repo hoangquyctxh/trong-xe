@@ -1766,11 +1766,36 @@
                 }
             };
 
+            // =================================================================
+            // --- ĐÃ CẬP NHẬT: HÀM MỞ CỬA SỔ POPUP XÁC NHẬN ---
+            // =================================================================
+            const openConfirmationPopup = (confirmationData) => {
+                // Các thuộc tính cho cửa sổ popup: có thể thay đổi kích thước, có thanh cuộn, vị trí và kích thước ban đầu.
+                const windowFeatures = 'popup,width=700,height=550,resizable=yes,scrollbars=yes';
+
+                // Mở cửa sổ popup
+                const confirmationWindow = window.open('confirmation.html', 'ConfirmationWindow', windowFeatures);
+
+                // Đợi cửa sổ mới tải xong rồi gửi dữ liệu qua
+                if (confirmationWindow) {
+                    // Dùng setTimeout nhỏ để đảm bảo cửa sổ đã sẵn sàng nhận message
+                    setTimeout(() => {
+                        confirmationWindow.postMessage({
+                            type: 'VEHICLE_EXIT_CONFIRMATION',
+                            payload: confirmationData
+                        }, '*'); // Trong thực tế, nên thay '*' bằng domain của bạn để tăng bảo mật
+                    }, 100);
+                } else {
+                    // Thông báo nếu người dùng chặn popup
+                    showToast('Vui lòng cho phép mở cửa sổ popup để xem xác nhận.', 'error');
+                }
+            };
+
             const completePayment = async () => {
                 if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
-
+            
                 allElements.paymentModal.style.display = 'none'; // Đóng modal ngay
-
+            
                 // Lấy thông tin phí và phương thức thanh toán
                 const fee = parseFloat(allElements.paymentAmountDisplay.textContent.replace(/\./g, '')) || 0;
                 let paymentMethod = 'Chưa chọn';
@@ -1779,7 +1804,17 @@
                 } else if (allElements.selectQrBtn.classList.contains('active')) {
                     paymentMethod = 'Chuyển khoản QR';
                 }
-
+            
+                // Chuẩn bị dữ liệu để hiển thị trên popup
+                const confirmationData = {
+                    licensePlate: currentVehicleContext.plate,
+                    timeIn: allElements.paymentEntryTime.textContent,
+                    timeOut: formatDateTimeForDisplay(new Date()),
+                    duration: allElements.paymentDuration.textContent,
+                    paymentMethod: paymentMethod,
+                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`
+                };
+            
                 // SỬ DỤNG HÀM MỚI, ĐÁNG TIN CẬY
                 const checkoutResult = await processCheckOut({
                     uniqueID: currentVehicleContext.uniqueID,
@@ -1787,11 +1822,15 @@
                     fee: fee,
                     paymentMethod: paymentMethod
                 });
-
+            
                 if (!checkoutResult) return; // Nếu có lỗi, dừng lại, không reset form
-                
+            
+                // --- CẬP NHẬT: Gọi hàm mở popup sau khi đã xử lý xong nghiệp vụ ---
+                openConfirmationPopup(confirmationData);
+                // --------------------------------------------------------------------
+            
                 showToast('Đã hoàn tất cho xe ra!', 'success');
-
+            
                 // Reset và tải lại dữ liệu sau khi hoàn tất
                 resetMainForm();
                 allElements.searchTermInput.value = '';
@@ -1859,39 +1898,42 @@
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
                     
-                    if (code && !recentlyScanned.has(code.data)) {
+                    if (code) {
                         const uniqueID = code.data;
-                        recentlyScanned.add(uniqueID); // Thêm vào danh sách đã quét để tránh lặp
                         
-                        const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === uniqueID && v.Status === 'Đang gửi');
+                        // Dừng quét ngay khi phát hiện mã để xử lý
+                        closeQrScanner();
+
+                        // Tìm xe trong danh sách, bất kể trạng thái
+                        const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === uniqueID);
 
                         if (vehicle) {
-                            const fee = calculateFee(vehicle['Entry Time']);
+                            if (vehicle.Status === 'Đang gửi') {
+                                // XE VẪN CÒN TRONG BÃI
+                                const isVehicleVIP = vehicle.VIP === 'Có';
+                                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
 
-                            if (fee > 0) {
-                                // CÓ PHÍ: Đóng máy quét và hiển thị biên lai thanh toán
-                                currentVehicleContext = { plate: vehicle.Plate, status: 'parking', uniqueID: vehicle.UniqueID };
-                                closeQrScanner();
-                                showPaymentModal();
-                                // Không cần timeout cho recentlyScanned vì máy quét đã đóng
+                                if (fee > 0) {
+                                    // CÓ PHÍ: Hiển thị biên lai thanh toán
+                                    currentVehicleContext = { plate: vehicle.Plate, status: 'parking', uniqueID: vehicle.UniqueID, isVIP: isVehicleVIP };
+                                    showPaymentModal();
+                                } else {
+                                    // MIỄN PHÍ (VIP hoặc gửi nhanh): Cho xe ra trực tiếp
+                                    processCheckOut({
+                                        uniqueID: uniqueID,
+                                        plate: vehicle.Plate,
+                                        fee: 0,
+                                        paymentMethod: isVehicleVIP ? 'VIP' : 'Miễn phí'
+                                    });
+                                    showToast(`Xe ${vehicle.Plate} ra thành công (miễn phí).`, 'success');
+                                }
                             } else {
-                                // MIỄN PHÍ: Cho xe ra trực tiếp
-                                allElements.scannerStatus.textContent = `Đã quét: ${vehicle.Plate}...`;
-                                // SỬA LỖI: Gọi hàm processCheckOut thay vì handleVehicleAction
-                                processCheckOut({
-                                    uniqueID: uniqueID,
-                                    plate: vehicle.Plate,
-                                    fee: 0,
-                                    paymentMethod: vehicle.VIP === 'Có' ? 'VIP' : 'Miễn phí'
-                                });
-                                showScanSuccessFeedback();
-                                showToast(`Xe ${vehicle.Plate} ra thành công (miễn phí).`, 'success');
-                                setTimeout(() => recentlyScanned.delete(uniqueID), 3000); // Cho phép quét xe khác sau 3s
+                                // XE ĐÃ RỜI BÃI
+                                showToast(`Xe ${vehicle.Plate} đã rời bãi lúc ${formatDateTimeForDisplay(vehicle['Exit Time'])}.`, 'error');
                             }
                         } else {
-                            // Không tìm thấy xe hoặc xe đã ra
+                            // MÃ QR KHÔNG TỒN TẠI
                             showToast('Mã QR không hợp lệ hoặc xe đã ra khỏi bãi.', 'error');
-                            setTimeout(() => recentlyScanned.delete(uniqueID), 3000); // Cho phép thử lại sau 3s
                         }
                     }
                 }
