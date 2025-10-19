@@ -1923,6 +1923,36 @@
                 await fetchVehiclesForDate(allElements.datePicker.value);
             };
 
+            // =================================================================
+            // --- MỚI: HÀM MỞ CỬA SỔ TRÊN MÀN HÌNH PHỤ ---
+            // =================================================================
+            const openWindowOnSecondaryScreen = async (url, windowName, features) => {
+                // Kiểm tra xem trình duyệt có hỗ trợ API quản lý màn hình không
+                if ('getScreenDetails' in window) {
+                    try {
+                        const screenDetails = await window.getScreenDetails();
+                        // Tìm màn hình phụ (không phải màn hình chính)
+                        const secondaryScreen = screenDetails.screens.find(screen => !screen.isPrimary);
+
+                        if (secondaryScreen) {
+                            // Nếu tìm thấy, thêm tọa độ vào chuỗi features
+                            const { availLeft, availTop } = secondaryScreen;
+                            features += `,left=${availLeft},top=${availTop}`;
+                        }
+                    } catch (err) {
+                        console.warn("Không thể truy cập thông tin màn hình chi tiết:", err.message);
+                        // Fallback nếu người dùng từ chối quyền
+                        features += `,left=${window.screen.width},top=0`;
+                    }
+                } else {
+                    // Fallback cho các trình duyệt cũ: Giả định màn hình phụ nằm bên phải
+                    console.log("Trình duyệt không hỗ trợ getScreenDetails. Sử dụng phương pháp dự phòng.");
+                    features += `,left=${window.screen.width},top=0`;
+                }
+
+                // Mở cửa sổ với các thông số đã được tính toán
+                return window.open(url, windowName, features);
+            };
 
             const downloadQRCode = async () => {
                 const imageUrl = allElements.paymentQrcodeImage.src;
@@ -2172,8 +2202,8 @@
                         return;
                     }
 
-                    // 1. Mở cửa sổ phụ và TRUYỀN ID QUA URL
-                    const confirmationWindow = window.open(`confirmation.html?uid=${vehicle.UniqueID}`, 'ConfirmationWindow', 'popup,width=800,height=600');
+                    // 1. MỞ CỬA SỔ TRÊN MÀN HÌNH PHỤ (NẾU CÓ)
+                    const confirmationWindow = await openWindowOnSecondaryScreen(`confirmation.html?uid=${vehicle.UniqueID}`, 'ConfirmationWindow', 'popup,width=950,height=700');
                     if (!confirmationWindow) {
                         showToast('Không thể mở cửa sổ thanh toán. Vui lòng cho phép pop-up.', 'error');
                         return;
