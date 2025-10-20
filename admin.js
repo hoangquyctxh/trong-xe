@@ -1,5 +1,4 @@
 // admin.js
-
 document.addEventListener('DOMContentLoaded', () => {
     const elements = {
         loader: document.getElementById('loader'),
@@ -7,53 +6,127 @@ document.addEventListener('DOMContentLoaded', () => {
         totalVehicles: document.getElementById('total-vehicles'),
         currentVehicles: document.getElementById('current-vehicles'),
         trafficChartCanvas: document.getElementById('traffic-chart'),
-        // SỬA LỖI: Lấy các canvas và title bằng ID trực tiếp
         revenueChartCanvas: document.getElementById('revenue-chart'),
         vehiclesChartCanvas: document.getElementById('vehicles-chart'),
         revenueChartTitle: document.getElementById('revenue-chart-title'),
         vehiclesChartTitle: document.getElementById('vehicles-chart-title'),
-        sidebar: document.querySelector('.sidebar'), // MỚI
-        pages: document.querySelectorAll('.page-content'), // MỚI
+        sidebar: document.querySelector('.sidebar'),
+        pages: document.querySelectorAll('.page-content'),
         mapContainer: document.getElementById('map-container'),
         resetFilterBtn: document.getElementById('reset-filter-btn'),
-        transactionLogBody: document.getElementById('transaction-log-body'), // MỚI
+        transactionLogBody: document.getElementById('transaction-log-body'),
+        adminDatePicker: document.getElementById('admin-date-picker'),
+        startSessionBtn: document.getElementById('start-session-btn'),
+        editModal: document.getElementById('edit-transaction-modal'),
+        editForm: document.getElementById('edit-transaction-form'),
+        closeEditModalBtn: document.getElementById('close-edit-modal-btn'),
+        cancelEditBtn: document.getElementById('cancel-edit-btn'),
+        saveEditBtn: document.getElementById('save-edit-btn'),
+        editUniqueID: document.getElementById('edit-unique-id'),
+        editPlate: document.getElementById('edit-plate'),
+        editEntryTime: document.getElementById('edit-entry-time'),
+        editExitTime: document.getElementById('edit-exit-time'),
+        editFee: document.getElementById('edit-fee'),
+        editPaymentMethod: document.getElementById('edit-payment-method'),
+        editStatus: document.getElementById('edit-status'),
     };
 
-    const locationMap = LOCATIONS_CONFIG.reduce((map, loc) => {
-        map[loc.id] = loc.name;
-        return map;
-    }, {});
+    const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
+        ? LOCATIONS_CONFIG.reduce((map, loc) => {
+            if (loc && loc.id) {
+                map[loc.id] = loc.name || loc.id;
+            }
+            return map;
+        }, {})
+        : {};
+
+    const getLocationName = (locationId) => {
+        return locationMap[locationId] || locationId || '--';
+    };
 
     let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
 
     const formatCurrency = (value) => {
-        return value.toLocaleString('vi-VN');
+        const numValue = Number(value);
+        return isNaN(numValue) ? '0' : numValue.toLocaleString('vi-VN');
     };
 
-    // MỚI: Hàm lọc dữ liệu và cập nhật UI
     const filterDataByLocation = (locationId) => {
         if (!fullAdminData) return;
 
-        const locationName = locationMap[locationId];
+// admin.js
+document.addEventListener('DOMContentLoaded', () => {
+    const elements = {
+        loader: document.getElementById('loader'),
+        totalRevenue: document.getElementById('total-revenue'),
+        totalVehicles: document.getElementById('total-vehicles'),
+        currentVehicles: document.getElementById('current-vehicles'),
+        trafficChartCanvas: document.getElementById('traffic-chart'),
+        revenueChartCanvas: document.getElementById('revenue-chart'),
+        vehiclesChartCanvas: document.getElementById('vehicles-chart'),
+        revenueChartTitle: document.getElementById('revenue-chart-title'),
+        vehiclesChartTitle: document.getElementById('vehicles-chart-title'),
+        sidebar: document.querySelector('.sidebar'),
+        pages: document.querySelectorAll('.page-content'),
+        mapContainer: document.getElementById('map-container'),
+        resetFilterBtn: document.getElementById('reset-filter-btn'),
+        transactionLogBody: document.getElementById('transaction-log-body'),
+        adminDatePicker: document.getElementById('admin-date-picker'),
+        startSessionBtn: document.getElementById('start-session-btn'),
+        editModal: document.getElementById('edit-transaction-modal'),
+        editForm: document.getElementById('edit-transaction-form'),
+        closeEditModalBtn: document.getElementById('close-edit-modal-btn'),
+        cancelEditBtn: document.getElementById('cancel-edit-btn'),
+        saveEditBtn: document.getElementById('save-edit-btn'),
+        editUniqueID: document.getElementById('edit-unique-id'),
+        editPlate: document.getElementById('edit-plate'),
+        editEntryTime: document.getElementById('edit-entry-time'),
+        editExitTime: document.getElementById('edit-exit-time'),
+        editFee: document.getElementById('edit-fee'),
+        editPaymentMethod: document.getElementById('edit-payment-method'),
+        editStatus: document.getElementById('edit-status'),
+    };
+
+    const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
+        ? LOCATIONS_CONFIG.reduce((map, loc) => {
+            if (loc && loc.id) {
+                map[loc.id] = loc.name || loc.id;
+            }
+            return map;
+        }, {})
+        : {};
+
+    const getLocationName = (locationId) => {
+        return locationMap[locationId] || locationId || '--';
+    };
+
+    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
+
+    const formatCurrency = (value) => {
+        const numValue = Number(value);
+        return isNaN(numValue) ? '0' : numValue.toLocaleString('vi-VN');
+    };
+
+    const filterDataByLocation = (locationId) => {
+        if (!fullAdminData) return;
+
+        const locationName = getLocationName(locationId);
         elements.resetFilterBtn.style.display = 'block';
 
         // Cập nhật thẻ thống kê
-        elements.totalRevenue.innerHTML = `${formatCurrency(fullAdminData.revenueByLocation[locationId] || 0)} <sup>đ</sup>`;
-        elements.totalVehicles.textContent = fullAdminData.vehiclesByLocation[locationId] || 0;
-        // Lưu ý: Dữ liệu 'xe đang gửi' theo từng điểm cần được tính toán từ backend.
-        // Hiện tại, chúng ta sẽ hiển thị 'N/A' để cho biết dữ liệu này không có sẵn khi lọc.
+        elements.totalRevenue.innerHTML = `${formatCurrency(fullAdminData.revenueByLocation?.[locationId] || 0)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = fullAdminData.vehiclesByLocation?.[locationId] || 0;
         elements.currentVehicles.textContent = 'N/A';
 
         // Cập nhật tiêu đề biểu đồ
-        elements.revenueChartTitle.textContent = `Doanh thu (Lọc: ${locationName})`;
-        elements.vehiclesChartTitle.textContent = `Lượt xe (Lọc: ${locationName})`;
+        elements.revenueChartTitle.textContent = `Doanh thu (Lọc: )`;
+        elements.vehiclesChartTitle.textContent = `Lượt xe (Lọc: )`;
 
         // Làm nổi bật biểu đồ
         highlightChartSlice(revenueChart, locationName);
         highlightChartSlice(vehiclesChart, locationName);
     };
 
-    // MỚI: Hàm reset bộ lọc
     const resetFilter = () => {
         if (!fullAdminData) return;
         updateDashboardUI(fullAdminData); // Vẽ lại mọi thứ với dữ liệu đầy đủ
@@ -62,16 +135,17 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.vehiclesChartTitle.textContent = 'Lượt xe theo bãi đỗ xe';
     };
 
-    // MỚI: Hàm tiện ích để làm nổi bật một phần của biểu đồ
     const highlightChartSlice = (chart, labelToHighlight) => {
+        if (!chart || !chart.data) return;
         const labelIndex = chart.data.labels.indexOf(labelToHighlight);
         chart.data.datasets.forEach(dataset => {
-            dataset.backgroundColor = dataset.originalBackgroundColor.map((color, index) => index === labelIndex ? color.replace('0.8', '1') : color.replace('1', '0.8').replace('0.8', '0.2'));
+            dataset.backgroundColor = dataset.originalBackgroundColor.map((color, index) => 
+                index === labelIndex ? color.replace(/, 0\.\d+\)/, ', 1)') : color.replace(/, 1\)/, ', 0.2)')
+            );
         });
         chart.update();
     };
 
-    // MỚI: Hàm cập nhật popup trên bản đồ mà không cần vẽ lại
     const updateMapPopups = (data) => {
         if (!map || !map.markers) return;
 
@@ -79,64 +153,45 @@ document.addEventListener('DOMContentLoaded', () => {
             const marker = map.markers[locationId];
             const loc = LOCATIONS_CONFIG.find(l => l.id === locationId);
             if (!marker || !loc) return;
-
-            const revenue = data.revenueByLocation[loc.id] || 0;
-            const vehicleCount = data.vehiclesByLocation[loc.id] || 0;
-            const newPopupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0; font-size: 1rem; color: var(--primary-accent);">${loc.name}</h4><p style="margin: 0 0 5px 0; font-size: 0.9rem;"><strong>Lượt xe:</strong> ${vehicleCount}</p><p style="margin: 0; font-size: 0.9rem;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+            const newPopupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${loc.name}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> </p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
             
             marker.setPopupContent(newPopupContent);
         });
     };
 
-    // MỚI: Hàm khởi tạo bản đồ
     const initMap = (data) => {
-        // Chỉ khởi tạo map một lần
         if (map) {
             map.remove();
         }
 
-        // Khởi tạo bản đồ, đặt trung tâm ở Hà Nội
-        map = L.map(elements.mapContainer, {
-            // Thêm các tùy chọn để tránh lỗi lặp lại bản đồ
-            // attributionControl: false 
-        }).setView([21.035, 105.84], 14);
+        map = L.map(elements.mapContainer).setView([21.035, 105.84], 14);
 
-        // Thêm lớp nền bản đồ từ OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // MỚI: Lưu trữ các marker để cập nhật sau
         map.markers = {};
 
-        // Lặp qua các điểm trong cấu hình và thêm marker
         LOCATIONS_CONFIG.forEach(loc => {
-            const revenue = data.revenueByLocation[loc.id] || 0;
-            const vehicleCount = data.vehiclesByLocation[loc.id] || 0;
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
 
-            const popupContent = `
-                <div style="font-family: 'Be Vietnam Pro', sans-serif;">
-                    <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: var(--primary-accent);">${loc.name}</h4>
-                    <p style="margin: 0 0 5px 0; font-size: 0.9rem;"><strong>Lượt xe:</strong> ${vehicleCount}</p>
-                    <p style="margin: 0; font-size: 0.9rem;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p>
-                </div>
-            `;
+            const popupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${getLocationName(loc.id)}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> </p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
 
             const marker = L.marker([loc.lat, loc.lng])
                 .addTo(map)
                 .bindPopup(popupContent);
 
-            // Lưu marker lại
             map.markers[loc.id] = marker;
 
-            // THÊM SỰ KIỆN CLICK VÀO MARKER
             marker.on('click', () => {
                 filterDataByLocation(loc.id);
             });
         });
     };
 
-    // MỚI: Hàm xử lý điều hướng trang con
     const setupNavigation = () => {
         if (!elements.sidebar) return;
 
@@ -147,84 +202,146 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const targetId = link.dataset.target;
 
-            // Bỏ active ở link cũ, thêm active cho link mới
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             link.classList.add('active');
 
-            // Ẩn tất cả các trang, hiện trang mục tiêu
-            elements.pages.forEach(page => {
-                if (page.id === targetId) {
-                    page.classList.add('active');
-                } else {
-                    page.classList.remove('active');
-                }
-            });
+            elements.pages.forEach(page => page.classList.toggle('active', page.id === targetId));
 
-            // MỚI: Rất quan trọng - Cập nhật lại kích thước bản đồ khi tab được hiển thị
             if (targetId === 'page-map' && map) {
                 setTimeout(() => map.invalidateSize(), 10);
             }
         });
     };
 
-    // MỚI: Hàm hiển thị bảng giao dịch
     const renderTransactionTable = (transactions) => {
         if (!elements.transactionLogBody) return;
         elements.transactionLogBody.innerHTML = '';
 
         if (!transactions || transactions.length === 0) {
-            elements.transactionLogBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">Không có giao dịch nào trong ngày hôm nay.</td></tr>`;
+            elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">Không có giao dịch.</td></tr>`;
             return;
         }
-
-        // Sắp xếp giao dịch mới nhất lên đầu
-        transactions.sort((a, b) => new Date(b['Entry Time']) - new Date(a['Entry Time']));
 
         transactions.forEach(tx => {
             const row = document.createElement('tr');
             const statusClass = tx.Status === 'Đang gửi' ? 'parking' : 'departed';
-            const feeDisplay = tx.Fee !== null && tx.Fee !== undefined ? `${formatCurrency(tx.Fee)}đ` : '--';
-            const exitTimeDisplay = tx['Exit Time'] ? new Date(tx['Exit Time']).toLocaleTimeString('vi-VN') : '--';
-
-            // CẬP NHẬT: Sắp xếp lại thứ tự và đảm bảo hiển thị đúng các cột
+            const feeDisplay = tx.Fee ? `${formatCurrency(tx.Fee)}đ` : '--';
+            const exitTimeDisplay = tx['Exit Time'] ? new Date(tx['Exit Time']).toLocaleString('vi-VN') : '--';
+            
             row.innerHTML = `
                 <td class="plate">${tx.Plate || '--'}</td>
                 <td>${new Date(tx['Entry Time']).toLocaleString('vi-VN')}</td>
-                <td>${exitTimeDisplay}</td>
-                <td class="fee">${feeDisplay}</td>
+                <td></td>
+                <td class="fee"></td>
                 <td>${tx['Payment Method'] || '--'}</td>
-                <td>${locationMap[tx.LocationID] || tx.LocationID || '--'}</td>
-                <td style="text-align: center;"><span class="status-badge ${statusClass}">${tx.Status}</span></td>
+                <td>${getLocationName(tx.LocationID)}</td>
+                <td style="text-align: center;"><span class="status-badge ">${tx.Status}</span></td>
+                <td style="text-align: center;"><button class="edit-btn" data-uniqueid="${tx.UniqueID}">Sửa</button></td>
             `;
             elements.transactionLogBody.appendChild(row);
         });
     };
 
+    const openEditModal = (uniqueID) => {
+        const transaction = fullAdminData.transactions.find(tx => tx.UniqueID === uniqueID);
+        if (!transaction) {
+            alert('Không tìm thấy giao dịch.');
+            return;
+        }
+
+        const toLocalISOString = (date) => {
+            if (!date) return '';
+            const dt = new Date(date);
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+            return dt.toISOString().slice(0, 16);
+        };
+
+        elements.editUniqueID.value = transaction.UniqueID;
+        elements.editPlate.value = transaction.Plate || '';
+        elements.editEntryTime.value = toLocalISOString(transaction['Entry Time']);
+        elements.editExitTime.value = toLocalISOString(transaction['Exit Time']);
+        elements.editFee.value = transaction.Fee ?? '';
+        elements.editPaymentMethod.value = transaction['Payment Method'] || '';
+        elements.editStatus.value = transaction.Status || 'Đã rời bãi';
+
+        elements.editModal.style.display = 'flex';
+    };
+
+    const closeEditModal = () => {
+        elements.editModal.style.display = 'none';
+        elements.editForm.reset();
+    };
+
+    const saveTransactionChanges = async (event) => {
+        event.preventDefault();
+        elements.saveEditBtn.disabled = true;
+        elements.saveEditBtn.textContent = 'Đang lưu...';
+
+        const payload = {
+            action: 'editTransaction',
+            uniqueID: elements.editUniqueID.value,
+            plate: elements.editPlate.value,
+            entryTime: elements.editEntryTime.value ? new Date(elements.editEntryTime.value).toISOString() : null,
+            exitTime: elements.editExitTime.value ? new Date(elements.editExitTime.value).toISOString() : null,
+            fee: elements.editFee.value,
+            paymentMethod: elements.editPaymentMethod.value,
+            status: elements.editStatus.value,
+            secret: currentSecretKey
+        };
+
+        try {
+            const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+                alert('Cập nhật thành công!');
+                closeEditModal();
+                fetchAdminData(currentSecretKey, true, elements.adminDatePicker.value);
+        } catch (error) {
+            alert(`Lỗi khi lưu: ${error.message}`);
+        } finally {
+            elements.saveEditBtn.disabled = false;
+            elements.saveEditBtn.textContent = 'Lưu thay đổi';
+        }
+    };
+
     const updateDashboardUI = (data, isSilentUpdate = false) => {
-        fullAdminData = data; // Lưu dữ liệu gốc
-        elements.totalRevenue.innerHTML = `${formatCurrency(data.totalRevenueToday)} <sup>đ</sup>`;
-        elements.totalVehicles.textContent = data.totalVehiclesToday;
-        elements.currentVehicles.textContent = data.vehiclesCurrentlyParking;
+        fullAdminData = data;
 
-        // MỚI: Gọi hàm render bảng giao dịch
-        // Giả định backend trả về một mảng `data.transactions`
-        renderTransactionTable(data.transactions);
+        elements.totalRevenue.innerHTML = `${formatCurrency(data?.totalRevenueToday ?? 0)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = data?.totalVehiclesToday ?? 0;
+        elements.currentVehicles.textContent = data?.vehiclesCurrentlyParking ?? 0;
 
-        // Dữ liệu cho biểu đồ
-        const locationNames = Object.keys(data.revenueByLocation).map(id => locationMap[id] || id);
-        const revenueData = Object.values(data.revenueByLocation);
-        const vehiclesData = Object.values(data.vehiclesByLocation);
+        renderTransactionTable(data?.transactions || []);
 
-        // 1. Biểu đồ lưu lượng xe theo giờ
+        const locationData = {
+            names: [],
+            revenue: [],
+            vehicles: []
+        };
+
+        // SỬA LỖI: Thêm kiểm tra an toàn cho các đối tượng location
+        if (data?.revenueByLocation && data?.vehiclesByLocation) {
+            Object.keys(data.revenueByLocation).forEach(id => {
+                locationData.names.push(getLocationName(id));
+                locationData.revenue.push(data.revenueByLocation[id] || 0);
+                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
+            });
+        }
+
+        // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
+        const trafficData = data?.trafficByHour || Array(24).fill(0);
         if (trafficChart) trafficChart.destroy();
         trafficChart = new Chart(elements.trafficChartCanvas, {
             type: 'bar',
             data: {
-                labels: Array.from({ length: 24 }, (_, i) => `${i}h`),
+                labels: Array.from({ length: 24 }, (_, i) => `h`),
                 datasets: [{
                     label: 'Số lượt xe vào',
-                    data: data.trafficByHour,
-                    backgroundColor: 'rgba(0, 123, 255, 0.7)', // --primary-accent-light
+                    data: trafficData,
+                    backgroundColor: 'rgba(0, 123, 255, 0.7)',
                     borderColor: 'rgba(0, 123, 255, 1)',
                     borderWidth: 1
                 }]
@@ -244,24 +361,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 2. Biểu đồ doanh thu theo điểm
+        const chartColors = ['rgba(40, 167, 69, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(23, 162, 184, 0.8)', 'rgba(220, 53, 69, 0.8)', 'rgba(108, 117, 125, 0.8)'];
+        
         if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(elements.revenueChartCanvas, {
             type: 'doughnut',
             data: {
-                labels: locationNames,
+                labels: locationData.names,
                 datasets: [{
-                    label: 'Doanh thu', // Sửa lỗi chính tả
-                    data: revenueData,
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.8)',   // success-color
-                        'rgba(255, 193, 7, 0.8)',  // warning-color
-                        'rgba(23, 162, 184, 0.8)', // info-color
-                        'rgba(220, 53, 69, 0.8)',  // danger-color
-                        'rgba(108, 117, 125, 0.8)' // secondary,
-                    ],
-                    // MỚI: Lưu màu gốc để reset
-                    originalBackgroundColor: ['rgba(40, 167, 69, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(23, 162, 184, 0.8)', 'rgba(220, 53, 69, 0.8)', 'rgba(108, 117, 125, 0.8)']
+                    label: 'Doanh thu',
+                    data: locationData.revenue,
+                    backgroundColor: chartColors,
+                    originalBackgroundColor: [...chartColors]
                 }]
             },
             options: {
@@ -272,14 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed !== null) {
-                                    label += formatCurrency(context.parsed) + ' đ';
-                                }
-                                return label;
+                                return `${context.label || ''}: ${formatCurrency(context.parsed)} đ`;
                             }
                         }
                     }
@@ -287,24 +391,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 3. Biểu đồ lượt xe theo điểm
         if (vehiclesChart) vehiclesChart.destroy();
         vehiclesChart = new Chart(elements.vehiclesChartCanvas, {
             type: 'pie',
             data: {
-                labels: locationNames,
+                labels: locationData.names,
                 datasets: [{
                     label: 'Lượt xe',
-                    data: vehiclesData,
-                    backgroundColor: [
-                        'rgba(0, 86, 179, 0.8)',    // primary-accent
-                        'rgba(0, 123, 255, 0.8)',  // primary-accent-light
-                        'rgba(108, 117, 125, 0.8)',// text-secondary
-                        'rgba(255, 193, 7, 0.8)', // secondary-accent (yellow)
-                        'rgba(23, 162, 184, 0.8)'  // info-color,
-                    ],
-                    // MỚI: Lưu màu gốc để reset
-                    originalBackgroundColor: ['rgba(0, 86, 179, 0.8)', 'rgba(0, 123, 255, 0.8)', 'rgba(108, 117, 125, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(23, 162, 184, 0.8)']
+                    data: locationData.vehicles,
+                    backgroundColor: [...chartColors].reverse(),
+                    originalBackgroundColor: [...chartColors].reverse()
                 }]
             },
             options: {
@@ -314,8 +410,1379 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // MỚI: Gọi hàm khởi tạo bản đồ sau khi có dữ liệu
-        if (!map) { // Chỉ khởi tạo bản đồ lần đầu
+        if (!map && typeof L !== 'undefined' && LOCATIONS_CONFIG) {
+            initMap(data);
+        } else if (isSilentUpdate) {
+            updateMapPopups(data);
+        }
+    };
+
+    const setTodayDate = () => {
+        const today = new Date();
+        const formatDateForAPI = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `--`;
+        };
+        const formattedDate = formatDateForAPI(new Date());
+        if (elements.adminDatePicker) {
+            elements.adminDatePicker.value = formattedDate;
+        }
+        return formattedDate;
+    };
+
+    const fetchAdminData = async (secretKey, isSilent = false, date = null) => {
+        try {
+            const dateParam = date ? `&date=` : '';
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminData&secret=&v=${new Date().getTime()}`);
+
+            if (!response.ok) {
+                throw new Error(`Lỗi mạng: ${response.statusText}`);
+            }
+            const result = await response.json();
+
+            if (result.status !== 'success' || !result.data) {
+                throw new Error(result.message || 'Lỗi không xác định từ server');
+            }
+
+            updateDashboardUI(result.data, isSilent);
+            return true;
+        } catch (error) {
+            if (!isSilent) {
+                alert(`Không thể tải dữ liệu quản trị: ${error.message}`);
+                console.error('ADMIN ERROR LOG:', error);
+                showLoginScreen('Đã xảy ra lỗi. Vui lòng thử lại.');
+            }
+            return false;
+        }
+    };
+
+    const startAdminSession = async () => {
+        try {
+            if (elements.loader) {
+                elements.loader.querySelector('span').textContent = 'Đang xác thực và tải dữ liệu...';
+                elements.loader.querySelector('.spinner').style.display = 'block';
+                elements.startSessionBtn.style.display = 'none';
+            }
+    
+            const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "");
+            if (!secretKey) {
+                showLoginScreen('Cần có mật khẩu để truy cập.');
+                return;
+            }
+            currentSecretKey = secretKey;
+    
+            const dateToFetch = elements.adminDatePicker.value;
+    
+            const success = await fetchAdminData(secretKey, false, dateToFetch);
+    
+            if (success) {
+                elements.loader.style.display = 'none';
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                autoRefreshInterval = setInterval(() => {
+                    const currentDate = elements.adminDatePicker.value;
+                    fetchAdminData(secretKey, true, currentDate);
+                }, APP_CONFIG.autoRefreshInterval || 30000);
+            }
+
+        } catch (error) {
+            console.error("Lỗi nghiêm trọng khi bắt đầu phiên quản trị:", error);
+            if (elements.loader) {
+                elements.loader.style.display = 'none';
+            }
+            alert("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
+        }
+    };
+
+    const showLoginScreen = (message) => {
+        if (elements.loader) {
+            elements.loader.style.display = 'flex';
+            elements.loader.querySelector('span').textContent = message || 'Vui lòng xác nhận để truy cập trang quản trị.';
+            elements.loader.querySelector('.spinner').style.display = 'none';
+            elements.startSessionBtn.style.display = 'block';
+        }
+    };
+
+    const init = () => {
+        try {
+            setTodayDate();
+            setupNavigation();
+    
+            if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
+            if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
+                if (currentSecretKey) fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
+            });
+            if (elements.transactionLogBody) elements.transactionLogBody.addEventListener('click', (e) => { if (e.target.classList.contains('edit-btn')) openEditModal(e.target.dataset.uniqueid); });
+            if (elements.closeEditModalBtn) elements.closeEditModalBtn.addEventListener('click', closeEditModal);
+            if (elements.cancelEditBtn) elements.cancelEditBtn.addEventListener('click', closeEditModal);
+            if (elements.editForm) elements.editForm.addEventListener('submit', saveTransactionChanges);
+            if (elements.startSessionBtn) elements.startSessionBtn.addEventListener('click', startAdminSession);
+    
+            showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
+        } catch (error) {
+            console.error("Lỗi trong quá trình khởi tạo:", error);
+            document.body.innerHTML = `<h1 style="text-align: center; margin-top: 50px;">LỖI KHỞI TẠO TRANG. VUI LÒNG TẢI LẠI.</h1><p style="text-align: center;">Chi tiết: ${error.message}</p>`;
+        }
+    };
+
+    init();
+});
+// admin.js
+document.addEventListener('DOMContentLoaded', () => {
+    const elements = {
+        loader: document.getElementById('loader'),
+        totalRevenue: document.getElementById('total-revenue'),
+        totalVehicles: document.getElementById('total-vehicles'),
+        currentVehicles: document.getElementById('current-vehicles'),
+        trafficChartCanvas: document.getElementById('traffic-chart'),
+        revenueChartCanvas: document.getElementById('revenue-chart'),
+        vehiclesChartCanvas: document.getElementById('vehicles-chart'),
+        revenueChartTitle: document.getElementById('revenue-chart-title'),
+        vehiclesChartTitle: document.getElementById('vehicles-chart-title'),
+        sidebar: document.querySelector('.sidebar'),
+        pages: document.querySelectorAll('.page-content'),
+        mapContainer: document.getElementById('map-container'),
+        resetFilterBtn: document.getElementById('reset-filter-btn'),
+        transactionLogBody: document.getElementById('transaction-log-body'),
+        adminDatePicker: document.getElementById('admin-date-picker'),
+        startSessionBtn: document.getElementById('start-session-btn'),
+        editModal: document.getElementById('edit-transaction-modal'),
+        editForm: document.getElementById('edit-transaction-form'),
+        closeEditModalBtn: document.getElementById('close-edit-modal-btn'),
+        cancelEditBtn: document.getElementById('cancel-edit-btn'),
+        saveEditBtn: document.getElementById('save-edit-btn'),
+        editUniqueID: document.getElementById('edit-unique-id'),
+        editPlate: document.getElementById('edit-plate'),
+        editEntryTime: document.getElementById('edit-entry-time'),
+        editExitTime: document.getElementById('edit-exit-time'),
+        editFee: document.getElementById('edit-fee'),
+        editPaymentMethod: document.getElementById('edit-payment-method'),
+        editStatus: document.getElementById('edit-status'),
+    };
+
+    const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
+        ? LOCATIONS_CONFIG.reduce((map, loc) => {
+            if (loc && loc.id) {
+                map[loc.id] = loc.name || loc.id;
+            }
+            return map;
+        }, {})
+        : {};
+
+    const getLocationName = (locationId) => {
+        return locationMap[locationId] || locationId || '--';
+    };
+
+    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
+
+    const formatCurrency = (value) => {
+        const numValue = Number(value);
+        return isNaN(numValue) ? '0' : numValue.toLocaleString('vi-VN');
+    };
+
+    const filterDataByLocation = (locationId) => {
+        if (!fullAdminData) return;
+
+        const locationName = getLocationName(locationId);
+        elements.resetFilterBtn.style.display = 'block';
+
+        // Lọc các giao dịch đang gửi tại địa điểm được chọn
+        const currentVehiclesAtLocation = fullAdminData.transactions.filter(tx => tx.LocationID === locationId && tx.Status === 'Đang gửi').length;
+
+        // Cập nhật thẻ thống kê
+        elements.totalRevenue.innerHTML = `${formatCurrency(fullAdminData.revenueByLocation?.[locationId] || 0)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = fullAdminData.vehiclesByLocation?.[locationId] || 0;
+        // Cập nhật số xe đang gửi cho địa điểm cụ thể
+        elements.currentVehicles.textContent = currentVehiclesAtLocation;
+
+        // Cập nhật tiêu đề biểu đồ
+        elements.revenueChartTitle.textContent = `Doanh thu (Lọc: ${locationName})`;
+        elements.vehiclesChartTitle.textContent = `Lượt xe (Lọc: ${locationName})`;
+
+        // Làm nổi bật biểu đồ
+        highlightChartSlice(revenueChart, locationName);
+        highlightChartSlice(vehiclesChart, locationName);
+    };
+
+    const resetFilter = () => {
+        if (!fullAdminData) return;
+        updateDashboardUI(fullAdminData); // Vẽ lại mọi thứ với dữ liệu đầy đủ
+        elements.resetFilterBtn.style.display = 'none';
+        elements.revenueChartTitle.textContent = 'Doanh thu theo bãi đỗ xe';
+        elements.vehiclesChartTitle.textContent = 'Lượt xe theo bãi đỗ xe';
+    };
+
+    const highlightChartSlice = (chart, labelToHighlight) => {
+        if (!chart || !chart.data) return;
+        const labelIndex = chart.data.labels.indexOf(labelToHighlight);
+        chart.data.datasets.forEach(dataset => {
+            dataset.backgroundColor = dataset.originalBackgroundColor.map((color, index) => 
+                index === labelIndex ? color.replace(/, 0\.\d+\)/, ', 1)') : color.replace(/, 1\)/, ', 0.2)')
+            );
+        });
+        chart.update();
+    };
+
+    const updateMapPopups = (data) => {
+        if (!map || !map.markers) return;
+
+        Object.keys(map.markers).forEach(locationId => {
+            const marker = map.markers[locationId];
+            const loc = LOCATIONS_CONFIG.find(l => l.id === locationId);
+            if (!marker || !loc) return;
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+            const newPopupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${loc.name}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> ${vehicleCount}</p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+            
+            marker.setPopupContent(newPopupContent);
+        });
+    };
+
+    const initMap = (data) => {
+        if (map) {
+            map.remove();
+        }
+
+        map = L.map(elements.mapContainer).setView([21.035, 105.84], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        map.markers = {};
+
+        LOCATIONS_CONFIG.forEach(loc => {
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+
+            const popupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${getLocationName(loc.id)}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> ${vehicleCount}</p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+
+            const marker = L.marker([loc.lat, loc.lng])
+                .addTo(map)
+                .bindPopup(popupContent);
+
+            map.markers[loc.id] = marker;
+
+            marker.on('click', () => {
+                filterDataByLocation(loc.id);
+            });
+        });
+    };
+
+    const setupNavigation = () => {
+        if (!elements.sidebar) return;
+
+        elements.sidebar.addEventListener('click', (e) => {
+            const link = e.target.closest('.nav-link');
+            if (!link) return;
+
+            e.preventDefault();
+            const targetId = link.dataset.target;
+
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            elements.pages.forEach(page => page.classList.toggle('active', page.id === targetId));
+
+            if (targetId === 'page-map' && map) {
+                setTimeout(() => map.invalidateSize(), 10);
+            }
+        });
+    };
+
+    const renderTransactionTable = (transactions) => {
+        if (!elements.transactionLogBody) return;
+        elements.transactionLogBody.innerHTML = '';
+
+        if (!transactions || transactions.length === 0) {
+            elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">Không có giao dịch.</td></tr>`;
+            return;
+        }
+
+        transactions.forEach(tx => {
+            const row = document.createElement('tr');
+            const statusClass = tx.Status === 'Đang gửi' ? 'parking' : 'departed';
+            const feeDisplay = tx.Fee ? `${formatCurrency(tx.Fee)}đ` : '--';
+            const exitTimeDisplay = tx['Exit Time'] ? new Date(tx['Exit Time']).toLocaleString('vi-VN') : '--';
+            
+            row.innerHTML = `
+                <td class="plate">${tx.Plate || '--'}</td>
+                <td>${new Date(tx['Entry Time']).toLocaleString('vi-VN')}</td>
+                <td>${exitTimeDisplay}</td>
+                <td class="fee">${feeDisplay}</td>
+                <td>${tx['Payment Method'] || '--'}</td>
+                <td>${getLocationName(tx.LocationID)}</td>
+                <td style="text-align: center;"><span class="status-badge ${statusClass}">${tx.Status}</span></td>
+                <td style="text-align: center;"><button class="edit-btn" data-uniqueid="${tx.UniqueID}">Sửa</button></td>
+            `;
+            elements.transactionLogBody.appendChild(row);
+        });
+    };
+
+    const openEditModal = (uniqueID) => {
+        const transaction = fullAdminData.transactions.find(tx => tx.UniqueID === uniqueID);
+        if (!transaction) {
+            alert('Không tìm thấy giao dịch.');
+            return;
+        }
+
+        const toLocalISOString = (date) => {
+            if (!date) return '';
+            const dt = new Date(date);
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+            return dt.toISOString().slice(0, 16);
+        };
+
+        elements.editUniqueID.value = transaction.UniqueID;
+        elements.editPlate.value = transaction.Plate || '';
+        elements.editEntryTime.value = toLocalISOString(transaction['Entry Time']);
+        elements.editExitTime.value = toLocalISOString(transaction['Exit Time']);
+        elements.editFee.value = transaction.Fee ?? '';
+        elements.editPaymentMethod.value = transaction['Payment Method'] || '';
+        elements.editStatus.value = transaction.Status || 'Đã rời bãi';
+
+        elements.editModal.style.display = 'flex';
+    };
+
+    const closeEditModal = () => {
+        elements.editModal.style.display = 'none';
+        elements.editForm.reset();
+    };
+
+    const saveTransactionChanges = async (event) => {
+        event.preventDefault();
+        elements.saveEditBtn.disabled = true;
+        elements.saveEditBtn.textContent = 'Đang lưu...';
+
+        const payload = {
+            action: 'editTransaction',
+            uniqueID: elements.editUniqueID.value,
+            plate: elements.editPlate.value,
+            entryTime: elements.editEntryTime.value ? new Date(elements.editEntryTime.value).toISOString() : null,
+            exitTime: elements.editExitTime.value ? new Date(elements.editExitTime.value).toISOString() : null,
+            fee: elements.editFee.value,
+            paymentMethod: elements.editPaymentMethod.value,
+            status: elements.editStatus.value,
+            secret: currentSecretKey
+        };
+
+        try {
+            const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+                alert('Cập nhật thành công!');
+                closeEditModal();
+                fetchAdminData(currentSecretKey, true, elements.adminDatePicker.value);
+        } catch (error) {
+            alert(`Lỗi khi lưu: ${error.message}`);
+        } finally {
+            elements.saveEditBtn.disabled = false;
+            elements.saveEditBtn.textContent = 'Lưu thay đổi';
+        }
+    };
+
+    const updateDashboardUI = (data, isSilentUpdate = false) => {
+        fullAdminData = data;
+
+        elements.totalRevenue.innerHTML = `${formatCurrency(data?.totalRevenueToday ?? 0)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = data?.totalVehiclesToday ?? 0;
+        elements.currentVehicles.textContent = data?.vehiclesCurrentlyParking ?? 0;
+
+        renderTransactionTable(data?.transactions || []);
+
+        const locationData = {
+            names: [],
+            revenue: [],
+            vehicles: []
+        };
+
+        if (data?.revenueByLocation && data?.vehiclesByLocation) {
+            Object.keys(data.revenueByLocation).forEach(id => {
+                locationData.names.push(getLocationName(id));
+                locationData.revenue.push(data.revenueByLocation[id] || 0);
+                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
+            });
+        }
+
+        // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
+        const trafficData = data?.trafficByHour || Array(24).fill(0);
+        if (trafficChart) trafficChart.destroy();
+        trafficChart = new Chart(elements.trafficChartCanvas, {
+            type: 'bar',
+            data: {
+                labels: Array.from({ length: 24 }, (_, i) => `${i}h`),
+                datasets: [{
+                    label: 'Số lượt xe vào',
+                    data: trafficData,
+                    backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { 
+                            stepSize: 1 
+                        } 
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        const chartColors = ['rgba(40, 167, 69, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(23, 162, 184, 0.8)', 'rgba(220, 53, 69, 0.8)', 'rgba(108, 117, 125, 0.8)'];
+        
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(elements.revenueChartCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: locationData.names,
+                datasets: [{
+                    label: 'Doanh thu',
+                    data: locationData.revenue,
+                    backgroundColor: chartColors,
+                    originalBackgroundColor: [...chartColors]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label || ''}: ${formatCurrency(context.parsed)} đ`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (vehiclesChart) vehiclesChart.destroy();
+        vehiclesChart = new Chart(elements.vehiclesChartCanvas, {
+            type: 'pie',
+            data: {
+                labels: locationData.names,
+                datasets: [{
+                    label: 'Lượt xe',
+                    data: locationData.vehicles,
+                    backgroundColor: [...chartColors].reverse(),
+                    originalBackgroundColor: [...chartColors].reverse()
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+
+        if (!map && typeof L !== 'undefined' && LOCATIONS_CONFIG) {
+            initMap(data);
+        } else if (isSilentUpdate) {
+            updateMapPopups(data);
+        }
+    };
+
+    const setTodayDate = () => {
+        const today = new Date();
+        const formatDateForAPI = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        const formattedDate = formatDateForAPI(new Date());
+        if (elements.adminDatePicker) {
+            elements.adminDatePicker.value = formattedDate;
+        }
+        return formattedDate;
+    };
+
+    const fetchAdminData = async (secretKey, isSilent = false, date = null) => {
+        try {
+            const dateParam = date ? `&date=${date}` : '';
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminData&secret=${secretKey}${dateParam}&v=${new Date().getTime()}`);
+
+            if (!response.ok) {
+                throw new Error(`Lỗi mạng: ${response.statusText}`);
+            }
+            const result = await response.json();
+
+            if (result.status !== 'success' || !result.data) {
+                throw new Error(result.message || 'Lỗi không xác định từ server');
+            }
+
+            updateDashboardUI(result.data, isSilent);
+            return true;
+        } catch (error) {
+            if (!isSilent) {
+                alert(`Không thể tải dữ liệu quản trị: ${error.message}`);
+                console.error('ADMIN ERROR LOG:', error);
+                showLoginScreen('Đã xảy ra lỗi. Vui lòng thử lại.');
+            }
+            return false;
+        }
+    };
+
+    const startAdminSession = async () => {
+        try {
+            if (elements.loader) {
+                elements.loader.querySelector('span').textContent = 'Đang xác thực và tải dữ liệu...';
+                elements.loader.querySelector('.spinner').style.display = 'block';
+                elements.startSessionBtn.style.display = 'none';
+            }
+    
+            const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "");
+            if (!secretKey) {
+                showLoginScreen('Cần có mật khẩu để truy cập.');
+                return;
+            }
+            currentSecretKey = secretKey;
+    
+            const dateToFetch = elements.adminDatePicker.value;
+    
+            const success = await fetchAdminData(secretKey, false, dateToFetch);
+    
+            if (success) {
+                elements.loader.style.display = 'none';
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                autoRefreshInterval = setInterval(() => {
+                    const currentDate = elements.adminDatePicker.value;
+                    fetchAdminData(secretKey, true, currentDate);
+                }, APP_CONFIG.autoRefreshInterval || 30000);
+            }
+
+        } catch (error) {
+            console.error("Lỗi nghiêm trọng khi bắt đầu phiên quản trị:", error);
+            if (elements.loader) {
+                elements.loader.style.display = 'none';
+            }
+            alert("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
+        }
+    };
+
+    const showLoginScreen = (message) => {
+        if (elements.loader) {
+            elements.loader.style.display = 'flex';
+            elements.loader.querySelector('span').textContent = message || 'Vui lòng xác nhận để truy cập trang quản trị.';
+            elements.loader.querySelector('.spinner').style.display = 'none';
+            elements.startSessionBtn.style.display = 'block';
+        }
+    };
+
+    const init = () => {
+        try {
+            setTodayDate();
+            setupNavigation();
+    // admin.js
+    document.addEventListener('DOMContentLoaded', () => {
+        const elements = {
+            loader: document.getElementById('loader'),
+            totalRevenue: document.getElementById('total-revenue'),
+            totalVehicles: document.getElementById('total-vehicles'),
+            currentVehicles: document.getElementById('current-vehicles'),
+            trafficChartCanvas: document.getElementById('traffic-chart'),
+            revenueChartCanvas: document.getElementById('revenue-chart'),
+            vehiclesChartCanvas: document.getElementById('vehicles-chart'),
+            revenueChartTitle: document.getElementById('revenue-chart-title'),
+            vehiclesChartTitle: document.getElementById('vehicles-chart-title'),
+            sidebar: document.querySelector('.sidebar'),
+            pages: document.querySelectorAll('.page-content'),
+            mapContainer: document.getElementById('map-container'),
+            resetFilterBtn: document.getElementById('reset-filter-btn'),
+            transactionLogBody: document.getElementById('transaction-log-body'),
+            adminDatePicker: document.getElementById('admin-date-picker'),
+            startSessionBtn: document.getElementById('start-session-btn'),
+            editModal: document.getElementById('edit-transaction-modal'),
+            editForm: document.getElementById('edit-transaction-form'),
+            closeEditModalBtn: document.getElementById('close-edit-modal-btn'),
+            cancelEditBtn: document.getElementById('cancel-edit-btn'),
+            saveEditBtn: document.getElementById('save-edit-btn'),
+            editUniqueID: document.getElementById('edit-unique-id'),
+            editPlate: document.getElementById('edit-plate'),
+            editEntryTime: document.getElementById('edit-entry-time'),
+            editExitTime: document.getElementById('edit-exit-time'),
+            editFee: document.getElementById('edit-fee'),
+            editPaymentMethod: document.getElementById('edit-payment-method'),
+            editStatus: document.getElementById('edit-status'),
+        };
+    
+        const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
+            ? LOCATIONS_CONFIG.reduce((map, loc) => {
+                if (loc && loc.id) {
+                    map[loc.id] = loc.name || loc.id;
+                }
+                return map;
+            }, {})
+            : {};
+    
+        const getLocationName = (locationId) => {
+            return locationMap[locationId] || locationId || '--';
+        };
+    
+        let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
+    
+        const formatCurrency = (value) => {
+            const numValue = Number(value);
+            return isNaN(numValue) ? '0' : numValue.toLocaleString('vi-VN');
+        };
+    
+        const filterDataByLocation = (locationId) => {
+            if (!fullAdminData) return;
+    
+            const locationName = getLocationName(locationId);
+            elements.resetFilterBtn.style.display = 'block';
+    
+            // Cập nhật thẻ thống kê
+            elements.totalRevenue.innerHTML = `${formatCurrency(fullAdminData.revenueByLocation?.[locationId] || 0)} <sup>đ</sup>`;
+            elements.totalVehicles.textContent = fullAdminData.vehiclesByLocation?.[locationId] || 0;
+            elements.currentVehicles.textContent = 'N/A';
+    
+            // Cập nhật tiêu đề biểu đồ
+            elements.revenueChartTitle.textContent = `Doanh thu (Lọc: )`;
+            elements.vehiclesChartTitle.textContent = `Lượt xe (Lọc: )`;
+    
+            // Làm nổi bật biểu đồ
+            highlightChartSlice(revenueChart, locationName);
+            highlightChartSlice(vehiclesChart, locationName);
+        };
+    
+        const resetFilter = () => {
+            if (!fullAdminData) return;
+            updateDashboardUI(fullAdminData); // Vẽ lại mọi thứ với dữ liệu đầy đủ
+            elements.resetFilterBtn.style.display = 'none';
+            elements.revenueChartTitle.textContent = 'Doanh thu theo bãi đỗ xe';
+            elements.vehiclesChartTitle.textContent = 'Lượt xe theo bãi đỗ xe';
+        };
+    
+        const highlightChartSlice = (chart, labelToHighlight) => {
+            if (!chart || !chart.data) return;
+            const labelIndex = chart.data.labels.indexOf(labelToHighlight);
+            chart.data.datasets.forEach(dataset => {
+                dataset.backgroundColor = dataset.originalBackgroundColor.map((color, index) => 
+                    index === labelIndex ? color.replace(/, 0\.\d+\)/, ', 1)') : color.replace(/, 1\)/, ', 0.2)')
+                );
+            });
+            chart.update();
+        };
+    
+        const updateMapPopups = (data) => {
+            if (!map || !map.markers) return;
+    
+            Object.keys(map.markers).forEach(locationId => {
+                const marker = map.markers[locationId];
+                const loc = LOCATIONS_CONFIG.find(l => l.id === locationId);
+                if (!marker || !loc) return;
+                const revenue = data.revenueByLocation?.[loc.id] || 0;
+                const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+                const newPopupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${loc.name}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> </p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+                
+                marker.setPopupContent(newPopupContent);
+            });
+        };
+    
+        const initMap = (data) => {
+            if (map) {
+                map.remove();
+            }
+    
+            map = L.map(elements.mapContainer).setView([21.035, 105.84], 14);
+    
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+    
+            map.markers = {};
+    
+            LOCATIONS_CONFIG.forEach(loc => {
+                const revenue = data.revenueByLocation?.[loc.id] || 0;
+                const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+    
+                const popupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${getLocationName(loc.id)}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> </p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+    
+                const marker = L.marker([loc.lat, loc.lng])
+                    .addTo(map)
+                    .bindPopup(popupContent);
+    
+                map.markers[loc.id] = marker;
+    
+                marker.on('click', () => {
+                    filterDataByLocation(loc.id);
+                });
+            });
+        };
+    
+        const setupNavigation = () => {
+            if (!elements.sidebar) return;
+    
+            elements.sidebar.addEventListener('click', (e) => {
+                const link = e.target.closest('.nav-link');
+                if (!link) return;
+    
+                e.preventDefault();
+                const targetId = link.dataset.target;
+    
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+    
+                elements.pages.forEach(page => page.classList.toggle('active', page.id === targetId));
+    
+                if (targetId === 'page-map' && map) {
+                    setTimeout(() => map.invalidateSize(), 10);
+                }
+            });
+        };
+    
+        const renderTransactionTable = (transactions) => {
+            if (!elements.transactionLogBody) return;
+            elements.transactionLogBody.innerHTML = '';
+    
+            if (!transactions || transactions.length === 0) {
+                elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">Không có giao dịch.</td></tr>`;
+                return;
+            }
+    
+            transactions.forEach(tx => {
+                const row = document.createElement('tr');
+                const statusClass = tx.Status === 'Đang gửi' ? 'parking' : 'departed';
+                const feeDisplay = tx.Fee ? `${formatCurrency(tx.Fee)}đ` : '--';
+                const exitTimeDisplay = tx['Exit Time'] ? new Date(tx['Exit Time']).toLocaleString('vi-VN') : '--';
+                
+                row.innerHTML = `
+                    <td class="plate">${tx.Plate || '--'}</td>
+                    <td>${new Date(tx['Entry Time']).toLocaleString('vi-VN')}</td>
+                    <td></td>
+                    <td class="fee"></td>
+                    <td>${tx['Payment Method'] || '--'}</td>
+                    <td>${getLocationName(tx.LocationID)}</td>
+                    <td style="text-align: center;"><span class="status-badge ">${tx.Status}</span></td>
+                    <td style="text-align: center;"><button class="edit-btn" data-uniqueid="${tx.UniqueID}">Sửa</button></td>
+                `;
+                elements.transactionLogBody.appendChild(row);
+            });
+        };
+    
+        const openEditModal = (uniqueID) => {
+            const transaction = fullAdminData.transactions.find(tx => tx.UniqueID === uniqueID);
+            if (!transaction) {
+                alert('Không tìm thấy giao dịch.');
+                return;
+            }
+    
+            const toLocalISOString = (date) => {
+                if (!date) return '';
+                const dt = new Date(date);
+                dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+                return dt.toISOString().slice(0, 16);
+            };
+    
+            elements.editUniqueID.value = transaction.UniqueID;
+            elements.editPlate.value = transaction.Plate || '';
+            elements.editEntryTime.value = toLocalISOString(transaction['Entry Time']);
+            elements.editExitTime.value = toLocalISOString(transaction['Exit Time']);
+            elements.editFee.value = transaction.Fee ?? '';
+            elements.editPaymentMethod.value = transaction['Payment Method'] || '';
+            elements.editStatus.value = transaction.Status || 'Đã rời bãi';
+    
+            elements.editModal.style.display = 'flex';
+        };
+    
+        const closeEditModal = () => {
+            elements.editModal.style.display = 'none';
+            elements.editForm.reset();
+        };
+    
+        const saveTransactionChanges = async (event) => {
+            event.preventDefault();
+            elements.saveEditBtn.disabled = true;
+            elements.saveEditBtn.textContent = 'Đang lưu...';
+    
+            const payload = {
+                action: 'editTransaction',
+                uniqueID: elements.editUniqueID.value,
+                plate: elements.editPlate.value,
+                entryTime: elements.editEntryTime.value ? new Date(elements.editEntryTime.value).toISOString() : null,
+                exitTime: elements.editExitTime.value ? new Date(elements.editExitTime.value).toISOString() : null,
+                fee: elements.editFee.value,
+                paymentMethod: elements.editPaymentMethod.value,
+                status: elements.editStatus.value,
+                secret: currentSecretKey
+            };
+    
+            try {
+                const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.status !== 'success') throw new Error(result.message);
+                    alert('Cập nhật thành công!');
+                    closeEditModal();
+                    fetchAdminData(currentSecretKey, true, elements.adminDatePicker.value);
+            } catch (error) {
+                alert(`Lỗi khi lưu: ${error.message}`);
+            } finally {
+                elements.saveEditBtn.disabled = false;
+                elements.saveEditBtn.textContent = 'Lưu thay đổi';
+            }
+        };
+    
+        const updateDashboardUI = (data, isSilentUpdate = false) => {
+            fullAdminData = data;
+    
+            elements.totalRevenue.innerHTML = `${formatCurrency(data?.totalRevenueToday ?? 0)} <sup>đ</sup>`;
+            elements.totalVehicles.textContent = data?.totalVehiclesToday ?? 0;
+            elements.currentVehicles.textContent = data?.vehiclesCurrentlyParking ?? 0;
+    
+            renderTransactionTable(data?.transactions || []);
+    
+            const locationData = {
+                names: [],
+                revenue: [],
+                vehicles: []
+            };
+    
+            if (data?.revenueByLocation && data?.vehiclesByLocation) {
+                Object.keys(data.revenueByLocation).forEach(id => {
+                    locationData.names.push(getLocationName(id));
+                    locationData.revenue.push(data.revenueByLocation[id] || 0);
+                    locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
+                });
+            }
+    
+            // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
+            const trafficData = data?.trafficByHour || Array(24).fill(0);
+            if (trafficChart) trafficChart.destroy();
+            trafficChart = new Chart(elements.trafficChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => `h`),
+                    datasets: [{
+                        label: 'Số lượt xe vào',
+                        data: trafficData,
+                        backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { 
+                                stepSize: 1 
+                            } 
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+    
+            const chartColors = ['rgba(40, 167, 69, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(23, 162, 184, 0.8)', 'rgba(220, 53, 69, 0.8)', 'rgba(108, 117, 125, 0.8)'];
+            
+            if (revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(elements.revenueChartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: locationData.names,
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: locationData.revenue,
+                        backgroundColor: chartColors,
+                        originalBackgroundColor: [...chartColors]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label || ''}: ${formatCurrency(context.parsed)} đ`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+    
+            if (vehiclesChart) vehiclesChart.destroy();
+            vehiclesChart = new Chart(elements.vehiclesChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: locationData.names,
+                    datasets: [{
+                        label: 'Lượt xe',
+                        data: locationData.vehicles,
+                        backgroundColor: [...chartColors].reverse(),
+                        originalBackgroundColor: [...chartColors].reverse()
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+    
+            if (!map && typeof L !== 'undefined' && LOCATIONS_CONFIG) {
+                initMap(data);
+            } else if (isSilentUpdate) {
+                updateMapPopups(data);
+            }
+        };
+    
+        const setTodayDate = () => {
+            const today = new Date();
+            const formatDateForAPI = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `--`;
+            };
+            const formattedDate = formatDateForAPI(new Date());
+            if (elements.adminDatePicker) {
+                elements.adminDatePicker.value = formattedDate;
+            }
+            return formattedDate;
+        };
+    
+        const fetchAdminData = async (secretKey, isSilent = false, date = null) => {
+            try {
+                const dateParam = date ? `&date=` : '';
+                const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminData&secret=&v=${new Date().getTime()}`);
+    
+                if (!response.ok) {
+                    throw new Error(`Lỗi mạng: ${response.statusText}`);
+                }
+                const result = await response.json();
+    
+                if (result.status !== 'success' || !result.data) {
+                    throw new Error(result.message || 'Lỗi không xác định từ server');
+                }
+    
+                updateDashboardUI(result.data, isSilent);
+                return true;
+            } catch (error) {
+                if (!isSilent) {
+                    alert(`Không thể tải dữ liệu quản trị: ${error.message}`);
+                    console.error('ADMIN ERROR LOG:', error);
+                    showLoginScreen('Đã xảy ra lỗi. Vui lòng thử lại.');
+                }
+                return false;
+            }
+        };
+    
+        const startAdminSession = async () => {
+            try {
+                if (elements.loader) {
+                    elements.loader.querySelector('span').textContent = 'Đang xác thực và tải dữ liệu...';
+                    elements.loader.querySelector('.spinner').style.display = 'block';
+                    elements.startSessionBtn.style.display = 'none';
+                }
+        
+                const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "");
+                if (!secretKey) {
+                    showLoginScreen('Cần có mật khẩu để truy cập.');
+                    return;
+                }
+                currentSecretKey = secretKey;
+        
+                const dateToFetch = elements.adminDatePicker.value;
+        
+                const success = await fetchAdminData(secretKey, false, dateToFetch);
+        
+                if (success) {
+                    elements.loader.style.display = 'none';
+                    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = setInterval(() => {
+                        const currentDate = elements.adminDatePicker.value;
+                        fetchAdminData(secretKey, true, currentDate);
+                    }, APP_CONFIG.autoRefreshInterval || 30000);
+                }
+    
+            } catch (error) {
+                console.error("Lỗi nghiêm trọng khi bắt đầu phiên quản trị:", error);
+                if (elements.loader) {
+                    elements.loader.style.display = 'none';
+                }
+                alert("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
+            }
+        };
+    
+        const showLoginScreen = (message) => {
+            if (elements.loader) {
+                elements.loader.style.display = 'flex';
+                elements.loader.querySelector('span').textContent = message || 'Vui lòng xác nhận để truy cập trang quản trị.';
+                elements.loader.querySelector('.spinner').style.display = 'none';
+                elements.startSessionBtn.style.display = 'block';
+            }
+        };
+    
+        const init = () => {
+            try {
+                setTodayDate();
+                setupNavigation();
+        
+                if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
+                if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
+                    if (currentSecretKey) fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
+                });
+                if (elements.transactionLogBody) elements.transactionLogBody.addEventListener('click', (e) => { if (e.target.classList.contains('edit-btn')) openEditModal(e.target.dataset.uniqueid); });
+                if (elements.closeEditModalBtn) elements.closeEditModalBtn.addEventListener('click', closeEditModal);
+                if (elements.cancelEditBtn) elements.cancelEditBtn.addEventListener('click', closeEditModal);
+                if (elements.editForm) elements.editForm.addEventListener('submit', saveTransactionChanges);
+                if (elements.startSessionBtn) elements.startSessionBtn.addEventListener('click', startAdminSession);
+        
+                showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
+            } catch (error) {
+                console.error("Lỗi trong quá trình khởi tạo:", error);
+                document.body.innerHTML = `<h1 style="text-align: center; margin-top: 50px;">LỖI KHỞI TẠO TRANG. VUI LÒNG TẢI LẠI.</h1><p style="text-align: center;">Chi tiết: ${error.message}</p>`;
+            }
+        };
+    
+        init();
+    });
+    
+            if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
+            if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
+                if (currentSecretKey) fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
+            });
+            if (elements.transactionLogBody) elements.transactionLogBody.addEventListener('click', (e) => { if (e.target.classList.contains('edit-btn')) openEditModal(e.target.dataset.uniqueid); });
+            if (elements.closeEditModalBtn) elements.closeEditModalBtn.addEventListener('click', closeEditModal);
+            if (elements.cancelEditBtn) elements.cancelEditBtn.addEventListener('click', closeEditModal);
+            if (elements.editForm) elements.editForm.addEventListener('submit', saveTransactionChanges);
+            if (elements.startSessionBtn) elements.startSessionBtn.addEventListener('click', startAdminSession);
+    
+            showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
+        } catch (error) {
+            console.error("Lỗi trong quá trình khởi tạo:", error);
+            document.body.innerHTML = `<h1 style="text-align: center; margin-top: 50px;">LỖI KHỞI TẠO TRANG. VUI LÒNG TẢI LẠI.</h1><p style="text-align: center;">Chi tiết: ${error.message}</p>`;
+        }
+    };
+
+    init();
+});
+        const locationName = getLocationName(locationId);
+        elements.resetFilterBtn.style.display = 'block';
+
+        // Cập nhật thẻ thống kê
+        elements.totalRevenue.innerHTML = `${formatCurrency(fullAdminData.revenueByLocation?.[locationId] || 0)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = fullAdminData.vehiclesByLocation?.[locationId] || 0;
+        elements.currentVehicles.textContent = 'N/A';
+
+        // Cập nhật tiêu đề biểu đồ
+        elements.revenueChartTitle.textContent = `Doanh thu (Lọc: ${locationName})`;
+        elements.vehiclesChartTitle.textContent = `Lượt xe (Lọc: ${locationName})`;
+
+        // Làm nổi bật biểu đồ
+        highlightChartSlice(revenueChart, locationName);
+        highlightChartSlice(vehiclesChart, locationName);
+    };
+
+    const resetFilter = () => {
+        if (!fullAdminData) return;
+        updateDashboardUI(fullAdminData); // Vẽ lại mọi thứ với dữ liệu đầy đủ
+        elements.resetFilterBtn.style.display = 'none';
+        elements.revenueChartTitle.textContent = 'Doanh thu theo bãi đỗ xe';
+        elements.vehiclesChartTitle.textContent = 'Lượt xe theo bãi đỗ xe';
+    };
+
+    const highlightChartSlice = (chart, labelToHighlight) => {
+        if (!chart || !chart.data || !chart.data.datasets[0]?.originalBackgroundColor) return;
+        const labelIndex = chart.data.labels.indexOf(labelToHighlight);
+        chart.data.datasets.forEach(dataset => {
+            dataset.backgroundColor = dataset.originalBackgroundColor.map((color, index) => 
+                index === labelIndex ? color.replace(/, 0\.\d+\)/, ', 1)') : color.replace(/, 1\)/, ', 0.2)')
+            );
+        });
+        chart.update();
+    };
+
+    const updateMapPopups = (data) => {
+        if (!map || !map.markers) return;
+
+        Object.keys(map.markers).forEach(locationId => {
+            const marker = map.markers[locationId];
+            const loc = LOCATIONS_CONFIG.find(l => l.id === locationId);
+            if (!marker || !loc) return;
+            // SỬA LỖI: Thêm kiểm tra an toàn (optional chaining)
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+            const newPopupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${loc.name}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> ${vehicleCount}</p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+            
+            marker.setPopupContent(newPopupContent);
+        });
+    };
+
+    const initMap = (data) => {
+        if (map) {
+            map.remove();
+        }
+
+        map = L.map(elements.mapContainer).setView([21.035, 105.84], 14);
+
+        // Thêm lớp nền bản đồ từ OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // MỚI: Lưu trữ các marker để cập nhật sau
+        map.markers = {};
+
+        LOCATIONS_CONFIG.forEach(loc => {
+            // SỬA LỖI: Thêm kiểm tra an toàn (optional chaining)
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+
+            const popupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${getLocationName(loc.id)}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> ${vehicleCount}</p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+
+            const marker = L.marker([loc.lat, loc.lng])
+                .addTo(map)
+                .bindPopup(popupContent);
+
+            map.markers[loc.id] = marker;
+
+            marker.on('click', () => {
+                filterDataByLocation(loc.id);
+            });
+        });
+    };
+
+    const setupNavigation = () => {
+        if (!elements.sidebar) return;
+
+        elements.sidebar.addEventListener('click', (e) => {
+            const link = e.target.closest('.nav-link');
+            if (!link) return;
+
+            e.preventDefault();
+            const targetId = link.dataset.target;
+
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            elements.pages.forEach(page => page.classList.toggle('active', page.id === targetId));
+
+            if (targetId === 'page-map' && map) {
+                setTimeout(() => map.invalidateSize(), 10);
+            }
+        });
+    };
+
+    const renderTransactionTable = (transactions) => {
+        if (!elements.transactionLogBody) return;
+        elements.transactionLogBody.innerHTML = '';
+
+        if (!transactions || transactions.length === 0) {
+            elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">Không có giao dịch.</td></tr>`;
+            return;
+        }
+
+        transactions.forEach(tx => {
+            const row = document.createElement('tr');
+            const statusClass = tx.Status === 'Đang gửi' ? 'parking' : 'departed';
+            const feeDisplay = tx.Fee ? `${formatCurrency(tx.Fee)}đ` : '--';
+            const exitTimeDisplay = tx['Exit Time'] ? new Date(tx['Exit Time']).toLocaleString('vi-VN') : '--';
+            
+            row.innerHTML = `
+                <td class="plate">${tx.Plate || '--'}</td>
+                <td>${new Date(tx['Entry Time']).toLocaleString('vi-VN')}</td>
+                <td>${exitTimeDisplay}</td>
+                <td class="fee">${feeDisplay}</td>
+                <td>${tx['Payment Method'] || '--'}</td>
+                <td>${getLocationName(tx.LocationID)}</td>
+                <td style="text-align: center;"><span class="status-badge ${statusClass}">${tx.Status}</span></td>
+                <td style="text-align: center;"><button class="edit-btn" data-uniqueid="${tx.UniqueID}">Sửa</button></td>
+            `;
+            elements.transactionLogBody.appendChild(row);
+        });
+    };
+
+    const openEditModal = (uniqueID) => {
+        const transaction = fullAdminData.transactions.find(tx => tx.UniqueID === uniqueID);
+        if (!transaction) {
+            alert('Không tìm thấy giao dịch.');
+            return;
+        }
+
+        const toLocalISOString = (date) => {
+            if (!date) return '';
+            const dt = new Date(date);
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+            return dt.toISOString().slice(0, 16);
+        };
+
+        elements.editUniqueID.value = transaction.UniqueID;
+        elements.editPlate.value = transaction.Plate || '';
+        elements.editEntryTime.value = toLocalISOString(transaction['Entry Time']);
+        elements.editExitTime.value = toLocalISOString(transaction['Exit Time']);
+        elements.editFee.value = transaction.Fee ?? '';
+        elements.editPaymentMethod.value = transaction['Payment Method'] || '';
+        elements.editStatus.value = transaction.Status || 'Đã rời bãi';
+
+        elements.editModal.style.display = 'flex';
+    };
+
+    const closeEditModal = () => {
+        elements.editModal.style.display = 'none';
+        elements.editForm.reset();
+    };
+
+    const saveTransactionChanges = async (event) => {
+        event.preventDefault();
+        elements.saveEditBtn.disabled = true;
+        elements.saveEditBtn.textContent = 'Đang lưu...';
+
+        const payload = {
+            action: 'editTransaction',
+            uniqueID: elements.editUniqueID.value,
+            plate: elements.editPlate.value,
+            entryTime: elements.editEntryTime.value ? new Date(elements.editEntryTime.value).toISOString() : null,
+            exitTime: elements.editExitTime.value ? new Date(elements.editExitTime.value).toISOString() : null,
+            fee: elements.editFee.value,
+            paymentMethod: elements.editPaymentMethod.value,
+            status: elements.editStatus.value,
+            secret: currentSecretKey // Gửi kèm mật khẩu để xác thực
+        };
+
+        try {
+            const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+                alert('Cập nhật thành công!');
+                closeEditModal();
+                fetchAdminData(currentSecretKey, true, elements.adminDatePicker.value);
+        } catch (error) {
+            alert(`Lỗi khi lưu: ${error.message}`);
+        } finally {
+            elements.saveEditBtn.disabled = false;
+            elements.saveEditBtn.textContent = 'Lưu thay đổi';
+        }
+    };
+
+    const updateDashboardUI = (data, isSilentUpdate = false) => {
+        fullAdminData = data; // Lưu dữ liệu gốc
+
+        elements.totalRevenue.innerHTML = `${formatCurrency(data?.totalRevenueToday ?? 0)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = data?.totalVehiclesToday ?? 0;
+        elements.currentVehicles.textContent = data?.vehiclesCurrentlyParking ?? 0;
+
+        renderTransactionTable(data?.transactions || []);
+
+        const locationData = {
+            names: [],
+            revenue: [],
+            vehicles: []
+        };
+
+        if (data?.revenueByLocation && data?.vehiclesByLocation) {
+            Object.keys(data.revenueByLocation).forEach(id => {
+                locationData.names.push(getLocationName(id));
+                locationData.revenue.push(data.revenueByLocation[id] || 0);
+                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
+            });
+        }
+
+        // Biểu đồ lưu lượng xe theo giờ
+        if (trafficChart) trafficChart.destroy();
+        trafficChart = new Chart(elements.trafficChartCanvas, {
+            type: 'bar',
+            data: {
+                labels: Array.from({ length: 24 }, (_, i) => `${i}h`),
+                datasets: [{
+                    label: 'Số lượt xe vào',
+                    data: data.trafficByHour,
+                    backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { 
+                            stepSize: 1 
+                        } 
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        const chartColors = ['rgba(40, 167, 69, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(23, 162, 184, 0.8)', 'rgba(220, 53, 69, 0.8)', 'rgba(108, 117, 125, 0.8)'];
+        
+        // Biểu đồ doanh thu theo điểm
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(elements.revenueChartCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: locationData.names,
+                datasets: [{
+                    label: 'Doanh thu',
+                    data: locationData.revenue,
+                    backgroundColor: chartColors,
+                    originalBackgroundColor: [...chartColors]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label || ''}: ${formatCurrency(context.parsed)} đ`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ lượt xe theo điểm
+        if (vehiclesChart) vehiclesChart.destroy();
+        vehiclesChart = new Chart(elements.vehiclesChartCanvas, {
+            type: 'pie',
+            data: {
+                labels: locationData.names,
+                datasets: [{
+                    label: 'Lượt xe',
+                    data: locationData.vehicles,
+                    backgroundColor: [...chartColors].reverse(),
+                    originalBackgroundColor: [...chartColors].reverse()
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+
+        if (!map) {
             initMap(data);
         } else if (isSilentUpdate) {
             // Nếu là cập nhật "âm thầm", chỉ update popup
@@ -323,66 +1790,116 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const fetchAdminData = async (secretKey, isSilent = false) => {
-        // Removed: elements.loader.style.display = 'flex'; from here
+    const setTodayDate = () => {
+        const today = new Date();
+        const formatDateForAPI = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        const formattedDate = formatDateForAPI(new Date());
+        if (elements.adminDatePicker) {
+            elements.adminDatePicker.value = formattedDate;
+        }
+        return formattedDate;
+    };
+
+    const fetchAdminData = async (secretKey, isSilent = false, date = null) => {
         try {
-            console.log(`Fetching admin data for secret: ${secretKey}, silent: ${isSilent}`);
-            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminData&secret=${secretKey}`);
+            const dateParam = date ? `&date=${date}` : '';
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminData&secret=${secretKey}${dateParam}&v=${new Date().getTime()}`);
+
             if (!response.ok) {
                 throw new Error(`Lỗi mạng: ${response.statusText}`);
             }
             const result = await response.json();
-            if (result.status === 'success') {
-                updateDashboardUI(result.data, isSilent);
-                console.log("Admin data fetched successfully:", result.data);
-            } else {
-                throw new Error(result.message);
+
+            if (result.status !== 'success' || !result.data) {
+                throw new Error(result.message || 'Lỗi không xác định từ server');
             }
+
+            updateDashboardUI(result.data, isSilent);
+            return true;
         } catch (error) {
-            console.error("Lỗi tải dữ liệu quản trị:", error);
-            // Chỉ hiện alert khi tải lần đầu
             if (!isSilent) {
-                alert(`Không thể tải dữ liệu quản trị: ${error.message}. Vui lòng kiểm tra mật khẩu hoặc kết nối mạng.`);
+                alert(`Không thể tải dữ liệu quản trị: ${error.message}`);
+                console.error('ADMIN ERROR LOG:', error);
+                showLoginScreen('Đã xảy ra lỗi. Vui lòng thử lại.');
             }
-        } finally {
-            // Ensure loader is hidden after fetch attempt
+            return false;
+        }
+    };
+
+    const startAdminSession = async () => {
+        try {
+            if (elements.loader) {
+                elements.loader.querySelector('span').textContent = 'Đang xác thực và tải dữ liệu...';
+                elements.loader.querySelector('.spinner').style.display = 'block';
+                elements.startSessionBtn.style.display = 'none';
+            }
+    
+            const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "");
+            if (!secretKey) {
+                showLoginScreen('Cần có mật khẩu để truy cập.');
+                return;
+            }
+            currentSecretKey = secretKey; // Lưu lại mật khẩu
+    
+            const dateToFetch = elements.adminDatePicker.value;
+    
+            const success = await fetchAdminData(secretKey, false, dateToFetch);
+    
+            if (success) {
+                elements.loader.style.display = 'none';
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                autoRefreshInterval = setInterval(() => {
+                    const currentDate = elements.adminDatePicker.value;
+                    fetchAdminData(secretKey, true, currentDate);
+                }, APP_CONFIG.autoRefreshInterval || 30000);
+            }
+            // Nếu không thành công, fetchAdminData đã xử lý việc hiển thị lại màn hình đăng nhập
+
+        } catch (error) {
+            // Bắt các lỗi không mong muốn khác
+            console.error("Lỗi nghiêm trọng khi bắt đầu phiên quản trị:", error);
             if (elements.loader) {
                 elements.loader.style.display = 'none';
             }
+            alert("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
+        }
+    };
+
+    const showLoginScreen = (message) => {
+        if (elements.loader) {
+            elements.loader.style.display = 'flex';
+            elements.loader.querySelector('span').textContent = message || 'Vui lòng xác nhận để truy cập trang quản trị.';
+            elements.loader.querySelector('.spinner').style.display = 'none';
+            elements.startSessionBtn.style.display = 'block';
         }
     };
 
     const init = () => {
-        // Show loader immediately when init starts
-        if (elements.loader) {
-            elements.loader.style.display = 'flex';
-        }
-
-        const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "");
-        if (secretKey) {
-            fetchAdminData(secretKey);
-            currentSecretKey = secretKey; // Lưu lại mật khẩu
-
-            // MỚI: Bắt đầu tự động làm mới
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-            autoRefreshInterval = setInterval(() => {
-                fetchAdminData(currentSecretKey, true); // Gọi ở chế độ silent
-            }, APP_CONFIG.autoRefreshInterval);
-        } else {
-            // If secretKey is not provided, hide the loader and display access denied message
-            if (elements.loader) {
-                elements.loader.style.display = 'none';
-            }
-            alert("Cần có mật khẩu để truy cập.");
-            document.body.innerHTML = '<h1 style="text-align: center; margin-top: 50px;">TRUY CẬP BỊ TỪ CHỐI</h1>';
+        try {
+            setTodayDate();
+            setupNavigation();
+    
+            if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
+            if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
+                if (currentSecretKey) fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
+            });
+            if (elements.transactionLogBody) elements.transactionLogBody.addEventListener('click', (e) => { if (e.target.classList.contains('edit-btn')) openEditModal(e.target.dataset.uniqueid); });
+            if (elements.closeEditModalBtn) elements.closeEditModalBtn.addEventListener('click', closeEditModal);
+            if (elements.cancelEditBtn) elements.cancelEditBtn.addEventListener('click', closeEditModal);
+            if (elements.editForm) elements.editForm.addEventListener('submit', saveTransactionChanges);
+            if (elements.startSessionBtn) elements.startSessionBtn.addEventListener('click', startAdminSession);
+    
+            showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
+        } catch (error) {
+            console.error("Lỗi trong quá trình khởi tạo:", error);
+            document.body.innerHTML = `<h1 style="text-align: center; margin-top: 50px;">LỖI KHỞI TẠO TRANG. VUI LÒNG TẢI LẠI.</h1><p style="text-align: center;">Chi tiết: ${error.message}</p>`;
         }
     };
-
-    // MỚI: Gắn sự kiện cho nút reset
-    elements.resetFilterBtn.addEventListener('click', resetFilter);
-
-    // MỚI: Khởi tạo chức năng điều hướng
-    setupNavigation();
 
     init();
 });

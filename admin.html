@@ -106,6 +106,15 @@
             justify-content: space-between;
             align-items: center;
         }
+        /* MỚI: CSS cho bộ chọn ngày */
+        .header-controls { display: flex; align-items: center; gap: 15px; }
+        .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-main); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
+        .date-selector label { font-weight: 600; color: var(--text-secondary); }
+        .date-selector input[type="date"] {
+            background: transparent; border: none; border-radius: 6px; padding: 5px;
+            font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary);
+        }
+
         .header-title { display: flex; align-items: center; gap: 15px; }
         .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
         .header-title h1 { font-size: 1.9rem; color: var(--primary-accent); font-weight: 800; line-height: 1.2; margin: 0; }
@@ -219,6 +228,7 @@
         .transaction-table .col-payment { width: 15%; }
         .transaction-table .col-location { width: 18%; }
         .transaction-table .col-status { width: 13%; text-align: center; }
+        .transaction-table .col-action { width: 10%; text-align: center; } /* MỚI */
 
         .transaction-table thead th {
             position: sticky;
@@ -289,6 +299,65 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* --- MỚI: CSS cho Modal Chỉnh sửa --- */
+        .modal {
+            position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(17, 24, 39, 0.6);
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s ease forwards;
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            padding: 25px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 550px;
+            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color);
+        }
+        .modal-header h2 { margin: 0; font-size: 1.4rem; }
+        .modal-body { display: flex; flex-direction: column; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
+            color: var(--text-primary); background: #f9fafb; border-radius: var(--border-radius-md);
+            font-size: 1rem; transition: all 0.2s; font-family: 'Be Vietnam Pro', sans-serif;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; background: white; border-color: var(--primary-accent-light);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+        }
+        .modal-footer {
+            display: flex; justify-content: flex-end; gap: 12px;
+            margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color);
+        }
+        .action-button {
+            padding: 12px 20px; border: none; color: white; font-size: 0.95rem;
+            font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-primary { background-color: var(--primary-accent); }
+        .btn-secondary { background-color: var(--text-secondary); }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-secondary:hover { filter: brightness(1.1); }
+        .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; }
+
+        .edit-btn {
+            background: none; border: 1px solid var(--primary-accent); color: var(--primary-accent);
+            padding: 5px 10px; border-radius: var(--border-radius-md); cursor: pointer; font-weight: 600;
+            transition: all 0.2s;
+        }
+        .edit-btn:hover { background: var(--primary-accent); color: white; }
+
         @media (max-width: 992px) {
             .main-grid {
                 grid-template-columns: 1fr 1fr;
@@ -309,6 +378,8 @@
     <div id="loader">
         <div class="spinner"></div>
         <span>Đang tải dữ liệu quản trị...</span>
+        <!-- MỚI: Thêm nút để người dùng chủ động bắt đầu phiên -->
+        <button id="start-session-btn" class="action-button btn-primary" style="display: none; margin-top: 20px; width: auto; padding: 10px 25px;">Truy cập</button>
     </div>
 
     <div class="dashboard-layout">
@@ -345,7 +416,14 @@
                         <h1>Bảng điều khiển Quản trị</h1>
                     </div>
                 </div>
-                <button id="reset-filter-btn" class="action-button" style="display: none; width: auto; padding: 8px 16px; background: var(--text-secondary);">Hiển thị tất cả</button>
+                <!-- MỚI: Thêm bộ chọn ngày vào header -->
+                <div class="header-controls">
+                    <div class="date-selector">
+                        <label for="admin-date-picker">Xem ngày:</label>
+                        <input type="date" id="admin-date-picker">
+                    </div>
+                    <button id="reset-filter-btn" class="action-button" style="display: none; width: auto; padding: 8px 16px; background: var(--text-secondary);">Hiển thị tất cả</button>
+                </div>
             </header>
 
             <div class="container">
@@ -408,6 +486,7 @@
                                         <th class="col-payment">Thanh toán</th>
                                         <th class="col-location">Điểm trực</th>
                                         <th class="col-status">Trạng thái</th>
+                                        <th class="col-action">Hành động</th>
                                     </tr>
                                 </thead>
                                 <tbody id="transaction-log-body">
@@ -443,6 +522,52 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- MỚI: Modal Chỉnh sửa Giao dịch -->
+    <div id="edit-transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Chỉnh sửa Giao dịch</h2>
+                <button id="close-edit-modal-btn" class="action-button btn-secondary" style="padding: 5px 10px; width: auto;">&times;</button>
+            </div>
+            <form id="edit-transaction-form">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-unique-id">
+                    <div class="form-group">
+                        <label for="edit-plate">Biển số xe</label>
+                        <input type="text" id="edit-plate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-entry-time">Thời gian vào</label>
+                        <input type="datetime-local" id="edit-entry-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-exit-time">Thời gian ra</label>
+                        <input type="datetime-local" id="edit-exit-time">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-fee">Phí</label>
+                        <input type="number" id="edit-fee" placeholder="Để trống để tự tính toán">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-payment-method">Phương thức thanh toán</label>
+                        <input type="text" id="edit-payment-method">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-status">Trạng thái</label>
+                        <select id="edit-status">
+                            <option value="Đang gửi">Đang gửi</option>
+                            <option value="Đã rời bãi">Đã rời đi</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancel-edit-btn" class="action-button btn-secondary">Hủy</button>
+                    <button type="submit" id="save-edit-btn" class="action-button btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Thêm thư viện bản đồ Leaflet JS -->

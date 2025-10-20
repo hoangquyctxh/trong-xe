@@ -8,8 +8,8 @@
 // =================================================================================
 
 const APP_CONFIG = {
-    // URL Google Apps Script để xử lý dữ liệu
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbzVmsjxvQUR791xUw8gDmU2PpVGMHjmOyA2IxAwoMJXZxSM5OnLQ0tjmK47nyJuoGXdSg/exec",
+    // Cập nhật URL mới nhất từ Google Apps Script
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycbwm-GhIS6HZD3QQFWUE_6Uf5o57h3FDtm_kyYKijh_zcBLBmRyD49AbEzouTo0qJwISXA/exec",
 
     // Cấu hình thanh toán VietQR
     payment: {
