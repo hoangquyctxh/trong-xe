@@ -405,6 +405,10 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M22,21H2V3H4V19H6V10H10V19H12V6H16V19H18V14H22V21Z"></path></svg>
                     <span>Phân tích</span>
                 </a></li>
+                <li><a href="#" class="nav-link" data-target="page-settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10M10.59,22L12,20.59L13.41,22L17.5,17.91L16.09,16.5L12,20.59L7.91,16.5L6.5,17.91L10.59,22M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"></path></svg>
+                    <span>Cài đặt</span>
+                </a></li>
             </ul>
         </nav>
 
@@ -520,6 +524,42 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- MỚI: Trang 5 - Cài đặt -->
+                <div id="page-settings" class="page-content">
+                    <div class="card full-width">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>Quản lý Tài khoản Ngân hàng</h2>
+                            <button id="add-bank-account-btn" class="action-button btn-primary" style="width: auto;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Thêm tài khoản
+                            </button>
+                        </div>
+                        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                            Đây là nơi quản lý các tài khoản ngân hàng dùng để tạo mã QR thanh toán. Chỉ một tài khoản có thể được kích hoạt tại một thời điểm.
+                        </p>
+                        <div class="transaction-table-wrapper">
+                            <table class="transaction-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ngân hàng (BIN)</th>
+                                        <th>Chủ tài khoản</th>
+                                        <th>Số tài khoản</th>
+                                        <th style="text-align: center;">Trạng thái</th>
+                                        <th style="text-align: center;">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bank-accounts-body">
+                                    <!-- Dữ liệu tài khoản ngân hàng sẽ được chèn vào đây -->
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">Chưa có tài khoản ngân hàng nào.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -565,6 +605,42 @@
                 <div class="modal-footer">
                     <button type="button" id="cancel-edit-btn" class="action-button btn-secondary">Hủy</button>
                     <button type="submit" id="save-edit-btn" class="action-button btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MỚI: Modal Thêm/Sửa Tài khoản Ngân hàng -->
+    <div id="bank-account-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="bank-modal-title">Thêm Tài khoản Ngân hàng</h2>
+                <button id="close-bank-modal-btn" class="action-button btn-secondary" style="padding: 5px 10px; width: auto;">&times;</button>
+            </div>
+            <form id="bank-account-form">
+                <div class="modal-body">
+                    <input type="hidden" id="bank-account-id">
+                    <div class="form-group">
+                        <label for="bank-bin">Mã BIN/Tên Ngân hàng (VD: 970436 - Vietcombank)</label>
+                        <input type="text" id="bank-bin" placeholder="Nhập mã BIN ngân hàng" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-account-name">Tên chủ tài khoản</label>
+                        <input type="text" id="bank-account-name" placeholder="Tên chủ tài khoản viết không dấu" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-account-number">Số tài khoản</label>
+                        <input type="text" id="bank-account-number" placeholder="Nhập số tài khoản" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bank-account-template">Mẫu QR (tùy chọn)</label>
+                        <input type="text" id="bank-account-template" value="compact2" placeholder="VD: compact, compact2, qr_only">
+                        <small style="color: var(--text-secondary);">Để trống nếu không chắc. Các giá trị phổ biến: compact, compact2.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancel-bank-btn" class="action-button btn-secondary">Hủy</button>
+                    <button type="submit" id="save-bank-btn" class="action-button btn-primary">Lưu tài khoản</button>
                 </div>
             </form>
         </div>
