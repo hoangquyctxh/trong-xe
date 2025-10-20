@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="config.js"></script> <!-- MỚI: Tải file cấu hình -->
-    <script src="locations.js"></script> <!-- MỚI: Tải file cấu hình -->
     <style>
         :root {
             /* --- BẢNG MÀU ĐỒNG BỘ TỪ INDEX.HTML (PHIÊN BẢN HOÀN CHỈNH) --- */
@@ -968,6 +967,18 @@
             // =================================================================
 
 
+            // =================================================================
+            // GIẢI PHÁP MỚI: LƯU VỊ TRÍ CỬA SỔ KHI ĐÓNG
+            // =================================================================
+            window.addEventListener('beforeunload', () => {
+                const position = {
+                    x: window.screenX,
+                    y: window.screenY,
+                    width: window.outerWidth,
+                    height: window.outerHeight
+                };
+                localStorage.setItem('confirmationWindowPosition', JSON.stringify(position));
+            });
             // SỬA LỖI: Chủ động yêu cầu dữ liệu từ trang chính
             const urlParams = new URLSearchParams(window.location.search);
             

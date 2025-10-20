@@ -7,10 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
         totalVehicles: document.getElementById('total-vehicles'),
         currentVehicles: document.getElementById('current-vehicles'),
         trafficChartCanvas: document.getElementById('traffic-chart'),
+        // SỬA LỖI: Lấy các canvas và title bằng ID trực tiếp
         revenueChartCanvas: document.getElementById('revenue-chart'),
         vehiclesChartCanvas: document.getElementById('vehicles-chart'),
         revenueChartTitle: document.getElementById('revenue-chart-title'),
         vehiclesChartTitle: document.getElementById('vehicles-chart-title'),
+        sidebar: document.querySelector('.sidebar'), // MỚI
+        pages: document.querySelectorAll('.page-content'), // MỚI
         mapContainer: document.getElementById('map-container'),
         resetFilterBtn: document.getElementById('reset-filter-btn'),
         transactionLogBody: document.getElementById('transaction-log-body'), // MỚI
@@ -93,7 +96,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Khởi tạo bản đồ, đặt trung tâm ở Hà Nội
-        map = L.map(elements.mapContainer).setView([21.035, 105.84], 14);
+        map = L.map(elements.mapContainer, {
+            // Thêm các tùy chọn để tránh lỗi lặp lại bản đồ
+            // attributionControl: false 
+        }).setView([21.035, 105.84], 14);
 
         // Thêm lớp nền bản đồ từ OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -127,6 +133,37 @@ document.addEventListener('DOMContentLoaded', () => {
             marker.on('click', () => {
                 filterDataByLocation(loc.id);
             });
+        });
+    };
+
+    // MỚI: Hàm xử lý điều hướng trang con
+    const setupNavigation = () => {
+        if (!elements.sidebar) return;
+
+        elements.sidebar.addEventListener('click', (e) => {
+            const link = e.target.closest('.nav-link');
+            if (!link) return;
+
+            e.preventDefault();
+            const targetId = link.dataset.target;
+
+            // Bỏ active ở link cũ, thêm active cho link mới
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            // Ẩn tất cả các trang, hiện trang mục tiêu
+            elements.pages.forEach(page => {
+                if (page.id === targetId) {
+                    page.classList.add('active');
+                } else {
+                    page.classList.remove('active');
+                }
+            });
+
+            // MỚI: Rất quan trọng - Cập nhật lại kích thước bản đồ khi tab được hiển thị
+            if (targetId === 'page-map' && map) {
+                setTimeout(() => map.invalidateSize(), 10);
+            }
         });
     };
 
@@ -287,10 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchAdminData = async (secretKey, isSilent = false) => {
-        if (!isSilent) {
-            elements.loader.style.display = 'flex';
-        }
+        // Removed: elements.loader.style.display = 'flex'; from here
         try {
+            console.log(`Fetching admin data for secret: ${secretKey}, silent: ${isSilent}`);
             const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminData&secret=${secretKey}`);
             if (!response.ok) {
                 throw new Error(`Lỗi mạng: ${response.statusText}`);
@@ -298,23 +334,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (result.status === 'success') {
                 updateDashboardUI(result.data, isSilent);
+                console.log("Admin data fetched successfully:", result.data);
             } else {
                 throw new Error(result.message);
             }
         } catch (error) {
+            console.error("Lỗi tải dữ liệu quản trị:", error);
             // Chỉ hiện alert khi tải lần đầu
             if (!isSilent) {
-                alert(`Không thể tải dữ liệu quản trị: ${error.message}`);
+                alert(`Không thể tải dữ liệu quản trị: ${error.message}. Vui lòng kiểm tra mật khẩu hoặc kết nối mạng.`);
             }
-            console.error("Lỗi tải dữ liệu quản trị:", error);
         } finally {
-            if (!isSilent) {
+            // Ensure loader is hidden after fetch attempt
+            if (elements.loader) {
                 elements.loader.style.display = 'none';
             }
         }
     };
 
     const init = () => {
+        // Show loader immediately when init starts
+        if (elements.loader) {
+            elements.loader.style.display = 'flex';
+        }
+
         const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "");
         if (secretKey) {
             fetchAdminData(secretKey);
@@ -326,6 +369,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchAdminData(currentSecretKey, true); // Gọi ở chế độ silent
             }, APP_CONFIG.autoRefreshInterval);
         } else {
+            // If secretKey is not provided, hide the loader and display access denied message
+            if (elements.loader) {
+                elements.loader.style.display = 'none';
+            }
             alert("Cần có mật khẩu để truy cập.");
             document.body.innerHTML = '<h1 style="text-align: center; margin-top: 50px;">TRUY CẬP BỊ TỪ CHỐI</h1>';
         }
@@ -333,6 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // MỚI: Gắn sự kiện cho nút reset
     elements.resetFilterBtn.addEventListener('click', resetFilter);
+
+    // MỚI: Khởi tạo chức năng điều hướng
+    setupNavigation();
 
     init();
 });
