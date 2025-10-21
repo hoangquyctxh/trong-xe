@@ -853,10 +853,10 @@
             const adVideo = document.getElementById('ad-video'); // MỚI
 
             const paymentChannel = new BroadcastChannel('parking_payment_channel');
-            
+
             // MỚI: Biến lưu trữ tọa độ
             let currentLocationCoords = { lat: null, lng: null };
-            let inactivityTimer = null; // MỚI: Timer cho quảng cáo
+            let inactivityTimer = null;
 
             // --- MỚI: HÀM HIỆU ỨNG CONFETTI ---
             function startConfetti(containerId = 'confetti-container') {
@@ -937,11 +937,11 @@
             // =================================================================
             let currentVideoIndex = 0;
             const adPlaylist = APP_CONFIG.adVideos || [];
-
+            
             const startInactivityTimer = () => {
                 clearTimeout(inactivityTimer); // Xóa timer cũ
                 inactivityTimer = setTimeout(() => {
-                    // Chuyển sang chế độ quảng cáo
+                    // Chuyển sang chế độ quảng cáo nếu không có giao dịch nào đang diễn ra
                     idleView.classList.add('hidden');
                     adView.classList.remove('hidden');
                     playNextVideo();
@@ -951,7 +951,7 @@
             const stopInactivityTimerAndAds = () => {
                 clearTimeout(inactivityTimer);
                 adView.classList.add('hidden');
-                if (adVideo) adVideo.pause();
+                if (adVideo && !adVideo.paused) adVideo.pause();
             };
 
             const playNextVideo = () => {
@@ -964,21 +964,6 @@
             if (adVideo) {
                 adVideo.onended = playNextVideo; // Tự động phát video tiếp theo khi hết
             }
-            // =================================================================
-
-
-            // =================================================================
-            // GIẢI PHÁP MỚI: LƯU VỊ TRÍ CỬA SỔ KHI ĐÓNG
-            // =================================================================
-            window.addEventListener('beforeunload', () => {
-                const position = {
-                    x: window.screenX,
-                    y: window.screenY,
-                    width: window.outerWidth,
-                    height: window.outerHeight
-                };
-                localStorage.setItem('confirmationWindowPosition', JSON.stringify(position));
-            });
             // SỬA LỖI: Chủ động yêu cầu dữ liệu từ trang chính
             const urlParams = new URLSearchParams(window.location.search);
             
@@ -998,13 +983,15 @@
             setInterval(updateClock, 1000);
             fetchWeather(initialLat, initialLng);
             startInactivityTimer(); // Bắt đầu đếm giờ để hiện quảng cáo
+            idleView.classList.remove('hidden'); // Hiển thị màn hình chờ mặc định
 
             // =================================================================
             // GIẢI PHÁP MỚI: Lắng nghe sự kiện và nhận dữ liệu trực tiếp
             // =================================================================
             paymentChannel.onmessage = (event) => {
                 const { type, payload, method } = event.data;
-                stopInactivityTimerAndAds(); // Dừng quảng cáo khi có giao dịch
+                
+                stopInactivityTimerAndAds(); // Dừng quảng cáo và timer khi có bất kỳ giao dịch nào
 
                 if (type === 'VEHICLE_CHECKOUT_INITIATE') {
                     checkinSuccessView.classList.add('hidden'); // Đảm bảo các view khác bị ẩn
@@ -1066,7 +1053,7 @@
                             idleView.classList.remove('hidden');
                             idleView.style.animation = 'fadeIn 0.5s ease';
                             startInactivityTimer(); // Bắt đầu lại timer chờ quảng cáo
-                        }, 500); // Đợi hiệu ứng fadeOut hoàn tất
+                        }, 500);
                     }, 10000); // Chuyển sang màn hình chờ sau 10 giây
                 } else if (type === 'VEHICLE_CHECKIN_COMPLETE') { // MỚI: Xử lý khi gửi xe thành công
                     idleView.classList.add('hidden');
@@ -1087,7 +1074,7 @@
                             checkinSuccessView.style.animation = ''; // Reset animation
                             idleView.classList.remove('hidden');
                             idleView.style.animation = 'fadeIn 0.5s ease';
-                            startInactivityTimer(); // Bắt đầu lại timer chờ quảng cáo
+                            startInactivityTimer();
                         }, 500);
                     }, 10000);
                 } else if (type === 'TRANSACTION_CANCELED') { // MỚI: Xử lý khi giao dịch bị hủy
@@ -1097,7 +1084,7 @@
                     checkinSuccessView.classList.add('hidden');
                     idleView.classList.remove('hidden');
                     idleView.style.animation = 'fadeIn 0.5s ease';
-                    startInactivityTimer(); // Bắt đầu lại timer chờ quảng cáo
+                    startInactivityTimer();
                 }
             };
 
