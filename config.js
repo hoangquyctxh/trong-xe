@@ -9,7 +9,7 @@
 
 const APP_CONFIG = {
     // Cập nhật URL mới nhất từ Google Apps Script
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbzyHkLlxyjd47fTvtBWMKAtjr575Kjwjn_53ATc5eKWYm4-RvQRn6haiMA92DY2NqCuzQ/exec",
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycbxgxxGCgQL_7LttclpuXZCDvzl6A0m48rcmTeiLpDdkCvyG6Y04P3XHpTXRmXhRxouzIw/exec",
 
     // Cấu hình thanh toán VietQR (ĐÃ CHUYỂN SANG QUẢN LÝ ĐỘNG TRONG TRANG ADMIN)
     // Phần này không còn được sử dụng.
