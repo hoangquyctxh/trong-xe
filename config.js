@@ -11,11 +11,8 @@ const APP_CONFIG = {
     // Cập nhật URL mới nhất từ Google Apps Script
     googleScriptUrl: "https://script.google.com/macros/s/AKfycbwm-GhIS6HZD3QQFWUE_6Uf5o57h3FDtm_kyYKijh_zcBLBmRyD49AbEzouTo0qJwISXA/exec",
 
-    // Cấu hình thanh toán VietQR
-    payment: {
-        baseUrl: "https://img.vietqr.io/image/MBV-666686989-compact.png",
-        accountName: "NGUYEN CAO HOANG QUY"
-    },
+    // Cấu hình thanh toán VietQR (ĐÃ CHUYỂN SANG QUẢN LÝ ĐỘNG TRONG TRANG ADMIN)
+    // Phần này không còn được sử dụng.
 
     // Cấu hình API thời tiết (MỚI)
     weather: {
