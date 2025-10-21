@@ -1862,11 +1862,20 @@
                 if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: initialData });
                 // =================================================================
 
-                                // --- CẬP NHẬT: Sử dụng API link ảnh của VietQR và nội dung không dấu ---
+                // =================================================================
+                // --- NÂNG CẤP: LẤY THÔNG TIN TÀI KHOẢN ĐỘNG TỪ LOCALSTORAGE ---
+                // =================================================================
+                const activeBankAccount = JSON.parse(localStorage.getItem('activeBankAccount_v1'));
+                if (!activeBankAccount) {
+                    showToast('Chưa có tài khoản thanh toán nào được kích hoạt. Vui lòng vào trang quản trị để cài đặt.', 'error');
+                    allElements.qrSpinner.style.display = 'none';
+                    return;
+                }
+
                 const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
                 const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics); // e.g. TTGX%2030F12345%20_abcdef123
-                const encodedAccountName = encodeURIComponent(APP_CONFIG.payment.accountName);
-                const qrImageUrl = `${APP_CONFIG.payment.baseUrl}?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
+                const encodedAccountName = encodeURIComponent(activeBankAccount.accountName);
+                const qrImageUrl = `https://img.vietqr.io/image/${activeBankAccount.bin}-${activeBankAccount.accountNumber}-${activeBankAccount.template}.png?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
 
                 // Hiển thị ảnh QR
                 allElements.paymentQrcodeImage.src = qrImageUrl;

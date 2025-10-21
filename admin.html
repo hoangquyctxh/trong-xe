@@ -401,10 +401,6 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14,17H17V14H14M4.5,17H7.5V14H4.5M4.5,12H7.5V9H4.5M4.5,7H7.5V4H4.5M9,5H12V2H9M14,2V5H17V2M19,9H22V12H19M19,14H22V17H19M19,19H22V22H19M14,19H17V22H14M9,19H12V22H9M4,19H7V22H4M9,14H12V17H9M9,9H12V12H9M2,2V5H4V2M2,7V12H4V7M2,14V17H4V14M2,19V22H4V19Z"></path></svg>
                     <span>Giao dịch</span>
                 </a></li>
-                <li><a href="#" class="nav-link" data-target="page-analytics">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M22,21H2V3H4V19H6V10H10V19H12V6H16V19H18V14H22V21Z"></path></svg>
-                    <span>Phân tích</span>
-                </a></li>
                 <li><a href="#" class="nav-link" data-target="page-settings">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10M10.59,22L12,20.59L13.41,22L17.5,17.91L16.09,16.5L12,20.59L7.91,16.5L6.5,17.91L10.59,22M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"></path></svg>
                     <span>Cài đặt</span>
@@ -462,6 +458,25 @@
                                 <div class="value" id="current-vehicles">0</div>
                             </div>
                         </div>
+                        <!-- Biểu đồ được chuyển vào đây -->
+                        <div class="card full-width">
+                            <h2>Lưu lượng xe theo giờ (hôm nay)</h2>
+                            <div class="chart-container">
+                                <canvas id="traffic-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card" style="grid-column: span 2;">
+                            <h2 id="revenue-chart-title">Doanh thu theo điểm</h2>
+                            <div class="chart-container">
+                                <canvas id="revenue-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h2 id="vehicles-chart-title">Lượt xe theo điểm</h2>
+                            <div class="chart-container">
+                                <canvas id="vehicles-chart"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -497,30 +512,6 @@
                                     <!-- Dữ liệu sẽ được chèn vào đây bằng JS -->
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Trang 4: Phân tích -->
-                <div id="page-analytics" class="page-content">
-                    <div class="main-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0;">
-                        <div class="card full-width">
-                            <h2>Lưu lượng xe theo giờ (hôm nay)</h2>
-                            <div class="chart-container">
-                                <canvas id="traffic-chart"></canvas>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <h2 id="revenue-chart-title">Doanh thu theo điểm</h2>
-                            <div class="chart-container">
-                                <canvas id="revenue-chart"></canvas>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <h2 id="vehicles-chart-title">Lượt xe theo điểm</h2>
-                            <div class="chart-container">
-                                <canvas id="vehicles-chart"></canvas>
-                            </div>
                         </div>
                     </div>
                 </div>
