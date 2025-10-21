@@ -15,26 +15,26 @@ const IMAGE_FOLDER_ID = '10_RCBR7UZh-WX59rpHjwQuZSqpcrL8pH'; // ID thư mục �
 function doGet(e) {
   const params = e.parameter;
   try {
-    // SỬA: Ưu tiên xử lý action trước để tránh tình huống 
-    // khi cả action và date cùng tồn tại nhưng return nhầm dữ liệu.
-    if (params.action === 'getAdminData') {
-      const secret = params.secret;
-      const date = params.date || null;
-      return getAdminData(secret, date);
+    // NÂNG CẤP: Xử lý các action khác nhau
+    switch (params.action) {
+      case 'getAdminOverview':
+        return getAdminOverview(params.secret, params.date || null);
+      case 'getTransactions':
+        return getTransactions(params.secret, params.date || null);
+      case 'getAdminData': // Vẫn giữ lại để tương thích nếu cần
+        return getAdminData(params.secret, params.date || null);
+      default:
+        // Xử lý các request cũ hơn nếu không có action
+        if (params.plate) {
+          const history = getVehicleHistory(params.plate);
+          return createJsonResponse({ status: 'success', data: history });
+        }
+        if (params.date) {
+          const records = getRecordsForDate(params.date);
+          return createJsonResponse({ status: 'success', data: records });
+        }
+        throw new Error("Yêu cầu không hợp lệ hoặc thiếu 'action'.");
     }
-
-    // Nếu không có action chuyên dụng, xử lý các request khác
-    if (params.plate) {
-      const history = getVehicleHistory(params.plate);
-      return createJsonResponse({ status: 'success', data: history });
-    }
-
-    if (params.date) {
-      const records = getRecordsForDate(params.date);
-      return createJsonResponse({ status: 'success', data: records });
-    }
-
-    throw new Error("Yêu cầu không hợp lệ.");
   } catch (error) {
     logError('doGet', error);
     return createJsonResponse({ status: 'error', message: error.message });
@@ -344,12 +344,9 @@ const ADMIN_SECRET_KEY = "admin123";
  * @param {object} e - Đối tượng sự kiện từ yêu cầu GET.
  * @returns {ContentService.TextOutput} - Dữ liệu JSON cho dashboard.
  */
-function getAdminData(secret, dateString = null) {
+function getAdminData(secret, dateString) {
   if (secret !== ADMIN_SECRET_KEY) {
-    return createJsonResponse({
-      status: 'error',
-      message: 'Sai mật khẩu quản trị.'
-    });
+    return createJsonResponse({ status: 'error', message: 'Sai mật khẩu quản trị.' });
   }
 
   try {
@@ -465,6 +462,130 @@ function getAdminData(secret, dateString = null) {
       status: 'error',
       message: `Lỗi xử lý dữ liệu: ${err.message}`
     });
+  }
+}
+
+/**
+ * NÂNG CẤP: Hàm chỉ lấy dữ liệu tổng quan (không bao gồm danh sách giao dịch chi tiết).
+ */
+function getAdminOverview(secret, dateString) {
+  if (secret !== ADMIN_SECRET_KEY) {
+    return createJsonResponse({ status: 'error', message: 'Sai mật khẩu quản trị.' });
+  }
+
+  try {
+    const sheet = getSheet();
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    
+    const targetDate = dateString ? new Date(dateString + "T00:00:00") : new Date();
+    const targetDateStr = Utilities.formatDate(targetDate, "GMT+7", "yyyy-MM-dd");
+    
+    let totalRevenueToday = 0;
+    let totalVehiclesToday = 0;
+    let vehiclesCurrentlyParking = 0;
+    const trafficByHour = Array(24).fill(0);
+    const revenueByLocation = {};
+    const vehiclesByLocation = {};
+
+    const cols = getHeaderIndices(headers);
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const entryTime = new Date(row[cols.entryTimeCol]);
+      const rowDate = Utilities.formatDate(entryTime, "GMT+7", "yyyy-MM-dd");
+      const status = row[cols.statusCol];
+      
+      if (rowDate === targetDateStr) {
+        const fee = parseFloat(row[cols.feeCol]) || 0;
+        const locationId = row[cols.locationIdCol];
+
+        totalVehiclesToday++;
+        if (fee > 0) totalRevenueToday += fee;
+
+        const entryHour = entryTime.getHours();
+        trafficByHour[entryHour]++;
+
+        if (locationId) {
+          revenueByLocation[locationId] = (revenueByLocation[locationId] || 0) + fee;
+          vehiclesByLocation[locationId] = (vehiclesByLocation[locationId] || 0) + 1;
+        }
+      }
+
+      if (status === 'Đang gửi') {
+        vehiclesCurrentlyParking++;
+      }
+    }
+
+    return createJsonResponse({
+      status: 'success',
+      data: {
+        totalRevenueToday,
+        totalVehiclesToday,
+        vehiclesCurrentlyParking,
+        revenueByLocation,
+        vehiclesByLocation,
+        trafficByHour,
+      }
+    });
+
+  } catch (err) {
+    logError("getAdminOverview", err);
+    return createJsonResponse({ status: 'error', message: `Lỗi xử lý dữ liệu tổng quan: ${err.message}` });
+  }
+}
+
+/**
+ * NÂNG CẤP: Hàm chỉ lấy danh sách giao dịch chi tiết.
+ */
+function getTransactions(secret, dateString) {
+  if (secret !== ADMIN_SECRET_KEY) {
+    return createJsonResponse({ status: 'error', message: 'Sai mật khẩu quản trị.' });
+  }
+
+  try {
+    const sheet = getSheet();
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const cols = getHeaderIndices(headers);
+    
+    const targetDate = dateString ? new Date(dateString + "T00:00:00") : new Date();
+    const targetDateStr = Utilities.formatDate(targetDate, "GMT+7", "yyyy-MM-dd");
+    
+    const transactions = [];
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowDate = Utilities.formatDate(new Date(row[cols.entryTimeCol]), "GMT+7", "yyyy-MM-dd");
+
+      if (rowDate === targetDateStr) {
+        const transaction = {
+          Plate: row[cols.plateCol],
+          'Entry Time': row[cols.entryTimeCol],
+          'Exit Time': row[cols.exitTimeCol] || null,
+          Status: row[cols.statusCol],
+          Fee: parseFloat(row[cols.feeCol]) || 0,
+          'Payment Method': row[cols.paymentMethodCol] || '',
+          LocationID: row[cols.locationIdCol],
+          UniqueID: row[cols.uniqueIdCol]
+        };
+        transactions.push(transaction);
+      }
+    }
+
+    // Sắp xếp giao dịch theo giờ vào mới nhất
+    transactions.sort((a, b) => new Date(b['Entry Time']) - new Date(a['Entry Time']));
+
+    return createJsonResponse({
+      status: 'success',
+      data: {
+        transactions
+      }
+    });
+
+  } catch (err) {
+    logError("getTransactions", err);
+    return createJsonResponse({ status: 'error', message: `Lỗi tải danh sách giao dịch: ${err.message}` });
   }
 }
 
@@ -644,125 +765,6 @@ function createDashboard() {
   }
 }
 
-
-/**
- * =================================================================
- * HÀM TỰ ĐỘNG TẠO TRANG TỔNG QUAN (DASHBOARD)
- * Chạy hàm này thủ công từ trình soạn thảo để tạo dashboard.
- * =================================================================
- */
-/*
-function createDashboard_OLD() {
-  try {
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const dataSheetName = SHEET_NAME; // Lấy tên từ cấu hình
-    const dashboardSheetName = 'Dashboard';
-
-    // Xóa dashboard cũ nếu có và tạo mới
-    let dashboardSheet = ss.getSheetByName(dashboardSheetName);
-    if (dashboardSheet) {
-      ss.deleteSheet(dashboardSheet);
-    }
-    dashboardSheet = ss.insertSheet(dashboardSheetName, 0);
-    dashboardSheet.clear();
-    SpreadsheetApp.flush(); // Đảm bảo sheet được tạo xong
-
-    // --- 1. THIẾT LẬP CÁC CHỈ SỐ TỔNG QUAN ---
-    dashboardSheet.getRange('A1').setValue('BÁO CÁO TỔNG QUAN SỰ KIỆN').setFontSize(18).setFontWeight('bold');
-    
-    const stats = [
-      ['Tổng Doanh Thu', `=SUM('${dataSheetName}'!L:L)`],
-      ['Tổng Lượt Xe', `=COUNTA('${dataSheetName}'!C2:C)`],
-      ['Xe đang gửi', `=COUNTIF('${dataSheetName}'!G:G, "Đang gửi")`],
-      ['Lượt xe VIP', `=COUNTIF('${dataSheetName}'!K:K, "Có")`]
-    ];
-    dashboardSheet.getRange('A3:B6').setValues(stats).setFontWeight('bold');
-    dashboardSheet.getRange('B3').setNumberFormat('#,##0"đ"'); // Định dạng tiền tệ
-    dashboardSheet.getRange('A3:B6').setBorder(true, true, true, true, true, true);
-    dashboardSheet.getRange('A3:A6').setBackground('#f3f4f6');
-
-
-    // --- 2. TẠO CÁC BẢNG DỮ LIỆU BẰNG QUERY ---
-    
-    // Bảng Doanh thu theo Ngày
-    dashboardSheet.getRange('D2').setValue('Doanh thu theo Ngày').setFontWeight('bold');
-    dashboardSheet.getRange('D3').setFormula(`=QUERY('${dataSheetName}'!A:M; "SELECT B, SUM(L) WHERE L IS NOT NULL GROUP BY B ORDER BY B ASC LABEL B 'Ngày', SUM(L) 'Doanh thu'"; 1)`);
-
-    // Bảng Doanh thu theo Điểm trực
-    dashboardSheet.getRange('G2').setValue('Doanh thu theo Điểm trực').setFontWeight('bold');
-    dashboardSheet.getRange('G3').setFormula(`=QUERY('${dataSheetName}'!A:M; "SELECT I, SUM(L) WHERE K IS NULL AND L > 0 GROUP BY I LABEL I 'Điểm trực', SUM(L) 'Doanh thu'"; 1)`);
-
-    // Bảng Phương thức thanh toán
-    dashboardSheet.getRange('J2').setValue('Thống kê Phương thức thanh toán').setFontWeight('bold');
-    dashboardSheet.getRange('J3').setFormula(`=QUERY('${dataSheetName}'!A:M; "SELECT M, COUNT(M), SUM(L) WHERE M IS NOT NULL GROUP BY M LABEL M 'Phương thức', COUNT(M) 'Số lượt', SUM(L) 'Tổng tiền'"; 1)`);
-
-    // Bảng Giờ cao điểm
-    // Thêm cột phụ 'Hour' vào sheet dữ liệu nếu chưa có
-    const dataSheet = ss.getSheetByName(dataSheetName);
-    if (dataSheet.getRange('N1').getValue() !== 'Hour') {
-        dataSheet.getRange('N1').setValue('Hour').setFontWeight('bold');
-        dataSheet.getRange('N2').setFormula('=IF(ISBLANK(E2), "", HOUR(E2))');
-        const lastRow = dataSheet.getLastRow();
-        if (lastRow > 2) {
-            dataSheet.getRange('N2').copyTo(dataSheet.getRange(`N3:N${lastRow}`));
-        }
-    }
-    dashboardSheet.getRange('M2').setValue('Lượt xe vào theo Giờ').setFontWeight('bold');
-    dashboardSheet.getRange('M3').setFormula(`=QUERY('${dataSheetName}'!A:N; "SELECT N, COUNT(N) WHERE N IS NOT NULL GROUP BY N ORDER BY N ASC LABEL N 'Giờ', COUNT(N) 'Số lượt xe'"; 1)`);
-
-    SpreadsheetApp.flush(); // Chờ các công thức tính toán xong
-
-    // --- 3. VẼ BIỂU ĐỒ ---
-
-    // Biểu đồ Doanh thu theo Ngày (Line Chart)
-    const dailyRevenueChart = dashboardSheet.newChart()
-      .setChartType(Charts.ChartType.LINE)
-      .addRange(dashboardSheet.getRange('D3').getDataRegion())
-      .setOption('title', 'Biểu đồ Doanh thu theo Ngày')
-      .setOption('hAxis.title', 'Ngày')
-      .setOption('vAxis.title', 'Doanh thu (VNĐ)')
-      .setPosition(8, 4, 0, 0) // Dòng 8, Cột D
-      .build();
-    dashboardSheet.insertChart(dailyRevenueChart);
-
-    // Biểu đồ Doanh thu theo Điểm trực (Column Chart)
-    const locationRevenueChart = dashboardSheet.newChart()
-      .setChartType(Charts.ChartType.COLUMN)
-      .addRange(dashboardSheet.getRange('G3').getDataRegion())
-      .setOption('title', 'So sánh Doanh thu các Điểm trực')
-      .setPosition(8, 7, 0, 0) // Dòng 8, Cột G
-      .build();
-    dashboardSheet.insertChart(locationRevenueChart);
-
-    // Biểu đồ Phương thức thanh toán (Pie Chart)
-    const paymentMethodChart = dashboardSheet.newChart()
-      .setChartType(Charts.ChartType.PIE)
-      .addRange(dashboardSheet.getRange('J3').getDataRegion())
-      .setOption('title', 'Tỷ lệ Phương thức thanh toán')
-      .setOption('pieHole', 0.4)
-      .setPosition(8, 10, 0, 0) // Dòng 8, Cột J
-      .build();
-    dashboardSheet.insertChart(paymentMethodChart);
-
-    // Biểu đồ Giờ cao điểm (Column Chart)
-    const peakHourChart = dashboardSheet.newChart()
-      .setChartType(Charts.ChartType.COLUMN)
-      .addRange(dashboardSheet.getRange('M3').getDataRegion())
-      .setOption('title', 'Phân tích Giờ cao điểm (Xe vào)')
-      .setOption('hAxis.title', 'Giờ trong ngày')
-      .setOption('vAxis.title', 'Số lượt xe')
-      .setPosition(28, 4, 0, 0) // Dòng 28, Cột D
-      .build();
-    dashboardSheet.insertChart(peakHourChart);
-
-    SpreadsheetApp.getUi().alert('Trang Dashboard đã được tạo và cập nhật thành công!');
-
-  } catch (e) {
-    Logger.log(`Lỗi khi tạo Dashboard: ${e.message}`);
-    SpreadsheetApp.getUi().alert(`Đã xảy ra lỗi: ${e.message}`);
-  }
-}
-*/
 // Thêm hàm này vào file Code.gs của bạn
 
 function handleEditTransaction(payload, sheet) { // sheet được truyền vào từ doPost
@@ -886,7 +888,7 @@ function getAdminData(secret, dateString = null) {
     const headers = data[0];
     
     // Xử lý ngày
-    const targetDate = dateString ? new Date(dateString) : new Date();
+    const targetDate = dateString ? new Date(dateString + "T00:00:00") : new Date();
     const targetDateStr = Utilities.formatDate(targetDate, "GMT+7", "yyyy-MM-dd");
     
     // Khởi tạo các biến thống kê
@@ -899,15 +901,7 @@ function getAdminData(secret, dateString = null) {
     const transactions = [];
 
     // Ánh xạ các cột quan trọng
-    const dateCol = findHeaderIndex(headers, 'Date');
-    const plateCol = findHeaderIndex(headers, 'Plate');
-    const statusCol = findHeaderIndex(headers, 'Status');
-    const entryTimeCol = findHeaderIndex(headers, 'Entry Time');
-    const exitTimeCol = findHeaderIndex(headers, 'Exit Time');
-    const feeCol = findHeaderIndex(headers, 'Fee');
-    const locationIdCol = findHeaderIndex(headers, 'LocationID');
-    const paymentMethodCol = findHeaderIndex(headers, 'PaymentMethod');
-    const uniqueIdCol = findHeaderIndex(headers, 'UniqueID');
+    const cols = getHeaderIndices(headers);
 
     // Duyệt qua từng dòng dữ liệu
     for (let i = 1; i < data.length; i++) {
@@ -915,19 +909,19 @@ function getAdminData(secret, dateString = null) {
       const rowDate = Utilities.formatDate(new Date(row[entryTimeCol]), "GMT+7", "yyyy-MM-dd");
       const status = row[statusCol];
       const fee = parseFloat(row[feeCol]) || 0;
-      const locationId = row[locationIdCol];
+      const locationId = row[cols.locationIdCol];
 
       // CHỈ TÍNH TOÁN THỐNG KÊ TRONG NGÀY (doanh thu, lượt xe, biểu đồ...) cho các xe CÓ GIỜ VÀO trong ngày đó.
       if (rowDate === targetDateStr) {
         const transaction = {
-          Plate: row[plateCol],
-          'Entry Time': row[entryTimeCol],
-          'Exit Time': row[exitTimeCol] || null,
+          Plate: row[cols.plateCol],
+          'Entry Time': row[cols.entryTimeCol],
+          'Exit Time': row[cols.exitTimeCol] || null,
           Status: status,
           Fee: fee,
-          'Payment Method': row[paymentMethodCol] || '',
+          'Payment Method': row[cols.paymentMethodCol] || '',
           LocationID: locationId,
-          UniqueID: row[uniqueIdCol]
+          UniqueID: row[cols.uniqueIdCol]
         };
 
         // Tính toán các chỉ số trong ngày
@@ -947,7 +941,7 @@ function getAdminData(secret, dateString = null) {
       }
 
       // SỬA LỖI LOGIC: Đếm tổng số xe đang gửi trên TOÀN BỘ dữ liệu, không phụ thuộc vào ngày.
-      if (status === 'Đang gửi') {
+      if (row[cols.statusCol] === 'Đang gửi') {
         vehiclesCurrentlyParking++;
       }
     }
