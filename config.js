@@ -9,10 +9,12 @@
 
 const APP_CONFIG = {
     // Cập nhật URL mới nhất từ Google Apps Script
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbxgxxGCgQL_7LttclpuXZCDvzl6A0m48rcmTeiLpDdkCvyG6Y04P3XHpTXRmXhRxouzIw/exec",
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycbwm-GhIS6HZD3QQFWUE_6Uf5o57h3FDtm_kyYKijh_zcBLBmRyD49AbEzouTo0qJwISXA/exec",
 
-    // Cấu hình thanh toán VietQR (ĐÃ CHUYỂN SANG QUẢN LÝ ĐỘNG TRONG TRANG ADMIN)
-    // Phần này không còn được sử dụng.
+    // Cấu hình thanh toán QR (SỬ DỤNG LẠI PHƯƠP PHÁP TĨNH)
+    payment: {
+        baseUrl: "https://qr.sepay.vn/img?bank=Oceanbank&acc=666686989&template=compact"
+    },
 
     // Cấu hình API thời tiết (MỚI)
     weather: {

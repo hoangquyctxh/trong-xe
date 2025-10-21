@@ -1854,28 +1854,13 @@
                 // =================================================================
                 // SỬA LỖI QUAN TRỌNG: Đảm bảo kênh được tạo trước khi gửi tin
                 // =================================================================
-                if (!paymentChannel) {
-                    paymentChannel = new BroadcastChannel('parking_payment_channel');
-                }
-                // Sau khi đảm bảo kênh đã tồn tại, tạo dữ liệu và gửi đi
-                const initialData = createInitialDataForConfirmation(vehicle);
-                if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: initialData });
-                // =================================================================
 
                 // =================================================================
-                // --- NÂNG CẤP: LẤY THÔNG TIN TÀI KHOẢN ĐỘNG TỪ LOCALSTORAGE ---
+                // --- QUAY LẠI PHƯƠNG PHÁP TẠO QR TĨNH TỪ CONFIG.JS ---
                 // =================================================================
-                const activeBankAccount = JSON.parse(localStorage.getItem('activeBankAccount_v1'));
-                if (!activeBankAccount) {
-                    showToast('Chưa có tài khoản thanh toán nào được kích hoạt. Vui lòng vào trang quản trị để cài đặt.', 'error');
-                    allElements.qrSpinner.style.display = 'none';
-                    return;
-                }
-
                 const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
-                const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics); // e.g. TTGX%2030F12345%20_abcdef123
-                const encodedAccountName = encodeURIComponent(activeBankAccount.accountName);
-                const qrImageUrl = `https://img.vietqr.io/image/${activeBankAccount.bin}-${activeBankAccount.accountNumber}-${activeBankAccount.template}.png?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
+                const encodedDescription = encodeURIComponent(paymentInfoTextNoDiacritics);
+                const qrImageUrl = `${APP_CONFIG.payment.baseUrl}&amount=${fee}&des=${encodedDescription}`;
 
                 // Hiển thị ảnh QR
                 allElements.paymentQrcodeImage.src = qrImageUrl;
@@ -2308,28 +2293,21 @@
             });
 
             // HÀM MỚI: Tạo dữ liệu để gửi sang cửa sổ phụ
-            const createInitialDataForConfirmation = (vehicle) => {
+            const createInitialDataForConfirmation = (vehicle, qrImageUrl, paymentMemo) => {
                 if (!vehicle) return null;
                 const isVehicleVIP = vehicle.VIP === 'Có';
                 const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
                 
-                const paymentInfoText = `TTGX ${vehicle.Plate} ${vehicle.UniqueID}`;
-                const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
-                const encodedAddInfo = encodeURIComponent(paymentInfoTextNoDiacritics);
-                const encodedAccountName = encodeURIComponent(APP_CONFIG.payment.accountName);
-                const qrImageUrl = `${APP_CONFIG.payment.baseUrl}?accountName=${encodedAccountName}&amount=${fee}&addInfo=${encodedAddInfo}`;
-
                 // MỚI: Tìm tên bãi đỗ xe từ ID
                 const location = LOCATIONS_CONFIG.find(loc => loc.id === vehicle.LocationID);
                 const locationName = location ? location.name : 'Không xác định';
-
 
                 return {
                     licensePlate: vehicle.Plate,
                     timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
                     totalAmount: `${fee.toLocaleString('vi-VN')}đ`,
                     qrImageUrl: qrImageUrl,
-                    paymentMemo: paymentInfoText,
+                    paymentMemo: paymentMemo,
                     locationName: locationName, // Thêm tên bãi đỗ xe vào payload
                     lat: location ? location.lat : null, // MỚI: Thêm tọa độ
                     lng: location ? location.lng : null  // MỚI: Thêm tọa độ
