@@ -2284,9 +2284,8 @@
             if (allElements.selectQrBtn) allElements.selectQrBtn.addEventListener('click', () => {
                 allElements.selectQrBtn.classList.add('active');
                 allElements.selectCashBtn.classList.remove('active');
-                document.getElementById('payment-qrcode-wrapper').style.display = 'block';
-                const memoEl = document.getElementById('payment-memo-display');
-                if (memoEl) memoEl.parentElement.style.display = 'block';
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'block';
                 allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
                 // Gửi thông báo cho cửa sổ phụ
                 if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'qr' });
@@ -2294,9 +2293,8 @@
             if (allElements.selectCashBtn) allElements.selectCashBtn.addEventListener('click', () => {
                 allElements.selectCashBtn.classList.add('active');
                 allElements.selectQrBtn.classList.remove('active');
-                document.getElementById('payment-qrcode-wrapper').style.display = 'none';
-                const memoEl = document.getElementById('payment-memo-display');
-                if (memoEl) memoEl.parentElement.style.display = 'none';
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'none';
                 allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
                 // Gửi thông báo cho cửa sổ phụ
                 if (paymentChannel) {

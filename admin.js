@@ -428,6 +428,15 @@ document.addEventListener('DOMContentLoaded', () => {
             vehicles: []
         };
 
+        // SỬA LỖI: Lấy dữ liệu cho biểu đồ từ `data`
+        if (data?.revenueByLocation && data?.vehiclesByLocation) {
+            Object.keys(data.revenueByLocation).forEach(id => {
+                locationData.names.push(getLocationName(id));
+                locationData.revenue.push(data.revenueByLocation[id] || 0);
+                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
+            });
+        }
+
         // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
         const trafficData = data?.trafficByHour || Array(24).fill(0);
         if (trafficChart) trafficChart.destroy();
