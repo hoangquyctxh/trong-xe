@@ -559,6 +559,15 @@ document.addEventListener('DOMContentLoaded', () => {
         editFee: document.getElementById('edit-fee'),
         editPaymentMethod: document.getElementById('edit-payment-method'),
         editStatus: document.getElementById('edit-status'),
+        // MỚI: Các phần tử cho modal tài khoản ngân hàng
+        bankAccountModal: document.getElementById('bank-account-modal'),
+        addBankAccountBtn: document.getElementById('add-bank-account-btn'),
+        closeBankModalBtn: document.getElementById('close-bank-modal-btn'),
+        cancelBankBtn: document.getElementById('cancel-bank-btn'),
+        bankAccountForm: document.getElementById('bank-account-form'),
+        bankAccountsBody: document.getElementById('bank-accounts-body'),
+        bankModalTitle: document.getElementById('bank-modal-title'),
+
     };
 
     const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
@@ -574,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return locationMap[locationId] || locationId || '--';
     };
 
-    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
+    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval, allTransactions = [];
 
     const formatCurrency = (value) => {
         const numValue = Number(value);
@@ -784,6 +793,142 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.saveEditBtn.textContent = 'Lưu thay đổi';
         }
     };
+
+    // ================================================================
+    // --- MỚI: LOGIC QUẢN LÝ TÀI KHOẢN NGÂN HÀNG (SỬA LỖI) ---
+    // ================================================================
+    const getBankAccounts = () => {
+        return JSON.parse(localStorage.getItem('bankAccounts_v1')) || [];
+    };
+
+    const saveBankAccounts = (accounts) => {
+        localStorage.setItem('bankAccounts_v1', JSON.stringify(accounts));
+        // Cập nhật tài khoản đang hoạt động cho trang index.html sử dụng
+        const activeAccount = accounts.find(acc => acc.isActive);
+        if (activeAccount) {
+            localStorage.setItem('activeBankAccount_v1', JSON.stringify(activeAccount));
+        } else {
+            localStorage.removeItem('activeBankAccount_v1');
+        }
+    };
+
+    const renderBankAccounts = () => {
+        if (!elements.bankAccountsBody) return;
+        const accounts = getBankAccounts();
+        elements.bankAccountsBody.innerHTML = '';
+
+        if (accounts.length === 0) {
+            elements.bankAccountsBody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">Chưa có tài khoản. Nhấn "Thêm tài khoản" để bắt đầu.</td></tr>`;
+            return;
+        }
+
+        accounts.forEach(acc => {
+            const statusHtml = acc.isActive
+                ? `<span class="status-badge parking">Đang hoạt động</span>`
+                : `<button class="action-button btn-secondary set-active-btn" data-id="${acc.id}" style="width: auto; padding: 5px 10px; font-size: 0.8rem; background: var(--info-color);">Kích hoạt</button>`;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${acc.bin}</td>
+                <td>${acc.accountName}</td>
+                <td>${acc.accountNumber}</td>
+                <td style="text-align: center;">${statusHtml}</td>
+                <td style="text-align: center;">
+                    <button class="edit-bank-btn edit-btn" data-id="${acc.id}" style="margin-right: 5px;">Sửa</button>
+                    <button class="delete-bank-btn action-button" data-id="${acc.id}" style="background: var(--danger-color); width: auto; padding: 5px 10px; font-size: 0.8rem;">Xóa</button>
+                </td>
+            `;
+            elements.bankAccountsBody.appendChild(row);
+        });
+
+        // Gắn lại sự kiện cho các nút vừa tạo
+        elements.bankAccountsBody.querySelectorAll('.set-active-btn').forEach(btn => btn.addEventListener('click', handleSetActiveAccount));
+        elements.bankAccountsBody.querySelectorAll('.edit-bank-btn').forEach(btn => btn.addEventListener('click', handleEditAccount));
+        elements.bankAccountsBody.querySelectorAll('.delete-bank-btn').forEach(btn => btn.addEventListener('click', handleDeleteAccount));
+    };
+
+    const openBankAccountModal = (accountToEdit = null) => {
+        if (!elements.bankAccountModal) return;
+        elements.bankAccountForm.reset();
+
+        if (accountToEdit) {
+            elements.bankModalTitle.textContent = 'Sửa Tài khoản Ngân hàng';
+            document.getElementById('bank-account-id').value = accountToEdit.id;
+            document.getElementById('bank-bin').value = accountToEdit.bin;
+            document.getElementById('bank-account-name').value = accountToEdit.accountName;
+            document.getElementById('bank-account-number').value = accountToEdit.accountNumber;
+            document.getElementById('bank-account-template').value = accountToEdit.template || 'compact2';
+        } else {
+            elements.bankModalTitle.textContent = 'Thêm Tài khoản Ngân hàng';
+            document.getElementById('bank-account-id').value = '';
+        }
+        elements.bankAccountModal.style.display = 'flex';
+    };
+
+    const handleSaveBankAccount = (e) => {
+        e.preventDefault();
+        let accounts = getBankAccounts();
+        const accountId = document.getElementById('bank-account-id').value;
+
+        const newAccountData = {
+            bin: document.getElementById('bank-bin').value.trim(),
+            accountName: document.getElementById('bank-account-name').value.trim(),
+            accountNumber: document.getElementById('bank-account-number').value.trim(),
+            template: document.getElementById('bank-account-template').value.trim() || 'compact2',
+        };
+
+        if (accountId) { // Chế độ sửa
+            const index = accounts.findIndex(acc => acc.id === accountId);
+            if (index !== -1) {
+                accounts[index] = { ...accounts[index], ...newAccountData };
+            }
+        } else { // Chế độ thêm mới
+            newAccountData.id = `bank_${new Date().getTime()}`;
+            // Nếu đây là tài khoản đầu tiên, tự động kích hoạt nó
+            newAccountData.isActive = accounts.length === 0;
+            accounts.push(newAccountData);
+        }
+
+        saveBankAccounts(accounts);
+        renderBankAccounts();
+        elements.bankAccountModal.style.display = 'none';
+    };
+
+    const handleSetActiveAccount = (e) => {
+        const accountId = e.target.dataset.id;
+        let accounts = getBankAccounts();
+        accounts.forEach(acc => {
+            acc.isActive = acc.id === accountId;
+        });
+        saveBankAccounts(accounts);
+        renderBankAccounts();
+    };
+
+    const handleEditAccount = (e) => {
+        const accountId = e.target.dataset.id;
+        const accountToEdit = getBankAccounts().find(acc => acc.id === accountId);
+        if (accountToEdit) {
+            openBankAccountModal(accountToEdit);
+        }
+    };
+
+    const handleDeleteAccount = (e) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) return;
+
+        const accountId = e.target.dataset.id;
+        let accounts = getBankAccounts();
+        const updatedAccounts = accounts.filter(acc => acc.id !== accountId);
+
+        // Nếu tài khoản bị xóa đang active, và vẫn còn tài khoản khác
+        const wasActive = accounts.find(acc => acc.id === accountId)?.isActive;
+        if (wasActive && updatedAccounts.length > 0) {
+            updatedAccounts[0].isActive = true; // Tự động kích hoạt tài khoản đầu tiên trong danh sách còn lại
+        }
+
+        saveBankAccounts(updatedAccounts);
+        renderBankAccounts();
+    };
+    // ================================================================
 
     const updateDashboardUI = (data, isSilentUpdate = false) => {
         fullAdminData = data;
@@ -1468,6 +1613,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.cancelEditBtn) elements.cancelEditBtn.addEventListener('click', closeEditModal);
             if (elements.editForm) elements.editForm.addEventListener('submit', saveTransactionChanges);
             if (elements.startSessionBtn) elements.startSessionBtn.addEventListener('click', startAdminSession);
+
+            // MỚI: Gắn sự kiện cho các nút quản lý tài khoản ngân hàng
+            if (elements.addBankAccountBtn) elements.addBankAccountBtn.addEventListener('click', () => openBankAccountModal());
+            if (elements.closeBankModalBtn) elements.closeBankModalBtn.addEventListener('click', () => elements.bankAccountModal.style.display = 'none');
+            if (elements.cancelBankBtn) elements.cancelBankBtn.addEventListener('click', () => elements.bankAccountModal.style.display = 'none');
+            if (elements.bankAccountForm) elements.bankAccountForm.addEventListener('submit', handleSaveBankAccount);
+
+            renderBankAccounts(); // Hiển thị danh sách tài khoản đã lưu khi tải trang
     
             showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
         } catch (error) {
