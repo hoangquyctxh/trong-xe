@@ -206,7 +206,7 @@
             border-radius: var(--border-radius-lg);
             padding: 2em;
             border: 1px solid var(--border-color);
-            min-height: 380px; /* Giảm chiều cao */
+            min-height: 420px; /* Tăng chiều cao để cân đối */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -224,32 +224,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1em;
-            margin-bottom: 1.5em;
-        }
-        .method-btn { /* Thu nhỏ nút */
-            padding: 1em;
-            border-radius: var(--border-radius-md);
-            border: 2px solid var(--border-color);
-            background: var(--bg-main);
-            color: var(--text-secondary);
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .method-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-md);
-            border-color: var(--primary-accent-light);
-        }
-        .method-btn.active {
-            background: var(--primary-accent-light);
-            color: white;
-            border-color: var(--primary-accent);
+            margin-bottom: 2em; /* Tăng khoảng cách */
         }
         .qr-code-display {
             padding: 15px;
@@ -687,16 +662,6 @@
                         <span id="payment-total-amount">0</span><sup>đ</sup>
                     </div>
                 </div>
-                <div class="payment-method-selector">
-                    <button id="select-qr-btn" class="method-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                        Thanh toán QR
-                    </button>
-                    <button id="select-cash-btn" class="method-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12V12"/><path d="M10.62 6.38a4 4 0 1 0 5.25 5.25"/><path d="M12 19.52A7.52 7.52 0 1 0 4.48 12"/><path d="M12 12V12"/></svg>
-                        Tiền mặt
-                    </button>
-                </div>
             </div>
 
             <!-- CỘT PHẢI: HIỂN THỊ QR HOẶC HƯỚNG DẪN -->
@@ -709,9 +674,6 @@
             <div id="qr-code-wrapper" class="qr-code-display hidden" style="transition: all 0.4s ease;">
                 <img id="qr-code-image" src="" alt="Mã QR thanh toán">
                 <p>Nội dung: <strong id="qr-memo">--</strong></p>
-            </div>
-            <div id="cash-payment-action" class="action-buttons hidden">
-                <button id="complete-cash-payment-btn" class="btn btn-primary">Hoàn tất thanh toán</button>
             </div>
         </div>
     </div>
@@ -842,11 +804,7 @@
             const paymentView = document.getElementById('payment-selection-view');
             const successView = document.getElementById('success-view');
             const checkinSuccessView = document.getElementById('checkin-success-view'); // MỚI
-            const selectQrBtn = document.getElementById('select-qr-btn');
-            const selectCashBtn = document.getElementById('select-cash-btn');
             const qrWrapper = document.getElementById('qr-code-wrapper');
-            const cashPaymentAction = document.getElementById('cash-payment-action');
-            const completeCashPaymentBtn = document.getElementById('complete-cash-payment-btn');
             const rightPanel = document.getElementById('right-panel-content');
             const idleView = document.getElementById('idle-view'); // MỚI
             const adView = document.getElementById('ad-view'); // MỚI
@@ -1011,23 +969,23 @@
 
                 } else if (type === 'PAYMENT_METHOD_SELECTED') {
                     if (method === 'qr') {
-                        selectQrBtn.classList.add('active');
-                        selectCashBtn.classList.remove('active');
                         // Di chuyển nội dung QR vào panel phải
                         rightPanel.innerHTML = '';
                         rightPanel.classList.remove('placeholder');
                         qrWrapper.classList.remove('hidden'); // Hiển thị lại
                         rightPanel.appendChild(qrWrapper);
                     } else if (method === 'cash') {
-                        selectCashBtn.classList.add('active');
-                        selectQrBtn.classList.remove('active');
                         // Di chuyển nút tiền mặt vào panel phải
                         rightPanel.innerHTML = '';
                         rightPanel.classList.remove('placeholder');
-                        cashPaymentAction.classList.remove('hidden'); // Hiển thị lại
-                        rightPanel.appendChild(cashPaymentAction);
-                        // Thêm hướng dẫn cho nhân viên
-                        rightPanel.insertAdjacentHTML('afterbegin', '<p style="margin-bottom: 1.5em; color: var(--text-secondary);">Vui lòng thu tiền mặt từ khách và nhấn "Hoàn tất".</p>');
+                        // Hiển thị hướng dẫn thanh toán tiền mặt
+                        rightPanel.innerHTML = `
+                            <div style="text-align: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1em;"><path d="M12 12V12"/><path d="M10.62 6.38a4 4 0 1 0 5.25 5.25"/><path d="M12 19.52A7.52 7.52 0 1 0 4.48 12"/><path d="M12 12V12"/></svg>
+                                <h3 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: 0.5em;">Thanh toán bằng tiền mặt</h3>
+                                <p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p>
+                            </div>
+                        `;
                     }
                 } else if (type === 'CHECKOUT_COMPLETE') {
                     idleView.classList.add('hidden');
