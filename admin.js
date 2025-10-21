@@ -167,6 +167,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetId === 'page-map' && map) {
                 setTimeout(() => map.invalidateSize(), 10);
             }
+
+            // NÂNG CẤP: Chỉ tải dữ liệu giao dịch khi người dùng click vào tab "Giao dịch"
+            // và dữ liệu đó chưa được tải.
+            const hasTransactions = fullAdminData && fullAdminData.transactions && fullAdminData.transactions.length > 0;
+            if (targetId === 'page-transactions' && !hasTransactions && currentSecretKey) {
+                fetchTransactionData(currentSecretKey, elements.adminDatePicker.value);
+            }
         });
     };
 
@@ -407,21 +414,16 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.totalVehicles.textContent = data?.totalVehiclesToday ?? 0;
         elements.currentVehicles.textContent = data?.vehiclesCurrentlyParking ?? 0;
 
-        renderTransactionTable(data?.transactions || []);
+        // Bỏ render bảng giao dịch ở đây, chỉ render khi có dữ liệu giao dịch được tải riêng
+        if (data?.transactions) {
+            renderTransactionTable(data.transactions);
+        }
 
         const locationData = {
             names: [],
             revenue: [],
             vehicles: []
         };
-
-        if (data?.revenueByLocation && data?.vehiclesByLocation) {
-            Object.keys(data.revenueByLocation).forEach(id => {
-                locationData.names.push(getLocationName(id));
-                locationData.revenue.push(data.revenueByLocation[id] || 0);
-                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
-            });
-        }
 
         // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
         const trafficData = data?.trafficByHour || Array(24).fill(0);
@@ -524,10 +526,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return formattedDate;
     };
 
+    // NÂNG CẤP: Tách hàm fetchAdminData thành 2 hàm: một cho dữ liệu tổng quan, một cho giao dịch
     const fetchAdminData = async (secretKey, isSilent = false, date = null) => {
         try {
             const dateParam = date ? `&date=${date}` : '';
-            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminData&secret=${secretKey}${dateParam}&v=${new Date().getTime()}`);
+            // Thay đổi action để chỉ lấy dữ liệu tổng quan (overview)
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminOverview&secret=${secretKey}${dateParam}&v=${new Date().getTime()}`);
 
             if (!response.ok) {
                 throw new Error(`Lỗi mạng: ${response.statusText}`);
@@ -538,7 +542,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(result.message || 'Lỗi không xác định từ server');
             }
 
-            updateDashboardUI(result.data, isSilent);
+            // Gộp dữ liệu mới vào dữ liệu cũ (nếu có)
+            fullAdminData = { ...(fullAdminData || {}), ...result.data };
+            updateDashboardUI(fullAdminData, isSilent);
+
             return true;
         } catch (error) {
             if (!isSilent) {
@@ -549,6 +556,35 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
     };
+
+    // NÂNG CẤP: Hàm mới chỉ để tải dữ liệu giao dịch
+    const fetchTransactionData = async (secretKey, date = null) => {
+        if (!elements.transactionLogBody) return;
+        
+        // Hiển thị trạng thái đang tải trong bảng
+        elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px;">Đang tải chi tiết giao dịch...</td></tr>`;
+
+        try {
+            const dateParam = date ? `&date=${date}` : '';
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getTransactions&secret=${secretKey}${dateParam}&v=${new Date().getTime()}`);
+
+            if (!response.ok) throw new Error(`Lỗi mạng: ${response.statusText}`);
+            
+            const result = await response.json();
+            if (result.status !== 'success' || !result.data) {
+                throw new Error(result.message || 'Lỗi không xác định từ server');
+            }
+
+            // Gộp dữ liệu giao dịch vào biến fullAdminData và render lại bảng
+            fullAdminData.transactions = result.data.transactions;
+            renderTransactionTable(fullAdminData.transactions);
+
+        } catch (error) {
+            elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--danger-color);">Lỗi tải giao dịch: ${error.message}</td></tr>`;
+            console.error('Lỗi tải giao dịch:', error);
+        }
+    };
+
 
     const startAdminSession = async () => {
         try {
@@ -1076,7 +1112,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
             if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
             if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
-                if (currentSecretKey) fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
+                if (currentSecretKey) {
+                    // Khi đổi ngày, tải lại cả dữ liệu tổng quan và giao dịch (nếu đang ở tab giao dịch)
+                    fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
+                    if (document.getElementById('page-transactions').classList.contains('active')) {
+                        fetchTransactionData(currentSecretKey, elements.adminDatePicker.value);
+                    }
+                }
             });
             if (elements.transactionLogBody) elements.transactionLogBody.addEventListener('click', (e) => { if (e.target.classList.contains('edit-btn')) openEditModal(e.target.dataset.uniqueid); });
             if (elements.closeEditModalBtn) elements.closeEditModalBtn.addEventListener('click', closeEditModal);
