@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
             marker.setPopupContent(newPopupContent);
         });
     };
-
     const initMap = (data) => {
         if (map) {
             map.remove();
