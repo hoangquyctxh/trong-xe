@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const highlightChartSlice = (chart, labelToHighlight) => {
-        if (!chart || !chart.data) return;
+        if (!chart || !chart.data || !chart.data.datasets[0]?.originalBackgroundColor) return;
         const labelIndex = chart.data.labels.indexOf(labelToHighlight);
         chart.data.datasets.forEach(dataset => {
             dataset.backgroundColor = dataset.originalBackgroundColor.map((color, index) => 
@@ -424,6 +424,15 @@ document.addEventListener('DOMContentLoaded', () => {
             revenue: [],
             vehicles: []
         };
+
+        // SỬA LỖI: Lấy dữ liệu cho biểu đồ từ `data`
+        if (data?.revenueByLocation && data?.vehiclesByLocation) {
+            Object.keys(data.revenueByLocation).forEach(id => {
+                locationData.names.push(getLocationName(id));
+                locationData.revenue.push(data.revenueByLocation[id] || 0);
+                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
+            });
+        }
 
         // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
         const trafficData = data?.trafficByHour || Array(24).fill(0);
