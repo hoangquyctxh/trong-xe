@@ -170,9 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // NÂNG CẤP: Chỉ tải dữ liệu giao dịch khi người dùng click vào tab "Giao dịch"
             // và dữ liệu đó chưa được tải.
-            const hasTransactions = fullAdminData && fullAdminData.transactions && fullAdminData.transactions.length > 0;
-            if (targetId === 'page-transactions' && !hasTransactions && currentSecretKey) {
-                fetchTransactionData(currentSecretKey, elements.adminDatePicker.value);
+            const isTransactionTab = targetId === 'page-transactions';
+            const transactionsLoaded = fullAdminData && fullAdminData.transactions;
+            if (isTransactionTab && !transactionsLoaded && currentSecretKey) {
+                fetchTransactionData(currentSecretKey, elements.adminDatePicker.value || null); // Pass null if date is empty
             }
         });
     };
@@ -427,15 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
             vehicles: []
         };
 
-        // SỬA LỖI: Lấy dữ liệu cho biểu đồ từ `data`
-        if (data?.revenueByLocation && data?.vehiclesByLocation) {
-            Object.keys(data.revenueByLocation).forEach(id => {
-                locationData.names.push(getLocationName(id));
-                locationData.revenue.push(data.revenueByLocation[id] || 0);
-                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
-            });
-        }
-
         // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
         const trafficData = data?.trafficByHour || Array(24).fill(0);
         if (trafficChart) trafficChart.destroy();
@@ -522,18 +514,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const setTodayDate = () => {
-        const today = new Date();
-        const formatDateForAPI = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        const formattedDate = formatDateForAPI(new Date());
+         // NÂNG CẤP: Để trống bộ chọn ngày ban đầu để tải tất cả dữ liệu
         if (elements.adminDatePicker) {
-            elements.adminDatePicker.value = formattedDate;
+            elements.adminDatePicker.value = ''; // Để trống
         }
-        return formattedDate;
     };
 
     // NÂNG CẤP: Tách hàm fetchAdminData thành 2 hàm: một cho dữ liệu tổng quan, một cho giao dịch
@@ -650,7 +634,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
             if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
                 if (currentSecretKey) {
-                    // Khi đổi ngày, tải lại cả dữ liệu tổng quan và giao dịch (nếu đang ở tab giao dịch)
+                    // Khi đổi ngày, xóa dữ liệu giao dịch cũ và tải lại cả hai
+                    if (fullAdminData) {
+                        fullAdminData.transactions = null; 
+                    }
                     fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
                     if (document.getElementById('page-transactions').classList.contains('active')) {
                         fetchTransactionData(currentSecretKey, elements.adminDatePicker.value);
@@ -680,4 +667,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     init();
 });
-
