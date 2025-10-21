@@ -1842,8 +1842,8 @@
                 allElements.paymentQrcodeImage.style.opacity = '0'; // Ẩn ảnh cũ
                 
                 // YÊU CẦU MỚI: Mặc định ẩn QR và bỏ chọn các nút
-                document.getElementById('payment-qrcode-wrapper').style.display = 'none';
-                document.getElementById('payment-memo-display').parentElement.style.display = 'none';
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'none';
                 allElements.selectQrBtn.classList.remove('active');
                 allElements.selectCashBtn.classList.remove('active');
                 
