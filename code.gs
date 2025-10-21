@@ -1,6 +1,6 @@
 /**
  * @file Code.gs
- * @version 14.0 - Robust VIP Feature
+ * @version 15.0 - Stable Admin Data Fetching
  * @description Hệ thống xử lý dữ liệu xe, tích hợp tính năng VIP và lưu ảnh.
  * Giải pháp này đảm bảo tính nhất quán của dữ liệu VIP giữa client và server.
  */
@@ -9,6 +9,8 @@
 const SHEET_ID = '1uYWrFvS_6L-iIVv4eyJSL8i2tb9GGPJmE8dGIbHsor4'; // ID Google Sheet của bạn
 const SHEET_NAME = 'Sheet1'; // Tên trang tính
 const IMAGE_FOLDER_ID = '10_RCBR7UZh-WX59rpHjwQuZSqpcrL8pH'; // ID thư mục ảnh trên Drive
+const ADMIN_SECRET_KEY = "admin123"; // Mật khẩu bảo vệ trang quản trị.
+const GEMINI_API_KEY = "AIzaSyDbcSZTvvcfc_bbZhpapT_H3Jj7clfrb3w"; // API Key cho tính năng AI Insights
 
 // ================== CÁC HÀM CHÍNH (doGet, doPost) ==================
 
@@ -21,7 +23,7 @@ function doGet(e) {
         return getAdminOverview(params.secret, params.date || null);
       case 'getTransactions':
         return getTransactions(params.secret, params.date || null);
-      case 'getAdminData': // Vẫn giữ lại để tương thích nếu cần
+      case 'getAdminData': // Giữ lại để tương thích nếu cần
         return getAdminData(params.secret, params.date || null);
       default:
         // Xử lý các request cũ hơn nếu không có action
@@ -356,7 +358,7 @@ function getAdminData(secret, dateString) {
     const headers = data[0];
     
     // Xử lý ngày
-    const targetDate = dateString ? new Date(dateString) : new Date();
+    const targetDate = dateString ? new Date(dateString + "T00:00:00") : new Date();
     const targetDateStr = Utilities.formatDate(targetDate, "GMT+7", "yyyy-MM-dd");
     
     // Khởi tạo các biến thống kê
@@ -369,23 +371,15 @@ function getAdminData(secret, dateString) {
     const transactions = [];
 
     // Ánh xạ các cột quan trọng
-    const dateCol = findHeaderIndex(headers, 'Date');
-    const plateCol = findHeaderIndex(headers, 'Plate');
-    const statusCol = findHeaderIndex(headers, 'Status');
-    const entryTimeCol = findHeaderIndex(headers, 'Entry Time');
-    const exitTimeCol = findHeaderIndex(headers, 'Exit Time');
-    const feeCol = findHeaderIndex(headers, 'Fee');
-    const locationIdCol = findHeaderIndex(headers, 'LocationID');
-    const paymentMethodCol = findHeaderIndex(headers, 'PaymentMethod');
-    const uniqueIdCol = findHeaderIndex(headers, 'UniqueID');
+    const cols = getHeaderIndices(headers);
 
     // Duyệt qua từng dòng dữ liệu
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const rowDate = Utilities.formatDate(new Date(row[entryTimeCol]), "GMT+7", "yyyy-MM-dd");
-      const status = row[statusCol];
-      const fee = parseFloat(row[feeCol]) || 0;
-      const locationId = row[locationIdCol];
+      const rowDate = Utilities.formatDate(new Date(row[cols.entryTimeCol]), "GMT+7", "yyyy-MM-dd");
+      const status = row[cols.statusCol];
+      const fee = parseFloat(row[cols.feeCol]) || 0;
+      const locationId = row[cols.locationIdCol];
 
       // CHỈ TÍNH TOÁN THỐNG KÊ TRONG NGÀY (doanh thu, lượt xe, biểu đồ...) cho các xe CÓ GIỜ VÀO trong ngày đó.
       if (rowDate === targetDateStr) {
@@ -393,11 +387,11 @@ function getAdminData(secret, dateString) {
           Plate: row[plateCol],
           'Entry Time': row[entryTimeCol],
           'Exit Time': row[exitTimeCol] || null,
-          Status: status,
-          Fee: fee,
-          'Payment Method': row[paymentMethodCol] || '',
-          LocationID: locationId,
-          UniqueID: row[uniqueIdCol]
+          Status: row[cols.statusCol],
+          Fee: parseFloat(row[cols.feeCol]) || 0,
+          'Payment Method': row[cols.paymentMethodCol] || '',
+          LocationID: row[cols.locationIdCol],
+          UniqueID: row[cols.uniqueIdCol]
         };
 
         // Tính toán các chỉ số trong ngày
@@ -417,7 +411,7 @@ function getAdminData(secret, dateString) {
       }
 
       // SỬA LỖI LOGIC: Đếm tổng số xe đang gửi trên TOÀN BỘ dữ liệu, không phụ thuộc vào ngày.
-      if (status === 'Đang gửi') {
+      if (row[cols.statusCol] === 'Đang gửi') {
         vehiclesCurrentlyParking++;
       }
     }
@@ -463,6 +457,23 @@ function getAdminData(secret, dateString) {
       message: `Lỗi xử lý dữ liệu: ${err.message}`
     });
   }
+}
+
+/**
+ * NÂNG CẤP: Hàm tiện ích để lấy chỉ số các cột, tránh lặp lại code.
+ * Đã di chuyển lên đây để các hàm khác có thể gọi.
+ */
+function getHeaderIndices(headers) {
+  return {
+    plateCol: findHeaderIndex(headers, 'Plate'),
+    statusCol: findHeaderIndex(headers, 'Status'),
+    entryTimeCol: findHeaderIndex(headers, 'Entry Time'),
+    exitTimeCol: findHeaderIndex(headers, 'Exit Time'),
+    feeCol: findHeaderIndex(headers, 'Fee'),
+    locationIdCol: findHeaderIndex(headers, 'LocationID'),
+    paymentMethodCol: findHeaderIndex(headers, 'PaymentMethod'),
+    uniqueIdCol: findHeaderIndex(headers, 'UniqueID')
+  };
 }
 
 /**
