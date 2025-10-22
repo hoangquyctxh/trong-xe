@@ -945,46 +945,16 @@
             const selectCashBtn = document.getElementById('select-cash-btn');
             const rightPanel = document.getElementById('right-panel-content');
             const grid = document.querySelector('.payment-content-grid');
-
-            // NÂNG CẤP: Hàm phát âm thanh bằng giọng nói của Google
-            const playSound = (text) => {
-                if (!text) return;
-                const encodedText = encodeURIComponent(text);
-                const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=vi&client=tw-ob`);
-                audio.play().catch(e => console.error("Lỗi phát âm thanh:", e));
-            };
-            
             const paymentChannel = new BroadcastChannel('parking_payment_channel');
             let inactivityTimer = null;
 
-            // --- HÀM HIỆU ỨNG CONFETTI ---
-            function startConfetti(containerId = 'confetti-container') {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                const confettiCount = 150;
-                const colors = ['#0056b3', '#007bff', '#ffc107', '#28a745', '#dc3545'];
-
-                for (let i = 0; i < confettiCount; i++) {
-                    const confetti = document.createElement('div');
-                    confetti.style.position = 'absolute';
-                    confetti.style.width = `${Math.random() * 10 + 5}px`;
-                    confetti.style.height = `${Math.random() * 6 + 4}px`;
-                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.opacity = '1';
-                    const startX = 50, startY = 50;
-                    confetti.style.left = `${startX}%`;
-                    confetti.style.top = `${startY}%`;
-                    const angle = Math.random() * 360;
-                    const radius = Math.random() * 300 + 150;
-                    const endX = startX + radius * Math.cos(angle * Math.PI / 180);
-                    const endY = startY + radius * Math.sin(angle * Math.PI / 180);
-                    confetti.style.transition = `transform 1.5s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 1.5s ease-out`;
-                    container.appendChild(confetti);
-                    setTimeout(() => { confetti.style.transform = `translate(${endX - startX}vw, ${endY - startY}vh) rotate(${Math.random() * 720}deg)`; confetti.style.opacity = '0'; }, 10);
-                    setTimeout(() => confetti.remove(), 1600);
-                }
-            }
-
+            // SỬA LỖI: Hàm này chỉ gửi yêu cầu phát âm thanh về trang chính
+            const requestSoundPlayback = (text) => {
+                if (!text) return;
+                // Gửi yêu cầu phát âm thanh về trang chính thay vì tự phát
+                paymentChannel.postMessage({ type: 'PLAY_SOUND', payload: text }); 
+            };
+            
             // --- HÀM ĐỒNG HỒ & THỜI TIẾT ---
             const updateClock = () => {
                 const now = new Date();
@@ -994,6 +964,33 @@
                 const cornerClockDisplay = document.getElementById('corner-clock-display');
                 if (cornerClockDisplay) cornerClockDisplay.textContent = timeString;
             };
+
+            // --- HÀM HIỆU ỨNG CONFETTI (VIẾT LẠI) ---
+            function startConfetti(containerId = 'confetti-container') {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                const confettiCount = 150;
+                const colors = ['#0056b3', '#007bff', '#ffc107', '#28a745', '#dc3545'];
+
+                // Xóa confetti cũ trước khi tạo mới
+                while (container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+
+                for (let i = 0; i < confettiCount; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.cssText = `position: absolute; width: ${Math.random() * 10 + 5}px; height: ${Math.random() * 6 + 4}px; background-color: ${colors[Math.floor(Math.random() * colors.length)]}; top: 50%; left: 50%; opacity: 1; transform: rotate(${Math.random() * 360}deg);`;
+                    container.appendChild(confetti);
+
+                    const angle = Math.random() * 360;
+                    const radius = Math.random() * 300 + 150;
+                    const endX = radius * Math.cos(angle * Math.PI / 180);
+                    const endY = radius * Math.sin(angle * Math.PI / 180);
+
+                    confetti.animate([ { transform: `translate(0, 0) rotate(${Math.random() * 360}deg)`, opacity: 1 }, { transform: `translate(${endX}px, ${endY}px) rotate(${Math.random() * 720}deg)`, opacity: 0 } ], { duration: 1500 + Math.random() * 1000, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'forwards' });
+                    setTimeout(() => confetti.remove(), 2500);
+                }
+            }
 
             const fetchWeather = async (lat, lon) => {
                 const weatherWidget = document.getElementById('weather-widget');
@@ -1049,11 +1046,12 @@
             const initialLng = urlParams.get('lng');
             const initialLocationName = urlParams.get('locationName');
 
-            if (initialLocationName) {
+            const setLocationName = (name) => {
                 const decodedLocationName = decodeURIComponent(initialLocationName);
                 document.getElementById('header-location-name').textContent = decodedLocationName;
                 document.getElementById('idle-location-display').textContent = decodedLocationName;
-            }
+            };
+            if (initialLocationName) setLocationName(initialLocationName);
             updateClock();
             setInterval(updateClock, 1000);
             fetchWeather(initialLat, initialLng);
@@ -1061,116 +1059,105 @@
             idleView.classList.remove('hidden');
 
             // --- LẮNG NGHE SỰ KIỆN TỪ KÊNH GIAO TIẾP ---
-            paymentChannel.onmessage = (event) => {
+            paymentChannel.addEventListener('message', (event) => {
                 const { type, payload, method } = event.data;
                 
                 stopInactivityTimerAndAds();
 
-                if (type === 'VEHICLE_CHECKOUT_INITIATE') {
-                    [successView, checkinSuccessView, idleView].forEach(v => v.classList.add('hidden'));
-                    paymentView.classList.remove('hidden');
-                    
-                    // Điền thông tin chung
-                    document.getElementById('payment-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
-                    document.getElementById('payment-plate').textContent = payload.licensePlate;
-                    document.getElementById('payment-time-in').textContent = payload.timeIn;
-                    document.getElementById('header-location-name').textContent = payload.locationName || 'Không xác định';
+                switch (type) {
+                    case 'VEHICLE_CHECKOUT_INITIATE':
+                        sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
+                        [successView, checkinSuccessView, idleView].forEach(v => v.classList.add('hidden'));
+                        paymentView.classList.remove('hidden');
+                        
+                        document.getElementById('payment-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
+                        document.getElementById('payment-plate').textContent = payload.licensePlate;
+                        document.getElementById('payment-time-in').textContent = payload.timeIn;
+                        if (payload.locationName) setLocationName(payload.locationName);
 
-                    // VIẾT LẠI: Reset trạng thái giao diện một cách triệt để
-                    grid.classList.remove('method-selected');
-                    rightPanel.classList.add('placeholder');
-                    selectQrBtn.classList.remove('active');
-                    selectCashBtn.classList.remove('active');
-                    renderRightPanel('placeholder'); // Gọi hàm render để reset cột phải
-
-                    // NÂNG CẤP: Phát âm thanh hướng dẫn thanh toán
-                    const feeText = payload.totalAmount.replace('đ', 'đồng');
-                    const readableDurationText = payload.readableDuration; // SỬA LỖI: Dùng chuỗi đọc được
-                    const soundText = `Cảm ơn quý khách đã sử dụng dịch vụ. Phí gửi xe của quý khách là ${feeText} cho tổng thời gian là ${readableDurationText}. Mời quý khách lựa chọn hình thức thanh toán.`;
-                    playSound(soundText);
-
-                } else if (type === 'PAYMENT_METHOD_SELECTED') {
-                    grid.classList.add('method-selected');
-                    rightPanel.classList.remove('placeholder');
-
-                    if (method === 'qr') {
-                        selectQrBtn.classList.add('active');
-                        selectCashBtn.classList.remove('active');
-                        renderRightPanel('qr');
-                        // Lấy payload từ message trước đó để điền thông tin QR
-                        const lastMessage = JSON.parse(sessionStorage.getItem('lastCheckoutInitiate'));
-                        if (lastMessage) {
-                            document.getElementById('qr-code-image').src = lastMessage.qrImageUrl;
-                            document.getElementById('qr-memo').textContent = lastMessage.paymentMemo;
-                        }
-                    } else if (method === 'cash') {
-                        selectCashBtn.classList.add('active');
+                        grid.classList.remove('method-selected');
+                        rightPanel.classList.add('placeholder');
                         selectQrBtn.classList.remove('active');
-                        renderRightPanel('cash');
-                    }
-                } else if (type === 'CHECKOUT_COMPLETE') {
-                    [paymentView, checkinSuccessView, idleView].forEach(v => v.classList.add('hidden'));
-                    successView.classList.remove('hidden');
-                    startConfetti();
+                        selectCashBtn.classList.remove('active');
+                        renderRightPanel('placeholder');
 
-                    // NÂNG CẤP: Phát âm thanh phù hợp với từng trường hợp
-                    let soundText = `Xe ${payload.licensePlate} đã hoàn tất thanh toán. Mời xe di chuyển ra cổng. Xin cảm ơn!`; // Mặc định
-                    if (payload.checkoutReason === 'guest') {
-                        soundText = `Đã xác nhận thông tin xe ${payload.licensePlate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!`;
-                    } else if (payload.checkoutReason === 'quick_exit') {
-                        soundText = `Xe ${payload.licensePlate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;
-                    }
-                    playSound(soundText);
-                    
-                    document.getElementById('success-plate').textContent = payload.licensePlate;
-                    document.getElementById('success-time-in').textContent = payload.timeIn;
-                    document.getElementById('success-time-out').textContent = payload.timeOut;
-                    document.getElementById('success-duration').textContent = payload.duration;
-                    document.getElementById('success-payment-method').textContent = payload.paymentMethod;
-                    document.getElementById('success-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
+                        const feeText = payload.totalAmount.replace('đ', 'đồng');
+                        const readableDurationText = payload.readableDuration;
+                        const soundTextCheckout = `Cảm ơn quý khách đã sử dụng dịch vụ. Phí gửi xe của quý khách là ${feeText} cho tổng thời gian là ${readableDurationText}. Mời quý khách lựa chọn hình thức thanh toán.`;
+                        requestSoundPlayback(soundTextCheckout);
+                        break;
 
-                    setTimeout(() => {
-                        successView.style.animation = 'fadeOut 0.5s ease forwards';
+                    case 'PAYMENT_METHOD_SELECTED':
+                        grid.classList.add('method-selected');
+                        rightPanel.classList.remove('placeholder');
+                        const lastMessage = JSON.parse(sessionStorage.getItem('lastCheckoutInitiate'));
+
+                        if (method === 'qr') {
+                            selectQrBtn.classList.add('active');
+                            selectCashBtn.classList.remove('active');
+                            renderRightPanel('qr');
+                            if (lastMessage) {
+                                document.getElementById('qr-code-image').src = lastMessage.qrImageUrl;
+                                document.getElementById('qr-memo').textContent = lastMessage.paymentMemo;
+                            }
+                        } else if (method === 'cash') {
+                            selectCashBtn.classList.add('active');
+                            selectQrBtn.classList.remove('active');
+                            renderRightPanel('cash');
+                        }
+                        break;
+
+                    case 'CHECKOUT_COMPLETE':
+                        [paymentView, checkinSuccessView, idleView].forEach(v => v.classList.add('hidden'));
+                        successView.classList.remove('hidden');
+                        startConfetti('confetti-container');
+
+                        let soundTextComplete = `Xe ${payload.licensePlate} đã hoàn tất thanh toán. Mời xe di chuyển ra cổng. Xin cảm ơn!`;
+                        if (payload.checkoutReason === 'guest') {
+                            soundTextComplete = `Đã xác nhận thông tin xe ${payload.licensePlate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!`;
+                        } else if (payload.checkoutReason === 'quick_exit') {
+                            soundTextComplete = `Xe ${payload.licensePlate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;
+                        }
+                        requestSoundPlayback(soundTextComplete);
+                        
+                        document.getElementById('success-plate').textContent = payload.licensePlate;
+                        document.getElementById('success-time-in').textContent = payload.timeIn;
+                        document.getElementById('success-time-out').textContent = payload.timeOut;
+                        document.getElementById('success-duration').textContent = payload.duration;
+                        document.getElementById('success-payment-method').textContent = payload.paymentMethod;
+                        document.getElementById('success-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
+
                         setTimeout(() => {
                             successView.classList.add('hidden');
-                            successView.style.animation = '';
                             idleView.classList.remove('hidden');
-                            idleView.style.animation = 'fadeIn 0.5s ease';
                             startInactivityTimer();
-                        }, 500);
-                    }, 10000);
-                } else if (type === 'VEHICLE_CHECKIN_COMPLETE') {
-                    [paymentView, successView, idleView].forEach(v => v.classList.add('hidden'));
-                    checkinSuccessView.classList.remove('hidden');
-                    startConfetti('checkin-confetti-container');
-                    // NÂNG CẤP: Bật lại âm thanh khi gửi xe thành công
-                    if (payload.soundText) playSound(payload.soundText);
+                        }, 10000);
+                        break;
 
-                    document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
-                    document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
+                    case 'VEHICLE_CHECKIN_COMPLETE':
+                        [paymentView, successView, idleView].forEach(v => v.classList.add('hidden'));
+                        checkinSuccessView.classList.remove('hidden');
+                        startConfetti('checkin-confetti-container');
+                        
+                        if (payload.soundText) requestSoundPlayback(payload.soundText);
 
-                    setTimeout(() => {
-                        checkinSuccessView.style.animation = 'fadeOut 0.5s ease forwards';
+                        document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
+                        document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
+
                         setTimeout(() => {
                             checkinSuccessView.classList.add('hidden');
-                            checkinSuccessView.style.animation = '';
                             idleView.classList.remove('hidden');
-                            idleView.style.animation = 'fadeIn 0.5s ease';
                             startInactivityTimer();
-                        }, 500);
-                    }, 10000);
-                } else if (type === 'TRANSACTION_CANCELED') {
-                    [paymentView, successView, checkinSuccessView].forEach(v => v.classList.add('hidden'));
-                    idleView.classList.remove('hidden');
-                    idleView.style.animation = 'fadeIn 0.5s ease';
-                    startInactivityTimer();
-                }
+                        }, 10000);
+                        break;
 
-                // VIẾT LẠI: Lưu trữ payload của lần checkout gần nhất để sử dụng lại
-                if (type === 'VEHICLE_CHECKOUT_INITIATE') {
-                    sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
+                    case 'TRANSACTION_CANCELED':
+                        [paymentView, successView, checkinSuccessView].forEach(v => v.classList.add('hidden'));
+                        idleView.classList.remove('hidden');
+                        startInactivityTimer();
+                        break;
                 }
-            };
+            });
 
             // --- GẮN SỰ KIỆN CHO CÁC NÚT BẤM CỦA KHÁCH HÀNG ---
             selectQrBtn.addEventListener('click', () => {

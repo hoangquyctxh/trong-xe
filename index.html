@@ -1153,6 +1153,11 @@
                         } else if (method === 'cash' && allElements.selectCashBtn) {
                             allElements.selectCashBtn.click();
                         }
+                    } else if (type === 'PLAY_SOUND' && event.data.payload) {
+                        // MỚI: Nhận lệnh phát âm thanh từ màn hình phụ
+                        if (typeof playTTS === 'function') {
+                            playTTS(event.data.payload);
+                        }
                     }
                 });
             }
@@ -1335,13 +1340,70 @@
                 }, 2500);
             };
 
-        // NÂNG CẤP: Hàm phát âm thanh bằng giọng nói của Google
-        const playSound = (text) => {
-            if (!text) return;
-            const encodedText = encodeURIComponent(text);
-            const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=vi&client=tw-ob`);
-            audio.play().catch(e => console.error("Lỗi phát âm thanh:", e));
-        };
+            // =================================================================
+            // --- THAY THẾ: Chuyển sang Web Speech API (Text-to-Speech) để ổn định hơn ---
+            // =================================================================
+            let vietnameseVoice = null;
+
+            // =================================================================
+            // --- GIẢI PHÁP HYBRID: Kết hợp Google TTS (Online) và Web Speech API (Offline) ---
+            // --- Cải tiến với hàng đợi (Queue) để đảm bảo phát âm thanh ổn định ---
+            // =================================================================
+            let audioQueue = [];
+            let isPlaying = false;
+
+            // Hàm tải và chọn giọng nói tiếng Việt cho Web Speech API (dùng khi offline)
+            const loadAndSetVietnameseVoice = () => {
+                if (!('speechSynthesis' in window)) return;
+                const setVoice = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    vietnameseVoice = voices.find(voice => voice.name === 'Google Tiếng Việt' && voice.lang === 'vi-VN') || voices.find(voice => voice.lang === 'vi-VN');
+                };
+                if (window.speechSynthesis.getVoices().length) {
+                    setVoice();
+                } else {
+                    window.speechSynthesis.onvoiceschanged = setVoice;
+                }
+            };
+
+            const processAudioQueue = () => {
+                if (isPlaying || audioQueue.length === 0) return;
+                isPlaying = true;
+                const text = audioQueue.shift();
+
+                const onEnded = () => {
+                    isPlaying = false;
+                    processAudioQueue();
+                };
+
+                if (navigator.onLine) {
+                    // Online: Dùng giọng Google TTS
+                    const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob`);
+                    audio.onended = onEnded;
+                    audio.onerror = () => { // Fallback nếu Google TTS lỗi
+                        console.error("Lỗi Google TTS, chuyển sang giọng nói trình duyệt.");
+                        playWithWebSpeech(text, onEnded);
+                    };
+                    audio.play().catch(() => playWithWebSpeech(text, onEnded));
+                } else {
+                    // Offline: Dùng Web Speech API
+                    playWithWebSpeech(text, onEnded);
+                }
+            };
+
+            const playWithWebSpeech = (text, onEndedCallback) => {
+                if (!('speechSynthesis'in window)) { onEndedCallback(); return; }
+                const utterance = new SpeechSynthesisUtterance(text);
+                if (vietnameseVoice) utterance.voice = vietnameseVoice;
+                utterance.onend = onEndedCallback;
+                window.speechSynthesis.speak(utterance);
+            };
+
+            const playTTS = (text) => {
+                if (!text) return;
+                audioQueue.push(text);
+                processAudioQueue();
+            };
 
             const calculateDuration = (startTime) => {
                 if (!startTime) return '--';
@@ -2213,7 +2275,10 @@
                 updateOnlineStatus();
                 const today = new Date();
                 if (allElements.datePicker) allElements.datePicker.value = formatDateForAPI(today);
-                
+
+                // Tải giọng nói cho Web Speech API (dùng khi offline)
+                loadAndSetVietnameseVoice();
+
                 // Tách biệt việc xác định vị trí và tải dữ liệu
                 // Dữ liệu sẽ được tải sau khi người dùng chọn điểm trực
                 await determineNearestLocation(); 
@@ -2303,12 +2368,11 @@
                                     // NÂNG CẤP: Thêm lý do checkout để màn hình phụ phát đúng âm thanh
                                     const checkoutReason = isVehicleVIP ? 'guest' : 'quick_exit';
                                     if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: { ...finalReceiptData, checkoutReason } });
-                                    
-                                    // NÂNG CẤP: Tắt âm thanh ở màn hình chính
-                                    // const soundText = isVehicleVIP ? `Đã xác nhận thông tin xe ${vehicle.Plate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!` : `Xe ${vehicle.Plate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;
-                                    // playSound(soundText);
 
-                                    showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success');
+                                    // NÂNG CẤP: Tắt âm thanh ở màn hình chính
+                                    // const soundText = isVehicleVIP ? `Đã xác nhận thông tin xe ${vehicle.Plate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!` : `Xe ${vehicle.Plate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;                                    // playTTS(soundText);
+
+                                    showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success'); 
                                     resetMainForm();
                                     allElements.searchTermInput.value = '';
                                     await fetchVehiclesForDate(allElements.datePicker.value);
