@@ -2213,16 +2213,18 @@
 
                     if (fee > 0) {
                         // --- QUY TRÌNH CÓ TÍNH PHÍ (như cũ) ---
-                        // SỬA LỖI: Luôn gửi tín hiệu cho cửa sổ phụ thay vì hiển thị modal ở đây
-                        // if (isMobileDevice()) {
-                        //     showPaymentModal();
-                        // } else {
+                        // NÂNG CẤP: Phân luồng hiển thị cho Desktop và Mobile
+                        if (isMobileDevice()) {
+                            // Trên di động, chỉ hiển thị modal trên trang chính
+                            showPaymentModal();
+                        } else {
+                            // Trên desktop, mở cửa sổ phụ và gửi dữ liệu qua
                             if (!confirmationWindow || confirmationWindow.closed) {
                                 const url = `confirmation.html?lat=${currentLocation.lat}&lng=${currentLocation.lng}&locationName=${encodeURIComponent(currentLocation.name)}`;
                                 confirmationWindow = await openWindowOnSecondaryScreen(url, 'ConfirmationWindow', 'popup,width=950,height=700');
                             }
                             showPaymentModal();
-                        // }
+                        }
                     } else {
                         // --- QUY TRÌNH MIỄN PHÍ (MỚI) ---
                         const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
