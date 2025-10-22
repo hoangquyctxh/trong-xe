@@ -1873,6 +1873,14 @@
                     allElements.qrSpinner.style.display = 'none';
                     showToast('Lỗi tải mã QR từ VietQR.', 'error');
                 }
+
+                // SỬA LỖI: Gửi dữ liệu đến cửa sổ phụ (nếu có)
+                if (paymentChannel && confirmationWindow && !confirmationWindow.closed) {
+                    const payloadForConfirmation = createInitialDataForConfirmation(vehicle, qrImageUrl, paymentInfoText);
+                    if (payloadForConfirmation) {
+                        paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: payloadForConfirmation });
+                    }
+                }
             };
 
             const completePayment = async () => {
