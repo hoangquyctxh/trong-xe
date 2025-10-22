@@ -190,53 +190,66 @@
         /* ================================================== */
         /* --- BỐ CỤC NGANG MỚI - TOP 1 --- */
         /* ================================================== */
+        /* NÂNG CẤP: Sử dụng Flexbox để dễ dàng tạo hiệu ứng trượt */
         .payment-content-grid {
-            display: grid;
-            /* NÂNG CẤP: Bắt đầu với 1 cột, sẽ chuyển thành 2 cột bằng JS */
-            grid-template-columns: 1fr;
-            justify-items: center; /* Căn giữa nội dung ban đầu */
-            gap: 2.5em;
-            align-items: start; /* Căn các cột theo đỉnh */
+            display: flex;
+            width: 200%; /* Gấp đôi chiều rộng để chứa 2 panel */
             margin-top: 1.5em;
-            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1); /* Hiệu ứng chuyển đổi layout */
-        }
-        /* NÂNG CẤP: Trạng thái 2 cột khi đã chọn phương thức thanh toán */
-        .payment-content-grid.method-selected {
-            grid-template-columns: 1fr 1fr;
-            justify-items: initial; /* Reset về mặc định */
+            transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1); /* Hiệu ứng trượt mượt mà */
+            transform: translateX(25%); /* Ban đầu, căn giữa panel bên trái */
         }
         .payment-details-panel {
             display: flex;
             flex-direction: column;
-            width: 100%; /* Đảm bảo panel chiếm đủ không gian */
-            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); /* Hiệu ứng trượt */
-            transform: translateX(0);
-        }
-        /* NÂNG CẤP: Hiệu ứng trượt sang trái */
-        .payment-content-grid.method-selected .payment-details-panel {
-            transform: translateX(0);
+            width: 50%; /* Mỗi panel chiếm 50% */
+            padding: 0 1.25em; /* Khoảng cách giữa các panel */
         }
         .payment-qr-panel {
             background-color: var(--bg-main);
             border-radius: var(--border-radius-lg);
             padding: 2em;
             border: 1px solid var(--border-color);
-            min-height: 420px; /* Tăng chiều cao để cân đối */
+            height: 450px; /* Cố định chiều cao */
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             text-align: center;
-            transition: all 0.5s ease 0.2s; /* Thêm delay để xuất hiện sau khi layout thay đổi */
-            opacity: 0; /* Ẩn ban đầu */
-            transform: scale(0.95);
-            display: none; /* Ẩn hoàn toàn ban đầu */
+            width: 50%; /* Mỗi panel chiếm 50% */
+            padding: 0 1.25em; /* Khoảng cách giữa các panel */
         }
-        /* NÂNG CẤP: Hiệu ứng xuất hiện cho panel bên phải */
-        .payment-content-grid.method-selected .payment-qr-panel {
-            display: flex; /* Hiện lại khi cần */
-            opacity: 1;
-            transform: scale(1);
+        /* NÂNG CẤP: Trạng thái khi đã chọn phương thức -> trượt sang trái */
+        .payment-content-grid.method-selected {
+            transform: translateX(0);
+        }
+        /* NÂNG CẤP: Icon tiền mặt động */
+        .cash-payment-icon {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 1em;
+        }
+        .cash-payment-icon .coin {
+            stroke: var(--primary-accent);
+            stroke-width: 2;
+            fill: var(--secondary-accent);
+            opacity: 0;
+            animation: drop 2.5s ease-out infinite;
+        }
+        .cash-payment-icon .coin1 { animation-delay: 0s; }
+        .cash-payment-icon .coin2 { animation-delay: 0.2s; }
+        .cash-payment-icon .coin3 { animation-delay: 0.4s; }
+        .cash-payment-icon .hand {
+            fill: none;
+            stroke: var(--primary-accent);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        @keyframes drop {
+            0% { transform: translateY(-100px); opacity: 0; }
+            10% { opacity: 1; }
+            80% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(20px); opacity: 0; }
         }
         .payment-qr-panel.placeholder {
             color: var(--text-secondary);
@@ -986,10 +999,10 @@
                     document.getElementById('payment-plate').textContent = payload.licensePlate;
                     document.getElementById('payment-time-in').textContent = payload.timeIn;
                     document.getElementById('header-location-name').textContent = payload.locationName || 'Không xác định';
-
-                    // NÂNG CẤP: Reset về trạng thái ban đầu (1 cột, căn giữa)
+                    
+                    // NÂNG CẤP: Reset về trạng thái ban đầu (trượt về giữa)
                     const grid = document.querySelector('.payment-content-grid');
-                    grid.classList.remove('method-selected');
+                    if (grid) grid.classList.remove('method-selected');
                     
                     // MỚI: Lưu lại tọa độ
                     currentLocationCoords.lat = payload.lat;
@@ -997,27 +1010,32 @@
 
                 } else if (type === 'PAYMENT_METHOD_SELECTED') {
                     if (method === 'qr') {
-                        // NÂNG CẤP: Kích hoạt hiệu ứng chuyển sang 2 cột
+                        // NÂNG CẤP: Kích hoạt hiệu ứng trượt
                         const grid = document.querySelector('.payment-content-grid');
-                        grid.classList.add('method-selected');
+                        if (grid) grid.classList.add('method-selected');
 
                         // Di chuyển nội dung QR vào panel phải
                         rightPanel.innerHTML = '';
                         rightPanel.classList.remove('placeholder');
                         qrWrapper.classList.remove('hidden'); // Hiển thị lại
                         rightPanel.appendChild(qrWrapper);
+
                     } else if (method === 'cash') {
-                        // Di chuyển nút tiền mặt vào panel phải
-                        // NÂNG CẤP: Kích hoạt hiệu ứng chuyển sang 2 cột
+                        // NÂNG CẤP: Kích hoạt hiệu ứng trượt
                         const grid = document.querySelector('.payment-content-grid');
-                        grid.classList.add('method-selected');
+                        if (grid) grid.classList.add('method-selected');
 
                         rightPanel.innerHTML = '';
                         rightPanel.classList.remove('placeholder');
                         // Hiển thị hướng dẫn thanh toán tiền mặt
                         rightPanel.innerHTML = `
                             <div style="text-align: center;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1em;"><path d="M12 12V12"/><path d="M10.62 6.38a4 4 0 1 0 5.25 5.25"/><path d="M12 19.52A7.52 7.52 0 1 0 4.48 12"/><path d="M12 12V12"/></svg>
+                                <svg class="cash-payment-icon" viewBox="0 0 64 64">
+                                    <circle class="coin coin1" cx="32" cy="20" r="6"/>
+                                    <circle class="coin coin2" cx="22" cy="25" r="4"/>
+                                    <circle class="coin coin3" cx="42" cy="25" r="4"/>
+                                    <path class="hand" d="M2,38 C2,38 14,30 32,30 C50,30 62,38 62,38"/>
+                                </svg>
                                 <h3 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: 0.5em;">Thanh toán bằng tiền mặt</h3>
                                 <p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p>
                             </div>
