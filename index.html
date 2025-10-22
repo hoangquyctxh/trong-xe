@@ -1365,9 +1365,17 @@
             let audioQueue = []; // Hàng đợi chứa các đoạn text cần phát
             let isPlaying = false; // Cờ để kiểm tra xem có đang phát âm thanh không
  
-            // Hàm xử lý hàng đợi, đảm bảo âm thanh phát tuần tự
+            // NÂNG CẤP: Hàm xử lý hàng đợi sử dụng Gemini TTS API
             const processAudioQueue = () => {
                 if (isPlaying || audioQueue.length === 0) return;
+                
+                const geminiApiKey = APP_CONFIG.geminiApiKey;
+                if (!geminiApiKey || geminiApiKey === "DÁN_API_KEY_CỦA_BẠN_VÀO_ĐÂY") {
+                    console.error("Chưa cấu hình Gemini API Key trong config.js. Không thể phát âm thanh.");
+                    audioQueue = []; // Xóa hàng đợi để tránh lặp lại lỗi
+                    return;
+                }
+
                 isPlaying = true;
                 const text = audioQueue.shift();
  
@@ -1375,16 +1383,36 @@
                     isPlaying = false;
                     processAudioQueue();
                 };
- 
-                // Chỉ sử dụng API của Google Translate
-                const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob`);
-                audio.onended = onEnded;
-                // Nếu có lỗi (ví dụ: mất mạng), vẫn tiếp tục xử lý hàng đợi
-                audio.onerror = () => {
-                    console.error("Lỗi phát âm thanh Google TTS (có thể do mất mạng).");
-                    onEnded();
-                };
-                audio.play().catch(onEnded); // Bắt lỗi nếu trình duyệt chặn tự động phát
+
+                // Gọi API Gemini Text-to-Speech
+                fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-to-speech:synthesizeSpeech?key=${geminiApiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        "input": { "text": text },
+                        "voice": {
+                            "languageCode": "vi-VN",
+                            "name": "vi-VN-Standard-A" // Giọng nữ miền Bắc tự nhiên
+                        },
+                        "audioConfig": { "audioEncoding": "MP3" }
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.audioContent) {
+                        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+                        audio.onended = onEnded;
+                        audio.onerror = onEnded;
+                        audio.play().catch(onEnded);
+                    } else {
+                        console.error("Lỗi Gemini TTS API:", data.error?.message || "Không nhận được dữ liệu âm thanh.");
+                        onEnded(); // Bỏ qua và xử lý mục tiếp theo
+                    }
+                })
+                .catch(error => {
+                    console.error("Lỗi mạng khi gọi Gemini TTS API:", error);
+                    onEnded(); // Bỏ qua và xử lý mục tiếp theo
+                });
             };
 
             const playTTS = (text) => {
