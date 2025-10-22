@@ -51,6 +51,7 @@
             border: 1px solid var(--border-color);
             position: relative;
             text-align: center;
+            overflow: hidden; /* SỬA LỖI: Ẩn các phần tử bị tràn ra ngoài */
             animation: fadeIn 0.4s ease-out;
         }
         .confirmation-card::after {
@@ -170,86 +171,58 @@
         }
         
         .total-fee-container .amount {
-            font-size: 4rem;
+            /* ĐƠN GIẢN HÓA: Kích thước cố định, phù hợp */
+            font-size: 3.5rem;
             font-weight: 800;
             color: var(--danger-color);
             line-height: 1;
             margin-top: 0.2em;
             animation: popInAmount 0.6s 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+            transition: none; /* Bỏ hiệu ứng */
         }
         @keyframes popInAmount {
             from { opacity: 0; transform: scale(0.8); }
             to   { opacity: 1; transform: scale(1); }
         }
         .total-fee-container .amount sup {
-            font-size: 2rem; /* Tăng kích thước đơn vị tiền tệ */
+            font-size: 1.8rem;
             font-weight: 700;
             vertical-align: top;
+            transition: none; /* Bỏ hiệu ứng */
         }
 
         /* ================================================== */
         /* --- BỐ CỤC NGANG MỚI - TOP 1 --- */
         /* ================================================== */
-        /* NÂNG CẤP: Sử dụng Flexbox để dễ dàng tạo hiệu ứng trượt */
+        /* NÂNG CẤP: Bố cục bất đối xứng, giảm khoảng trắng */
         .payment-content-grid {
-            display: flex;
-            width: 200%; /* Gấp đôi chiều rộng để chứa 2 panel */
+            display: grid;
+            grid-template-columns: 40% 1fr; /* Cột trái nhỏ, cột phải lớn */
+            gap: 2.5em;
             margin-top: 1.5em;
-            transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1); /* Hiệu ứng trượt mượt mà */
-            transform: translateX(25%); /* Ban đầu, căn giữa panel bên trái */
+            align-items: center; /* Căn giữa các cột theo chiều dọc */
         }
         .payment-details-panel {
             display: flex;
             flex-direction: column;
-            width: 50%; /* Mỗi panel chiếm 50% */
-            padding: 0 1.25em; /* Khoảng cách giữa các panel */
+            align-items: center;
+            /* NÂNG CẤP: Tạo hiệu ứng "hóa đơn" */
+            background: var(--bg-main);
+            padding: 2em 1.5em;
+            border-radius: var(--border-radius-lg);
+            border-right: 2px dashed var(--border-color);
         }
         .payment-qr-panel {
-            background-color: var(--bg-main);
             border-radius: var(--border-radius-lg);
-            padding: 2em;
+            padding: 1.5em; /* Giảm padding để có thêm không gian */
             border: 1px solid var(--border-color);
-            height: 450px; /* Cố định chiều cao */
+            min-height: 450px; /* Chiều cao tối thiểu */
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            background-color: transparent; /* Bỏ nền để hòa hợp hơn */
             text-align: center;
-            width: 50%; /* Mỗi panel chiếm 50% */
-            padding: 0 1.25em; /* Khoảng cách giữa các panel */
-        }
-        /* NÂNG CẤP: Trạng thái khi đã chọn phương thức -> trượt sang trái */
-        .payment-content-grid.method-selected {
-            transform: translateX(0);
-        }
-        /* NÂNG CẤP: Icon tiền mặt động */
-        .cash-payment-icon {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 1em;
-        }
-        .cash-payment-icon .coin {
-            stroke: var(--primary-accent);
-            stroke-width: 2;
-            fill: var(--secondary-accent);
-            opacity: 0;
-            animation: drop 2.5s ease-out infinite;
-        }
-        .cash-payment-icon .coin1 { animation-delay: 0s; }
-        .cash-payment-icon .coin2 { animation-delay: 0.2s; }
-        .cash-payment-icon .coin3 { animation-delay: 0.4s; }
-        .cash-payment-icon .hand {
-            fill: none;
-            stroke: var(--primary-accent);
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        @keyframes drop {
-            0% { transform: translateY(-100px); opacity: 0; }
-            10% { opacity: 1; }
-            80% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(20px); opacity: 0; }
         }
         .payment-qr-panel.placeholder {
             color: var(--text-secondary);
@@ -297,18 +270,17 @@
         }
         /* MỚI: Bố cục hiển thị thông tin chính */
         .main-info-display {
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
-            padding: 1.5em;
             margin-bottom: 1.5em;
+            width: 100%; /* Chiếm đủ chiều rộng của panel */
         }
         .main-info-display .plate-display { /* Giảm kích thước biển số */
-            font-size: 3.5rem;
+            /* ĐƠN GIẢN HÓA: Kích thước cố định, phù hợp */
+            font-size: 3rem;
             font-weight: 900;
             color: var(--primary-accent);
             font-family: monospace;
             line-height: 1.1;
+            transition: none; /* Bỏ hiệu ứng */
         }
         .main-info-display .time-in-display {
             font-size: 1.1rem;
@@ -688,15 +660,15 @@
             <!-- CỘT TRÁI: THÔNG TIN & LỰA CHỌN -->
             <div class="payment-details-panel">
                 <div class="main-info-display">
-                    <div class="plate-display" id="payment-plate">--</div>
+                    <div class="plate-display" id="payment-plate">30F-123.45</div>
                     <div class="time-in-display">
-                        Giờ vào: <strong id="payment-time-in" style="color: var(--text-primary);">--</strong>
+                        Giờ vào: <strong id="payment-time-in" style="color: var(--text-primary);">10:30:00 25/12/2024</strong>
                     </div>
                 </div>
                 <div class="total-fee-container">
                     <div class="label"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Tổng phí thanh toán</div>
                     <div class="amount">
-                        <span id="payment-total-amount">0</span><sup>đ</sup>
+                        <span id="payment-total-amount">5.000</span><sup>đ</sup>
                     </div>
                 </div>
             </div>
@@ -704,13 +676,15 @@
             <!-- CỘT PHẢI: HIỂN THỊ QR HOẶC HƯỚNG DẪN -->
             <div id="right-panel-content" class="payment-qr-panel placeholder">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1em; opacity: 0.5;"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12a10 10 0 0 0 10 10V12z"/></svg>
-                Vui lòng chọn phương thức thanh toán
+                Vui lòng chọn phương thức thanh toán trên màn hình chính
             </div>
 
             <!-- Các phần tử ẩn sẽ được di chuyển vào Cột Phải bằng JS -->
-            <div id="qr-code-wrapper" class="qr-code-display hidden" style="transition: all 0.4s ease;">
-                <img id="qr-code-image" src="" alt="Mã QR thanh toán">
-                <p>Nội dung: <strong id="qr-memo">--</strong></p>
+            <div class="hidden">
+                <div id="qr-code-wrapper" class="qr-code-display" style="transition: all 0.4s ease;">
+                    <img id="qr-code-image" src="" alt="Mã QR thanh toán">
+                    <p>Nội dung: <strong id="qr-memo">--</strong></p>
+                </div>
             </div>
         </div>
     </div>
@@ -1000,41 +974,29 @@
                     document.getElementById('payment-time-in').textContent = payload.timeIn;
                     document.getElementById('header-location-name').textContent = payload.locationName || 'Không xác định';
                     
-                    // NÂNG CẤP: Reset về trạng thái ban đầu (trượt về giữa)
-                    const grid = document.querySelector('.payment-content-grid');
-                    if (grid) grid.classList.remove('method-selected');
-                    
                     // MỚI: Lưu lại tọa độ
                     currentLocationCoords.lat = payload.lat;
                     currentLocationCoords.lng = payload.lng;
 
                 } else if (type === 'PAYMENT_METHOD_SELECTED') {
                     if (method === 'qr') {
-                        // NÂNG CẤP: Kích hoạt hiệu ứng trượt
-                        const grid = document.querySelector('.payment-content-grid');
-                        if (grid) grid.classList.add('method-selected');
-
-                        // Di chuyển nội dung QR vào panel phải
+                        // Hiển thị nội dung QR
                         rightPanel.innerHTML = '';
                         rightPanel.classList.remove('placeholder');
                         qrWrapper.classList.remove('hidden'); // Hiển thị lại
                         rightPanel.appendChild(qrWrapper);
 
                     } else if (method === 'cash') {
-                        // NÂNG CẤP: Kích hoạt hiệu ứng trượt
-                        const grid = document.querySelector('.payment-content-grid');
-                        if (grid) grid.classList.add('method-selected');
-
                         rightPanel.innerHTML = '';
                         rightPanel.classList.remove('placeholder');
                         // Hiển thị hướng dẫn thanh toán tiền mặt
                         rightPanel.innerHTML = `
                             <div style="text-align: center;">
-                                <svg class="cash-payment-icon" viewBox="0 0 64 64">
-                                    <circle class="coin coin1" cx="32" cy="20" r="6"/>
-                                    <circle class="coin coin2" cx="22" cy="25" r="4"/>
-                                    <circle class="coin coin3" cx="42" cy="25" r="4"/>
-                                    <path class="hand" d="M2,38 C2,38 14,30 32,30 C50,30 62,38 62,38"/>
+                                <!-- Icon tiền mặt tĩnh, đơn giản -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--primary-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1em;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+                                    <path d="M12 18V6"></path>
                                 </svg>
                                 <h3 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: 0.5em;">Thanh toán bằng tiền mặt</h3>
                                 <p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p>
