@@ -2302,6 +2302,20 @@
                 if (paymentChannel) paymentChannel.postMessage({ type: 'TRANSACTION_CANCELED' });
             });
 
+            // MỚI: Lắng nghe lựa chọn từ màn hình phụ của khách hàng
+            if (paymentChannel) {
+                paymentChannel.onmessage = (event) => {
+                    const { type, method } = event.data;
+                    if (type === 'CUSTOMER_PAYMENT_METHOD_SELECTED') {
+                        if (method === 'qr') {
+                            allElements.selectQrBtn.click();
+                        } else if (method === 'cash') {
+                            allElements.selectCashBtn.click();
+                        }
+                    }
+                };
+            }
+
             // HÀM MỚI: Tạo dữ liệu để gửi sang cửa sổ phụ
             const createInitialDataForConfirmation = (vehicle, qrImageUrl, paymentMemo) => {
                 if (!vehicle) return null;
