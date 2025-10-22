@@ -1193,6 +1193,9 @@
                 // MỚI: Gọi hàm cập nhật footer
                 updateFooterInfo(location);
 
+                // SỬA LỖI: Kích hoạt audio khi người dùng chọn bãi xe
+                activateAudioContext();
+
                 // MỚI: Tải thời tiết cho vị trí đã chọn
                 if (typeof fetchWeather === 'function') fetchWeather(location.lat, location.lng);
 
@@ -1349,6 +1352,16 @@
             // --- GIẢI PHÁP HYBRID: Kết hợp Google TTS (Online) và Web Speech API (Offline) ---
             // --- Cải tiến với hàng đợi (Queue) để đảm bảo phát âm thanh ổn định ---
             // =================================================================
+            // SỬA LỖI: Hàm kích hoạt audio để vượt qua chính sách Autoplay của trình duyệt
+            const activateAudioContext = () => {
+                const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaXRyYXRlV2lraSUyMFVERyUyMDIwMjEAAA');
+                silentAudio.volume = 0;
+                silentAudio.play().catch(e => {
+                    // Bỏ qua lỗi nếu không thể phát, sẽ thử lại ở lần tương tác sau
+                });
+                // Gỡ bỏ event listener sau khi đã kích hoạt thành công
+                document.body.removeEventListener('click', activateAudioContext, { once: true });
+            };
             let audioQueue = []; // Hàng đợi chứa các đoạn text cần phát
             let isPlaying = false; // Cờ để kiểm tra xem có đang phát âm thanh không
  
@@ -2255,6 +2268,9 @@
                 // Dữ liệu sẽ được tải sau khi người dùng chọn điểm trực
                 await determineNearestLocation(); 
                 
+                // SỬA LỖI: Thêm listener để kích hoạt audio ở lần click đầu tiên của người dùng
+                document.body.addEventListener('click', activateAudioContext, { once: true });
+
                 resetMainForm();
 
                 if (autoRefreshInterval) clearInterval(autoRefreshInterval);
