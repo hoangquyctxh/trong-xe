@@ -1,0 +1,2465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý xe Tình nguyện</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="config.js"></script> <!-- Tải file cấu hình chung của ứng dụng -->
+    <script src="locations.js"></script> <!-- Tải file cấu hình các điểm đỗ xe -->
+    
+    <style>
+        :root {
+            /* --- BẢNG MÀU MỚI: Hiện đại & Chuyên nghiệp --- */
+            --bg-main: #f8f9fa; /* Nền chính sáng hơn, sạch sẽ hơn */
+            --bg-card: #ffffff;
+            --bg-header: #ffffff; /* Giữ nguyên header trắng */
+            --border-color: #dee2e6; /* Viền nhẹ nhàng hơn */
+            --primary-accent: #0056b3; /* Xanh đậm, sang trọng hơn */
+            --primary-accent-light: #007bff; /* Xanh sáng hơn, năng động */
+            --secondary-accent: #ffc107; /* Vàng amber cho các điểm nhấn */
+            --text-primary: #212529; /* Đen đậm hơn cho văn bản chính */
+            --text-secondary: #6c757d; /* Xám cho văn bản phụ */
+            --text-light: #f9fafb;
+            --danger-color: #dc3545; /* Đỏ an toàn hơn */
+            --success-color: #28a745; /* Xanh lá cây rõ ràng */
+            /* --- Hiệu ứng đổ bóng & bo góc được tinh chỉnh --- */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.075);
+            --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.1);
+            --border-radius-lg: 0.75rem; /* Giảm nhẹ bo góc lớn */
+            --border-radius-md: 0.375rem; /* Bo góc vừa phải, sắc nét hơn */
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 0;
+        }
+        .container { max-width: 1280px; margin: auto; padding: 25px; }
+        header { 
+            background: var(--bg-header);
+            padding: 15px 0; /* Giảm padding dọc */
+            border-bottom: 1px solid var(--border-color);
+        }
+        .header-title { display: flex; align-items: center; gap: 15px; }
+        .header-title .logo img { width: 50px; height: auto; }
+        .title-group { display: flex; flex-direction: column; }
+        .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
+        .header-title h1 { font-size: 1.9rem; color: var(--primary-accent); font-weight: 800; line-height: 1.2; margin: 0; }
+        .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+        .date-selector label { font-weight: 600; color: var(--text-secondary); }
+        .date-selector input[type="date"] { background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
+        /* --- MỚI: Thiết kế lại cụm điều khiển header --- */
+        .header-controls { display: flex; align-items: center; gap: 12px; }
+        .clock-widget, .weather-widget {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-main);
+            padding: 8px 12px;
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .clock-widget .icon, #weather-icon { color: var(--primary-accent); width: 20px; }
+        #clock-display { font-weight: 600; color: var(--text-primary); }
+        #weather-temp { font-weight: 600; color: var(--text-primary); }
+        #weather-icon { height: 20px; width: auto; }
+
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-lg); padding: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
+        /* --- MỚI: Thay thế dải màu gradient bằng một đường viền tinh tế --- */
+        .card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: var(--primary-accent); }
+        
+        .card h2 { color: var(--text-primary); font-size: 1.25rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .card h2 svg { color: var(--primary-accent); }
+        .full-width { grid-column: 1 / -1; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .input-wrapper { position: relative; flex-grow: 1; }
+        .input-wrapper svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 20px; transition: color 0.2s; }
+        .input-wrapper input { width: 100%; padding: 14px 15px 14px 45px; border: 1px solid var(--border-color); color: var(--text-primary); background: #f9fafb; border-radius: var(--border-radius-md); font-size: 1rem; transition: all 0.2s; }
+        .input-wrapper input::placeholder { color: #9ca3af; }
+        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent-light); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
+        .input-wrapper input:focus + svg { color: var(--primary-accent); }
+        #search-term, #filter-input { text-transform: uppercase; }
+        .action-button { width: 100%; padding: 14px; border: none; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
+        .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
+        /* --- MỚI: Hiệu ứng nhấn nút --- */
+        .action-button:active:not(:disabled) { transform: translateY(-1px) scale(0.98); filter: brightness(0.95); }
+        .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+        .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        /* --- MỚI: Checkbox VIP --- */
+        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px 15px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; transition: background 0.2s; }
+        .vip-checkbox-wrapper:hover { background: #ffecb3; }
+        .vip-checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--secondary-accent); }
+        .vip-checkbox-wrapper label { font-weight: 700; color: #b45309; cursor: pointer; }
+
+        /* --- MỚI: Nút chụp ảnh --- */
+        .photo-capture-group { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .btn-capture-photo { flex-grow: 1; padding: 14px; border: 1px dashed var(--primary-accent); background: #eff6ff; color: var(--primary-accent); font-weight: 700; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-capture-photo:hover { background: #dbeafe; }
+        #photo-preview-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); display: none; }
+        #vehicle-image-display {
+            width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--border-radius-md);
+            margin-top: 15px; border: 1px solid var(--border-color); display: none;
+            cursor: pointer;
+        }
+
+        .icon-btn { flex-shrink: 0; width: 52px; height: 52px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
+        .icon-btn:hover:not(:disabled) { background-color: var(--bg-main); color: var(--primary-accent); }
+        .icon-btn:active:not(:disabled) { transform: scale(0.95); }
+        .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .btn-check-in { background: linear-gradient(45deg, var(--primary-accent), var(--primary-accent-light)); box-shadow: 0 4px 15px 0 rgba(0, 123, 255, 0.3); }
+        /* MỚI: Animation cho màu nền động */
+        @keyframes animated-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .btn-check-out { background: linear-gradient(45deg, var(--danger-color), #fd7e14); box-shadow: 0 4px 15px 0 rgba(220, 53, 69, 0.3); }
+        /* --- MỚI: Hiệu ứng xuất hiện mượt mà hơn --- */
+        #vehicle-info-panel { display: none; animation: fadeIn 0.4s ease; margin-top: 20px; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .info-grid { display: flex; flex-direction: column; gap: 15px; }
+        .info-item { display: flex; align-items: center; gap: 15px; background: var(--bg-main); padding: 12px 15px; border-radius: var(--border-radius-md); }
+        .info-item .icon { color: var(--primary-accent); }
+        .info-item .label { font-size: 0.9rem; color: var(--text-secondary); }
+        .info-item .value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-left: auto; }
+        .status-badge { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white; }
+        .status-badge.parking { background-color: var(--success-color); }
+        .status-badge.departed { background-color: var(--text-secondary); }
+        .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
+        #vehicle-list-container { max-height: 60vh; overflow-y: auto; padding-right: 5px; }
+        .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .vehicle-item:hover { transform: translateX(5px); border-color: var(--primary-accent); box-shadow: var(--shadow-md); }
+        /* --- MỚI: Cải thiện hiệu ứng hover cho danh sách --- */
+        .vehicle-item:hover { transform: translateY(-3px) translateX(3px); box-shadow: var(--shadow-md); border-color: var(--primary-accent-light); }        .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .vehicle-item .details { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; }
+        .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1.1rem; margin-bottom: 5px; }
+        .vehicle-item .icon {
+            position: relative;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-main);
+            border-radius: 50%;
+        }
+        /* --- MỚI: Icon VIP trong danh sách --- */
+        .vehicle-item.is-vip .icon { background-color: #fff3cd; color: var(--secondary-accent); }
+        .vehicle-item.is-vip { border-left: 4px solid var(--secondary-accent); }
+
+        /* --- MỚI: Icon camera trên danh sách --- */
+        .vehicle-item .photo-indicator { position: absolute; bottom: -2px; right: -2px; background: var(--primary-accent); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+        .vehicle-item .photo-indicator svg { width: 10px; height: 10px; }
+
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; }
+        .toast.success { background-color: var(--success-color); } .toast.error { background-color: var(--danger-color); }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; transform: scale(0.9); } }
+        .modal { 
+            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; 
+            overflow: auto; background-color: rgba(17, 24, 39, 0.6); 
+            display: none; align-items: center; justify-content: center; 
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
+            animation: fadeInBackdrop 0.3s ease forwards;
+            perspective: 1000px;
+        }
+        @keyframes fadeInBackdrop { from { opacity: 0; } to { opacity: 1; } }
+        #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
+        .hidden { display: none !important; }
+        .scan-success-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 12px;
+            box-shadow: inset 0 0 0 5px var(--success-color);
+            animation: fadeOutOverlay 0.5s ease-out forwards;
+        }
+        @keyframes fadeOutOverlay { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* --- GIAO DIỆN VÉ ĐIỆN TỬ MỚI (ĐƠN GIẢN & ỔN ĐỊNH) --- */
+        #qrcode-modal .modal-content {
+            background-color: var(--bg-card);
+            padding: 25px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;            
+            /* --- MỚI: Hiệu ứng modal nảy lên --- */
+            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .ticket-header-new {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .ticket-logo-new {
+            width: 45px;
+            height: 45px;
+        }
+        .ticket-org-name-new {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            line-height: 1.4;
+            text-align: left;
+        }
+        .ticket-title-new {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-accent);
+            margin-bottom: 10px;
+        }
+        .ticket-subtitle-new {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+        #qrcode-canvas-wrapper {
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            margin: 0 auto 20px auto;
+            width: 250px;
+            height: 250px;
+        }
+        #qrcode-canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .ticket-info-new {
+            text-align: left;
+            margin-bottom: 25px;
+        }
+        .ticket-info-new .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .ticket-info-new .info-row:last-child {
+            border-bottom: none;
+        }
+        .ticket-info-new .info-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .ticket-info-new .info-value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        #ticket-plate-display {
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        /* print stylesheet - only the ticket */
+        @media print {
+            body * { visibility: hidden; }
+            #qrcode-modal, #qrcode-modal * { visibility: visible; }
+            #qrcode-modal { 
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white !important;
+            }
+            .ticket-container {
+                transform: none !important;
+                animation: none !important;
+                box-shadow: none !important;
+                border: none !important;
+                max-width: 100%;
+            }
+            #close-qrcode-btn { display: none !important; }
+            @page { margin: 0; }
+        }
+
+        .site-footer { margin-top: 40px; }
+        .footer-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; padding: 30px; }
+        .footer-column h3, .footer-column h4 { display: flex; align-items: center; gap: 10px; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 15px; }
+        .footer-column h3 img { width: 30px; height: 30px; }
+        .footer-column svg { width: 24px; height: 24px; color: var(--primary-accent); }
+        .footer-column p { color: var(--text-secondary); margin-bottom: 10px; line-height: 1.7; }
+        .footer-column p strong { color: var(--text-primary); font-weight: 700; }
+        .copyright { margin-top: 20px !important; font-size: 0.9rem; color: #9ca3af; text-align: center; }
+        #offline-indicator { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: var(--danger-color); color: white; padding: 8px 15px; border-radius: 20px; box-shadow: var(--shadow-lg); z-index: 10000; display: none; align-items: center; gap: 8px; font-weight: 500; animation: fadeIn 0.5s; }
+
+        /* --- REDESIGN: DASHBOARD (Bảng tin nhanh) --- */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-item { 
+            background: var(--bg-main); 
+            padding: 20px; 
+            border-radius: var(--border-radius-lg); /* Bo góc lớn hơn */
+            text-align: left; /* Căn trái */
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        .stat-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
+        .stat-item .label { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+        .stat-item .value { font-size: 2rem; font-weight: 700; color: var(--primary-accent); line-height: 1.1; }
+        .stat-item .info-duration { font-size: 1.5rem; }
+        .dashboard-gauge { grid-column: 1 / -1; text-align: center; }
+        
+        .gauge-container { position: relative; width: 180px; height: 90px; overflow: hidden; margin: 0 auto 10px auto; }
+        .gauge-bg, .gauge-fill {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 200%;
+            border-radius: 50%;
+            border: 20px solid;
+        }
+        .gauge-bg { border-color: #e9ecef #e9ecef transparent transparent; transform: rotate(135deg); }
+        .gauge-fill {
+            border-color: var(--primary-accent) var(--primary-accent) transparent transparent;
+            transform: rotate(135deg);
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .gauge-text { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
+        .gauge-label { font-size: 1rem; color: var(--text-secondary); font-weight: 500; }
+
+        @media (max-width: 960px) { .main-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { 
+            body { padding: 0; }
+            .container { padding: 20px; }
+            header { flex-direction: column; align-items: flex-start; } 
+            .date-selector { width: 100%; justify-content: space-between; } 
+        }
+        @media (max-width: 600px) { 
+            .container { padding: 15px; }
+            .card { padding: 20px; } 
+            .input-group { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; }
+            .input-wrapper { grid-column: 1 / -1; }
+            #phone-item-main { grid-column: 1 / -1; }
+            .icon-btn { grid-row: 1; height: 52px; }
+            #mic-btn { grid-column: 2; } #scan-qr-btn { grid-column: 3; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        /* --- CẢI TIẾN GIAO DIỆN LỊCH SỬ GỬI XE (TIMELINE) --- */
+        #info-history-list {
+            position: relative;
+            padding-left: 25px;
+            margin-top: 15px;
+        }
+        #info-history-list::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            bottom: 5px;
+            width: 2px;
+            background-color: var(--border-color);
+        }
+        .history-item {
+            position: relative;
+            margin-bottom: 15px;
+            background: var(--bg-main);
+            padding: 12px 15px;
+            border-radius: var(--border-radius-md);
+            border-left: 3px solid var(--primary-accent-light);
+        }
+        .history-item::before {
+            content: '';
+            position: absolute;
+            left: -24px; /* (25px padding-left) - (10px width / 2) - (1px border) */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid var(--primary-accent-light);
+        }
+        
+        /* CSS cho việc in ấn */
+        @media print {
+            body * { visibility: hidden; }
+            #payment-modal, #payment-modal * { visibility: visible; }
+            #payment-modal { position: absolute; left: 0; top: 0; width: 100%; height: auto; background: white !important; backdrop-filter: none; }
+            #payment-modal .modal-content { box-shadow: none; border: 1px solid #ccc; margin: 0; max-width: 100%; }
+            .payment-actions, #close-payment-modal-btn { display: none !important; }
+        }
+        .payment-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 15px;
+        }
+        .payment-header {
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            margin-bottom: 20px; padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        /* ================================================== */
+        /* --- THIẾT KẾ LẠI BIÊN LAI CAO CẤP - TOP 1 --- */
+        /* ================================================== */
+        #payment-modal .modal-content {
+            background-color: var(--bg-card);
+            padding: 0; /* Bỏ padding cũ */
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 400px; 
+            text-align: center;
+            animation: slideDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards, fadeIn 0.5s ease;
+            position: relative; 
+            overflow: hidden; /* Để bo góc cho header */
+        }
+        /* Họa tiết chìm (watermark) */
+        #payment-modal .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 250px;
+            height: 250px;
+            background-image: url('https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            opacity: 0.05;
+            z-index: 0;
+        }
+        .receipt-header {
+            background-color: var(--primary-accent);
+            color: white;
+            padding: 20px 25px;
+            text-align: left;
+        }
+        .receipt-header h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin: 0;
+            line-height: 1.2;
+        }
+        .receipt-header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+        .receipt-body {
+            padding: 25px;
+            position: relative; /* Để các phần tử con nổi trên watermark */
+            z-index: 1;
+        }
+        .receipt-info-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .receipt-info-grid .info-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+        }
+        .receipt-info-grid .info-row svg {
+            width: 20px;
+            height: 20px;
+            color: var(--primary-accent);
+            flex-shrink: 0;
+        }
+        .receipt-info-grid .info-label {
+            color: var(--text-secondary);
+        }
+        .receipt-info-grid .info-value {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-left: auto; /* Đẩy giá trị sang phải */
+        }
+        .receipt-info-grid .plate-with-thumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .receipt-total-fee {
+            margin-bottom: 20px;
+        }
+        .receipt-total-fee .label {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        .receipt-total-fee .amount {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--danger-color);
+            line-height: 1;
+        }
+        .receipt-total-fee .amount sup {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .receipt-footer {
+            background-color: var(--bg-main);
+            padding: 20px 25px;
+            border-top: 1px solid var(--border-color);
+        }
+        /* --- MỚI: Bố cục cho QR Code Area --- */
+        .receipt-qr-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .payment-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .payment-actions .icon-btn-small {
+            width: 36px; height: 36px;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        /* MỚI: Nút chọn phương thức thanh toán */
+        .payment-method-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .method-btn {
+            flex-grow: 1; padding: 12px; border-radius: var(--border-radius-md); border: 2px solid var(--border-color); background: var(--bg-main); color: var(--text-secondary); font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .method-btn.active { background: var(--primary-accent); color: white; border-color: var(--primary-accent); }
+        
+        /* --- MỚI: Bố cục ngang cho Tablet và Desktop --- */
+        /* ĐÃ XÓA: Bỏ hoàn toàn bố cục 2 cột để đảm bảo tính đồng nhất và ổn định */
+
+        /* Responsive cho biên lai thanh toán trên màn hình nhỏ */
+        /* Áp dụng cho cả màn hình nhỏ */
+        @media (max-width: 450px) {
+            #payment-modal .modal-content {
+                padding: 20px;
+                max-width: 360px;
+            }
+            .receipt-header h2 { font-size: 1.4rem; }
+            .receipt-total-fee .amount { font-size: 2.8rem; }
+            .receipt-body, .receipt-footer { padding: 20px; }
+        }
+        /* Đảm bảo các nút luôn xếp chồng trên màn hình nhỏ */
+        @media (max-width: 400px) {
+            .receipt-footer .action-buttons-container { flex-direction: column; }
+        }
+        /* --- THIẾT KẾ LẠI: Ảnh thumbnail trong biên lai --- */
+        .plate-with-thumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #payment-thumb-image {
+            width: 48px; height: 48px; object-fit: cover;
+            border-radius: var(--border-radius-md); border: 1px solid var(--border-color);
+            cursor: pointer; transition: transform 0.2s;
+            display: none; /* Ẩn mặc định */
+        }
+        #payment-thumb-image:hover { transform: scale(1.1); }
+
+        /* --- MỚI: Spinner tải QR code --- */
+        .qr-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -20px;
+            margin-left: -20px;
+            display: none; /* Ẩn mặc định */
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ================================================== */
+        /* --- REDESIGN: Modal chọn bãi đỗ xe - TOP 1 --- */
+        /* ================================================== */
+        #location-select-modal .modal-content {
+            max-width: 480px; /* Tăng nhẹ độ rộng */
+            padding: 0; /* Bỏ padding cũ */
+            overflow: hidden; /* Để bo góc cho header */
+        }
+        .location-select-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .location-select-body {
+            padding: 25px;
+        }
+        .location-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .location-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--bg-main);
+            border-radius: var(--border-radius-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        .location-option:hover {
+            border-color: var(--primary-accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .location-option .icon-wrapper {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #dbeafe;
+            color: var(--primary-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .location-option .distance {
+            margin-left: auto;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        /* --- MỚI: Modal xác nhận chung --- */
+        #confirmation-modal .modal-content {
+            max-width: 420px; padding: 0; overflow: hidden;
+        }
+        #confirmation-modal .receipt-header {
+            background: linear-gradient(135deg, var(--primary-accent-light), var(--primary-accent));
+            text-align: center;
+        }
+        #confirmation-modal .receipt-body {
+            padding: 25px; text-align: center;
+        }
+        #confirmation-modal #confirmation-message {
+            font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6; margin: 0;
+        }
+        #confirmation-modal .receipt-footer {
+            display: flex; gap: 12px; padding: 20px;
+        }
+        #confirmation-modal #cancel-confirmation-btn {
+            background: var(--bg-main); color: var(--text-secondary); flex-grow: 1;
+        }
+        #confirmation-modal #confirm-action-btn {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div id="offline-indicator">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 10.7l-4.2-4.2M13.3 13.3l4.2 4.2M1 1l22 22M17.4 8.6c1.6-1.6 2.3-3.8 1.4-5.6-1-1.9-3.2-2.8-5.3-2.1l-4.9 1.7-1.7 4.9c-.6 2.1.3 4.3 2.1 5.3s3.8 2.3 5.6 1.4l1.4-1.4"/></svg>
+        <span>Chế độ Ngoại tuyến</span>
+    </div>
+
+    <header>
+        <div class="container" style="padding-top: 0; padding-bottom: 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;">
+            <div class="header-title">
+                <div class="logo">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
+                </div>
+                <div class="title-group">
+                    <p class="subtitle" id="location-subtitle">Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
+                    <h1>Bảng điều hành bãi xe</h1>
+                </div>
+            </div>
+            <!-- CỘT GIỮA: CHỌN NGÀY -->
+            <div class="date-selector">
+                <label for="date-picker">Xem ngày:</label>
+                <input type="date" id="date-picker">
+            </div>
+            <!-- CỘT PHẢI: ĐỒNG HỒ & THỜI TIẾT -->
+            <div class="header-controls"> <!-- Cấu trúc HTML mới cho cụm này -->
+                <div id="clock-widget" class="clock-widget" title="Thời gian thực">
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span id="clock-display">--:--:--</span>
+                </div>
+                <div id="weather-widget" class="weather-widget" title="Thời tiết tại điểm trực">
+                    <img id="weather-icon" src="" alt="Thời tiết" style="display: none;">
+                    <span id="weather-temp">--°C</span>
+                    <span id="weather-desc">Đang tải...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+
+        <main class="main-grid">
+            <div class="card">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="m10 12-4 4"/><path d="M12 10h6"/><path d="m14 8 2 2-2 2"/><path d="m6 14 2 2-2 2"/></svg>
+                    Tra cứu & Xử lý
+                </h2>
+                <div id="main-form">
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
+                        </div>
+                        <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                        </button>
+                        <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để check-out">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        </button>
+                    </div>
+                     <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
+                        <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
+                    </div>
+                    <!-- ================== MỚI: CHECKBOX KHÁCH MỜI/VIP ================== -->
+                    <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
+                        <input type="checkbox" id="is-vip-checkbox">
+                        <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
+                    </div>
+
+                    <!-- ================== MỚI: NÚT CHỤP ẢNH ================== -->
+                    <div class="photo-capture-group" id="photo-capture-group">
+                        <button type="button" class="btn-capture-photo" id="capture-photo-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            Chụp ảnh xe
+                        </button>
+                        <img id="photo-preview-thumb" src="" alt="Ảnh xe xem trước">
+                        <input type="file" id="photo-file-input" accept="image/*" capture="environment" class="hidden">
+                    </div>
+                    
+                    <div class="action-buttons-container">
+                        <button type="button" id="check-in-btn" class="action-button btn-check-in hidden">Xác nhận gửi xe</button>
+                        <button type="button" id="check-out-btn" class="action-button btn-check-out hidden">Xác nhận cho xe ra</button>
+                    </div>
+                </div>
+
+                <div id="vehicle-info-panel">
+                    <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Thông tin chi tiết</h3>
+                    <div class="info-grid" style="margin-top: 20px;">
+                        <div class="info-item">
+                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                            <span class="label">Trạng thái</span>
+                            <span class="value" id="info-status">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></span>
+                            <span class="label">Giờ vào</span>
+                            <span class="value" id="info-entry-time">--</span>
+                        </div>
+                        <div class="info-item" id="duration-item">
+                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+                            <span class="label">Thời gian gửi</span>
+                            <span class="value info-duration" id="info-duration">--</span>
+                        </div>
+                        <div class="info-item" id="fee-item">
+                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+                            <span class="label">Phí tạm tính</span>
+                            <span class="value" id="info-fee" style="color: var(--danger-color);">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></span>
+                            <span class="label">Số điện thoại</span>
+                            <span class="value" id="info-phone-number">--</span>
+                        </div>
+                    </div>
+                    <!-- ================== MỚI: HIỂN THỊ ẢNH ĐÃ CHỤP ================== -->
+                    <img id="vehicle-image-display" src="" alt="Ảnh xe đã chụp">
+                    <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1rem;">Lịch sử gửi xe</h3>
+                    <ul class="history-list" id="info-history-list"></ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>
+                    Bảng tin nhanh
+                </h2>
+                <div class="dashboard-gauge">
+                    <div class="gauge-container">
+                        <div class="gauge-bg"></div>
+                        <div class="gauge-fill" id="capacity-gauge-fill"></div>
+                        <div class="gauge-text" id="capacity-gauge-text">0%</div>
+                    </div>
+                    <div class="gauge-label">Sức chứa bãi xe</div>
+                </div>
+                <div class="dashboard-grid" style="margin-top: 25px;">
+                    <div class="stat-item">
+                        <div class="label">Xe hiện tại</div>
+                        <div class="value" id="dashboard-current">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Tổng lượt trong ngày</div>
+                        <div class="value" id="dashboard-total">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Giờ cao điểm (vào)</div>
+                        <div class="value" id="dashboard-peak">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Xe gửi lâu nhất</div>
+                        <div class="value info-duration" id="dashboard-longest">--</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card full-width">
+                 <div class="list-header">
+                    <h2 id="list-title">Danh sách xe</h2>
+                    <div class="input-wrapper" style="max-width: 300px;">
+                         <input type="text" id="filter-input" placeholder="Lọc danh sách theo biển số, SĐT...">
+                    </div>
+                 </div>
+                <div class="list-content">
+                    <div id="vehicle-list-container"></div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="site-footer" style="margin-top: 0;">
+            <div class="footer-container card">
+                <div class="footer-column">
+                    <h3><img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn"> Đơn vị tổ chức</h3>
+                    <p><strong id="footer-operator">Đoàn Thanh niên Phường Ba Đình</strong></p>                    
+                </div>
+                <div class="footer-column">
+                    <h4>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        Thông tin liên hệ
+                    </h4>
+                    <p><strong>Địa chỉ:</strong> <span id="footer-address">--</span></p>
+                    <p><strong>Hotline:</strong> <span id="footer-hotline">--</span></p>
+                </div>
+                <div class="footer-column">
+                    <h4>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        Thời gian hoạt động
+                    </h4>
+                    <p id="footer-hours">--</p>
+                    <p><em>Hệ thống online 24/7</em></p>
+                </div>
+            </div>
+            <p class="copyright">Bản quyền © 2025 thuộc về Đoàn Thanh niên Phường Ba Đình. Mọi hình thức sao chép đều cần có sự cho phép bằng văn bản.</p>
+        </footer>
+    </div>
+
+    <div id="qrcode-modal" class="modal" aria-hidden="true">
+        <div class="modal-content">
+            <div class="ticket-header-new">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new">
+                <div class="ticket-org-name-new">
+                    Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
+                </div>
+            </div>
+            <h2 class="ticket-title-new">VÉ GỬI XE ĐIỆN TỬ</h2>
+            <p class="ticket-subtitle-new" id="ticket-location-display">--</p>
+
+            <div id="qrcode-canvas-wrapper">
+                <canvas id="qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
+            </div>
+
+            <div class="ticket-info-new">
+                <div class="info-row">
+                    <span class="info-label">Biển số xe:</span>
+                    <span class="info-value" id="ticket-plate-display">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Thời gian vào:</span>
+                    <span class="info-value" id="ticket-time-display">--</span>
+                </div>
+            </div>
+
+            <div class="action-buttons-container">
+                <button id="close-qrcode-btn" class="action-button btn-check-in" type="button">
+                    Hoàn tất
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thêm modal quét QR (video) để tránh lỗi nếu script cố dùng phần tử không tồn tại -->
+    <div id="qr-scanner-modal" class="modal" aria-hidden="true" style="display:none;">
+        <div class="modal-content">
+            <div class="ticket-container" role="dialog" aria-modal="true" style="max-width:720px; padding:12px;">
+                <div style="width:100%; background:transparent;">
+                    <div style="background:var(--bg-card); padding:12px; border-radius:12px; box-shadow:var(--shadow-md);">
+                        <video id="camera-feed" autoplay playsinline style="width:100%; height:auto; border-radius:8px; background:#000;"></video>
+                        <div id="scanner-status" style="margin-top:10px; color:var(--text-secondary); text-align:center;">Chưa bật camera</div>
+                        <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
+                            <button id="close-scanner-btn" class="action-button" style="max-width:240px; background:linear-gradient(90deg,#ef4444,#fb7185);">Đóng máy quét</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thanh toán -->
+    <div id="payment-modal" class="modal" aria-hidden="true">
+        <div class="modal-content">
+            <div class="payment-actions">
+                <button id="download-qr-btn" type="button" class="icon-btn-small" title="Tải mã QR"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                <button id="print-receipt-btn" type="button" class="icon-btn-small" title="In biên lai"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+            </div>
+
+            <div class="receipt-header">
+                <p>Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
+                <h2>BIÊN LAI THANH TOÁN</h2>
+            </div>
+
+            <div class="receipt-body">
+                <div class="receipt-total-fee">
+                    <p class="label">TỔNG PHÍ</p>
+                    <div class="amount">
+                        <span id="payment-amount-display">0</span><sup>đ</sup>
+                    </div>
+                </div>
+
+                <!-- MỚI: Lựa chọn phương thức thanh toán -->
+                <div class="payment-method-selector">
+                    <button id="select-qr-btn" class="method-btn" type="button">Thanh toán QR</button>
+                    <button id="select-cash-btn" class="method-btn" type="button">Tiền mặt</button>
+                </div>
+
+                <div id="payment-qrcode-wrapper" style="padding: 10px; background: #fff; border-radius: var(--border-radius-md); max-width: 250px; margin: 0 auto 15px auto; position: relative;">
+                    <div class="qr-spinner" id="qr-spinner"></div>
+                    <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 25px;">Nội dung: <strong id="payment-memo-display" style="font-family: monospace;">--</strong></p>
+
+                <div class="receipt-info-grid" style="border-top: 1px dashed var(--border-color); padding-top: 20px;">
+                    <div class="info-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span class="info-label">Biển số xe:</span> 
+                        <div class="info-value plate-with-thumb">
+                            <span id="payment-plate-display" style="font-family: monospace; font-size: 1.1rem;">--</span>
+                            <img id="payment-thumb-image" src="" alt="Ảnh xe">
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                        <span class="info-label">Giờ vào:</span><span class="info-value" id="payment-entry-time">--</span>
+                    </div>
+                    <div class="info-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H3v-6"/><path d="M14 10 3 21"/></svg>
+                        <span class="info-label">Giờ ra:</span><span class="info-value" id="payment-exit-time">--</span>
+                    </div>
+                    <div class="info-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        <span class="info-label">Tổng thời gian:</span><span class="info-value" id="payment-duration">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="receipt-footer">
+                <div class="action-buttons-container" style="display: flex; gap: 10px;">
+                <button id="close-payment-modal-btn" class="action-button" style="background: var(--text-secondary);" type="button">Hủy</button>
+                <button id="complete-payment-btn" class="action-button btn-check-in" type="button">
+                    Hoàn tất & Cho xe ra
+                </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MỚI: Modal chọn bãi đỗ xe -->
+    <div id="location-select-modal" class="modal" aria-hidden="true">
+        <div class="modal-content">
+            <div class="location-select-header">
+                <h2 class="ticket-title-new" style="text-align: left; margin-bottom: 5px;">Xác nhận Bãi đỗ xe</h2>
+                <p class="ticket-subtitle-new" style="text-align: left; margin: 0;">Vui lòng chọn đúng điểm bạn đang có mặt từ danh sách bên dưới.</p>
+            </div>
+            <div class="location-select-body">
+                <div id="location-list-container" class="location-list">
+                    <!-- Danh sách các điểm trực sẽ được chèn vào đây bằng JS -->
+                </div>
+                <div class="action-buttons-container" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                    <button id="use-default-location-btn" class="action-button" style="background: var(--text-secondary);" type="button">Sử dụng bãi đỗ xe mặc định</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MỚI: Modal Xác nhận Chung (REPLACED with modern layout) -->
+    <div id="confirmation-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content" style="max-width: 420px; padding: 0; overflow: hidden;">
+            <div class="receipt-header" style="background: linear-gradient(135deg, var(--primary-accent-light), var(--primary-accent), var(--primary-accent-light)); text-align: left; background-size: 200% 200%; animation: animated-gradient 4s ease infinite;">
+                <div class="ticket-header-new" style="border: none; padding: 0; margin: 0; justify-content: flex-start;">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new" style="width: 40px; height: 40px;">
+                    <div class="ticket-org-name-new" style="color: white; font-size: 0.85rem;">
+                        Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
+                    </div>
+                </div>
+                <h2 id="confirmation-title" style="margin-top: 10px; text-align: center;">Hoàn tất cho xe ra</h2>
+            </div>
+
+            <div class="receipt-body" style="padding:22px; text-align:center; background: var(--bg-card);">
+                <p id="confirmation-message" style="font-size:1.05rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+                    <!-- Nội dung sẽ được chèn bằng JS -->
+                </p>
+                <p style="margin-top:14px; color:var(--text-secondary); font-size:0.9rem;">Hành động này có thể không hoàn tác. Vui lòng kiểm tra kỹ biển số trước khi xác nhận.</p>
+            </div>
+
+            <div class="receipt-footer" style="display:flex; gap:12px; padding:16px; border-top:1px solid var(--border-color); justify-content:flex-end; background:var(--bg-card);">
+                <button id="cancel-confirmation-btn" class="action-button" style="background: var(--bg-main); color: var(--text-secondary); padding:10px 16px; border-radius:10px;" type="button">Hủy bỏ</button>
+                <button id="confirm-action-btn" class="action-button btn-check-out" type="button" style="padding:10px 16px; border-radius:10px;">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const allElements = {
+                datePicker: document.getElementById('date-picker'),
+                searchTermInput: document.getElementById('search-term'),
+                phoneNumberInput: document.getElementById('phone-number'),
+                phoneItemMain: document.getElementById('phone-item-main'),
+                photoCaptureGroup: document.getElementById('photo-capture-group'),
+                vipCheckboxContainer: document.getElementById('vip-checkbox-container'), // MỚI
+                isVipCheckbox: document.getElementById('is-vip-checkbox'), // MỚI
+                capturePhotoBtn: document.getElementById('capture-photo-btn'),
+                photoFileInput: document.getElementById('photo-file-input'),
+                photoPreviewThumb: document.getElementById('photo-preview-thumb'),
+                vehicleImageDisplay: document.getElementById('vehicle-image-display'),
+                checkInBtn: document.getElementById('check-in-btn'),
+                checkOutBtn: document.getElementById('check-out-btn'),
+                toastContainer: document.getElementById('toast-container'),
+                vehicleInfoPanel: document.getElementById('vehicle-info-panel'),
+                infoStatus: document.getElementById('info-status'),
+                infoEntryTime: document.getElementById('info-entry-time'),
+                infoDuration: document.getElementById('info-duration'),
+                infoPhoneNumber: document.getElementById('info-phone-number'),
+                infoFee: document.getElementById('info-fee'),
+                feeItem: document.getElementById('fee-item'),
+                durationItem: document.getElementById('duration-item'),
+                infoHistoryList: document.getElementById('info-history-list'),
+                listTitle: document.getElementById('list-title'),
+                vehicleListContainer: document.getElementById('vehicle-list-container'),
+                filterInput: document.getElementById('filter-input'),
+                dashboardCurrent: document.getElementById('dashboard-current'),
+                dashboardTotal: document.getElementById('dashboard-total'),
+                dashboardPeak: document.getElementById('dashboard-peak'),
+                dashboardLongest: document.getElementById('dashboard-longest'),
+                micBtn: document.getElementById('mic-btn'),
+                scanQrBtn: document.getElementById('scan-qr-btn'), 
+                qrcodeModal: document.getElementById('qrcode-modal'),
+                qrcodeCanvas: document.getElementById('qrcode-canvas'),
+                closeQrcodeBtn: document.getElementById('close-qrcode-btn'),
+                qrScannerModal: document.getElementById('qr-scanner-modal'),
+                cameraFeed: document.getElementById('camera-feed'),
+                scannerStatus: document.getElementById('scanner-status'),
+                closeScannerBtn: document.getElementById('close-scanner-btn'),
+                ticketPlateDisplay: document.getElementById('ticket-plate-display'),
+                ticketTimeDisplay: document.getElementById('ticket-time-display'),
+                offlineIndicator: document.getElementById('offline-indicator'),
+                locationSubtitle: document.getElementById('location-subtitle'),
+                ticketLocationDisplay: document.getElementById('ticket-location-display'),
+                paymentModal: document.getElementById('payment-modal'),
+                paymentAmountDisplay: document.getElementById('payment-amount-display'),
+                paymentQrcodeImage: document.getElementById('payment-qrcode-image'),
+                paymentMemoDisplay: document.getElementById('payment-memo-display'),
+                closePaymentModalBtn: document.getElementById('close-payment-modal-btn'),
+                completePaymentBtn: document.getElementById('complete-payment-btn'), // Nút này giờ là nút chính
+                paymentPlateDisplay: document.getElementById('payment-plate-display'),
+                paymentEntryTime: document.getElementById('payment-entry-time'),
+                paymentExitTime: document.getElementById('payment-exit-time'),
+                paymentDuration: document.getElementById('payment-duration'),
+                downloadQrBtn: document.getElementById('download-qr-btn'),
+                printReceiptBtn: document.getElementById('print-receipt-btn'),
+                qrSpinner: document.getElementById('qr-spinner'),
+                paymentThumbImage: document.getElementById('payment-thumb-image'),
+                capacityGaugeFill: document.getElementById('capacity-gauge-fill'),
+                capacityGaugeText: document.getElementById('capacity-gauge-text'),
+                locationSelectModal: document.getElementById('location-select-modal'),
+                locationListContainer: document.getElementById('location-list-container'),
+                useDefaultLocationBtn: document.getElementById('use-default-location-btn'),
+                // MỚI: Các phần tử ở footer
+                footerAddress: document.getElementById('footer-address'),
+                footerHotline: document.getElementById('footer-hotline'),
+                footerHours: document.getElementById('footer-hours'),
+                // MỚI: Các phần tử của Modal xác nhận
+                confirmationModal: document.getElementById('confirmation-modal'),
+                confirmationTitle: document.getElementById('confirmation-title'),
+                confirmationMessage: document.getElementById('confirmation-message'),
+                confirmActionBtn: document.getElementById('confirm-action-btn'),
+                cancelConfirmationBtn: document.getElementById('cancel-confirmation-btn'),
+                selectQrBtn: document.getElementById('select-qr-btn'), // MỚI
+                selectCashBtn: document.getElementById('select-cash-btn'), // MỚI
+            };
+
+
+            let vehiclesOnSelectedDate = [];
+            let isLoading = false;
+            let durationIntervals = [];
+            let cameraStream = null;
+            let currentVehicleContext = null;
+            let scanAnimation = null;
+            let paymentChannel = null; // MỚI: Kênh giao tiếp giữa các cửa sổ
+            // SỬA LỖI QUAN TRỌNG: Khởi tạo kênh giao tiếp ngay từ đầu
+            try {
+                paymentChannel = new BroadcastChannel('parking_payment_channel');
+            } catch (e) { console.error("Trình duyệt không hỗ trợ BroadcastChannel.", e); }
+
+            let capturedImageBase64 = null; // Mới: Lưu ảnh dưới dạng base64
+            let confirmationWindow = null; // MỚI: Giữ tham chiếu đến cửa sổ phụ
+            let recentlyScanned = new Set(); // Chống quét lại liên tục
+            let autoRefreshInterval = null;
+            let currentLocation = null; // Mới: Lưu thông tin bãi đỗ xe
+           
+            let currentCapacity = 0; // Mới: Sức chứa của điểm trực hiện tại
+
+            // --- BẮT ĐẦU TÍCH HỢP VỊ TRÍ ---
+            // =================================================================
+            // SỬA LỖI QUAN TRỌNG: Gắn listener ngay sau khi khởi tạo kênh
+            // =================================================================
+            if (paymentChannel) {
+                paymentChannel.addEventListener('message', (event) => {
+                    const { type, method } = event.data;
+                    if (type === 'CUSTOMER_PAYMENT_METHOD_SELECTED') {
+                        // Chỉ xử lý khi modal thanh toán đang mở
+                        if (!allElements.paymentModal || allElements.paymentModal.style.display !== 'flex') return;
+
+                        if (method === 'qr' && allElements.selectQrBtn) {
+                            allElements.selectQrBtn.click();
+                        } else if (method === 'cash' && allElements.selectCashBtn) {
+                            allElements.selectCashBtn.click();
+                        }
+                    }
+                });
+            }
+
+            const getDistance = (lat1, lon1, lat2, lon2) => {
+                const R = 6371; // Bán kính Trái đất (km)
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            };
+
+            // --- MỚI: Cập nhật thông tin footer ---
+            const updateFooterInfo = (location) => {
+                if (!location) return;
+                if (allElements.footerAddress) allElements.footerAddress.textContent = location.address || 'Chưa cập nhật';
+                if (allElements.footerHotline) allElements.footerHotline.textContent = location.hotline || 'Chưa cập nhật';
+                if (allElements.footerHours) allElements.footerHours.textContent = location.operatingHours ? `Hàng ngày: ${location.operatingHours}` : 'Chưa cập nhật';
+                // Bạn cũng có thể cập nhật đơn vị phụ trách nếu nó khác nhau
+                // if (allElements.footerOperator) allElements.footerOperator.textContent = location.operator || 'Đoàn TN Phường Ba Đình';
+            };
+
+            const selectLocation = async (location) => {
+                currentLocation = location;
+                currentCapacity = location.capacity || 0;
+                allElements.locationSubtitle.textContent = `Bãi đỗ xe: ${location.name}`;
+                allElements.locationSelectModal.style.display = 'none';
+                showToast(`Đã xác nhận bãi đỗ xe: ${location.name}`, 'success');
+                
+                // MỚI: Gọi hàm cập nhật footer
+                updateFooterInfo(location);
+
+                // MỚI: Tải thời tiết cho vị trí đã chọn
+                if (typeof fetchWeather === 'function') fetchWeather(location.lat, location.lng);
+
+                // Sau khi chọn xong, tải dữ liệu cho bãi đỗ xe đó
+                // MỚI: Mở cửa sổ phụ ngay sau khi chọn bãi đỗ xe (chỉ trên desktop)
+                if (!isMobileDevice() && !confirmationWindow) {
+                    const url = `confirmation.html?lat=${location.lat}&lng=${location.lng}&locationName=${encodeURIComponent(location.name)}`;
+                    confirmationWindow = await openWindowOnSecondaryScreen(url, 'ConfirmationWindow', 'popup,width=950,height=700');
+                }
+
+                fetchVehiclesForDate(allElements.datePicker.value, false, true);
+            };
+
+            const showLocationSelector = (nearbyLocations) => {
+                allElements.locationListContainer.innerHTML = '';
+                nearbyLocations.forEach(loc => {
+                    const option = document.createElement('div');
+                    option.className = 'location-option';
+                    option.innerHTML = `
+                        <div class="icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+                        <div class="info">
+                            <div style="font-weight: 700;">${loc.name}</div>
+                        </div>
+                        <div class="distance">~${(loc.distance * 1000).toFixed(0)} m</div>
+                    `;
+                    option.onclick = () => selectLocation(loc);
+                    allElements.locationListContainer.appendChild(option);
+                });
+
+                allElements.locationSelectModal.style.display = 'flex';
+            };
+
+            const determineNearestLocation = async () => {
+                const locations = typeof LOCATIONS_CONFIG !== 'undefined' ? LOCATIONS_CONFIG : [];
+
+                if (!navigator.geolocation || locations.length === 0) {
+                    showToast('Trình duyệt không hỗ trợ định vị. Sử dụng điểm mặc định.', 'error');
+                    allElements.locationSubtitle.textContent = `Chưa có điểm trực nào được cấu hình.`;
+                    return;
+                }
+
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    });
+
+                    const nearbyLocations = locations.map(loc => {
+                        const distance = getDistance(position.coords.latitude, position.coords.longitude, loc.lat, loc.lng);
+                        return { ...loc, distance };
+                    }).filter(loc => loc.distance < 2.5) // Lọc các điểm trong bán kính 2.5km
+                      .sort((a, b) => a.distance - b.distance);
+
+                    if (nearbyLocations.length === 0) {
+                        // Nếu không có bãi đỗ xe nào gần, dùng điểm mặc định
+                        showToast('Không tìm thấy bãi đỗ xe nào ở gần. Sử dụng điểm mặc định.', 'error');
+                        selectLocation(locations[0]);
+                    } else if (nearbyLocations.length === 1) {
+                        // Nếu chỉ có 1 điểm, tự động chọn
+                        selectLocation(nearbyLocations[0]);
+                    } else {
+                        // Nếu có nhiều hơn 1 điểm, áp dụng logic "thông minh"
+                        const nearest = nearbyLocations[0];
+                        const secondNearest = nearbyLocations[1];
+                        const distanceDifference = secondNearest.distance - nearest.distance; // Khoảng cách chênh lệch (km)
+
+                        // Nếu khoảng cách chênh lệch lớn (ví dụ > 300m), tự tin chọn điểm gần nhất
+                        if (distanceDifference > 0.3) { // Thay đổi ngưỡng thành 300m (0.3km)
+                            selectLocation(nearest);
+                        } else {
+                            // Ngược lại, nếu 2 điểm quá gần nhau, hiển thị modal để người dùng xác nhận
+                            showLocationSelector(nearbyLocations);
+                        }
+                    }
+
+                } catch (err) {
+                    console.error('Lỗi định vị:', err);
+                    let message = 'Không thể xác định vị trí.';
+                    if (err.code === 1) message = 'Vui lòng cấp quyền truy cập vị trí trong cài đặt trình duyệt.';
+                    if (err.code === 2) message = 'Vị trí không khả dụng.';
+                    if (err.code === 3) message = 'Yêu cầu vị trí hết hạn.';
+                    showToast(`${message} Sử dụng điểm mặc định.`, 'error');
+                    if (locations.length > 0) {
+                        // Dùng điểm mặc định khi có lỗi
+                        selectLocation(locations[0]);
+                    }
+                }
+            };
+            // --- KẾT THÚC TÍCH HỢP VỊ TRÍ ---
+
+            // --- Tối ưu hóa khởi động và xử lý loading ---
+            const setIsLoading = (loading, isInitialLoad = false) => {
+                isLoading = loading;
+                const mainInputs = [allElements.searchTermInput, allElements.micBtn, allElements.scanQrBtn];
+                const secondaryElements = [allElements.checkInBtn, allElements.checkOutBtn, allElements.phoneNumberInput, allElements.datePicker, allElements.filterInput];
+                
+                if (isInitialLoad && !loading) {
+                    [...mainInputs, ...secondaryElements].forEach(el => { if(el) el.disabled = false; });
+                } else if (!isInitialLoad) {
+                    secondaryElements.forEach(el => { if(el) el.disabled = loading; });
+                }
+                
+                if (!isInitialLoad) {
+                    mainInputs.forEach(el => { if(el) el.disabled = loading; });
+                } else {
+                     mainInputs.forEach(el => { if(el) el.disabled = false; });
+                }
+
+                if(loading) {
+                     allElements.checkInBtn.disabled = true;
+                     allElements.checkOutBtn.disabled = true;
+                }
+            };
+
+            const formatDateForAPI = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            const formatDateTimeForDisplay = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
+            const cleanPlateNumber = (plateStr) => plateStr ? plateStr.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+            const formatPhoneNumberForDisplay = (phoneStr) => {
+                if (!phoneStr || String(phoneStr).trim() === '') return 'Chưa có';
+                let phone = String(phoneStr);
+                if (phone.length === 9 && !phone.startsWith('0')) return '0' + phone;
+                return phone;
+            };
+            
+            // MỚI: Hàm tiện ích để loại bỏ dấu tiếng Việt
+            const removeDiacritics = (str) => {
+                return str
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+            };
+
+            const showToast = (message, type = 'success') => {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icon = type === 'success' ? '✅' : '❌';
+                toast.innerHTML = `${icon} <span>${message}</span>`;
+                allElements.toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.animation = 'fadeOutToast 0.5s ease forwards';
+                    setTimeout(() => toast.remove(), 500);
+                }, 2500);
+            };
+
+        // NÂNG CẤP: Hàm phát âm thanh bằng giọng nói của Google
+        const playSound = (text) => {
+            if (!text) return;
+            const encodedText = encodeURIComponent(text);
+            const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=vi&client=tw-ob`);
+            audio.play().catch(e => console.error("Lỗi phát âm thanh:", e));
+        };
+
+            const calculateDuration = (startTime) => {
+                if (!startTime) return '--';
+                const start = new Date(startTime);
+                const now = new Date();
+                let diff = Math.floor((now - start) / 1000);
+                const days = Math.floor(diff / 86400); diff %= 86400;
+                const hours = Math.floor(diff / 3600); diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                let result = '';
+                if (days > 0) result += `${days}d `;
+                if (hours > 0) result += `${hours}h `;
+                result += `${minutes}m`;
+                return result.trim();
+            };
+
+            // MỚI: Hàm tính thời gian để đọc, thay thế chữ viết tắt
+            const calculateReadableDuration = (startTime) => {
+                if (!startTime) return 'không xác định';
+                const start = new Date(startTime);
+                const now = new Date();
+                let diff = Math.floor((now - start) / 1000);
+                const days = Math.floor(diff / 86400); diff %= 86400;
+                const hours = Math.floor(diff / 3600); diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                let result = [];
+                if (days > 0) result.push(`${days} ngày`);
+                if (hours > 0) result.push(`${hours} giờ`);
+                if (minutes > 0 || (days === 0 && hours === 0)) result.push(`${minutes} phút`);
+                return result.join(' ');
+            };
+
+            const calculateDurationBetween = (startTime, endTime) => {
+                if (!startTime || !endTime) return '--';
+                const start = new Date(startTime);
+                const end = new Date(endTime);
+                let diff = Math.floor((end - start) / 1000);
+                if (diff < 0) return '0m';
+                const days = Math.floor(diff / 86400); diff %= 86400;
+                const hours = Math.floor(diff / 3600); diff %= 3600;
+                const minutes = Math.floor(diff / 60);
+                let result = '';
+                if (days > 0) result += `${days}d `; if (hours > 0) result += `${hours}h `; result += `${minutes}m`;
+                return result.trim() || '0m';
+            };
+
+            const calculateFee = (startTime, endTime, isVIP = false) => {
+                // Xử lý trường hợp VIP
+                if (isVIP) {
+                    return 0;
+                }
+                // ---------------------------------
+
+                if (!startTime) return 0;
+            
+                // Sử dụng cấu hình từ file config.js
+                const config = APP_CONFIG.fee;
+                const start = new Date(startTime);
+                const end = endTime ? new Date(endTime) : new Date();
+            
+                const diffMinutes = Math.floor((end - start) / (1000 * 60));
+            
+                // 1. Miễn phí trong 15 phút đầu
+                if (diffMinutes <= config.freeMinutes) {
+                    return 0;
+                }
+            
+                // 2. Nâng cấp logic: Tính phí theo từng giờ, áp dụng mức giá ngày/đêm tương ứng
+                let totalFee = 0;
+                // Thời điểm bắt đầu tính phí là sau 15 phút miễn phí
+                let chargeableStartTime = new Date(start.getTime() + config.freeMinutes * 60 * 1000);
+            
+                // Tính tổng số block giờ cần trả phí (làm tròn lên)
+                const chargeableMinutes = diffMinutes - config.freeMinutes;
+                const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
+            
+                for (let i = 0; i < totalChargeableHours; i++) {
+                    // Xác định giờ bắt đầu của block hiện tại
+                    let currentBlockStartHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
+                    
+                    // Kiểm tra xem block giờ này thuộc ban đêm hay ban ngày
+                    const isNight = currentBlockStartHour >= config.nightStartHour || currentBlockStartHour < config.nightEndHour;
+                    totalFee += isNight ? config.nightRate : config.dayRate;
+                }
+            
+                return totalFee;
+            };
+            const clearAllIntervals = () => {
+                durationIntervals.forEach(clearInterval);
+                durationIntervals = [];
+            };
+
+            // --- MỚI: HÀM HIỂN THỊ MODAL XÁC NHẬN ---
+            const showConfirmationModal = (message, onConfirm) => {
+                // CẬP NHẬT: Điền dữ liệu vào các phần tử riêng biệt
+                allElements.confirmationTitle.textContent = message.title;
+                allElements.confirmationMessage.innerHTML = `Xác nhận cho xe <strong style="font-size:1.5rem; color:var(--text-primary); display:block; margin:8px 0;">${message.plate}</strong> ra khỏi bãi.<br>Lý do: <strong>${message.reason}</strong>`;
+                allElements.confirmationModal.style.display = 'flex';
+
+                // Tạo một hàm xử lý duy nhất để tránh gắn nhiều listener
+                const handleConfirmClick = () => {
+                    onConfirm();
+                    allElements.confirmationModal.style.display = 'none';
+                    // Xóa listener sau khi thực hiện để tránh gọi lại
+                    allElements.confirmActionBtn.removeEventListener('click', handleConfirmClick);
+                };
+
+                // Gắn listener mới
+                allElements.confirmActionBtn.addEventListener('click', handleConfirmClick, { once: true });
+            };
+
+            // --- DATA & UI FUNCTIONS ---
+            const fetchVehiclesForDate = async (dateStr, isSilent = false, isInitialLoad = false) => {
+                // Nếu dateStr rỗng hoặc không hợp lệ, gán ngày hiện tại
+                if (!dateStr) {
+                    dateStr = formatDateForAPI(new Date());
+                    if (allElements.datePicker) allElements.datePicker.value = dateStr;
+                }
+                // Kiểm tra hợp lệ của ngày
+                let displayDateObj = new Date(dateStr + 'T00:00:00');
+                if (isNaN(displayDateObj.getTime())) {
+                    displayDateObj = new Date();
+                    dateStr = formatDateForAPI(displayDateObj);
+                    if (allElements.datePicker) allElements.datePicker.value = dateStr;
+                }
+
+                if (isLoading && !isSilent) return;
+                
+                if (!isSilent) {
+                    setIsLoading(true, isInitialLoad);
+                    showSkeletonLoader();
+                } else {
+                    if (allElements.datePicker) allElements.datePicker.disabled = true;
+                }
+
+                allElements.listTitle.textContent = `Danh sách xe ngày ${displayDateObj.toLocaleDateString('vi-VN')}`;
+                
+                try {
+                    const response = await fetch(`${APP_CONFIG.googleScriptUrl}?date=${dateStr}&v=${new Date().getTime()}`);
+                    if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        vehiclesOnSelectedDate = result.data;
+                        filterVehicleList();
+                        updateDashboard();
+                        if (allElements.searchTermInput.value) {
+                             updateUIFromCache(cleanPlateNumber(allElements.searchTermInput.value));
+                        }
+                    } else { throw new Error(result.message); }
+                } catch (error) {
+                    if (!isSilent) showToast(`Lỗi tải dữ liệu: ${error.message}`, 'error');
+                    console.error("Fetch error:", error);
+                    vehiclesOnSelectedDate = []; // Clear data on error
+                    filterVehicleList();
+                    updateDashboard();
+                } finally {
+                    if (!isSilent) {
+                        setIsLoading(false, isInitialLoad);
+                    } else {
+                         if (allElements.datePicker) allElements.datePicker.disabled = false;
+                    }
+                }
+            };
+
+            const fetchVehicleHistory = (plate) => {
+                fetch(`${APP_CONFIG.googleScriptUrl}?plate=${plate}&v=${new Date().getTime()}`)
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.status === 'success') {
+                            populateHistoryList(result.data);
+                        } else { throw new Error(result.message); }
+                    })
+                    .catch(error => {
+                        console.error("Lỗi tải lịch sử:", error);
+                        document.getElementById('info-history-list').innerHTML = `<li class="history-item" style="color: var(--danger-color);">Không thể tải lịch sử.</li>`;
+                    });
+            };
+            
+            const showSkeletonLoader = () => {
+                allElements.vehicleListContainer.innerHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    const skeleton = document.createElement('div');
+                    skeleton.className = 'skeleton-item';
+                    allElements.vehicleListContainer.appendChild(skeleton);
+                }
+            };
+
+            const renderVehicleList = (list) => {
+                allElements.vehicleListContainer.innerHTML = '';
+                if (!list || list.length === 0) {
+                    allElements.vehicleListContainer.innerHTML = `<div class="empty-state" style="color: var(--text-secondary); text-align: center; padding: 40px 0;"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 1rem;"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v9c0 .6.4 1 1 1h2"/><path d="M7 12V2H3v10"/><path d="m16 12 3.1 3.9c.1.1.1.3 0 .4l-1.1.9c-.1.1-.3.1-.4 0L16 16v-4"/><path d="M5 18h3"/><path d="M6 18v-4"/></svg><p>Không có xe nào trong danh sách.</p></div>`;
+                    return;
+                }
+                
+                list.sort((a, b) => new Date(b['Entry Time']) - new Date(a['Entry Time']));
+                list.forEach(vehicle => {
+                    const vehicleItem = document.createElement('div');
+                    const isVehicleVIP = vehicle.VIP === 'Có'; // LOGIC MỚI
+                    vehicleItem.className = isVehicleVIP ? 'vehicle-item is-vip' : 'vehicle-item';
+                    vehicleItem.dataset.plate = vehicle.Plate;
+                    vehicleItem.dataset.status = vehicle.Status;
+                    vehicleItem.dataset.uniqueid = vehicle.UniqueID; 
+                    const phoneInfo = vehicle.Phone ? `<span>📞 ${formatPhoneNumberForDisplay(vehicle.Phone)}</span>` : '';
+                    const photoIndicator = vehicle.ImageUrl ? `<div class="photo-indicator"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>` : '';
+                    const statusClass = vehicle.Status === 'Đang gửi' ? 'parking' : 'departed';
+                    const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.Status}</span>`;
+                    const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
+                    const vipIcon = isVehicleVIP ? '⭐' : ''; // LOGIC MỚI
+                    vehicleItem.innerHTML = `<div class="icon">${carIcon}${photoIndicator}</div><div class="info" style="flex-grow:1;"><div class="plate">${vipIcon} ${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
+                    allElements.vehicleListContainer.appendChild(vehicleItem);
+                });
+            };
+
+            const filterVehicleList = () => {
+                const filterText = cleanPlateNumber(allElements.filterInput.value);
+                if (!filterText) { renderVehicleList(vehiclesOnSelectedDate); return; }
+                
+                const filteredList = vehiclesOnSelectedDate.filter(v => 
+                    (v.Plate && cleanPlateNumber(v.Plate).includes(filterText)) || (v.Phone && String(v.Phone).includes(filterText))
+                );
+                renderVehicleList(filteredList);
+            };
+
+            const updateDashboard = () => {
+                if (!vehiclesOnSelectedDate) return;
+                
+                const currentVehicles = vehiclesOnSelectedDate.filter(v => v.Status === 'Đang gửi');
+                const vehiclesToday = vehiclesOnSelectedDate.filter(v => v.Date === formatDateForAPI(new Date(allElements.datePicker.value + 'T00:00:00')));
+
+                allElements.dashboardCurrent.textContent = currentVehicles.length;
+                allElements.dashboardTotal.textContent = vehiclesToday.length;
+
+                if (vehiclesToday.length > 0) {
+                    const hours = vehiclesToday.map(v => new Date(v['Entry Time']).getHours());
+                    const hourCounts = hours.reduce((acc, hour) => { acc[hour] = (acc[hour] || 0) + 1; return acc; }, {});
+                    const peakHour = Object.keys(hourCounts).length > 0 ? Object.keys(hourCounts).reduce((a, b) => hourCounts[a] > hourCounts[b] ? a : b) : '--';
+                    allElements.dashboardPeak.textContent = peakHour !== '--' ? `${peakHour}h - ${parseInt(peakHour) + 1}h` : '--';
+                } else { allElements.dashboardPeak.textContent = '--'; }
+
+                if (currentVehicles.length > 0) {
+                    const longest = currentVehicles.reduce((a, b) => new Date(a['Entry Time']) < new Date(b['Entry Time']) ? a : b);
+                    allElements.dashboardLongest.textContent = calculateDuration(longest['Entry Time']);
+                } else { allElements.dashboardLongest.textContent = '--'; }
+            };
+
+            const updateUIFromCache = (plate) => {
+                clearAllIntervals();
+                
+                const vehicleInCache = vehiclesOnSelectedDate.find(v => 
+                    v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi'
+                );
+
+                if (vehicleInCache) {
+                    const isVehicleVIP = vehicleInCache.VIP === 'Có'; // LOGIC MỚI
+                    currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID, isVIP: isVehicleVIP };
+                    allElements.phoneItemMain.style.display = 'none';
+                    allElements.photoCaptureGroup.style.display = 'none'; // Ẩn nút chụp ảnh
+                    allElements.vipCheckboxContainer.style.display = 'none'; // Ẩn checkbox VIP
+
+                    // Hiển thị trạng thái VIP
+                    if (isVehicleVIP) {
+                        allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi (VIP) ⭐</span>`;
+                    } else {
+                        allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
+                    }
+
+                    allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleInCache['Entry Time']);
+                    allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleInCache.Phone);
+                    allElements.durationItem.style.display = 'flex';
+                    allElements.feeItem.style.display = 'flex';
+
+                    const updateLiveInfo = () => {
+                        const duration = calculateDuration(vehicleInCache['Entry Time']) || '--';
+                        const fee = calculateFee(vehicleInCache['Entry Time'], null, isVehicleVIP);
+                        allElements.infoDuration.textContent = duration;
+                        allElements.infoFee.textContent = `${fee.toLocaleString('vi-VN')}đ`;
+                    };
+                    updateLiveInfo();
+                    const interval = setInterval(updateLiveInfo, 10000); // Cập nhật mỗi 10s
+                    durationIntervals.push(interval);
+
+                    // Hiển thị ảnh nếu có
+                    if (vehicleInCache.ImageUrl) {
+                        allElements.vehicleImageDisplay.src = vehicleInCache.ImageUrl;
+                        allElements.vehicleImageDisplay.style.display = 'block';
+                    } else {
+                        allElements.vehicleImageDisplay.style.display = 'none';
+                    }
+
+                    allElements.checkOutBtn.classList.remove('hidden');
+                    allElements.checkInBtn.classList.add('hidden');
+                } else {
+                    currentVehicleContext = { plate, status: 'new' };
+                    allElements.phoneItemMain.style.display = 'block';
+                    allElements.photoCaptureGroup.style.display = 'flex'; // Hiện nút chụp ảnh
+                    allElements.vipCheckboxContainer.style.display = 'flex'; // Hiện checkbox VIP
+
+                    allElements.checkInBtn.classList.remove('hidden');
+                    allElements.checkOutBtn.classList.add('hidden');
+                }
+                fetchVehicleHistory(plate);
+            };
+
+            const populateHistoryList = (history) => {
+                const historyList = allElements.infoHistoryList;
+                historyList.innerHTML = '';
+                const historyExists = Array.isArray(history) && history.length > 0;
+
+                if (currentVehicleContext && (currentVehicleContext.status === 'parking' || (currentVehicleContext.status === 'new' && historyExists))) {
+                    allElements.vehicleInfoPanel.style.display = 'block';
+                } else if (currentVehicleContext && currentVehicleContext.status === 'new' && !historyExists) {
+                     allElements.vehicleInfoPanel.style.display = 'none';
+                }
+
+                if (historyExists) {
+                    if(currentVehicleContext && currentVehicleContext.status === 'new') {
+                        allElements.phoneNumberInput.value = history[0]?.Phone || '';
+                    }
+                    history.slice(0, 5).forEach(entry => {
+                        const li = document.createElement('li');
+                        li.className = 'history-item'; // Sử dụng class mới cho timeline
+                        const duration = calculateDurationBetween(entry['Entry Time'], entry['Exit Time']);
+                        li.innerHTML = `
+                            <div style="font-weight: 500; color: var(--text-primary); margin-bottom: 5px;">Vào: ${formatDateTimeForDisplay(entry['Entry Time'])}</div>
+                            <div style="color: var(--text-secondary); margin-bottom: 5px;">Ra: ${formatDateTimeForDisplay(entry['Exit Time'])}</div>
+                            <div style="font-weight: 700; color: var(--primary-accent);">Tổng thời gian: ${duration}</div>
+                        `;
+                        historyList.appendChild(li);
+                    });
+                } else {
+                    historyList.innerHTML = `<li style="list-style: none; color: var(--text-secondary);">Chưa có lịch sử.</li>`;
+                }
+            };
+
+            const resetMainForm = () => {
+                allElements.vehicleInfoPanel.style.display = 'none';
+                allElements.phoneItemMain.style.display = 'block';
+                allElements.photoCaptureGroup.style.display = 'flex';
+                allElements.photoPreviewThumb.style.display = 'none';
+                allElements.vipCheckboxContainer.style.display = 'flex';
+                allElements.photoPreviewThumb.src = '';
+                allElements.vehicleImageDisplay.style.display = 'none';
+                capturedImageBase64 = null;
+                allElements.checkInBtn.classList.add('hidden');
+                allElements.checkOutBtn.classList.add('hidden');
+                allElements.infoPhoneNumber.textContent = '--';
+                // allElements.feeItem.style.display = 'none'; // Không cần ẩn nữa vì bố cục mới
+                allElements.isVipCheckbox.checked = false;
+                currentVehicleContext = null;
+                clearAllIntervals();
+            };
+
+            // =================================================================
+            // --- GIẢI PHÁP MỚI: HÀM XỬ LÝ CHECK-OUT CHUYÊN DỤNG ---
+            // =================================================================
+            const processCheckOut = async (checkoutData) => {
+                if (isLoading) return;
+                setIsLoading(true);
+
+                const payload = {
+                    action: 'checkOut',
+                    ...checkoutData // Gộp tất cả dữ liệu checkout vào payload
+                };
+
+                try {
+                    if (navigator.onLine) {
+                        const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await response.json();
+                        if (result.status !== 'success') {
+                            throw new Error(result.message);
+                        }
+                        // Nếu thành công, không cần làm gì thêm ở đây, hàm gọi nó sẽ xử lý
+                    } else {
+                        // Chế độ offline
+                        const offlineAction = { ...payload, timestamp: new Date().toISOString() };
+                        addToOfflineQueue(offlineAction);
+                    }
+                    // Trả về true nếu không có lỗi
+                    return true; 
+                } catch (error) {
+                    showToast(`Lỗi khi cho xe ra: ${error.message}`, 'error');
+                    return false; // Trả về false nếu có lỗi
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleVehicleAction = async (plateOrUniqueID, phone, action, imageBase64) => {
+                if (isLoading) return;
+                setIsLoading(true);
+                let originalPlate;
+                let payload;
+                let uniqueID; // SỬA LỖI: Khai báo uniqueID ở phạm vi rộng hơn
+                const entryTime = new Date();
+                
+                if (action === 'checkIn') {
+                    if (!currentLocation) {
+                        showToast("Chưa xác định được điểm trực. Vui lòng thử lại.", 'error');
+                        setIsLoading(false);
+                        determineNearestLocation(); // Thử lại
+                        return;
+                    }
+                    originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
+                    if (!originalPlate) {
+                        showToast("Biển số không hợp lệ.", 'error');
+                        setIsLoading(false);
+                        return; // Thêm return để dừng hẳn nếu biển số không hợp lệ
+                    }
+                    uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
+                    // MỚI: Thêm isVIP vào payload
+                    const isVIP = allElements.isVipCheckbox.checked;
+                    payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id, imageData: imageBase64, isVIP: isVIP };
+                } else { // checkOut
+                    // LOGIC CHECK-OUT ĐÃ ĐƯỢC CHUYỂN SANG HÀM processCheckOut()
+                    // Hàm này sẽ không xử lý check-out nữa
+                }
+
+                try {
+                    if (navigator.onLine) {
+                        const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                            method: 'POST',
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            if (action === 'checkIn') {
+                                // =================================================================
+                                // GIẢI PHÁP MỚI: Sử dụng sessionStorage để giao tiếp
+                                // =================================================================
+                                const soundText = `Đã tiếp nhận xe ${originalPlate} vào bãi.`;
+                                const checkinSuccessPayload = {
+                                    licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime),
+                                    soundText: soundText // Gửi nội dung âm thanh cần phát
+                                };
+                                // GIẢI PHÁP MỚI: Gửi trực tiếp payload qua BroadcastChannel
+                                if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKIN_COMPLETE', payload: checkinSuccessPayload });
+                                showQrCode(originalPlate, entryTime, uniqueID);
+                            }
+                        } else { throw new Error(result.message); }
+                    } else {
+                        if (action === 'checkIn') {
+                            const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
+                            addToOfflineQueue(offlineAction);
+                            const soundText = `Đã tiếp nhận xe ${originalPlate} vào bãi.`;
+                            // GIẢI PHÁP MỚI (cho offline)
+                            const checkinSuccessPayload = {
+                                licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime),
+                                soundText: soundText
+                            };
+                            // GIẢI PHÁP MỚI (cho offline)
+                            if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKIN_COMPLETE', payload: checkinSuccessPayload });
+                            showQrCode(originalPlate, entryTime, uniqueID);
+                        }
+                    }
+                } catch (error) {
+                    showToast(`Lỗi đồng bộ: ${error.message}`, 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            
+            const showQrCode = (plate, entryTime, uniqueID) => {
+                if (allElements.ticketPlateDisplay) allElements.ticketPlateDisplay.textContent = plate;
+                if (allElements.ticketTimeDisplay) allElements.ticketTimeDisplay.textContent = formatDateTimeForDisplay(entryTime);
+                if (allElements.ticketLocationDisplay && currentLocation) {
+                    allElements.ticketLocationDisplay.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
+                }
+
+                QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
+                    if (error) { showToast('Lỗi tạo mã QR.', 'error'); return; }
+                    
+                    if (allElements.qrcodeModal) {
+                        allElements.qrcodeModal.style.display = 'flex';
+                        allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.add('open');
+                    // playSound(`Đã tiếp nhận xe ${plate} vào bãi.`); // Đã chuyển sang màn hình phụ
+                    }
+                });
+            };
+
+            const closeQrCode = () => {
+                // GIẢI PHÁP TRIỆT ĐỂ: Đảm bảo giao diện luôn được mở khóa và làm mới
+                setIsLoading(false); // 1. Luôn mở khóa tất cả các nút và input
+
+                // 2. Ẩn modal và xóa QR code cũ
+                if (allElements.qrcodeModal) {
+                    allElements.qrcodeModal.style.display = 'none';
+                    allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.remove('open');
+                }
+                if (allElements.qrcodeCanvas) {
+                    try {
+                        const ctx = allElements.qrcodeCanvas.getContext('2d'); if (ctx) ctx.clearRect(0, 0, allElements.qrcodeCanvas.width, allElements.qrcodeCanvas.height);
+                        capturedImageBase64 = null;
+                        allElements.photoPreviewThumb.style.display = 'none';
+                    } catch(e){ /* ignore */ }
+                }
+
+                // 3. Reset form và tải lại dữ liệu
+                if (allElements.searchTermInput) allElements.searchTermInput.value = ''; 
+                if (allElements.phoneNumberInput) allElements.phoneNumberInput.value = '';
+                capturedImageBase64 = null;
+                allElements.photoPreviewThumb.style.display = 'none';
+                resetMainForm();
+                fetchVehiclesForDate(allElements.datePicker ? allElements.datePicker.value : formatDateForAPI(new Date()));
+            };
+
+            const showPaymentModal = () => {
+                if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
+
+                const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === currentVehicleContext.uniqueID);
+                if (!vehicle) {
+                    showToast('Không tìm thấy thông tin xe để tính phí.', 'error');
+                    return;
+                }
+
+                const isVehicleVIP = vehicle.VIP === 'Có'; // LOGIC MỚI
+                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
+                const memo = cleanPlateNumber(vehicle.Plate);
+
+                // Điền thông tin vào biên lai
+                allElements.paymentPlateDisplay.textContent = vehicle.Plate;
+                allElements.paymentEntryTime.textContent = formatDateTimeForDisplay(vehicle['Entry Time']);
+                allElements.paymentExitTime.textContent = formatDateTimeForDisplay(new Date());
+                allElements.paymentDuration.textContent = calculateDuration(vehicle['Entry Time']);
+                allElements.paymentAmountDisplay.textContent = fee.toLocaleString('vi-VN');
+                
+                // --- THIẾT KẾ LẠI: Hiển thị ảnh thumbnail ---
+                if (vehicle.ImageUrl) {
+                    allElements.paymentThumbImage.src = vehicle.ImageUrl;
+                    allElements.paymentThumbImage.style.display = 'block';
+                } else {
+                    allElements.paymentThumbImage.style.display = 'none';
+                }
+
+                // Cập nhật nội dung chuyển khoản theo yêu cầu mới, lấy tên bãi đỗ từ currentLocation
+                // TỐI ƯU: Rút gọn nội dung chuyển khoản để tương thích với nhiều ngân hàng
+                // Định dạng: TTGX [Biển số] [UniqueID]
+                const paymentInfoText = `TTGX ${vehicle.Plate} ${vehicle.UniqueID}`;
+                allElements.paymentMemoDisplay.textContent = paymentInfoText;
+
+                // --- TỐI ƯU TỐC ĐỘ: Hiển thị modal ngay lập tức ---
+                allElements.paymentModal.style.display = 'flex';
+                allElements.paymentQrcodeImage.style.opacity = '0'; // Ẩn ảnh cũ
+                
+                // YÊU CẦU MỚI: Mặc định ẩn QR và bỏ chọn các nút
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'none';
+                allElements.selectQrBtn.classList.remove('active');
+                allElements.selectCashBtn.classList.remove('active');
+                
+                // MỚI: Vô hiệu hóa nút hoàn tất khi chưa chọn phương thức
+                allElements.completePaymentBtn.disabled = true;
+                allElements.qrSpinner.style.display = 'block'; // Hiện spinner
+
+                // =================================================================
+                // SỬA LỖI QUAN TRỌNG: Đảm bảo kênh được tạo trước khi gửi tin
+                // =================================================================
+
+                // =================================================================
+                // --- QUAY LẠI PHƯƠNG PHÁP TẠO QR TĨNH TỪ CONFIG.JS ---
+                // =================================================================
+                const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
+                const encodedDescription = encodeURIComponent(paymentInfoTextNoDiacritics);
+                const qrImageUrl = `${APP_CONFIG.payment.baseUrl}&amount=${fee}&des=${encodedDescription}`;
+
+                // Hiển thị ảnh QR
+                allElements.paymentQrcodeImage.src = qrImageUrl;
+                // Sau khi ảnh tải xong
+                allElements.paymentQrcodeImage.onload = () => {
+                    allElements.qrSpinner.style.display = 'none'; // Ẩn spinner
+                    allElements.paymentQrcodeImage.style.opacity = '1'; // Hiện ảnh mới
+                };
+                allElements.paymentQrcodeImage.onerror = () => {
+                    allElements.qrSpinner.style.display = 'none';
+                    showToast('Lỗi tải mã QR từ VietQR.', 'error');
+                }
+
+                // SỬA LỖI: Gửi dữ liệu đến cửa sổ phụ (nếu có)
+                if (paymentChannel && confirmationWindow && !confirmationWindow.closed) {
+                    const payloadForConfirmation = createInitialDataForConfirmation(vehicle, qrImageUrl, paymentInfoText);
+                    if (payloadForConfirmation) {
+                        paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: payloadForConfirmation });
+                    }
+                }
+            };
+
+            const completePayment = async () => {
+                if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
+            
+                const fee = parseFloat(allElements.paymentAmountDisplay.textContent.replace(/\./g, '')) || 0;
+                let paymentMethod = 'Chưa chọn';
+                if (allElements.selectCashBtn.classList.contains('active')) {
+                    paymentMethod = 'Tiền mặt';
+                } else if (allElements.selectQrBtn.classList.contains('active')) {
+                    paymentMethod = 'Chuyển khoản QR';
+                }
+                
+                // Đóng modal thanh toán ngay lập tức
+                allElements.paymentModal.style.display = 'none';
+            
+                // 1. Chuẩn bị dữ liệu biên lai cuối cùng
+                const finalReceiptData = {
+                    licensePlate: currentVehicleContext.plate,
+                    timeIn: allElements.paymentEntryTime.textContent,
+                    timeOut: formatDateTimeForDisplay(new Date()),
+                    duration: allElements.paymentDuration.textContent,
+                    paymentMethod: paymentMethod,
+                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`
+                };
+
+                // 2. Gửi yêu cầu xử lý check-out lên server (chạy ngầm)
+                const checkoutResult = await processCheckOut({
+                    uniqueID: currentVehicleContext.uniqueID,
+                    plate: currentVehicleContext.plate,
+                    fee: fee,
+                    paymentMethod: paymentMethod
+                });
+            
+                // 3. Nếu xử lý thất bại, dừng lại và thông báo lỗi
+                if (!checkoutResult) return; 
+            
+                // 4. Nếu thành công, gửi thông báo hoàn tất đến cửa sổ phụ
+                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+
+
+                // 5. Hiển thị thông báo và reset form
+                showToast('Đã hoàn tất cho xe ra!', 'success');
+            
+                // Reset và tải lại dữ liệu sau khi hoàn tất
+                resetMainForm();
+                allElements.searchTermInput.value = '';
+                allElements.phoneNumberInput.value = '';
+                capturedImageBase64 = null;
+                allElements.photoPreviewThumb.style.display = 'none';
+                await fetchVehiclesForDate(allElements.datePicker.value);
+            };
+
+            // MỚI: Hàm kiểm tra thiết bị di động
+            const isMobileDevice = () => window.innerWidth < 1024;
+
+            // =================================================================
+            // --- MỚI: HÀM MỞ CỬA SỔ TRÊN MÀN HÌNH PHỤ ---
+            // =================================================================
+            const openWindowOnSecondaryScreen = async (url, windowName, features) => {
+                // Kiểm tra xem trình duyệt có hỗ trợ API quản lý màn hình không
+                if ('getScreenDetails' in window) {
+                    try {
+                        const screenDetails = await window.getScreenDetails();
+                        // Tìm màn hình phụ (không phải màn hình chính)
+                        const secondaryScreen = screenDetails.screens.find(screen => !screen.isPrimary);
+
+                        if (secondaryScreen) {
+                            // Nếu tìm thấy, thêm tọa độ vào chuỗi features
+                            const { availLeft, availTop } = secondaryScreen;
+                            features += `,left=${availLeft},top=${availTop}`;
+                        }
+                    } catch (err) {
+                        console.warn("Không thể truy cập thông tin màn hình chi tiết:", err.message);
+                        // Fallback nếu người dùng từ chối quyền
+                        features += `,left=${window.screen.width},top=0`;
+                    }
+                } else {
+                    // Fallback cho các trình duyệt cũ: Giả định màn hình phụ nằm bên phải
+                    console.log("Trình duyệt không hỗ trợ getScreenDetails. Sử dụng phương pháp dự phòng.");
+                    features += `,left=${window.screen.width},top=0`;
+                }
+
+                // Mở cửa sổ với các thông số đã được tính toán
+                return window.open(url, windowName, features);
+            };
+
+            const downloadQRCode = async () => {
+                const imageUrl = allElements.paymentQrcodeImage.src;
+                if (!imageUrl) return;
+                try {
+                    const response = await fetch(imageUrl);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `QR_Thanh_Toan_${cleanPlateNumber(currentVehicleContext.plate)}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (error) {
+                    showToast('Lỗi tải mã QR. Vui lòng thử lại.', 'error');
+                }
+            };
+
+            const openQrScanner = async () => {
+                if (isLoading) return;
+                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) { showToast('Trình duyệt không hỗ trợ camera.', 'error'); return; }
+                if (!allElements.cameraFeed || !allElements.qrScannerModal) { showToast('Không tìm thấy phần tử máy quét trên trang.', 'error'); return; }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    cameraStream = stream;
+                    allElements.cameraFeed.srcObject = stream;
+                    allElements.qrScannerModal.style.display = 'flex';
+                    allElements.qrScannerModal.classList && allElements.qrScannerModal.classList.add('open');
+                    await allElements.cameraFeed.play().catch(()=>{});
+                    scanAnimation = requestAnimationFrame(tick);
+                } catch(err) { 
+                    console.error(err);
+                    showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error'); 
+                }
+            };
+
+            const closeQrScanner = () => {
+                if (scanAnimation) { cancelAnimationFrame(scanAnimation); scanAnimation = null; }
+                if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); cameraStream = null; }
+                if (allElements.qrScannerModal) {
+                    allElements.qrScannerModal.style.display = 'none';
+                    allElements.qrScannerModal.classList && allElements.qrScannerModal.classList.remove('open');
+                }
+                if (allElements.cameraFeed) {
+                    try { allElements.cameraFeed.pause(); allElements.cameraFeed.srcObject = null; } catch(e){/*ignore*/ }
+                }
+            };
+
+            const tick = () => {
+                if (allElements.cameraFeed.readyState === allElements.cameraFeed.HAVE_ENOUGH_DATA) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = allElements.cameraFeed.videoWidth;
+                    canvas.height = allElements.cameraFeed.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(allElements.cameraFeed, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+                    
+                    if (code) {
+                        const uniqueID = code.data;
+                        
+                        // Dừng quét ngay khi phát hiện mã để xử lý
+                        closeQrScanner();
+
+                        // Tìm xe trong danh sách, bất kể trạng thái
+                        const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === uniqueID);
+
+                        if (vehicle) {
+                            if (vehicle.Status === 'Đang gửi') {
+                                // XE VẪN CÒN TRONG BÃI
+                                const isVehicleVIP = vehicle.VIP === 'Có';
+                                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
+
+                                if (fee > 0) {
+                                    // CÓ PHÍ: Hiển thị biên lai thanh toán
+                                    currentVehicleContext = { plate: vehicle.Plate, status: 'parking', uniqueID: vehicle.UniqueID, isVIP: isVehicleVIP };
+                                    showPaymentModal();
+                                } else {
+                                    // MIỄN PHÍ (VIP hoặc gửi nhanh): Cho xe ra trực tiếp
+                                    processCheckOut({
+                                        uniqueID: uniqueID,
+                                        plate: vehicle.Plate,
+                                        fee: 0,
+                                        paymentMethod: isVehicleVIP ? 'VIP' : 'Miễn phí'
+                                    });
+                                    showToast(`Xe ${vehicle.Plate} ra thành công (miễn phí).`, 'success');
+                                }
+                            } else {
+                                // XE ĐÃ RỜI BÃI
+                                showToast(`Xe ${vehicle.Plate} đã rời bãi lúc ${formatDateTimeForDisplay(vehicle['Exit Time'])}.`, 'error');
+                            }
+                        } else {
+                            // MÃ QR KHÔNG TỒN TẠI
+                            showToast('Mã QR không hợp lệ hoặc xe đã ra khỏi bãi.', 'error');
+                        }
+                    }
+                }
+                scanAnimation = requestAnimationFrame(tick);
+            };
+            
+            const showScanSuccessFeedback = () => {
+                const overlay = document.createElement('div');
+                overlay.className = 'scan-success-overlay';
+                allElements.cameraFeed.parentElement.style.position = 'relative';
+                allElements.cameraFeed.parentElement.appendChild(overlay);
+                setTimeout(() => overlay.remove(), 500);
+            };
+
+            const startVoiceRecognition = () => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) { showToast('Trình duyệt không hỗ trợ nhận dạng giọng nói.', 'error'); return; }
+                const r = new SpeechRecognition(); r.lang = 'vi-VN'; r.interimResults = false;
+                allElements.micBtn.classList.add('active'); showToast('Đang lắng nghe...', 'success');
+                
+                r.onspeechend = () => r.stop();
+
+                r.onresult = (e) => {
+                    let transcript = e.results[0][0].transcript;
+                    transcript = transcript.replace(/ /g, '').replace(/\./g, '').toUpperCase();
+                    allElements.searchTermInput.value = transcript;
+                    allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                };
+                r.onerror = () => { showToast('Lỗi nhận dạng giọng nói.', 'error'); };
+                r.onend = () => { allElements.micBtn.classList.remove('active'); };
+                r.start();
+            };
+
+            // --- MỚI: XỬ LÝ CHỤP ẢNH ---
+            const handlePhotoCapture = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // Hiển thị ảnh thumbnail
+                const readerForPreview = new FileReader();
+                readerForPreview.onload = (e) => {
+                    allElements.photoPreviewThumb.src = e.target.result;
+                    allElements.photoPreviewThumb.style.display = 'block';
+                };
+                readerForPreview.readAsDataURL(file);
+
+                // Chuyển ảnh sang base64 để gửi đi
+                const readerForUpload = new FileReader();
+                readerForUpload.onload = (e) => {
+                    // e.target.result là một chuỗi base64 dạng "data:image/jpeg;base64,..."
+                    // Ta chỉ cần phần dữ liệu sau dấu phẩy
+                    const base64Data = e.target.result.split(',')[1];
+                    const mimeType = e.target.result.match(/:(.*?);/)[1];
+                    capturedImageBase64 = JSON.stringify({
+                        mimeType: mimeType,
+                        data: base64Data
+                    });
+                    showToast('Đã đính kèm ảnh!', 'success');
+                };
+                readerForUpload.readAsDataURL(file);
+
+                // Reset input để có thể chụp lại ảnh khác
+                event.target.value = '';
+            };
+
+            const getOfflineQueue = () => JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+            const saveOfflineQueue = (queue) => localStorage.setItem('offlineQueue', JSON.stringify(queue));
+            const addToOfflineQueue = (action) => {
+                const queue = getOfflineQueue();
+                queue.push(action);
+                saveOfflineQueue(queue);
+                showToast('Ngoại tuyến! Hành động đã được lưu tạm.', 'error');
+            };
+            const syncOfflineQueue = async () => {
+                const queue = getOfflineQueue();
+                if (queue.length === 0) return;
+                showToast(`Đang đồng bộ ${queue.length} hành động...`, 'success');
+                try {
+                    const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'sync', queue: queue })
+                    });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        showToast('Đồng bộ thành công!', 'success');
+                        saveOfflineQueue([]);
+                        fetchVehiclesForDate(allElements.datePicker.value);
+                    } else { throw new Error(result.message); }
+                } catch (error) { showToast(`Lỗi đồng bộ: ${error.message}`, 'error'); }
+            };
+            const updateOnlineStatus = () => {
+                if (navigator.onLine) {
+                    allElements.offlineIndicator.style.display = 'none';
+                    syncOfflineQueue();
+                } else {
+                    allElements.offlineIndicator.style.display = 'flex';
+                }
+            };
+
+            // --- INITIALIZATION & EVENT LISTENERS ---
+            const initialize = async () => {
+                updateOnlineStatus();
+                const today = new Date();
+                if (allElements.datePicker) allElements.datePicker.value = formatDateForAPI(today);
+                
+                // Tách biệt việc xác định vị trí và tải dữ liệu
+                // Dữ liệu sẽ được tải sau khi người dùng chọn điểm trực
+                await determineNearestLocation(); 
+                
+                resetMainForm();
+
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                autoRefreshInterval = setInterval(() => {
+                    // Chỉ làm mới khi người dùng không nhập liệu
+                    if (document.activeElement.tagName !== 'INPUT' && !isLoading) { fetchVehiclesForDate(allElements.datePicker.value, true); } 
+                }, APP_CONFIG.autoRefreshInterval);
+            };
+
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+            if (allElements.datePicker) allElements.datePicker.addEventListener('change', () => fetchVehiclesForDate(allElements.datePicker.value));
+            if (allElements.useDefaultLocationBtn) {
+                allElements.useDefaultLocationBtn.addEventListener('click', () => {
+                    selectLocation(LOCATIONS_CONFIG[0]);
+                });
+            }
+            if (allElements.checkInBtn) allElements.checkInBtn.addEventListener('click', async (e) => {
+                const btn = e.target;
+                btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
+                try {
+                    const phone = allElements.phoneNumberInput.value.trim();
+                    await handleVehicleAction(null, phone, 'checkIn', capturedImageBase64);
+                } finally {
+                    if (btn) btn.disabled = false; // Kích hoạt lại nút sau khi xử lý xong, dù thành công hay thất bại
+                }
+            });
+            if (allElements.checkOutBtn) allElements.checkOutBtn.addEventListener('click', async (e) => {
+                // ==================================================================
+                // --- QUY TRÌNH CHECK-OUT 2 MÀN HÌNH HOÀN TOÀN MỚI ---
+                // ==================================================================
+                const btn = e.target;
+                btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
+                try {
+                    if (!currentVehicleContext || currentVehicleContext.status !== 'parking') {
+                        showToast('Vui lòng chọn một xe đang gửi để xử lý.', 'error');
+                        return;
+                    }
+
+                    const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === currentVehicleContext.uniqueID);
+                    if (!vehicle) {
+                        showToast('Không tìm thấy thông tin xe để xử lý.', 'error');
+                        return;
+                    }
+
+                    const isVehicleVIP = vehicle.VIP === 'Có';
+                    const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
+
+                    if (fee > 0) {
+                        // --- QUY TRÌNH CÓ TÍNH PHÍ (như cũ) ---
+                        // NÂNG CẤP: Phân luồng hiển thị cho Desktop và Mobile
+                        if (isMobileDevice()) {
+                            // Trên di động, chỉ hiển thị modal trên trang chính
+                            showPaymentModal();
+                        } else {
+                            // Trên desktop, mở cửa sổ phụ và gửi dữ liệu qua
+                            if (!confirmationWindow || confirmationWindow.closed) {
+                                const url = `confirmation.html?lat=${currentLocation.lat}&lng=${currentLocation.lng}&locationName=${encodeURIComponent(currentLocation.name)}`;
+                                confirmationWindow = await openWindowOnSecondaryScreen(url, 'ConfirmationWindow', 'popup,width=950,height=700');
+                            }
+                            showPaymentModal();
+                        }
+                    } else {
+                        // --- QUY TRÌNH MIỄN PHÍ (MỚI) ---
+                        const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
+                        showConfirmationModal(
+                            {
+                                title: 'XÁC NHẬN CHO XE RA',
+                                plate: vehicle.Plate,
+                                reason: paymentMethod
+                            },
+                            async () => {
+                                const finalReceiptData = {
+                                    licensePlate: vehicle.Plate,
+                                    timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
+                                    timeOut: formatDateTimeForDisplay(new Date()),
+                                    duration: calculateDuration(vehicle['Entry Time']),
+                                    paymentMethod: paymentMethod,
+                                    totalAmount: '0đ'
+                                };
+                                const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
+                                if (checkoutResult) {
+                                    // NÂNG CẤP: Thêm lý do checkout để màn hình phụ phát đúng âm thanh
+                                    const checkoutReason = isVehicleVIP ? 'guest' : 'quick_exit';
+                                    if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: { ...finalReceiptData, checkoutReason } });
+                                    
+                                    // NÂNG CẤP: Tắt âm thanh ở màn hình chính
+                                    // const soundText = isVehicleVIP ? `Đã xác nhận thông tin xe ${vehicle.Plate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!` : `Xe ${vehicle.Plate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;
+                                    // playSound(soundText);
+
+                                    showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success');
+                                    resetMainForm();
+                                    allElements.searchTermInput.value = '';
+                                    await fetchVehiclesForDate(allElements.datePicker.value);
+                                }
+                            }
+                        );
+                    }
+
+                } finally {
+                    btn.disabled = false; // Kích hoạt lại nút
+                }
+            });
+            // Bắt sự kiện click vào label của checkbox VIP
+            if (allElements.vipCheckboxContainer) allElements.vipCheckboxContainer.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT') allElements.isVipCheckbox.checked = !allElements.isVipCheckbox.checked; });
+            
+            // --- Event Listeners cho Modal Thanh toán mới ---
+            if (allElements.completePaymentBtn) allElements.completePaymentBtn.addEventListener('click', () => {
+                // Nút này giờ xử lý cả 2 trường hợp
+                completePayment();
+            });
+            // MỚI: Xử lý chọn phương thức thanh toán
+            if (allElements.selectQrBtn) allElements.selectQrBtn.addEventListener('click', () => {
+                allElements.selectQrBtn.classList.add('active');
+                allElements.selectCashBtn.classList.remove('active');
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'block';
+                allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
+                // Gửi thông báo cho cửa sổ phụ
+                if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'qr' });
+            });
+            if (allElements.selectCashBtn) allElements.selectCashBtn.addEventListener('click', () => {
+                allElements.selectCashBtn.classList.add('active');
+                allElements.selectQrBtn.classList.remove('active');
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'none';
+                allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
+                // Gửi thông báo cho cửa sổ phụ
+                if (paymentChannel) {
+                    paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
+                }
+            });
+            if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => {
+                allElements.paymentModal.style.display = 'none';
+                // MỚI: Gửi tín hiệu hủy giao dịch đến cửa sổ phụ
+                if (paymentChannel) paymentChannel.postMessage({ type: 'TRANSACTION_CANCELED' });
+            });
+
+            // HÀM MỚI: Tạo dữ liệu để gửi sang cửa sổ phụ
+            const createInitialDataForConfirmation = (vehicle, qrImageUrl, paymentMemo) => {
+                if (!vehicle) return null;
+                const isVehicleVIP = vehicle.VIP === 'Có';
+                const duration = calculateDuration(vehicle['Entry Time']);
+                const readableDuration = calculateReadableDuration(vehicle['Entry Time']); // MỚI
+                const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
+                
+                // MỚI: Tìm tên bãi đỗ xe từ ID
+                const location = LOCATIONS_CONFIG.find(loc => loc.id === vehicle.LocationID);
+                const locationName = location ? location.name : 'Không xác định';
+
+                return {
+                    licensePlate: vehicle.Plate,
+                    timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
+                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`,
+                    qrImageUrl: qrImageUrl,
+                    duration: duration, // Gửi thêm thông tin thời gian
+                    readableDuration: readableDuration, // MỚI: Gửi thời gian dạng đọc được
+                    paymentMemo: paymentMemo,
+                    locationName: locationName, // Thêm tên bãi đỗ xe vào payload
+                    lat: location ? location.lat : null, // MỚI: Thêm tọa độ
+                    lng: location ? location.lng : null  // MỚI: Thêm tọa độ
+                };
+            };
+
+            if (allElements.downloadQrBtn) allElements.downloadQrBtn.addEventListener('click', downloadQRCode);
+            if (allElements.printReceiptBtn) allElements.printReceiptBtn.addEventListener('click', () => window.print());
+            if (allElements.paymentThumbImage) allElements.paymentThumbImage.addEventListener('click', () => window.open(allElements.paymentThumbImage.src, '_blank'));
+
+            if (allElements.searchTermInput) allElements.searchTermInput.addEventListener('input', () => {
+                const plate = cleanPlateNumber(allElements.searchTermInput.value);
+                if (plate.length >= 6) { updateUIFromCache(plate); } else { resetMainForm(); }
+            });
+            if (allElements.cancelConfirmationBtn) allElements.cancelConfirmationBtn.addEventListener('click', () => {
+                allElements.confirmationModal.style.display = 'none';
+            });
+            if (allElements.filterInput) allElements.filterInput.addEventListener('input', filterVehicleList);
+            if (allElements.micBtn) allElements.micBtn.addEventListener('click', startVoiceRecognition);
+            if (allElements.scanQrBtn) allElements.scanQrBtn.addEventListener('click', openQrScanner);
+            if (allElements.closeQrcodeBtn) allElements.closeQrcodeBtn.addEventListener('click', () => {
+                closeQrCode(); // Chỉ cần gọi hàm này là đủ
+            });
+            // --- MỚI: Event Listeners cho chụp ảnh ---
+            if (allElements.capturePhotoBtn) allElements.capturePhotoBtn.addEventListener('click', () => allElements.photoFileInput.click());
+            if (allElements.photoFileInput) allElements.photoFileInput.addEventListener('change', handlePhotoCapture);
+            if (allElements.vehicleImageDisplay) allElements.vehicleImageDisplay.addEventListener('click', () => window.open(allElements.vehicleImageDisplay.src, '_blank'));
+
+            if (allElements.closeScannerBtn) allElements.closeScannerBtn.addEventListener('click', closeQrScanner);
+            
+            // Nâng cấp: Cho phép checkout trực tiếp từ danh sách
+            if (allElements.vehicleListContainer) {
+                allElements.vehicleListContainer.addEventListener('click', (e) => {
+                    const item = e.target.closest('.vehicle-item');
+                    if (item && item.dataset.plate) {
+                        // Khi click vào một xe trong danh sách, điền biển số vào ô tìm kiếm và cập nhật UI
+                        allElements.searchTermInput.value = item.dataset.plate;
+                        if (item.dataset.status === 'Đang gửi') {
+                            updateUIFromCache(cleanPlateNumber(item.dataset.plate));
+                        }
+                    }
+                });
+            }
+
+            // =================================================================
+            // --- MỚI: ĐỊNH NGHĨA HÀM ĐỒNG HỒ & THỜI TIẾT Ở PHẠM VI TOÀN CỤC ---
+            // =================================================================
+            const updateClock = () => {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                if (document.getElementById('clock-widget')) {
+                    document.getElementById('clock-display').textContent = `${hours}:${minutes}:${seconds}`;
+                }
+            };
+
+            const fetchWeather = async (lat, lon) => {
+                const apiKey = APP_CONFIG.weather.apiKey;
+                if (!apiKey || apiKey === "YOUR_OPENWEATHERMAP_API_KEY") {
+                    document.getElementById('weather-desc').textContent = 'Chưa cấu hình API';
+                    return;
+                }
+                try {
+                    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=vi`;
+                    const response = await fetch(url);
+                    if (!response.ok) { // Kiểm tra nếu API trả về lỗi (vd: 401, 404)
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `Lỗi HTTP: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    if (!data.weather || data.weather.length === 0) throw new Error("Dữ liệu thời tiết không hợp lệ.");
+                    document.getElementById('weather-icon').src = `https://openweathermap.org/img/wn/${data.weather[0].icon}.png`;
+                    document.getElementById('weather-icon').style.display = 'inline';
+                    document.getElementById('weather-temp').textContent = `${Math.round(data.main.temp)}°C`;
+                    document.getElementById('weather-desc').textContent = data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
+                } catch (error) {
+                    console.error("Lỗi tải thời tiết:", error);
+                    document.getElementById('weather-desc').textContent = 'Lỗi thời tiết';
+                }
+            };
+            setInterval(updateClock, 1000); // Khởi chạy đồng hồ ngay lập tức
+            initialize();
+        });
+    </script>
+</body>
+</html>
