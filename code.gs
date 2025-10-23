@@ -79,47 +79,75 @@ function doPost(e) {
 
 // ================== CÁC HÀM XỬ LÝ HÀNH ĐỘNG ==================
 
+/* -------------------------
+   Helper: Lấy dữ liệu an toàn (chỉ đến lastRow)
+   ------------------------- */
+function safeGetValues(sheet) {
+  const lastRow = Math.max(1, sheet.getLastRow());
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  if (lastRow < 1) return [];
+  return sheet.getRange(1, 1, lastRow, lastCol).getValues();
+}
+
+/* -------------------------
+   Helper: Tìm index bản ghi mới nhất theo biển (quét cột Plate từ dưới lên)
+   Trả về index dòng (1-based) nếu tìm thấy, -1 nếu không có
+   ------------------------- */
+function findLastRowIndexByPlate(sheet, cols, cleanedPlate) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return -1;
+  const plateRange = sheet.getRange(2, cols.plateCol + 1, lastRow - 1, 1).getValues();
+  for (let i = plateRange.length - 1; i >= 0; i--) {
+    const recordPlate = (plateRange[i][0] || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (recordPlate === cleanedPlate) {
+      return i + 2; // convert to sheet row index
+    }
+  }
+  return -1;
+}
+
 function handleCheckIn(payload) {
   const { plate, phone, uniqueID, locationId, imageData, isVIP } = payload;
   if (!plate || !uniqueID) {
-    throw new Error("Thiếu biển số hoặc ID duy nhất khi gửi xe.");
+    throw new Error("Thiếu biển số hoặc UniqueID.");
   }
 
-  // CHỐNG TRÙNG LẶP: Kiểm tra xem xe có đang ở trạng thái "Đang gửi" không
-  const sheetForCheck = getSheet();
-  const dataForCheck = sheetForCheck.getDataRange().getValues();
-  const headersForCheck = dataForCheck[0];
-  const colsForCheck = getHeaderIndices(headersForCheck);
+  const sheet = getSheet();
+  const values = safeGetValues(sheet);
+  if (!values || values.length === 0) {
+    throw new Error("Bảng tính trống hoặc không thể đọc dữ liệu.");
+  }
+  const headers = values[0];
+  const cols = getHeaderIndices(headers);
   const cleanedPlate = (plate || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  for (let i = dataForCheck.length - 1; i > 0; i--) {
-    const recordPlate = (dataForCheck[i][colsForCheck.plateCol] || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (recordPlate === cleanedPlate) {
-      if (dataForCheck[i][colsForCheck.statusCol] === 'Đang gửi') {
-        throw new Error(`Xe [${plate}] đã có trong bãi. Vui lòng kiểm tra lại.`);
-      }
-      break; // Tìm thấy bản ghi gần nhất (đã rời đi), không cần tìm nữa.
+  // Tìm bản ghi gần nhất cho biển số (nếu đang gửi => chặn)
+  const existingRowIndex = findLastRowIndexByPlate(sheet, cols, cleanedPlate);
+  if (existingRowIndex !== -1) {
+    const statusCell = sheet.getRange(existingRowIndex, cols.statusCol + 1).getValue();
+    if (statusCell === 'Đang gửi') {
+      throw new Error(`Xe [${plate}] đang ở trong bãi.`);
     }
   }
 
   const now = new Date();
   const imageUrl = processAndSaveImage(imageData, plate);
 
-  // Ghi dữ liệu vào sheet
-  sheetForCheck.appendRow([
-    now,                  // Timestamp
-    formatDate(now),      // Date
-    plate.toUpperCase(),  // Plate
-    phone || '',          // Phone
-    now,                  // Entry Time
-    '',                   // Exit Time
-    'Đang gửi',           // Status
-    uniqueID,             // UniqueID
-    locationId || '',     // LocationID
-    imageUrl,             // ImageUrl
-    isVIP ? 'Có' : 'Không',// VIP
-    '',                   // Fee (Để trống khi check-in)
-    ''                    // PaymentMethod (Để trống khi check-in)
+  // Ghi bằng appendRow (đơn giản, đảm bảo Date object đúng)
+  sheet.appendRow([
+    now,
+    formatDate(now),
+    plate.toUpperCase(),
+    phone || '',
+    now,
+    '',
+    'Đang gửi',
+    uniqueID,
+    locationId || '',
+    imageUrl || '',
+    isVIP ? 'Có' : 'Không',
+    '', // Fee
+    ''  // PaymentMethod
   ]);
 
   // Xóa cache liên quan
@@ -128,31 +156,39 @@ function handleCheckIn(payload) {
   return createJsonResponse({ status: 'success', message: 'Gửi xe thành công.' });
 }
 
+/* -------------------------
+   Cập nhật handleCheckOut: quét từ dưới lên, cập nhật bằng setValue cho từng ô (ổn định)
+   ------------------------- */
 function handleCheckOut(payload) {
   const { uniqueID, fee, paymentMethod } = payload;
   if (!uniqueID) {
-    throw new Error("Thiếu ID duy nhất khi cho xe ra.");
+    throw new Error("Thiếu UniqueID.");
   }
 
   const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  const values = safeGetValues(sheet);
+  if (!values || values.length < 2) {
+    throw new Error("Không có dữ liệu giao dịch để xử lý.");
+  }
+  const headers = values[0];
   const cols = getHeaderIndices(headers);
-
-  if ([cols.uniqueIdCol, cols.statusCol, cols.exitTimeCol, cols.feeCol, cols.paymentMethodCol].includes(-1)) {
-    throw new Error("Sheet thiếu các cột bắt buộc: UniqueID, Status, Exit Time, Fee, hoặc PaymentMethod.");
+  if (cols.uniqueIdCol === -1 || cols.statusCol === -1) {
+    throw new Error("Sheet thiếu cột bắt buộc (UniqueID/Status).");
   }
 
   const now = new Date();
-  for (let i = data.length - 1; i > 0; i--) {
-    if (data[i][cols.uniqueIdCol] === uniqueID && data[i][cols.statusCol] === 'Đang gửi') {
-      const entryTime = new Date(data[i][cols.entryTimeCol]);
-      sheet.getRange(i + 1, cols.exitTimeCol + 1).setValue(now);
-      sheet.getRange(i + 1, cols.statusCol + 1).setValue('Đã rời đi');
-      sheet.getRange(i + 1, cols.feeCol + 1).setValue(fee);
-      sheet.getRange(i + 1, cols.paymentMethodCol + 1).setValue(paymentMethod);
+  // Quét từ dưới lên để tìm bản ghi đang gửi với UniqueID
+  for (let i = values.length - 1; i >= 1; i--) {
+    if (values[i][cols.uniqueIdCol] === uniqueID && values[i][cols.statusCol] === 'Đang gửi') {
+      const rowIndex = i + 1; // 1-based
+      const entryTime = values[i][cols.entryTimeCol] ? new Date(values[i][cols.entryTimeCol]) : now;
 
-      // Xóa cache liên quan đến ngày xe vào và ngày xe ra
+      sheet.getRange(rowIndex, cols.exitTimeCol + 1).setValue(now);
+      sheet.getRange(rowIndex, cols.statusCol + 1).setValue('Đã rời đi');
+      if (cols.feeCol !== -1) sheet.getRange(rowIndex, cols.feeCol + 1).setValue(fee);
+      if (cols.paymentMethodCol !== -1) sheet.getRange(rowIndex, cols.paymentMethodCol + 1).setValue(paymentMethod);
+
+      // Clear cache 2 ngày liên quan
       clearRelevantCache(entryTime);
       clearRelevantCache(now);
 
@@ -160,8 +196,126 @@ function handleCheckOut(payload) {
     }
   }
 
-  throw new Error('Không tìm thấy xe hoặc xe đã được cho ra trước đó.');
+  throw new Error('Không tìm thấy xe đang gửi với UniqueID này.');
 }
+
+/* -------------------------
+   Cập nhật getVehicleStatus để tránh đọc dữ liệu quá lớn (dùng safeGetValues)
+   Trả object vehicle đầy đủ khi đang gửi (đã có trước)
+   ------------------------- */
+function getVehicleStatus(plate) {
+  if (!plate) {
+    throw new Error("Thiếu biển số để kiểm tra.");
+  }
+
+  const sheet = getSheet();
+  const values = safeGetValues(sheet);
+  if (!values || values.length < 1) {
+    return createJsonResponse({ status: 'success', data: { isParking: false, vehicle: null } });
+  }
+  const headers = values[0];
+  const cols = getHeaderIndices(headers);
+  if (cols.plateCol === -1 || cols.statusCol === -1) {
+    throw new Error("Sheet thiếu cột Plate hoặc Status.");
+  }
+
+  const cleanedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // Quét từ dưới lên để lấy bản ghi mới nhất
+  for (let i = values.length - 1; i >= 1; i--) {
+    const recordPlate = (values[i][cols.plateCol] || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (recordPlate === cleanedPlate) {
+      const isParking = values[i][cols.statusCol] === 'Đang gửi';
+      const vehicle = isParking ? arrayToObject(headers, values[i]) : null;
+      return createJsonResponse({ status: 'success', data: { isParking: isParking, vehicle: vehicle } });
+    }
+  }
+  return createJsonResponse({ status: 'success', data: { isParking: false, vehicle: null } });
+}
+
+/* -------------------------
+   Cập nhật getRecordsForDate: kiểm tra dateStr, bảo vệ null, dùng cache an toàn
+   ------------------------- */
+function getRecordsForDate(dateStr) {
+  const targetDateStr = dateStr && String(dateStr).trim() ? String(dateStr).trim() : formatDate(new Date());
+  const cacheKey = `records_${targetDateStr}`;
+  const cached = SCRIPT_CACHE.get(cacheKey);
+  if (cached) return JSON.parse(cached);
+
+  const sheet = getSheet();
+  const values = safeGetValues(sheet);
+  if (!values || values.length < 2) {
+    SCRIPT_CACHE.put(cacheKey, JSON.stringify([]), CACHE_EXPIRATION_SECONDS);
+    return [];
+  }
+  const headers = values.shift(); // remove header row
+
+  const dateParts = targetDateStr.split('-');
+  if (dateParts.length !== 3) {
+    throw new Error("Date format phải là yyyy-MM-dd");
+  }
+  const targetDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+  const spreadsheetTimeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const startOfDay = new Date(Utilities.formatDate(targetDate, spreadsheetTimeZone, "yyyy-MM-dd'T'00:00:00"));
+  const endOfDay = new Date(Utilities.formatDate(targetDate, spreadsheetTimeZone, "yyyy-MM-dd'T'23:59:59"));
+
+  const records = values
+    .map(row => arrayToObject(headers, row))
+    .filter(record => {
+      const entryValue = getObjectValueCaseInsensitive(record, 'Entry Time');
+      if (!entryValue) return false;
+      const entryTime = new Date(entryValue);
+      const exitValue = getObjectValueCaseInsensitive(record, 'Exit Time');
+      const exitTime = exitValue ? new Date(exitValue) : null;
+      const statusValue = getObjectValueCaseInsensitive(record, 'Status');
+
+      const enteredToday = entryTime >= startOfDay && entryTime <= endOfDay;
+      const stillPresentFromBefore = entryTime < startOfDay && (statusValue === 'Đang gửi' || (exitTime && exitTime >= startOfDay));
+      return enteredToday || stillPresentFromBefore;
+    });
+
+  SCRIPT_CACHE.put(cacheKey, JSON.stringify(records), CACHE_EXPIRATION_SECONDS);
+  return records;
+}
+
+/* -------------------------
+   Cập nhật processAndSaveImage: an toàn, trả về file.getUrl() nếu có
+   ------------------------- */
+function processAndSaveImage(imageData, plate) {
+  if (!imageData || !IMAGE_FOLDER_ID || IMAGE_FOLDER_ID === 'ID_THU_MUC_GOOGLE_DRIVE_CUA_BAN') {
+    return "";
+  }
+  try {
+    // Nếu imageData đã là URL (từ client offline), trả về trực tiếp
+    if (typeof imageData === 'string' && imageData.indexOf('http') === 0) return imageData;
+
+    const imageObject = typeof imageData === 'string' ? JSON.parse(imageData) : imageData;
+    if (!imageObject || !imageObject.data) return "";
+    const decodedImage = Utilities.base64Decode(imageObject.data);
+    const blob = Utilities.newBlob(decodedImage, imageObject.mimeType || 'image/jpeg', `${plate}_${new Date().getTime()}.jpg`);
+    const imageFolder = DriveApp.getFolderById(IMAGE_FOLDER_ID);
+    const file = imageFolder.createFile(blob);
+    // Trả về url file Drive (an toàn)
+    return file.getUrl();
+  } catch (imgError) {
+    logError('processAndSaveImage', imgError);
+    return "";
+  }
+}
+
+/* -------------------------
+   Cập nhật clearRelevantCache: bảo vệ khóa khi removeAll
+   ------------------------- */
+function clearRelevantCache(date) {
+  try {
+    const dateKey = formatDate(date);
+    const keys = [`admin_overview_${dateKey}`, `transactions_${dateKey}`, `records_${dateKey}`];
+    SCRIPT_CACHE.removeAll(keys);
+  } catch (e) {
+    logError('clearRelevantCache', e);
+  }
+}
+
+// ================== CÁC HÀM XỬ LÝ HÀNH ĐỘNG ==================
 
 function handleSync(queue) {
   if (!Array.isArray(queue) || queue.length === 0) {
@@ -279,96 +433,114 @@ function handleSaveConfig(payload) {
 
 function getVehicleStatus(plate) {
   if (!plate) {
-    throw new Error("Thiếu biển số xe để kiểm tra.");
+    throw new Error("Thiếu biển số để kiểm tra.");
   }
 
   const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
+  const values = safeGetValues(sheet);
+  if (!values || values.length < 1) {
+    return createJsonResponse({ status: 'success', data: { isParking: false, vehicle: null } });
+  }
+  const headers = values[0];
   const cols = getHeaderIndices(headers);
-
   if (cols.plateCol === -1 || cols.statusCol === -1) {
-    throw new Error("Sheet của bạn đang thiếu cột 'Plate' hoặc 'Status'.");
+    throw new Error("Sheet thiếu cột Plate hoặc Status.");
   }
 
   const cleanedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-  // Tìm từ dưới lên để có được bản ghi mới nhất của biển số xe này
-  for (let i = data.length - 1; i > 0; i--) {
-    const recordPlate = (data[i][cols.plateCol] || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // Quét từ dưới lên để lấy bản ghi mới nhất
+  for (let i = values.length - 1; i >= 1; i--) {
+    const recordPlate = (values[i][cols.plateCol] || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (recordPlate === cleanedPlate) {
-      // Tìm thấy xe, kiểm tra trạng thái
-      const isParking = data[i][cols.statusCol] === 'Đang gửi';
-      // SỬA LỖI: Trả về toàn bộ object xe nếu đang gửi, để màn hình chính có thể xử lý
-      const vehicleData = isParking ? arrayToObject(headers, data[i]) : null;
-      return createJsonResponse({ status: 'success', data: { isParking: isParking, vehicle: vehicleData } });
+      const isParking = values[i][cols.statusCol] === 'Đang gửi';
+      const vehicle = isParking ? arrayToObject(headers, values[i]) : null;
+      return createJsonResponse({ status: 'success', data: { isParking: isParking, vehicle: vehicle } });
     }
   }
-
-  // Nếu không tìm thấy xe trong toàn bộ lịch sử, xe đó chắc chắn chưa có trong bãi
   return createJsonResponse({ status: 'success', data: { isParking: false, vehicle: null } });
 }
 
 function getRecordsForDate(dateStr) {
-  // TỐI ƯU: Sử dụng Cache
-  const cacheKey = `records_${dateStr}`;
+  const targetDateStr = dateStr && String(dateStr).trim() ? String(dateStr).trim() : formatDate(new Date());
+  const cacheKey = `records_${targetDateStr}`;
   const cached = SCRIPT_CACHE.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached);
-  }
+  if (cached) return JSON.parse(cached);
 
   const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  const headers = data.shift();
+  const values = safeGetValues(sheet);
+  if (!values || values.length < 2) {
+    SCRIPT_CACHE.put(cacheKey, JSON.stringify([]), CACHE_EXPIRATION_SECONDS);
+    return [];
+  }
+  const headers = values.shift(); // remove header row
 
-  const spreadsheetTimeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
-  // Sửa lỗi: Đảm bảo dateStr được xử lý đúng múi giờ
-  const dateParts = dateStr.split('-');
+  const dateParts = targetDateStr.split('-');
+  if (dateParts.length !== 3) {
+    throw new Error("Date format phải là yyyy-MM-dd");
+  }
   const targetDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-
+  const spreadsheetTimeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   const startOfDay = new Date(Utilities.formatDate(targetDate, spreadsheetTimeZone, "yyyy-MM-dd'T'00:00:00"));
   const endOfDay = new Date(Utilities.formatDate(targetDate, spreadsheetTimeZone, "yyyy-MM-dd'T'23:59:59"));
 
-  const records = data.map(row => arrayToObject(headers, row)).filter(record => {
-    const entryTimeValue = getObjectValueCaseInsensitive(record, 'Entry Time');
-    if (!entryTimeValue) return false;
+  const records = values
+    .map(row => arrayToObject(headers, row))
+    .filter(record => {
+      const entryValue = getObjectValueCaseInsensitive(record, 'Entry Time');
+      if (!entryValue) return false;
+      const entryTime = new Date(entryValue);
+      const exitValue = getObjectValueCaseInsensitive(record, 'Exit Time');
+      const exitTime = exitValue ? new Date(exitValue) : null;
+      const statusValue = getObjectValueCaseInsensitive(record, 'Status');
 
-    const entryTime = new Date(entryTimeValue);
-    const exitTimeValue = getObjectValueCaseInsensitive(record, 'Exit Time');
-    const exitTime = exitTimeValue ? new Date(exitTimeValue) : null;
-    const statusValue = getObjectValueCaseInsensitive(record, 'Status');
+      const enteredToday = entryTime >= startOfDay && entryTime <= endOfDay;
+      const stillPresentFromBefore = entryTime < startOfDay && (statusValue === 'Đang gửi' || (exitTime && exitTime >= startOfDay));
+      return enteredToday || stillPresentFromBefore;
+    });
 
-    // LOGIC ĐÚNG: Lấy xe vào trong ngày HOẶC xe từ ngày cũ nhưng vẫn đang gửi
-    const enteredToday = entryTime >= startOfDay && entryTime <= endOfDay;
-    const stillPresentFromBefore = entryTime < startOfDay && (statusValue === 'Đang gửi' || (exitTime && exitTime >= startOfDay));
-
-    return enteredToday || stillPresentFromBefore;
-  });
-
-  // TỐI ƯU: Lưu kết quả vào cache trước khi trả về
   SCRIPT_CACHE.put(cacheKey, JSON.stringify(records), CACHE_EXPIRATION_SECONDS);
-
   return records;
 }
 
-function getVehicleHistory(plate) {
-  if (!plate) return [];
+/* -------------------------
+   Cập nhật processAndSaveImage: an toàn, trả về file.getUrl() nếu có
+   ------------------------- */
+function processAndSaveImage(imageData, plate) {
+  if (!imageData || !IMAGE_FOLDER_ID || IMAGE_FOLDER_ID === 'ID_THU_MUC_GOOGLE_DRIVE_CUA_BAN') {
+    return "";
+  }
+  try {
+    // Nếu imageData đã là URL (từ client offline), trả về trực tiếp
+    if (typeof imageData === 'string' && imageData.indexOf('http') === 0) return imageData;
 
-  const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  const headers = data.shift();
-  const cleanedPlate = (plate || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-  const history = data
-    .map(row => arrayToObject(headers, row))
-    .filter(record => {
-      const recordPlate = getObjectValueCaseInsensitive(record, 'Plate');
-      return recordPlate && (recordPlate || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === cleanedPlate;
-    })
-    .sort((a, b) => new Date(getObjectValueCaseInsensitive(b, 'Entry Time')) - new Date(getObjectValueCaseInsensitive(a, 'Entry Time')));
-
-  return history;
+    const imageObject = typeof imageData === 'string' ? JSON.parse(imageData) : imageData;
+    if (!imageObject || !imageObject.data) return "";
+    const decodedImage = Utilities.base64Decode(imageObject.data);
+    const blob = Utilities.newBlob(decodedImage, imageObject.mimeType || 'image/jpeg', `${plate}_${new Date().getTime()}.jpg`);
+    const imageFolder = DriveApp.getFolderById(IMAGE_FOLDER_ID);
+    const file = imageFolder.createFile(blob);
+    // Trả về url file Drive (an toàn)
+    return file.getUrl();
+  } catch (imgError) {
+    logError('processAndSaveImage', imgError);
+    return "";
+  }
 }
+
+/* -------------------------
+   Cập nhật clearRelevantCache: bảo vệ khóa khi removeAll
+   ------------------------- */
+function clearRelevantCache(date) {
+  try {
+    const dateKey = formatDate(date);
+    const keys = [`admin_overview_${dateKey}`, `transactions_${dateKey}`, `records_${dateKey}`];
+    SCRIPT_CACHE.removeAll(keys);
+  } catch (e) {
+    logError('clearRelevantCache', e);
+  }
+}
+
+// ================== CÁC HÀM LẤY DỮ LIỆU (GET) ==================
 
 function getAdminOverview(secret, dateString) {
   if (secret !== ADMIN_SECRET_KEY) {
@@ -593,61 +765,16 @@ function formatDate(date) {
 }
 
 function clearRelevantCache(date) {
-  const dateKey = formatDate(date);
-  SCRIPT_CACHE.removeAll([`admin_overview_${dateKey}`, `transactions_${dateKey}`, `records_${dateKey}`]);
+  try {
+    const dateKey = formatDate(date);
+    const keys = [`admin_overview_${dateKey}`, `transactions_${dateKey}`, `records_${dateKey}`];
+    SCRIPT_CACHE.removeAll(keys);
+  } catch (e) {
+    logError('clearRelevantCache', e);
+  }
 }
 
 
 function logError(functionName, error) {
   console.error(`Lỗi trong hàm ${functionName}: ${error.message} tại ${error.stack}`);
-}
-
-function processAndSaveImage(imageData, plate) {
-  if (!imageData || !IMAGE_FOLDER_ID || IMAGE_FOLDER_ID === 'ID_THU_MUC_GOOGLE_DRIVE_CUA_BAN') {
-    return "";
-  }
-  try {
-    const imageObject = JSON.parse(imageData);
-    const decodedImage = Utilities.base64Decode(imageObject.data);
-    const blob = Utilities.newBlob(decodedImage, imageObject.mimeType, plate + '_' + new Date().getTime() + '.jpg');
-    const imageFolder = DriveApp.getFolderById(IMAGE_FOLDER_ID);
-    const file = imageFolder.createFile(blob);
-    return "https://lh3.googleusercontent.com/d/" + file.getId();
-  } catch (imgError) {
-    logError('processAndSaveImage', imgError);
-    return "Lỗi ảnh";
-  }
-}
-
-function getSystemConfig() {
-  const scriptProperties = PropertiesService.getScriptProperties();
-  const configJson = scriptProperties.getProperty('SYSTEM_CONFIG');
-  if (configJson) {
-    return JSON.parse(configJson);
-  }
-  return {
-    fee: { freeMinutes: 15, dayRate: 5000, nightRate: 8000, nightStartHour: 18, nightEndHour: 6 },
-    autoRefreshInterval: 5000,
-    adVideos: []
-  };
-}
-
-function saveSystemConfig(config) {
-  PropertiesService.getScriptProperties().setProperty('SYSTEM_CONFIG', JSON.stringify(config));
-}
-
-// ================== CÁC HÀM THIẾT LẬP THỦ CÔNG ==================
-
-function setupSheet() {
-  const sheet = getSheet();
-  sheet.clear();
-  const headers = [
-    'Timestamp', 'Date', 'Plate', 'Phone', 'Entry Time', 'Exit Time', 
-    'Status', 'UniqueID', 'LocationID', 'ImageUrl', 'VIP', 'Fee', 'PaymentMethod', 'Hour'
-  ];
-  sheet.appendRow(headers);
-  sheet.getRange("A1:M1").setFontWeight("bold");
-  sheet.setFrozenRows(1);
-  SpreadsheetApp.flush();
-  return ContentService.createTextOutput("Bảng tính đã được thiết lập thành công với các cột Fee và PaymentMethod.");
 }
