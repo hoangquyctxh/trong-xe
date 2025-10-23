@@ -1768,6 +1768,16 @@
                         const result = await response.json();
                         if (result.status === 'success') {
                             if (action === 'checkIn') {
+                                // MỚI: Gửi thông báo gửi xe thành công đến màn hình phụ
+                                if (paymentChannel) {
+                                    const soundText = `Đã ghi nhận xe ${originalPlate} vào bãi.`;
+                                    paymentChannel.postMessage({ 
+                                        type: 'VEHICLE_CHECKIN_COMPLETE', 
+                                        payload: { licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime), soundText: soundText }
+                                    });
+                                }
+                                // Kết thúc phần mới
+
                                 showQrCode(originalPlate, entryTime, uniqueID);
                             }
                         } else { throw new Error(result.message); }
@@ -1776,6 +1786,15 @@
                             const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
                             addToOfflineQueue(offlineAction);
                             showQrCode(originalPlate, entryTime, uniqueID);
+                            // MỚI: Gửi thông báo gửi xe thành công đến màn hình phụ (chế độ offline)
+                            if (paymentChannel) {
+                                const soundText = `Đã ghi nhận xe ${originalPlate} vào bãi.`;
+                                paymentChannel.postMessage({ 
+                                    type: 'VEHICLE_CHECKIN_COMPLETE', 
+                                    payload: { licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime), soundText: soundText }
+                                });
+                            }
+                            // Kết thúc phần mới
                         }
                     }
                 } catch (error) {

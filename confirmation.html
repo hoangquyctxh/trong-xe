@@ -1087,6 +1087,24 @@
                         requestSoundPlayback(soundTextCheckout);
                         break;
 
+                    case 'VEHICLE_CHECKIN_COMPLETE': // MỚI: Xử lý khi gửi xe thành công
+                        [paymentView, successView, idleView].forEach(v => v.classList.add('hidden'));
+                        checkinSuccessView.classList.remove('hidden');
+                        startConfetti('checkin-confetti-container');
+                        
+                        if (payload.soundText) requestSoundPlayback(payload.soundText);
+
+                        document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
+                        document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
+
+                        // Tự động quay về màn hình chờ sau 10 giây
+                        setTimeout(() => {
+                            checkinSuccessView.classList.add('hidden');
+                            idleView.classList.remove('hidden');
+                            startInactivityTimer();
+                        }, 10000);
+                        break;
+
                     case 'PAYMENT_METHOD_SELECTED':
                         grid.classList.add('method-selected');
                         rightPanel.classList.remove('placeholder');
@@ -1121,23 +1139,6 @@
 
                         setTimeout(() => {
                             successView.classList.add('hidden');
-                            idleView.classList.remove('hidden');
-                            startInactivityTimer();
-                        }, 10000);
-                        break;
-
-                    case 'VEHICLE_CHECKIN_COMPLETE':
-                        [paymentView, successView, idleView].forEach(v => v.classList.add('hidden'));
-                        checkinSuccessView.classList.remove('hidden');
-                        startConfetti('checkin-confetti-container');
-                        
-                        if (payload.soundText) requestSoundPlayback(payload.soundText);
-
-                        document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
-                        document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
-
-                        setTimeout(() => {
-                            checkinSuccessView.classList.add('hidden');
                             idleView.classList.remove('hidden');
                             startInactivityTimer();
                         }, 10000);
