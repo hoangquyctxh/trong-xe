@@ -1180,75 +1180,30 @@
                         return; // Dừng xử lý để tránh xung đột
                     }
 
-                    const { type, method, payload } = event.data; // Destructuring dữ liệu từ message
+                    const { type, payload } = event.data; // Destructuring dữ liệu từ message
 
-                    // MỚI: Xử lý các yêu cầu từ trạm tự phục vụ (Kiosk)
+                    // LUỒNG GỬI XE TỪ KIOSK (GIỮ NGUYÊN)
                     if (type === 'SELF_SERVICE_CHECKIN_REQUEST' && payload && payload.plate) {
-                        // 1. Điền biển số vào ô nhập liệu
                         allElements.searchTermInput.value = payload.plate;
-                        // 2. Kích hoạt sự kiện input để UI cập nhật
+                        allElements.phoneNumberInput.value = payload.phone || '';
                         allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        // 3. Tự động bấm nút "Xác nhận gửi xe" sau một khoảng trễ nhỏ
-                        // Dùng timeout nhỏ để đảm bảo UI đã cập nhật xong
-                        setTimeout(() => {
-                            if (allElements.checkInBtn && !allElements.checkInBtn.disabled) {
-                                allElements.checkInBtn.click();
-                            }
-                        }, 100);
+                        setTimeout(() => { if (allElements.checkInBtn && !allElements.checkInBtn.disabled) allElements.checkInBtn.click(); }, 100);
                     }
 
-                    // SỬA LỖI: Logic xử lý lấy xe tự phục vụ thông minh hơn
-                    if (type === 'SELF_SERVICE_CHECKOUT_REQUEST' && payload && payload.plate) {
-                        const plate = cleanPlateNumber(payload.plate);
-                        const vehicle = vehiclesOnSelectedDate.find(v => 
-                            v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi'
-                        );
-
-                        // SỬA LỖI: Thêm kiểm tra vehicle có tồn tại không
+                    // GIẢI PHÁP TRIỆT ĐỂ: Xử lý yêu cầu hiển thị biên lai trực tiếp từ Kiosk
+                    if (type === 'SHOW_PAYMENT_MODAL_FOR_VEHICLE' && payload && payload.vehicle) {
+                        const vehicle = payload.vehicle;
                         if (vehicle) {
-                            // TÍNH TOÁN PHÍ TRƯỚC KHI QUYẾT ĐỊNH
-                            const isVehicleVIP = vehicle.VIP === 'Có';
-                            const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
-
-                            // NẾU PHÍ BẰNG 0 (VIP, dưới 15 phút, etc.), TỰ ĐỘNG CHO RA
+                            const fee = calculateFee(vehicle['Entry Time'], null, vehicle.VIP === 'Có');
+                            
                             if (fee === 0) {
-                                (async () => {
-                                    // Xác định lý do miễn phí
-                                    const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
-                                    
-                                    const finalReceiptData = {
-                                        licensePlate: vehicle.Plate,
-                                        timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
-                                        timeOut: formatDateTimeForDisplay(new Date()),
-                                        duration: calculateDuration(vehicle['Entry Time']),
-                                        paymentMethod: paymentMethod,
-                                        totalAmount: '0đ' // Phí là 0
-                                    };
-
-                                    // Gọi hàm xử lý checkout ngầm
-                                    const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
-                                    
-                                    if (checkoutResult) {
-                                        // Gửi thông báo hoàn tất về màn hình phụ
-                                        if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
-                                        showToast(`Đã tự động cho xe ${vehicle.Plate} ra (${paymentMethod}).`, 'success');
-                                        // Tải lại danh sách
-                                        await fetchVehiclesForDate(allElements.datePicker.value, true);
-                                    }
-                                })();
+                                // Xử lý cho xe ra miễn phí
+                                processFreeCheckoutFromKiosk(vehicle);
                             } else {
-                                // NẾU CÓ PHÍ: Giữ nguyên quy trình cũ (hiện modal thanh toán)
-                                allElements.searchTermInput.value = payload.plate;
-                                allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                setTimeout(() => {
-                                    if (allElements.checkOutBtn && !allElements.checkOutBtn.disabled) {
-                                        allElements.checkOutBtn.click();
-                                    }
-                                }, 100);
+                                // Gọi trực tiếp hàm hiển thị biên lai, không cần mô phỏng
+                                currentVehicleContext = { plate: vehicle.Plate, status: 'parking', uniqueID: vehicle.UniqueID, isVIP: vehicle.VIP === 'Có' };
+                                showPaymentModal();
                             }
-                        } else {
-                            // SỬA LỖI: Thông báo nếu không tìm thấy xe
-                            showToast(`Không tìm thấy xe ${payload.plate} đang gửi trong bãi.`, 'error');
                         }
                     }
 
@@ -1261,6 +1216,31 @@
                     }
                 });
             }
+
+            // HÀM MỚI: Xử lý cho xe ra miễn phí từ Kiosk
+            const processFreeCheckoutFromKiosk = async (vehicle) => {
+                const isVehicleVIP = vehicle.VIP === 'Có';
+                const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
+                
+                const finalReceiptData = {
+                    licensePlate: vehicle.Plate,
+                    timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
+                    timeOut: formatDateTimeForDisplay(new Date()),
+                    duration: calculateDuration(vehicle['Entry Time']),
+                    paymentMethod: paymentMethod,
+                    totalAmount: '0đ'
+                };
+
+                const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
+                
+                if (checkoutResult) {
+                    // Gửi thông báo hoàn tất về màn hình phụ
+                    if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+                    showToast(`Đã tự động cho xe ${vehicle.Plate} ra (${paymentMethod}).`, 'success');
+                    // Tải lại danh sách
+                    await fetchVehiclesForDate(allElements.datePicker.value, true);
+                }
+            };
 
             const getDistance = (lat1, lon1, lat2, lon2) => {
                 const R = 6371; // Bán kính Trái đất (km)
@@ -2417,10 +2397,49 @@
             if (allElements.checkInBtn) allElements.checkInBtn.addEventListener('click', async (e) => {
                 const btn = e.target;
                 btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
+                
+                // --- SỬA LỖI: TÁCH LOGIC CHECK-IN RA HÀM RIÊNG ---
                 try {
+                    if (isLoading) return;
+                    setIsLoading(true);
+
+                    if (!currentLocation) {
+                        showToast("Chưa xác định được điểm trực. Vui lòng thử lại.", 'error');
+                        determineNearestLocation(); // Thử lại
+                        return;
+                    }
+                    const originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
+                    if (!originalPlate) {
+                        showToast("Biển số không hợp lệ.", 'error');
+                        return;
+                    }
+
+                    const entryTime = new Date();
+                    const uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
                     const phone = allElements.phoneNumberInput.value.trim();
-                    await handleVehicleAction(null, phone, 'checkIn', capturedImageBase64);
+                    const isVIP = allElements.isVipCheckbox.checked;
+                    const payload = { action: 'checkIn', plate: originalPlate, phone, uniqueID, locationId: currentLocation.id, imageData: capturedImageBase64, isVIP: isVIP };
+
+                    // Gửi yêu cầu lên server (chạy ngầm)
+                    syncCheckInInBackground(payload);
+
+                    // Hiển thị QR ngay lập tức
+                    showQrCode(originalPlate, entryTime, uniqueID);
+
+                    // Gửi thông báo đến màn hình phụ
+                    if (paymentChannel) {
+                        paymentChannel.postMessage({
+                            type: 'VEHICLE_CHECKIN_COMPLETE',
+                            payload: {
+                                licensePlate: originalPlate,
+                                timeIn: formatDateTimeForDisplay(entryTime),
+                                uniqueID: uniqueID,
+                                soundText: `Đã gửi thành công xe ${originalPlate}. Vui lòng nhận vé điện tử.`
+                            }
+                        });
+                    }
                 } finally {
+                    setIsLoading(false);
                     if (btn) btn.disabled = false; // Kích hoạt lại nút sau khi xử lý xong, dù thành công hay thất bại
                 }
             });

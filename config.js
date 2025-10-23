@@ -9,7 +9,7 @@
 
 const APP_CONFIG = {
     // Cập nhật URL mới nhất từ Google Apps Script
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbwm-GhIS6HZD3QQFWUE_6Uf5o57h3FDtm_kyYKijh_zcBLBmRyD49AbEzouTo0qJwISXA/exec",
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycbxAisLSy1prrlhDNLpkMtb1bX-rCXsxtMMP-xe9Ndg1YRePKwilVQoWNr4Z0C1SxujO5g/exec",
 
     // Cấu hình thanh toán QR (SỬ DỤNG LẠI PHƯƠP PHÁP TĨNH)
     payment: {

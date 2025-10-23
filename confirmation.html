@@ -1072,9 +1072,18 @@
                             <p>Đang xử lý, vui lòng chờ...</p>
                         </div>
                         <input type="text" id="kiosk-plate-input" placeholder="NHẬP BIỂN SỐ XE" readonly>
+                        <!-- MỚI: Ô nhập số điện thoại, ẩn mặc định -->
+                        <div id="kiosk-phone-wrapper" class="hidden" style="margin-bottom: 1em; animation: fadeInUp 0.3s;">
+                            <input type="tel" id="kiosk-phone-input" placeholder="Số điện thoại (không bắt buộc)" style="width: 100%; padding: 20px; font-size: 1.5rem; text-align: center; border: 2px solid var(--border-color); border-radius: var(--border-radius-lg); font-family: 'Be Vietnam Pro', sans-serif;">
+                        </div>
+
                         <div class="kiosk-actions">
-                            <button id="kiosk-checkin-btn" class="kiosk-btn check-in" disabled>Gửi xe</button>
-                            <button id="kiosk-checkout-btn" class="kiosk-btn check-out" disabled>Lấy xe</button>
+                            <!-- THAY ĐỔI: Gộp thành một nút duy nhất với hiệu ứng chuyển đổi -->
+                            <button id="kiosk-action-btn" class="kiosk-btn" disabled style="position: relative; overflow: hidden;">
+                                <span class="btn-text-wrapper" style="display: block; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);">
+                                    <span class="btn-text">NHẬP BIỂN SỐ</span>
+                                </span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1171,10 +1180,11 @@
                     selectCashBtn: document.getElementById('select-cash-btn'),
                     rightPanel: document.getElementById('right-panel-content'),
                     paymentGrid: document.querySelector('.payment-content-grid'),
-                    kioskInput: document.getElementById('kiosk-plate-input'),
-                    kioskCheckinBtn: document.getElementById('kiosk-checkin-btn'),
-                    kioskCheckoutBtn: document.getElementById('kiosk-checkout-btn'),
+                    kioskInput: document.getElementById('kiosk-plate-input'), // Giữ lại
+                    kioskActionBtn: document.getElementById('kiosk-action-btn'), // THAY ĐỔI
                     customerCancelBtn: document.getElementById('customer-cancel-btn'), // MỚI
+                    kioskPhoneWrapper: document.getElementById('kiosk-phone-wrapper'), // MỚI
+                    kioskPhoneInput: document.getElementById('kiosk-phone-input'), // MỚI
                     kioskOverlay: document.getElementById('kiosk-processing-overlay'),
                 },
                 views: ['paymentView', 'successView', 'checkinSuccessView', 'idleView', 'adView'],
@@ -1256,6 +1266,13 @@
                     if (this.elements.kioskOverlay) {
                         this.elements.kioskOverlay.classList.add('hidden');
                     }
+                    // Reset nút hành động về trạng thái ban đầu
+                    this.elements.kioskActionBtn.classList.remove('check-in', 'check-out');
+                    this.elements.kioskActionBtn.removeAttribute('data-action');
+                    this.elements.kioskActionBtn.disabled = true;
+                    this.elements.kioskActionBtn.querySelector('.btn-text').textContent = 'NHẬP BIỂN SỐ';
+                    this.elements.kioskPhoneWrapper.classList.add('hidden');
+                    this.elements.kioskPhoneInput.value = '';
                 },
 
                 // Cập nhật tên bãi đỗ xe
@@ -1429,19 +1446,6 @@
                         });
                     }
 
-                    // Kiosk tự phục vụ
-                    UI.elements.kioskInput.addEventListener('input', () => {
-                        const isValid = UI.elements.kioskInput.value.trim().length >= 4;
-                        UI.elements.kioskCheckinBtn.disabled = !isValid;
-                        UI.elements.kioskCheckoutBtn.disabled = !isValid;
-                    });
-                    UI.elements.kioskCheckinBtn.addEventListener('click', () => {
-                        this.sendMessage('SELF_SERVICE_CHECKIN_REQUEST', { payload: { plate: UI.elements.kioskInput.value.toUpperCase() } });
-                    });
-                    UI.elements.kioskCheckoutBtn.addEventListener('click', () => {
-                        this.sendMessage('SELF_SERVICE_CHECKOUT_REQUEST', { payload: { plate: UI.elements.kioskInput.value.toUpperCase() } });
-                    });
-                    
                     // NÂNG CẤP: Xử lý bàn phím ảo
                     const keyboard = document.querySelector('.virtual-keyboard');
                     const t9Map = { '1': '1', '2': '2ABC', '3': '3DEF', '4': '4GHI', '5': '5JKL', '6': '6MNO', '7': '7PQRS', '8': '8TUV', '9': '9WXYZ', '0': '0' };
@@ -1482,15 +1486,99 @@
                                 this.lastKey = null;
                             }, T9_TIMEOUT);
  
-                            input.dispatchEvent(new Event('input')); // Kích hoạt sự kiện để cập nhật trạng thái nút
+                            // NÂNG CẤP: Gọi hàm kiểm tra xe thay vì chỉ bật/tắt nút
+                            this.handleKioskInput();
                         });
                     }
 
-                    // Video quảng cáo
-                    if (UI.elements.adVideo) UI.elements.adVideo.onended = () => StateManager.playNextVideo();
+                    // NÂNG CẤP: Gắn sự kiện cho các nút kiosk
+                    UI.elements.kioskActionBtn.addEventListener('click', () => {
+                        const btn = UI.elements.kioskActionBtn;
+                        const plate = UI.elements.kioskInput.value.toUpperCase();
+                        if (!plate) return;
+
+                        const action = btn.dataset.action || '';
+                        if (action === 'check-in') {
+                            const phone = UI.elements.kioskPhoneInput.value;
+                            this.sendMessage('SELF_SERVICE_CHECKIN_REQUEST', { payload: { plate, phone } });
+                        } else if (action === 'check-out') {
+                            // Gửi yêu cầu hiển thị biên lai / xử lý checkout cho xe đã tìm thấy
+                            if (this.foundVehicleData) {
+                                this.sendMessage('SHOW_PAYMENT_MODAL_FOR_VEHICLE', { payload: { vehicle: this.foundVehicleData } });
+                            }
+                        } else {
+                            // Không có action hợp lệ — bỏ qua (an toàn)
+                            console.warn('Kiosk: no action assigned on button.');
+                        }
+                    });
+                },
+
+                // NÂNG CẤP: Hàm xử lý logic khi người dùng nhập biển số trên kiosk
+                async handleKioskInput() {
+                    const plate = UI.elements.kioskInput.value.trim().toUpperCase();
+                    this.foundVehicleData = null; // Reset dữ liệu xe đã tìm thấy
+
+                    // Reset trạng thái
+                    const actionBtn = UI.elements.kioskActionBtn;
+                    const btnText = actionBtn.querySelector('.btn-text');
+
+                    actionBtn.classList.remove('check-in', 'check-out');
+                    actionBtn.removeAttribute('data-action'); // đảm bảo không còn action cũ
+                    actionBtn.disabled = true;
+                    UI.elements.kioskPhoneWrapper.classList.add('hidden');
+
+                    if (plate.length < 4) {
+                        btnText.textContent = 'NHẬP BIỂN SỐ';
+                        return; // Chưa đủ ký tự để tìm
+                    }
+
+                    try {
+                        // Sử dụng action `getVehicleStatus` mới
+                        const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicleStatus&plate=${plate}&v=${new Date().getTime()}`);
+                        const result = await response.json();
+
+                        // Thêm hiệu ứng chuyển đổi
+                        const textWrapper = actionBtn.querySelector('.btn-text-wrapper');
+                        textWrapper.style.transform = 'translateY(100%)';
+
+                        // LƯU LẠI DỮ LIỆU XE TÌM THẤY
+                        this.foundVehicleData = result.data.vehicle || null;
+                        if (result.status === 'success' && result.data.isParking) {
+                            // Xe đang gửi
+                            setTimeout(() => {
+                                // đảm bảo trạng thái hợp lệ và đồng bộ
+                                actionBtn.classList.remove('check-in');
+                                actionBtn.classList.add('check-out');
+                                actionBtn.dataset.action = 'check-out';
+                                btnText.textContent = 'LẤY XE';
+                                textWrapper.style.transform = 'translateY(0)';
+                                actionBtn.disabled = false;
+                            }, 150);
+                        } else {
+                            // Xe không có trong bãi hoặc có lỗi
+                            setTimeout(() => {
+                                UI.elements.kioskPhoneWrapper.classList.remove('hidden');
+                                actionBtn.classList.remove('check-out');
+                                actionBtn.classList.add('check-in');
+                                actionBtn.dataset.action = 'check-in';
+                                btnText.textContent = 'GỬI XE';
+                                textWrapper.style.transform = 'translateY(0)';
+                                actionBtn.disabled = false;
+                            }, 150);
+                        }
+                    } catch (error) {
+                        console.error("Lỗi kiểm tra trạng thái xe:", error);
+                        // Nếu có lỗi mạng, mặc định hiển thị form gửi xe mới
+                        UI.elements.kioskPhoneWrapper.classList.remove('hidden');
+                        actionBtn.classList.remove('check-out');
+                        actionBtn.classList.add('check-in');
+                        actionBtn.dataset.action = 'check-in';
+                        btnText.textContent = 'GỬI XE';
+                        actionBtn.disabled = false;
+                    }
                 }
             };
-
+ 
             // --- 4. MODULE TIỆN ÍCH & KHỞI TẠO ---
             const App = {
                 init() {
