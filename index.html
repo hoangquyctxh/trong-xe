@@ -1365,16 +1365,9 @@
             let audioQueue = []; // Hàng đợi chứa các đoạn text cần phát
             let isPlaying = false; // Cờ để kiểm tra xem có đang phát âm thanh không
  
-            // NÂNG CẤP: Hàm xử lý hàng đợi sử dụng Gemini TTS API
+            // QUAY LẠI: Sử dụng Google Translate TTS với hàng đợi để đảm bảo ổn định
             const processAudioQueue = () => {
                 if (isPlaying || audioQueue.length === 0) return;
-                
-                const geminiApiKey = APP_CONFIG.geminiApiKey;
-                if (!geminiApiKey || geminiApiKey === "DÁN_API_KEY_CỦA_BẠN_VÀO_ĐÂY") {
-                    console.error("Chưa cấu hình Gemini API Key trong config.js. Không thể phát âm thanh.");
-                    audioQueue = []; // Xóa hàng đợi để tránh lặp lại lỗi
-                    return;
-                }
 
                 isPlaying = true;
                 const text = audioQueue.shift();
@@ -1383,36 +1376,16 @@
                     isPlaying = false;
                     processAudioQueue();
                 };
-
-                // Gọi API Gemini Text-to-Speech
-                fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-to-speech:synthesizeSpeech?key=${geminiApiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        "input": { "text": text },
-                        "voice": {
-                            "languageCode": "vi-VN",
-                            "name": "vi-VN-Standard-A" // Giọng nữ miền Bắc tự nhiên
-                        },
-                        "audioConfig": { "audioEncoding": "MP3" }
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.audioContent) {
-                        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-                        audio.onended = onEnded;
-                        audio.onerror = onEnded;
-                        audio.play().catch(onEnded);
-                    } else {
-                        console.error("Lỗi Gemini TTS API:", data.error?.message || "Không nhận được dữ liệu âm thanh.");
-                        onEnded(); // Bỏ qua và xử lý mục tiếp theo
-                    }
-                })
-                .catch(error => {
-                    console.error("Lỗi mạng khi gọi Gemini TTS API:", error);
+ 
+                // Chỉ sử dụng API của Google Translate
+                const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob`);
+                audio.onended = onEnded;
+                // Nếu có lỗi (ví dụ: mất mạng), vẫn tiếp tục xử lý hàng đợi
+                audio.onerror = () => {
+                    console.error("Lỗi phát âm thanh Google TTS (có thể do mất mạng).");
                     onEnded(); // Bỏ qua và xử lý mục tiếp theo
-                });
+                };
+                audio.play().catch(onEnded); // Bắt lỗi nếu trình duyệt chặn tự động phát
             };
 
             const playTTS = (text) => {
@@ -2382,11 +2355,12 @@
                                 const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
                                 if (checkoutResult) {
                                     // NÂNG CẤP: Thêm lý do checkout để màn hình phụ phát đúng âm thanh
-                                    const checkoutReason = isVehicleVIP ? 'guest' : 'quick_exit';
-                                    if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: { ...finalReceiptData, checkoutReason } });
+                                    // const checkoutReason = isVehicleVIP ? 'guest' : 'quick_exit';
+                                    // if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: { ...finalReceiptData, checkoutReason } });
 
-                                    // NÂNG CẤP: Tắt âm thanh ở màn hình chính
-                                    // const soundText = isVehicleVIP ? `Đã xác nhận thông tin xe ${vehicle.Plate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!` : `Xe ${vehicle.Plate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;                                    // playTTS(soundText);
+                                    // SỬA LỖI: Phát âm thanh trực tiếp từ màn hình chính khi cho xe ra miễn phí
+                                    const soundText = isVehicleVIP ? `Đã xác nhận thông tin xe ${vehicle.Plate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!` : `Xe ${vehicle.Plate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;
+                                    playTTS(soundText);
 
                                     showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success'); 
                                     resetMainForm();
@@ -2417,6 +2391,8 @@
                 if (qrWrapper) qrWrapper.style.display = 'block';
                 allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
                 // Gửi thông báo cho cửa sổ phụ
+                // SỬA LỖI: Kích hoạt audio context tại đây để đảm bảo quyền phát âm thanh
+                activateAudioContext();
                 if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'qr' });
             });
             if (allElements.selectCashBtn) allElements.selectCashBtn.addEventListener('click', () => {
@@ -2426,6 +2402,8 @@
                 if (qrWrapper) qrWrapper.style.display = 'none';
                 allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
                 // Gửi thông báo cho cửa sổ phụ
+                // SỬA LỖI: Kích hoạt audio context tại đây để đảm bảo quyền phát âm thanh
+                activateAudioContext();
                 if (paymentChannel) {
                     paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
                 }

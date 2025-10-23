@@ -21,12 +21,6 @@ const APP_CONFIG = {
         apiKey: "c9b24c823032912293817419cb0cd2dc" // <-- DÁN API KEY CỦA BẠN VÀO ĐÂY
     },
 
-    // =================================================================================
-    // --- MỚI: Cấu hình Gemini API cho giọng nói chất lượng cao ---
-    // Lấy API Key từ: https://aistudio.google.com/app/apikey
-    // =================================================================================
-    geminiApiKey: "AIzaSyDbcSZTvvcfc_bbZhpapT_H3Jj7clfrb3w",
-
     // Cấu hình tính phí gửi xe
     fee: {
         freeMinutes: 15,       // Số phút gửi xe miễn phí
