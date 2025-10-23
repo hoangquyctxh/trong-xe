@@ -269,9 +269,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateDashboardUI = (data, isSilentUpdate = false) => {
         if (!data) return; // SỬA LỖI: Thoát nếu không có dữ liệu
         fullAdminData = data;
+        
+        // SỬA LỖI: Hiển thị dữ liệu theo ngày đã chọn hoặc hôm nay
+        const isFilteredByDate = elements.adminDatePicker.value !== "";
+        const revenueToShow = isFilteredByDate ? (data?.totalRevenueForDate ?? 0) : (data?.totalRevenueToday ?? 0);
+        const vehiclesToShow = isFilteredByDate ? (data?.totalVehiclesForDate ?? 0) : (data?.totalVehiclesToday ?? 0);
 
-        elements.totalRevenue.innerHTML = `${formatCurrency(data?.totalRevenueToday ?? 0)} <sup>đ</sup>`;
-        elements.totalVehicles.textContent = data?.totalVehiclesToday ?? 0;
+        elements.totalRevenue.innerHTML = `${formatCurrency(revenueToShow)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = vehiclesToShow;
         elements.currentVehicles.textContent = data?.vehiclesCurrentlyParking ?? 0;
 
         // Bỏ render bảng giao dịch ở đây, chỉ render khi có dữ liệu giao dịch được tải riêng
@@ -463,15 +468,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
             const dateToFetch = elements.adminDatePicker.value;
     
+            // SỬA LỖI: Xử lý trường hợp fetchAdminData trả về false
             const success = await fetchAdminData(secretKey, false, dateToFetch);
     
             if (success) {
                 elements.loader.style.display = 'none';
                 if (autoRefreshInterval) clearInterval(autoRefreshInterval);
                 autoRefreshInterval = setInterval(() => {
+                    // Chỉ làm mới dữ liệu tổng quan trong nền
                     const currentDate = elements.adminDatePicker.value;
                     fetchAdminData(secretKey, true, currentDate);
                 }, APP_CONFIG.autoRefreshInterval || 30000);
+
+                // Tải dữ liệu giao dịch nếu tab giao dịch đang hoạt động
+                if (document.getElementById('page-transactions').classList.contains('active')) {
+                    fetchTransactionData(secretKey, dateToFetch);
+                }
+            } else {
+                // Nếu không thành công, hàm fetchAdminData đã hiển thị lỗi và gọi showLoginScreen
+                // Không cần làm gì thêm ở đây.
             }
 
         } catch (error) {

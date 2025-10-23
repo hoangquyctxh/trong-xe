@@ -338,6 +338,28 @@
         .gauge-text { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
         .gauge-label { font-size: 1rem; color: var(--text-secondary); font-weight: 500; }
 
+        /* MỚI: CSS cho thông báo trạng thái sức chứa */
+        .capacity-status-message {
+            margin-top: 12px;
+            padding: 10px 15px;
+            border-radius: var(--border-radius-md);
+            font-weight: 600;
+            text-align: center;
+            display: none; /* Ẩn theo mặc định */
+            animation: fadeIn 0.5s;
+            border: 1px solid transparent;
+        }
+        .capacity-status-message.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffeeba;
+        }
+        .capacity-status-message.danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+
         @media (max-width: 960px) { .main-grid { grid-template-columns: 1fr; } }
         @media (max-width: 768px) { 
             body { padding: 0; }
@@ -811,6 +833,8 @@
                         <div class="gauge-text" id="capacity-gauge-text">0%</div>
                     </div>
                     <div class="gauge-label">Sức chứa bãi xe</div>
+                    <!-- MỚI: Thêm khu vực hiển thị thông báo sức chứa -->
+                    <div id="capacity-status-message" class="capacity-status-message"></div>
                 </div>
                 <div class="dashboard-grid" style="margin-top: 25px;">
                     <div class="stat-item">
@@ -1143,8 +1167,97 @@
             // =================================================================
             if (paymentChannel) {
                 paymentChannel.addEventListener('message', (event) => {
-                    const { type, method } = event.data;
-                    if (type === 'CUSTOMER_PAYMENT_METHOD_SELECTED') {
+                    // SỬA LỖI: Xử lý khi người dùng chọn phương thức thanh toán trên màn hình phụ
+                    if (event.data.type === 'CUSTOMER_PAYMENT_METHOD_SELECTED') {
+                        const selectedMethod = event.data.method;
+                        if (selectedMethod === 'qr') {
+                            allElements.selectQrBtn.click();
+                        } else if (selectedMethod === 'cash') {
+                            allElements.selectCashBtn.click();
+                        }
+                        // Gửi lại tín hiệu đã xử lý để màn hình phụ cập nhật UI
+                        paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: selectedMethod });
+                        return; // Dừng xử lý để tránh xung đột
+                    }
+
+                    const { type, method, payload } = event.data; // Destructuring dữ liệu từ message
+
+                    // MỚI: Xử lý các yêu cầu từ trạm tự phục vụ (Kiosk)
+                    if (type === 'SELF_SERVICE_CHECKIN_REQUEST' && payload && payload.plate) {
+                        // 1. Điền biển số vào ô nhập liệu
+                        allElements.searchTermInput.value = payload.plate;
+                        // 2. Kích hoạt sự kiện input để UI cập nhật
+                        allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        // 3. Tự động bấm nút "Xác nhận gửi xe" sau một khoảng trễ nhỏ
+                        // Dùng timeout nhỏ để đảm bảo UI đã cập nhật xong
+                        setTimeout(() => {
+                            if (allElements.checkInBtn && !allElements.checkInBtn.disabled) {
+                                allElements.checkInBtn.click();
+                            }
+                        }, 100);
+                    }
+
+                    // SỬA LỖI: Logic xử lý lấy xe tự phục vụ thông minh hơn
+                    if (type === 'SELF_SERVICE_CHECKOUT_REQUEST' && payload && payload.plate) {
+                        const plate = cleanPlateNumber(payload.plate);
+                        const vehicle = vehiclesOnSelectedDate.find(v => 
+                            v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi'
+                        );
+
+                        // SỬA LỖI: Thêm kiểm tra vehicle có tồn tại không
+                        if (vehicle) {
+                            // TÍNH TOÁN PHÍ TRƯỚC KHI QUYẾT ĐỊNH
+                            const isVehicleVIP = vehicle.VIP === 'Có';
+                            const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
+
+                            // NẾU PHÍ BẰNG 0 (VIP, dưới 15 phút, etc.), TỰ ĐỘNG CHO RA
+                            if (fee === 0) {
+                                (async () => {
+                                    // Xác định lý do miễn phí
+                                    const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
+                                    
+                                    const finalReceiptData = {
+                                        licensePlate: vehicle.Plate,
+                                        timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
+                                        timeOut: formatDateTimeForDisplay(new Date()),
+                                        duration: calculateDuration(vehicle['Entry Time']),
+                                        paymentMethod: paymentMethod,
+                                        totalAmount: '0đ' // Phí là 0
+                                    };
+
+                                    // Gọi hàm xử lý checkout ngầm
+                                    const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
+                                    
+                                    if (checkoutResult) {
+                                        // Gửi thông báo hoàn tất về màn hình phụ
+                                        if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+                                        showToast(`Đã tự động cho xe ${vehicle.Plate} ra (${paymentMethod}).`, 'success');
+                                        // Tải lại danh sách
+                                        await fetchVehiclesForDate(allElements.datePicker.value, true);
+                                    }
+                                })();
+                            } else {
+                                // NẾU CÓ PHÍ: Giữ nguyên quy trình cũ (hiện modal thanh toán)
+                                allElements.searchTermInput.value = payload.plate;
+                                allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                setTimeout(() => {
+                                    if (allElements.checkOutBtn && !allElements.checkOutBtn.disabled) {
+                                        allElements.checkOutBtn.click();
+                                    }
+                                }, 100);
+                            }
+                        } else {
+                            // SỬA LỖI: Thông báo nếu không tìm thấy xe
+                            showToast(`Không tìm thấy xe ${payload.plate} đang gửi trong bãi.`, 'error');
+                        }
+                    }
+
+                    // MỚI: Xử lý khi người dùng hủy giao dịch từ màn hình phụ
+                    if (type === 'TRANSACTION_CANCELED') {
+                        if (allElements.paymentModal.style.display === 'flex') {
+                            allElements.paymentModal.style.display = 'none';
+                            resetMainForm();
+                        }
                     }
                 });
             }
@@ -1181,16 +1294,17 @@
                 updateFooterInfo(location);
 
                 // MỚI: Tải thời tiết cho vị trí đã chọn
-                if (typeof fetchWeather === 'function') fetchWeather(location.lat, location.lng);
+                fetchWeather(location.lat, location.lng);
 
                 // Sau khi chọn xong, tải dữ liệu cho bãi đỗ xe đó
                 // MỚI: Mở cửa sổ phụ ngay sau khi chọn bãi đỗ xe (chỉ trên desktop)
-                if (!isMobileDevice() && !confirmationWindow) {
+                if (!isMobileDevice() && (!confirmationWindow || confirmationWindow.closed)) {
                     const url = `confirmation.html?lat=${location.lat}&lng=${location.lng}&locationName=${encodeURIComponent(location.name)}`;
                     confirmationWindow = await openWindowOnSecondaryScreen(url, 'ConfirmationWindow', 'popup,width=950,height=700');
                 }
 
-                fetchVehiclesForDate(allElements.datePicker.value, false, true);
+                // Tải lại dữ liệu cho vị trí mới được chọn
+                fetchVehiclesForDate(allElements.datePicker.value, false);
             };
 
             const showLocationSelector = (nearbyLocations) => {
@@ -1198,12 +1312,13 @@
                 nearbyLocations.forEach(loc => {
                     const option = document.createElement('div');
                     option.className = 'location-option';
+                    const distanceText = loc.distance < 1 ? `~${(loc.distance * 1000).toFixed(0)} m` : `~${loc.distance.toFixed(1)} km`;
                     option.innerHTML = `
                         <div class="icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
                         <div class="info">
                             <div style="font-weight: 700;">${loc.name}</div>
                         </div>
-                        <div class="distance">~${(loc.distance * 1000).toFixed(0)} m</div>
+                        <div class="distance">${distanceText}</div>
                     `;
                     option.onclick = () => selectLocation(loc);
                     allElements.locationListContainer.appendChild(option);
@@ -1215,8 +1330,9 @@
             const determineNearestLocation = async () => {
                 const locations = typeof LOCATIONS_CONFIG !== 'undefined' ? LOCATIONS_CONFIG : [];
 
-                if (!navigator.geolocation || locations.length === 0) {
-                    showToast('Trình duyệt không hỗ trợ định vị. Sử dụng điểm mặc định.', 'error');
+                if (!navigator.geolocation) {
+                    console.warn('Trình duyệt không hỗ trợ định vị.');
+                    // Không làm gì cả, hệ thống đã tải với vị trí mặc định rồi.
                     allElements.locationSubtitle.textContent = `Chưa có điểm trực nào được cấu hình.`;
                     return;
                 }
@@ -1233,7 +1349,7 @@
                     const nearbyLocations = locations.map(loc => {
                         const distance = getDistance(position.coords.latitude, position.coords.longitude, loc.lat, loc.lng);
                         return { ...loc, distance };
-                    }).filter(loc => loc.distance < 2.5) // Lọc các điểm trong bán kính 2.5km
+                    }).filter(loc => loc.distance < 5) // Tăng bán kính lọc lên 5km
                       .sort((a, b) => a.distance - b.distance);
 
                     if (nearbyLocations.length === 0) {
@@ -1264,12 +1380,10 @@
                     if (err.code === 1) message = 'Vui lòng cấp quyền truy cập vị trí trong cài đặt trình duyệt.';
                     if (err.code === 2) message = 'Vị trí không khả dụng.';
                     if (err.code === 3) message = 'Yêu cầu vị trí hết hạn.';
-                    showToast(`${message} Sử dụng điểm mặc định.`, 'error');
-                    if (locations.length > 0) {
-                        // Dùng điểm mặc định khi có lỗi
-                        selectLocation(locations[0]);
-                    }
+                    showToast(message, 'error');
+                    // Không cần làm gì thêm, vì trang đã tải với vị trí mặc định.
                 }
+
             };
             // --- KẾT THÚC TÍCH HỢP VỊ TRÍ ---
 
@@ -1464,7 +1578,9 @@
                 allElements.listTitle.textContent = `Danh sách xe ngày ${displayDateObj.toLocaleDateString('vi-VN')}`;
                 
                 try {
-                    const response = await fetch(`${APP_CONFIG.googleScriptUrl}?date=${dateStr}&v=${new Date().getTime()}`);
+                    // SỬA LỖI: Thêm action=getVehicles và locationId vào yêu cầu để Google Sheet biết cần lấy dữ liệu gì.
+                    const locationIdParam = currentLocation ? `&locationId=${currentLocation.id}` : '';
+                    const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicles&date=${dateStr}${locationIdParam}&v=${new Date().getTime()}`);
                     if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
                     const result = await response.json();
                     if (result.status === 'success') {
@@ -1581,6 +1697,31 @@
                         allElements.capacityGaugeText.textContent = `${percentage}%`;
                     }
                 }
+
+                // MỚI: Cập nhật thông báo trạng thái sức chứa
+                const capacityStatusEl = document.getElementById('capacity-status-message');
+                if (capacityStatusEl && currentCapacity > 0) {
+                    const currentCount = currentVehicles.length;
+                    const percentage = (currentCount / currentCapacity) * 100;
+
+                    capacityStatusEl.style.display = 'none'; // Ẩn trước khi kiểm tra
+                    capacityStatusEl.className = 'capacity-status-message'; // Reset class
+
+                    if (percentage >= 100) {
+                        capacityStatusEl.textContent = `⚠️ Bãi xe đã ĐẦY hoặc QUÁ TẢI! (${currentCount}/${currentCapacity} xe)`;
+                        capacityStatusEl.classList.add('danger');
+                        capacityStatusEl.style.display = 'block';
+                    } else if (percentage >= 90) {
+                        capacityStatusEl.textContent = `🔔 Bãi xe SẮP ĐẦY! (${currentCount}/${currentCapacity} xe)`;
+                        capacityStatusEl.classList.add('warning');
+                        capacityStatusEl.style.display = 'block';
+                    } else if (percentage >= 80) {
+                        capacityStatusEl.textContent = `Bãi xe gần đầy (${currentCount}/${currentCapacity} xe)`;
+                        capacityStatusEl.classList.add('warning');
+                        capacityStatusEl.style.display = 'block';
+                    }
+                }
+
 
             };
 
@@ -1724,35 +1865,14 @@
                 } catch (error) {
                     showToast(`Lỗi khi cho xe ra: ${error.message}`, 'error');
                     return false; // Trả về false nếu có lỗi
-                } finally {
-                    setIsLoading(false);
                 }
-            };
-
-            const handleVehicleAction = async (plateOrUniqueID, phone, action, imageBase64) => {
+            };const handleVehicleAction = async (plateOrUniqueID, phone, action, imageBase64) => {
                 if (isLoading) return;
                 setIsLoading(true);
                 let originalPlate;
                 let payload;
                 let uniqueID; // SỬA LỖI: Khai báo uniqueID ở phạm vi rộng hơn
                 const entryTime = new Date();
-
-                // =================================================================
-                // --- TỐI ƯU HÓA TỐC ĐỘ (OPTIMISTIC UPDATE) ---
-                // --- Bước 1: Xử lý giao diện ngay lập tức ---
-                // =================================================================
-                if (action === 'checkIn') {
-                    originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
-                    if (!originalPlate) {
-                        showToast("Biển số không hợp lệ.", 'error');
-                        setIsLoading(false);
-                        return;
-                    }
-                    uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
-                    // Hiển thị QR Code ngay lập tức mà không cần chờ server
-                    showQrCode(originalPlate, entryTime, uniqueID);
-                }
-                // =================================================================
                 
                 if (action === 'checkIn') {
                     if (!currentLocation) {
@@ -1761,7 +1881,13 @@
                         determineNearestLocation(); // Thử lại
                         return;
                     }
-                    // originalPlate và uniqueID đã được tạo ở trên
+                    originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
+                    if (!originalPlate) {
+                        showToast("Biển số không hợp lệ.", 'error');
+                        setIsLoading(false);
+                        return; // Thêm return để dừng hẳn nếu biển số không hợp lệ
+                    }
+                    uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
                     // MỚI: Thêm isVIP vào payload
                     const isVIP = allElements.isVipCheckbox.checked;
                     payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id, imageData: imageBase64, isVIP: isVIP };
@@ -1770,12 +1896,6 @@
                     // Hàm này sẽ không xử lý check-out nữa
                 }
 
-                // =================================================================
-                // --- TỐI ƯU HÓA TỐC ĐỘ ---
-                // --- Bước 2: Gửi dữ liệu lên server ở chế độ nền ---
-                // =================================================================
-                // Thêm biển số vào payload sau khi đã hiển thị QR
-                if (action === 'checkIn') payload.plate = originalPlate;
                 try {
                     if (navigator.onLine) {
                         const response = await fetch(APP_CONFIG.googleScriptUrl, {
@@ -1783,58 +1903,36 @@
                             body: JSON.stringify(payload)
                         });
                         const result = await response.json();
-                        if (result.status === 'success') {
-                            // Check-in thành công ở chế độ nền, không cần làm gì thêm ở UI
-                            // Có thể thêm log ở đây nếu cần
-                            console.log(`Optimistic check-in for ${originalPlate} synced successfully.`);
-                        } else { throw new Error(result.message); }
+                if (result.status !== 'success') throw new Error(result.message);
                     } else {
-                        if (action === 'checkIn') {
-                            const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
-                            addToOfflineQueue(offlineAction);
-                            // UI đã được cập nhật ở trên, chỉ cần lưu vào hàng đợi offline
-                            // MỚI: Gửi thông báo gửi xe thành công đến màn hình phụ (chế độ offline)
-                            if (paymentChannel) {
-                                const soundText = `Đã ghi nhận xe ${originalPlate} vào bãi.`;
-                                paymentChannel.postMessage({ 
-                                    type: 'VEHICLE_CHECKIN_COMPLETE', 
-                                    payload: { licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime), soundText: soundText }
-                                });
-                            }
-                            // Kết thúc phần mới
+                // Chế độ offline
+                        const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
+                        addToOfflineQueue(offlineAction);
+            }
+
+            // SỬA LỖI TRIỆT ĐỂ: Luôn thực hiện các hành động này sau khi check-in thành công (cả online và offline)
+            if (action === 'checkIn') {
+                // 1. Hiển thị QR trên màn hình chính
+                showQrCode(originalPlate, entryTime, uniqueID);
+
+                // 2. Gửi thông báo đến màn hình phụ để đồng bộ hiển thị QR
+                if (paymentChannel) {
+                    paymentChannel.postMessage({
+                        type: 'VEHICLE_CHECKIN_COMPLETE',
+                        payload: {
+                        licensePlate: originalPlate,
+                        timeIn: formatDateTimeForDisplay(entryTime),
+                        uniqueID: uniqueID,
+                        soundText: `Đã gửi thành công xe ${originalPlate}. Vui lòng nhận vé điện tử.`
                         }
-                    }
-                    // Gửi thông báo đến màn hình phụ sau khi đã chắc chắn hiển thị QR
-                    if (action === 'checkIn' && paymentChannel) {
-                        const soundText = `Đã ghi nhận xe ${originalPlate} vào bãi.`;
-                        paymentChannel.postMessage({ 
-                            type: 'VEHICLE_CHECKIN_COMPLETE', 
-                            payload: { licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime), soundText: soundText }
-                        });
-                        // Đã di chuyển từ trong khối try..catch ra đây
-                    }
+                    });
+                }
+            }
                 } catch (error) {
                     showToast(`Lỗi đồng bộ: ${error.message}`, 'error');
                 } finally {
                     setIsLoading(false);
                 }
-            };
-            
-            const showQrCode = (plate, entryTime, uniqueID) => {
-                if (allElements.ticketPlateDisplay) allElements.ticketPlateDisplay.textContent = plate;
-                if (allElements.ticketTimeDisplay) allElements.ticketTimeDisplay.textContent = formatDateTimeForDisplay(entryTime);
-                if (allElements.ticketLocationDisplay && currentLocation) {
-                    allElements.ticketLocationDisplay.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
-                }
-
-                QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
-                    if (error) { showToast('Lỗi tạo mã QR.', 'error'); return; }
-                    
-                    if (allElements.qrcodeModal) {
-                        allElements.qrcodeModal.style.display = 'flex';
-                        allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.add('open');
-                    }
-                });
             };
 
             const closeQrCode = () => {
@@ -1860,7 +1958,57 @@
                 capturedImageBase64 = null;
                 allElements.photoPreviewThumb.style.display = 'none';
                 resetMainForm();
-                fetchVehiclesForDate(allElements.datePicker ? allElements.datePicker.value : formatDateForAPI(new Date()));
+                // SỬA LỖI: Tải lại dữ liệu ở chế độ nền (silent) để không làm gián đoạn công việc của nhân viên
+                fetchVehiclesForDate(allElements.datePicker ? allElements.datePicker.value : formatDateForAPI(new Date()), true);
+            };
+            
+            // =================================================================
+            // --- TỐI ƯU HÓA: TÁCH RIÊNG HÀM GỬI DỮ LIỆU NỀN ---
+            // =================================================================
+            const syncCheckInInBackground = (payload) => {
+                // Không cần `await`, hàm này sẽ tự chạy ở chế độ nền
+                (async () => {
+                    try {
+                        if (navigator.onLine) {
+                            const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                                method: 'POST',
+                                body: JSON.stringify(payload)
+                            });
+                            const result = await response.json();
+                            if (result.status !== 'success') {
+                                console.error('Lỗi đồng bộ nền:', result.message);
+                                // Có thể thêm logic để thử lại hoặc thông báo cho người dùng nếu cần
+                            } else {
+                                console.log(`Đồng bộ check-in cho ${payload.plate} thành công.`);
+                            }
+                        } else {
+                            const offlineAction = { ...payload, timestamp: new Date().toISOString() };
+                            addToOfflineQueue(offlineAction);
+                        }
+                    } catch (error) {
+                        console.error(`Lỗi đồng bộ nền: ${error.message}`);
+                        // Nếu có lỗi, lưu vào hàng đợi offline để thử lại sau
+                        const offlineAction = { ...payload, timestamp: new Date().toISOString() };
+                        addToOfflineQueue(offlineAction);
+                    }
+                })();
+            };
+
+            const showQrCode = (plate, entryTime, uniqueID) => {
+                if (allElements.ticketPlateDisplay) allElements.ticketPlateDisplay.textContent = plate;
+                if (allElements.ticketTimeDisplay) allElements.ticketTimeDisplay.textContent = formatDateTimeForDisplay(entryTime);
+                if (allElements.ticketLocationDisplay && currentLocation) {
+                    allElements.ticketLocationDisplay.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
+                }
+
+                QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
+                    if (error) { showToast('Lỗi tạo mã QR.', 'error'); return; }
+                    
+                    if (allElements.qrcodeModal) {
+                        allElements.qrcodeModal.style.display = 'flex';
+                        allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.add('open');
+                    }
+                });
             };
 
             const showPaymentModal = () => {
@@ -1957,34 +2105,41 @@
                 // Đóng modal thanh toán ngay lập tức
                 allElements.paymentModal.style.display = 'none';
             
-                // TỐI ƯU HÓA: Hiển thị thông báo và cập nhật UI ngay lập tức
-                // 1. Hiển thị toast thành công
-                showToast('Đã hoàn tất cho xe ra!', 'success');
-
-                // 2. Chuẩn bị dữ liệu biên lai cuối cùng và gửi đến màn hình phụ
+                // 1. Chuẩn bị dữ liệu biên lai cuối cùng
                 const finalReceiptData = {
                     licensePlate: currentVehicleContext.plate,
                     timeIn: allElements.paymentEntryTime.textContent,
                     timeOut: formatDateTimeForDisplay(new Date()),
                     duration: allElements.paymentDuration.textContent,
                     paymentMethod: paymentMethod,
-                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`,
-                    soundText: `Đã cho xe ${currentVehicleContext.plate} ra khỏi bãi. Cảm ơn quý khách.`
+                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`
                 };
-                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
 
-                // 3. Reset form và tải lại dữ liệu
-                resetMainForm();
-                allElements.searchTermInput.value = '';
-                await fetchVehiclesForDate(allElements.datePicker.value);
-
-                // 4. Gửi yêu cầu xử lý check-out lên server (chạy ngầm ở cuối cùng)
-                processCheckOut({
+                // 2. Gửi yêu cầu xử lý check-out lên server (chạy ngầm)
+                const checkoutResult = await processCheckOut({
                     uniqueID: currentVehicleContext.uniqueID,
                     plate: currentVehicleContext.plate,
                     fee: fee,
                     paymentMethod: paymentMethod
                 });
+            
+                // 3. Nếu xử lý thất bại, dừng lại và thông báo lỗi
+                if (!checkoutResult) return; 
+            
+                // 4. Nếu thành công, gửi thông báo hoàn tất đến cửa sổ phụ
+                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+
+
+                // 5. Hiển thị thông báo và reset form
+                showToast('Đã hoàn tất cho xe ra!', 'success');
+            
+                // Reset và tải lại dữ liệu sau khi hoàn tất
+                resetMainForm();
+                allElements.searchTermInput.value = '';
+                allElements.phoneNumberInput.value = '';
+                capturedImageBase64 = null;
+                allElements.photoPreviewThumb.style.display = 'none';
+                await fetchVehiclesForDate(allElements.datePicker.value);
             };
 
             // MỚI: Hàm kiểm tra thiết bị di động
@@ -2216,23 +2371,37 @@
 
             // --- INITIALIZATION & EVENT LISTENERS ---
             const initialize = async () => {
+                // 1. Thiết lập giao diện cơ bản
+                resetMainForm();
                 updateOnlineStatus();
                 const today = new Date();
                 if (allElements.datePicker) allElements.datePicker.value = formatDateForAPI(today);
 
-                // Tách biệt việc xác định vị trí và tải dữ liệu
-                // Dữ liệu sẽ được tải sau khi người dùng chọn điểm trực
-                await determineNearestLocation(); 
-                
-                // SỬA LỖI: Thêm listener để kích hoạt audio ở lần click đầu tiên của người dùng
-                resetMainForm();
+                // 2. Chọn vị trí mặc định và tải dữ liệu lần đầu
+                if (LOCATIONS_CONFIG.length > 0) {
+                    currentLocation = LOCATIONS_CONFIG[0]; // Gán vị trí mặc định
+                    currentCapacity = currentLocation.capacity || 0;
+                    allElements.locationSubtitle.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
+                    updateFooterInfo(currentLocation);
+                    fetchWeather(currentLocation.lat, currentLocation.lng);
+                    await fetchVehiclesForDate(allElements.datePicker.value, false, true); // Tải dữ liệu lần đầu
+                } else {
+                    showToast("Lỗi cấu hình: Không có bãi đỗ xe nào được định nghĩa trong locations.js", "error");
+                    return; // Dừng nếu không có cấu hình
+                }
 
+                // 3. Bắt đầu quá trình xác định vị trí chính xác (chạy ngầm)
+                determineNearestLocation();
                 if (autoRefreshInterval) clearInterval(autoRefreshInterval);
                 autoRefreshInterval = setInterval(() => {
                     // Chỉ làm mới khi người dùng không nhập liệu
                     if (document.activeElement.tagName !== 'INPUT' && !isLoading) { fetchVehiclesForDate(allElements.datePicker.value, true); } 
                 }, APP_CONFIG.autoRefreshInterval);
             };
+
+            // SỬA LỖI: Bổ sung listener cho nút xác nhận trong modal
+            if (allElements.confirmActionBtn) allElements.confirmActionBtn.addEventListener('click', () => { /* Logic đã được xử lý trong showConfirmationModal */ });
+
 
             window.addEventListener('online', updateOnlineStatus);
             window.addEventListener('offline', updateOnlineStatus);
@@ -2297,21 +2466,17 @@
                                 reason: paymentMethod
                             },
                             async () => {
-                                // TỐI ƯU HÓA: Cập nhật UI ngay lập tức
-                                showToast(`Đã cho xe ${vehicle.Plate} ra (${paymentMethod}).`, 'success'); 
                                 const finalReceiptData = {
                                     licensePlate: vehicle.Plate,
                                     timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
                                     timeOut: formatDateTimeForDisplay(new Date()),
                                     duration: calculateDuration(vehicle['Entry Time']),
                                     paymentMethod: paymentMethod,
-                                    totalAmount: '0đ',
-                                    soundText: `Đã cho xe ${vehicle.Plate} ra khỏi bãi. Cảm ơn quý khách.`
+                                    totalAmount: '0đ'
                                 };
-                                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
-                                
-                                // Reset form và gửi yêu cầu lên server ở chế độ nền
-                                processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
+                                const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });                                if (checkoutResult) {
+                                    if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+                                    showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success'); 
                                     resetMainForm();
                                     allElements.searchTermInput.value = '';
                                     await fetchVehiclesForDate(allElements.datePicker.value);
@@ -2336,6 +2501,7 @@
             if (allElements.selectQrBtn) allElements.selectQrBtn.addEventListener('click', () => {
                 allElements.selectQrBtn.classList.add('active');
                 allElements.selectCashBtn.classList.remove('active');
+                allElements.completePaymentBtn.disabled = false; // SỬA LỖI: Kích hoạt nút hoàn tất
                 const qrWrapper = document.getElementById('payment-qrcode-wrapper');
                 if (qrWrapper) qrWrapper.style.display = 'block';
                 if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'qr' });
@@ -2343,10 +2509,17 @@
             if (allElements.selectCashBtn) allElements.selectCashBtn.addEventListener('click', () => {
                 allElements.selectCashBtn.classList.add('active');
                 allElements.selectQrBtn.classList.remove('active');
+                allElements.completePaymentBtn.disabled = false; // SỬA LỖI: Kích hoạt nút hoàn tất
+
+                // SỬA LỖI: Ẩn khu vực QR code khi chọn tiền mặt
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'none';
+
                 if (paymentChannel) {
                     paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
                 }
             });
+
             if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => {
                 allElements.paymentModal.style.display = 'none';
                 // MỚI: Gửi tín hiệu hủy giao dịch đến cửa sổ phụ
@@ -2454,8 +2627,9 @@
                     document.getElementById('weather-desc').textContent = 'Lỗi thời tiết';
                 }
             };
-            setInterval(updateClock, 1000); // Khởi chạy đồng hồ ngay lập tức
-            initialize();
+            // SỬA LỖI: Khởi chạy đồng hồ và hàm khởi tạo chính của ứng dụng
+            setInterval(updateClock, 1000);
+            initialize(); // <--- LỜI GỌI HÀM BỊ THIẾU ĐÃ ĐƯỢC BỔ SUNG
         });
     </script>
 </body>

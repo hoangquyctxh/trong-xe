@@ -324,6 +324,22 @@
             padding-top: 1.5em;
         }
         .btn {
+        /* ================================================== */
+        /* --- MỚI: THIẾT KẾ LẠI KHU VỰC CHÂN BIÊN LAI --- */
+        /* ================================================== */
+        .receipt-footer {
+            margin-top: 1.5em;
+            padding-top: 1.5em;
+            border-top: 1px dashed var(--border-color);
+            display: flex;
+            justify-content: center;
+        }
+        .btn-cancel {
+            background: none; border: none; color: var(--text-secondary);
+            font-weight: 600; cursor: pointer; text-decoration: underline;
+            font-size: 1rem; transition: color 0.2s;
+        }
+        .btn-cancel:hover { color: var(--danger-color); }
             display: inline-block;
             width: 100%;
             padding: 0.8em 1em;
@@ -448,29 +464,33 @@
             animation: fadeInUp 0.5s 2s backwards;
         }
         .success-details-grid .detail-item {
-            font-size: 1.15rem; /* Tăng cỡ chữ */
+            font-size: 1.25rem; /* SỬA: Tăng kích thước chữ chung */
         }
         .success-details-grid .detail-item .label {
             color: var(--text-secondary);
             display: block;
-            font-size: 0.9rem;
+            font-size: 1rem; /* SỬA: Tăng kích thước chữ của nhãn */
         }
         .success-details-grid .detail-item .value {
             font-weight: 700;
             color: var(--text-primary);
+            font-size: 1.3rem; /* SỬA: Tăng kích thước chữ của giá trị */
+            font-weight: 800; /* SỬA: Làm đậm hơn */
         }
         .success-duration-highlight {
-            grid-column: 1 / -1; /* Trải dài toàn bộ grid */
-            text-align: center;
+            /* SỬA LỖI: Bỏ căn giữa để đồng bộ với các mục khác */
+            grid-column: 1 / -1; 
             margin-top: 0.8em;
             padding-top: 0.8em;
             border-top: 1px dashed var(--border-color);
+            display: flex; /* SỬA LỖI: Dùng flexbox để căn chỉnh */
+            justify-content: space-between; /* SỬA LỖI: Căn lề trái-phải */
+            align-items: center;
         }
         .success-duration-highlight .label {
             font-size: 1.1rem;
         }
         .success-duration-highlight .value {
-            font-size: 1.8rem; /* Tăng cỡ chữ */
             font-weight: 800;
             color: var(--primary-accent);
         }
@@ -656,6 +676,109 @@
             line-height: 1.3;
         }
 
+        /* ================================================== */
+        /* --- MỚI: GIAO DIỆN TỰ PHỤC VỤ (KIOSK MODE) --- */
+        /* ================================================== */
+        .self-service-kiosk {
+            display: none; /* Ẩn trên thiết bị di động theo mặc định */
+            margin-top: 2.5em;
+            padding-top: 2em;
+            border-top: 1px dashed var(--border-color);
+            width: 100%;
+            max-width: 600px; /* Giới hạn độ rộng để dễ nhìn */
+            animation: fadeInUp 0.5s 1s backwards;
+        }
+
+        /* Chỉ hiển thị trên màn hình lớn (máy tính) */
+        @media (min-width: 1024px) {
+            .self-service-kiosk {
+                display: block;
+            }
+        }
+
+        #kiosk-plate-input {
+            width: 100%;
+            padding: 20px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            font-family: monospace;
+            text-transform: uppercase;
+            margin-bottom: 1em;
+            transition: all 0.2s;
+        }
+        #kiosk-plate-input:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
+        }
+
+        .kiosk-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+        }
+        .kiosk-btn {
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .kiosk-btn.check-in {
+            background-color: var(--primary-accent);
+            color: white;
+        }
+        .kiosk-btn.check-out {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        .kiosk-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+        }
+        .kiosk-btn:disabled {
+            background-color: #e9ecef;
+            color: #adb5bd;
+            cursor: not-allowed;
+        }
+
+        /* ================================================== */
+        /* --- MỚI: BIỂU TƯỢNG ĐANG XỬ LÝ CHO KIOSK --- */
+        /* ================================================== */
+        .kiosk-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius-lg);
+            animation: fadeIn 0.3s;
+        }
+        .kiosk-overlay .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-left-color: var(--primary-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .kiosk-overlay p {
+            margin-top: 1em;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -757,12 +880,18 @@
                     <button id="select-qr-btn" class="method-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Thanh toán QR</button>
                     <button id="select-cash-btn" class="method-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12V12"/><path d="M10.62 6.38a4 4 0 1 0 5.25 5.25"/><path d="M12 19.52A7.52 7.52 0 1 0 4.48 12"/><path d="M12 12V12"/></svg>Tiền mặt</button>
                 </div>
+
             </div>
 
             <!-- CỘT PHẢI: HIỂN THỊ QR HOẶC HƯỚNG DẪN -->
             <div id="right-panel-content" class="payment-right-panel placeholder">
                 <!-- NỘI DUNG SẼ ĐƯỢC RENDER BẰNG JAVASCRIPT -->
             </div>
+        </div>
+
+        <!-- MỚI: Chuyển nút Hủy giao dịch xuống chân biên lai -->
+        <div class="receipt-footer">
+            <button id="customer-cancel-btn" class="btn-cancel">Huỷ giao dịch</button>
         </div>
     </div>
 
@@ -822,14 +951,24 @@
         <h1 class="card-title success" style="margin-bottom: 0.5em;">ĐÃ GỬI XE THÀNH CÔNG</h1>
         <p class="thank-you-message" style="margin-top: 0; margin-bottom: 1.5em;">Vui lòng nhận vé và bảo quản cẩn thận.</p>
 
-        <div class="success-main-content">
-             <div class="success-plate-display" id="checkin-success-plate">--</div>
-             <div class="success-details-grid" style="margin-top: 1.5em;">
-                <div class="detail-item" style="grid-column: 1 / -1; text-align: center;">
-                    <span class="label">Thời gian vào bãi</span>
-                    <span class="value" id="checkin-success-time-in" style="font-size: 1.5rem;">--</span>
+        <!-- ================================================== -->
+        <!-- --- MỚI: GIAO DIỆN VÉ XE KHI GỬI THÀNH CÔNG --- -->
+        <!-- ================================================== -->
+        <div class="success-main-content" style="max-width: 380px; margin: 0 auto;">
+            <div id="checkin-qrcode-canvas-wrapper" style="padding: 15px; background-color: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); margin: 0 auto 20px auto; width: 250px; height: 250px;">
+                <canvas id="checkin-qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
+            </div>
+
+            <div class="ticket-info-new" style="text-align: left; margin-bottom: 25px;">
+                <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                    <span class="info-label" style="font-weight: 500; color: var(--text-secondary);">Biển số xe:</span>
+                    <span class="info-value" id="checkin-success-plate" style="font-weight: 700; color: var(--text-primary); font-family: monospace; font-size: 1.1rem;">--</span>
                 </div>
-             </div>
+                <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px 0;">
+                    <span class="info-label" style="font-weight: 500; color: var(--text-secondary);">Thời gian vào:</span>
+                    <span class="info-value" id="checkin-success-time-in" style="font-weight: 700; color: var(--text-primary);">--</span>
+                </div>
+            </div>
         </div>
 
         <p class="auto-close-note" style="margin-top: 2em;">Sẽ tự động chuyển sang màn hình chờ sau 10 giây.</p>
@@ -846,6 +985,22 @@
             </div>
             <h1 class="idle-title">Bãi đỗ xe Thanh niên<br>Kính chào Quý khách!</h1>
             <p class="idle-subtitle">Sẵn sàng cho lượt xe tiếp theo...</p>
+
+            <!-- ================================================== -->
+            <!-- --- MỚI: KHU VỰC TỰ PHỤC VỤ (KIOSK) --- -->
+            <!-- ================================================== -->
+            <div class="self-service-kiosk" style="position: relative;">
+                <!-- MỚI: Lớp phủ xử lý -->
+                <div id="kiosk-processing-overlay" class="kiosk-overlay hidden">
+                    <div class="spinner"></div>
+                    <p>Đang xử lý, vui lòng chờ...</p>
+                </div>
+                <input type="text" id="kiosk-plate-input" placeholder="NHẬP BIỂN SỐ XE">
+                <div class="kiosk-actions">
+                    <button id="kiosk-checkin-btn" class="kiosk-btn check-in" disabled>Gửi xe</button>
+                    <button id="kiosk-checkout-btn" class="kiosk-btn check-out" disabled>Lấy xe</button>
+                </div>
+            </div>
 
             <!-- MỚI: Thêm widget đồng hồ và thời tiết -->
             <div class="idle-widgets">
@@ -887,295 +1042,335 @@
         <div id="corner-clock-display" class="corner-clock">--:--:--</div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script>
-        // =================================================================
-        // --- PHẦN HÀM TIỆN ÍCH VÀ HIỂN THỊ (ĐỊNH NGHĨA Ở PHẠM VI TOÀN CỤC) ---
-        // =================================================================
-        
         /**
-         * VIẾT LẠI: Hàm render tập trung cho cột bên phải.
-         * @param {'placeholder' | 'qr' | 'cash'} state - Trạng thái cần hiển thị.
+         * =================================================================
+         * HỆ THỐNG QUẢN LÝ MÀN HÌNH PHỤ (CONFIRMATION.HTML) - VIẾT LẠI
+         * Phiên bản: 2.0 - Tái cấu trúc toàn bộ
+         * Tác giả: Nguyễn Cao Hoàng Quý
+         * Mục tiêu: Ổn định, rõ ràng, dễ bảo trì và sửa lỗi triệt để.
+         * =================================================================
          */
-        function renderRightPanel(state) {
-            const rightPanel = document.getElementById('right-panel-content');
-            if (!rightPanel) return;
-
-            let content = '';
-            switch (state) {
-                case 'qr':
-                    content = `
-                        <div class="qr-code-display" style="animation: fadeInUp 0.5s ease;">
-                            <img id="qr-code-image" src="" alt="Mã QR thanh toán">
-                            <p>Nội dung: <strong id="qr-memo">--</strong></p>
-                        </div>
-                    `;
-                    break;
-                case 'cash':
-                    content = `
-                        <div style="text-align: center; animation: fadeInUp 0.5s ease;">
-                            <div class="cash-payment-animation">
-                                <div class="coin"></div><div class="coin"></div><div class="coin"></div><div class="coin"></div>
-                                <svg class="wallet-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-                            </div>
-                            <h3 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5em; font-weight: 700;">Thanh toán bằng Tiền mặt</h3>
-                            <p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p>
-                        </div>
-                    `;
-                    break;
-                case 'placeholder':
-                default:
-                    content = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1em; opacity: 0.5;"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12a10 10 0 0 0 10 10V12z"/></svg>
-                        Vui lòng chọn phương thức thanh toán
-                    `;
-                    break;
-            }
-            rightPanel.innerHTML = content;
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Lấy các phần tử DOM ---
-            const paymentView = document.getElementById('payment-selection-view');
-            const successView = document.getElementById('success-view');
-            const checkinSuccessView = document.getElementById('checkin-success-view');
-            const idleView = document.getElementById('idle-view');
-            const adView = document.getElementById('ad-view');
-            const adVideo = document.getElementById('ad-video');
-            const selectQrBtn = document.getElementById('select-qr-btn');
-            const selectCashBtn = document.getElementById('select-cash-btn');
-            const rightPanel = document.getElementById('right-panel-content');
-            const grid = document.querySelector('.payment-content-grid');
-            const paymentChannel = new BroadcastChannel('parking_payment_channel');
-            let inactivityTimer = null;
 
-            // SỬA LỖI: Hàm này chỉ gửi yêu cầu phát âm thanh về trang chính
-            const requestSoundPlayback = (text) => {
-                if (!text) return;
-                // Gửi yêu cầu phát âm thanh về trang chính thay vì tự phát
-                paymentChannel.postMessage({ type: 'PLAY_SOUND', payload: text }); 
-            };
-            
-            // --- HÀM ĐỒNG HỒ & THỜI TIẾT ---
-            const updateClock = () => {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('vi-VN', { hour12: false });
-                const clockDisplay = document.getElementById('clock-display');
-                if (clockDisplay) clockDisplay.textContent = timeString;
-                const cornerClockDisplay = document.getElementById('corner-clock-display');
-                if (cornerClockDisplay) cornerClockDisplay.textContent = timeString;
-            };
+            // --- 1. MODULE QUẢN LÝ GIAO DIỆN (UI) ---
+            const UI = {
+                elements: {
+                    paymentView: document.getElementById('payment-selection-view'),
+                    successView: document.getElementById('success-view'),
+                    checkinSuccessView: document.getElementById('checkin-success-view'),
+                    idleView: document.getElementById('idle-view'),
+                    adView: document.getElementById('ad-view'),
+                    adVideo: document.getElementById('ad-video'),
+                    selectQrBtn: document.getElementById('select-qr-btn'),
+                    selectCashBtn: document.getElementById('select-cash-btn'),
+                    rightPanel: document.getElementById('right-panel-content'),
+                    paymentGrid: document.querySelector('.payment-content-grid'),
+                    kioskInput: document.getElementById('kiosk-plate-input'),
+                    kioskCheckinBtn: document.getElementById('kiosk-checkin-btn'),
+                    kioskCheckoutBtn: document.getElementById('kiosk-checkout-btn'),
+                    customerCancelBtn: document.getElementById('customer-cancel-btn'), // MỚI
+                    kioskOverlay: document.getElementById('kiosk-processing-overlay'), // MỚI
+                },
+                views: ['paymentView', 'successView', 'checkinSuccessView', 'idleView', 'adView'],
 
-            // --- HÀM HIỆU ỨNG CONFETTI (VIẾT LẠI) ---
-            function startConfetti(containerId = 'confetti-container') {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                const confettiCount = 150;
-                const colors = ['#0056b3', '#007bff', '#ffc107', '#28a745', '#dc3545'];
-
-                // Xóa confetti cũ trước khi tạo mới
-                while (container.firstChild) {
-                    container.removeChild(container.firstChild);
-                }
-
-                for (let i = 0; i < confettiCount; i++) {
-                    const confetti = document.createElement('div');
-                    confetti.style.cssText = `position: absolute; width: ${Math.random() * 10 + 5}px; height: ${Math.random() * 6 + 4}px; background-color: ${colors[Math.floor(Math.random() * colors.length)]}; top: 50%; left: 50%; opacity: 1; transform: rotate(${Math.random() * 360}deg);`;
-                    container.appendChild(confetti);
-
-                    const angle = Math.random() * 360;
-                    const radius = Math.random() * 300 + 150;
-                    const endX = radius * Math.cos(angle * Math.PI / 180);
-                    const endY = radius * Math.sin(angle * Math.PI / 180);
-
-                    confetti.animate([ { transform: `translate(0, 0) rotate(${Math.random() * 360}deg)`, opacity: 1 }, { transform: `translate(${endX}px, ${endY}px) rotate(${Math.random() * 720}deg)`, opacity: 0 } ], { duration: 1500 + Math.random() * 1000, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'forwards' });
-                    setTimeout(() => confetti.remove(), 2500);
-                }
-            }
-
-            const fetchWeather = async (lat, lon) => {
-                const weatherWidget = document.getElementById('weather-widget');
-                if (!weatherWidget) return;
-                const apiKey = APP_CONFIG.weather.apiKey;
-                if (!apiKey || apiKey === "YOUR_OPENWEATHERMAP_API_KEY" || !lat || !lon) {
-                    weatherWidget.innerHTML = `<span>Thời tiết không khả dụng</span>`;
-                    return;
-                }
-                try {
-                    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=vi`;
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`Lỗi HTTP: ${response.status}`);
-                    const data = await response.json();
-                    weatherWidget.innerHTML = `<img id="weather-icon" src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Thời tiết" style="display: inline;"><span id="weather-temp">${Math.round(data.main.temp)}°C</span><span id="weather-desc">${data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)}</span>`;
-                } catch (error) {
-                    console.error("Lỗi tải thời tiết:", error);
-                    weatherWidget.innerHTML = `<span>Lỗi thời tiết</span>`;
-                }
-            };
-
-            // --- HÀM XỬ LÝ QUẢNG CÁO VÀ MÀN HÌNH CHỜ ---
-            let currentVideoIndex = 0;
-            const adPlaylist = APP_CONFIG.adVideos || [];
-            
-            const startInactivityTimer = () => {
-                clearTimeout(inactivityTimer);
-                inactivityTimer = setTimeout(() => {
-                    idleView.classList.add('hidden');
-                    adView.classList.remove('hidden');
-                    playNextVideo();
-                }, 10000); // 10 giây
-            };
-
-            const stopInactivityTimerAndAds = () => {
-                clearTimeout(inactivityTimer);
-                adView.classList.add('hidden');
-                if (adVideo && !adVideo.paused) adVideo.pause();
-            };
-
-            const playNextVideo = () => {
-                if (adPlaylist.length === 0 || !adVideo) return;
-                adVideo.src = adPlaylist[currentVideoIndex];
-                adVideo.play().catch(e => console.error("Lỗi phát video:", e));
-                currentVideoIndex = (currentVideoIndex + 1) % adPlaylist.length;
-            };
-
-            if (adVideo) adVideo.onended = playNextVideo;
-
-            // --- KHỞI TẠO BAN ĐẦU ---
-            const urlParams = new URLSearchParams(window.location.search);
-            const initialLat = urlParams.get('lat');
-            const initialLng = urlParams.get('lng');
-            const initialLocationName = urlParams.get('locationName');
-
-            const setLocationName = (name) => {
-                const decodedLocationName = decodeURIComponent(initialLocationName);
-                document.getElementById('header-location-name').textContent = decodedLocationName;
-                document.getElementById('idle-location-display').textContent = decodedLocationName;
-            };
-            if (initialLocationName) setLocationName(initialLocationName);
-            updateClock();
-            setInterval(updateClock, 1000);
-            fetchWeather(initialLat, initialLng);
-            startInactivityTimer();
-            idleView.classList.remove('hidden');
-
-            // --- LẮNG NGHE SỰ KIỆN TỪ KÊNH GIAO TIẾP ---
-            paymentChannel.addEventListener('message', (event) => {
-                const { type, payload, method } = event.data;
-                
-                stopInactivityTimerAndAds();
-
-                switch (type) {
-                    case 'VEHICLE_CHECKOUT_INITIATE':
-                        sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
-                        [successView, checkinSuccessView, idleView].forEach(v => v.classList.add('hidden'));
-                        paymentView.classList.remove('hidden');
-                        
-                        document.getElementById('payment-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
-                        document.getElementById('payment-plate').textContent = payload.licensePlate;
-                        document.getElementById('payment-time-in').textContent = payload.timeIn;
-                        if (payload.locationName) setLocationName(payload.locationName);
-
-                        grid.classList.remove('method-selected');
-                        rightPanel.classList.add('placeholder');
-                        selectQrBtn.classList.remove('active');
-                        selectCashBtn.classList.remove('active');
-                        renderRightPanel('placeholder');
-
-                        const feeText = payload.totalAmount.replace('đ', 'đồng');
-                        const readableDurationText = payload.readableDuration;
-                        const soundTextCheckout = `Cảm ơn quý khách đã sử dụng dịch vụ. Phí gửi xe của quý khách là ${feeText} cho tổng thời gian là ${readableDurationText}. Mời quý khách lựa chọn hình thức thanh toán.`;
-                        requestSoundPlayback(soundTextCheckout);
-                        break;
-
-                    case 'VEHICLE_CHECKIN_COMPLETE': // MỚI: Xử lý khi gửi xe thành công
-                        [paymentView, successView, idleView].forEach(v => v.classList.add('hidden'));
-                        checkinSuccessView.classList.remove('hidden');
-                        startConfetti('checkin-confetti-container');
-                        
-                        if (payload.soundText) requestSoundPlayback(payload.soundText);
-
-                        document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
-                        document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
-
-                        // Tự động quay về màn hình chờ sau 10 giây
-                        setTimeout(() => {
-                            checkinSuccessView.classList.add('hidden');
-                            idleView.classList.remove('hidden');
-                            startInactivityTimer();
-                        }, 10000);
-                        break;
-
-                    case 'PAYMENT_METHOD_SELECTED':
-                        grid.classList.add('method-selected');
-                        rightPanel.classList.remove('placeholder');
-                        const lastMessage = JSON.parse(sessionStorage.getItem('lastCheckoutInitiate'));
-
-                        if (method === 'qr') {
-                            selectQrBtn.classList.add('active');
-                            selectCashBtn.classList.remove('active');
-                            renderRightPanel('qr');
-                            if (lastMessage) {
-                                document.getElementById('qr-code-image').src = lastMessage.qrImageUrl;
-                                document.getElementById('qr-memo').textContent = lastMessage.paymentMemo;
-                            }
-                        } else if (method === 'cash') {
-                            selectCashBtn.classList.add('active');
-                            selectQrBtn.classList.remove('active');
-                            renderRightPanel('cash');
+                // Hiển thị một view cụ thể và ẩn các view khác
+                showView(viewName) {
+                    this.views.forEach(v => {
+                        if (this.elements[v]) {
+                            this.elements[v].classList.toggle('hidden', v !== viewName);
                         }
-                        break;
+                    });
+                },
 
-                    case 'CHECKOUT_COMPLETE':
-                        [paymentView, checkinSuccessView, idleView].forEach(v => v.classList.add('hidden'));
-                        successView.classList.remove('hidden');
-                        startConfetti('confetti-container');
+                // Cập nhật thông tin trên màn hình thanh toán
+                updatePaymentView(payload) {
+                    this.elements.paymentGrid.classList.remove('method-selected');
+                    this.elements.rightPanel.classList.add('placeholder');
+                    this.elements.selectQrBtn.classList.remove('active');
+                    this.elements.selectCashBtn.classList.remove('active');
+                    this.renderRightPanel('placeholder');
 
-                        document.getElementById('success-plate').textContent = payload.licensePlate;
-                        document.getElementById('success-time-in').textContent = payload.timeIn;
-                        document.getElementById('success-time-out').textContent = payload.timeOut;
-                        document.getElementById('success-duration').textContent = payload.duration;
-                        document.getElementById('success-payment-method').textContent = payload.paymentMethod;
-                        document.getElementById('success-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
+                    document.getElementById('payment-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
+                    document.getElementById('payment-plate').textContent = payload.licensePlate;
+                    document.getElementById('payment-time-in').textContent = payload.timeIn;
+                    if (payload.locationName) this.setLocationName(payload.locationName);
+                },
 
-                        setTimeout(() => {
-                            successView.classList.add('hidden');
-                            idleView.classList.remove('hidden');
-                            startInactivityTimer();
-                        }, 10000);
-                        break;
+                // Cập nhật thông tin trên màn hình gửi xe thành công
+                updateCheckinSuccessView(payload) {
+                    document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
+                    document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
+                    const qrCanvas = document.getElementById('checkin-qrcode-canvas');
+                    if (qrCanvas && payload.uniqueID) {
+                        QRCode.toCanvas(qrCanvas, payload.uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
+                            if (error) console.error('Lỗi tạo QR cho màn hình phụ:', error);
+                        });
+                    }
+                },
 
-                    case 'TRANSACTION_CANCELED':
-                        [paymentView, successView, checkinSuccessView].forEach(v => v.classList.add('hidden'));
-                        idleView.classList.remove('hidden');
-                        startInactivityTimer();
-                        break;
+                // Cập nhật thông tin trên màn hình thanh toán thành công
+                updateCheckoutSuccessView(payload) {
+                    document.getElementById('success-plate').textContent = payload.licensePlate;
+                    document.getElementById('success-time-in').textContent = payload.timeIn;
+                    document.getElementById('success-time-out').textContent = payload.timeOut;
+                    document.getElementById('success-duration').textContent = payload.duration;
+                    document.getElementById('success-payment-method').textContent = payload.paymentMethod;
+                    document.getElementById('success-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
+                },
+
+                // Render nội dung cho cột bên phải của màn hình thanh toán
+                renderRightPanel(state) {
+                    let content = '';
+                    switch (state) {
+                        case 'qr':
+                            content = `<div class="qr-code-display" style="animation: fadeInUp 0.5s ease;"><img id="qr-code-image" src="" alt="Mã QR thanh toán"><p>Nội dung: <strong id="qr-memo">--</strong></p></div>`;
+                            break;
+                        case 'cash':
+                            content = `<div style="text-align: center; animation: fadeInUp 0.5s ease;"><div class="cash-payment-animation"><div class="coin"></div><div class="coin"></div><div class="coin"></div><div class="coin"></div><svg class="wallet-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><h3 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5em; font-weight: 700;">Thanh toán bằng Tiền mặt</h3><p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p></div>`;
+                            break;
+                        default:
+                            content = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1em; opacity: 0.5;"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12a10 10 0 0 0 10 10V12z"/></svg>Vui lòng chọn phương thức thanh toán`;
+                    }
+                    this.elements.rightPanel.innerHTML = content;
+                },
+
+                // Cập nhật tên bãi đỗ xe
+                setLocationName(name) {
+                    const decodedName = decodeURIComponent(name);
+                    document.getElementById('header-location-name').textContent = decodedName;
+                    document.getElementById('idle-location-display').textContent = decodedName;
+                },
+
+                // Hiệu ứng confetti
+                startConfetti(containerId) {
+                    const container = document.getElementById(containerId);
+                    if (!container) return;
+                    const confettiCount = 150, colors = ['#0056b3', '#007bff', '#ffc107', '#28a745', '#dc3545'];
+                    while (container.firstChild) container.removeChild(container.firstChild);
+                    for (let i = 0; i < confettiCount; i++) {
+                        const confetti = document.createElement('div');
+                        confetti.style.cssText = `position: absolute; width: ${Math.random()*10+5}px; height: ${Math.random()*6+4}px; background-color: ${colors[Math.floor(Math.random()*colors.length)]}; top: 50%; left: 50%; opacity: 1; transform: rotate(${Math.random()*360}deg);`;
+                        container.appendChild(confetti);
+                        const angle = Math.random() * 360, radius = Math.random() * 300 + 150;
+                        const endX = radius * Math.cos(angle * Math.PI / 180), endY = radius * Math.sin(angle * Math.PI / 180);
+                        confetti.animate([ { transform: `translate(0, 0) rotate(${Math.random()*360}deg)`, opacity: 1 }, { transform: `translate(${endX}px, ${endY}px) rotate(${Math.random()*720}deg)`, opacity: 0 } ], { duration: 1500 + Math.random() * 1000, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'forwards' });
+                        setTimeout(() => confetti.remove(), 2500);
+                    }
                 }
-            });
+            };
 
-            // --- GẮN SỰ KIỆN CHO CÁC NÚT BẤM CỦA KHÁCH HÀNG ---
-            selectQrBtn.addEventListener('click', () => {
-                grid.classList.add('method-selected');
-                rightPanel.classList.remove('placeholder');
-                selectQrBtn.classList.add('active');
-                selectCashBtn.classList.remove('active');
-                renderRightPanel('qr');
-                // Lấy payload từ sessionStorage để điền thông tin QR
-                const lastMessage = JSON.parse(sessionStorage.getItem('lastCheckoutInitiate'));
-                if (lastMessage) {
-                    document.getElementById('qr-code-image').src = lastMessage.qrImageUrl;
-                    document.getElementById('qr-memo').textContent = lastMessage.paymentMemo;
+            // --- 2. MODULE QUẢN LÝ TRẠNG THÁI & HẸN GIỜ ---
+            const StateManager = {
+                inactivityTimer: null,
+                adVideoIndex: 0,
+                adPlaylist: APP_CONFIG.adVideos || [],
+
+                startInactivityTimer() {
+                    clearTimeout(this.inactivityTimer);
+                    this.inactivityTimer = setTimeout(() => {
+                        UI.showView('adView');
+                        this.playNextVideo();
+                    }, 15000); // 15 giây
+                },
+
+                stopInactivityTimerAndAds() {
+                    clearTimeout(this.inactivityTimer);
+                    if (UI.elements.adVideo && !UI.elements.adVideo.paused) UI.elements.adVideo.pause();
+                    UI.showView('idleView');
+                },
+
+                resetInactivity() {
+                    if (!UI.elements.adView.classList.contains('hidden')) {
+                        this.stopInactivityTimerAndAds();
+                    }
+                    this.startInactivityTimer();
+                },
+
+                playNextVideo() {
+                    if (this.adPlaylist.length === 0 || !UI.elements.adVideo) return;
+                    UI.elements.adVideo.src = this.adPlaylist[this.adVideoIndex];
+                    UI.elements.adVideo.play().catch(e => console.error("Lỗi phát video:", e));
+                    this.adVideoIndex = (this.adVideoIndex + 1) % this.adPlaylist.length;
                 }
-                paymentChannel.postMessage({ type: 'CUSTOMER_PAYMENT_METHOD_SELECTED', method: 'qr' });
-            });
+            };
 
-            selectCashBtn.addEventListener('click', () => {
-                grid.classList.add('method-selected');
-                rightPanel.classList.remove('placeholder');
-                selectCashBtn.classList.add('active');
-                selectQrBtn.classList.remove('active');
-                renderRightPanel('cash');
-                paymentChannel.postMessage({ type: 'CUSTOMER_PAYMENT_METHOD_SELECTED', method: 'cash' });
-            });
+            // --- 3. MODULE GIAO TIẾP & SỰ KIỆN ---
+            const EventHandler = {
+                paymentChannel: new BroadcastChannel('parking_payment_channel'),
+
+                init() {
+                    this.paymentChannel.onmessage = this.handleChannelMessage.bind(this);
+                    this.setupDOMEventListeners();
+                },
+
+                sendMessage(type, payload = {}) {
+                    this.paymentChannel.postMessage({ type, ...payload });
+                },
+
+                handleChannelMessage(event) {
+                    const { type, payload, method } = event.data;
+                    StateManager.resetInactivity(); // Reset timer khi có bất kỳ tin nhắn nào
+
+                    // MỚI: Ẩn lớp phủ xử lý khi có bất kỳ phản hồi nào từ màn hình chính
+                    // (vì lúc này màn hình sẽ chuyển sang view mới)
+                    switch (type) {
+                        case 'VEHICLE_CHECKOUT_INITIATE':
+                            sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
+                            UI.showView('paymentView');
+                            UI.updatePaymentView(payload);
+
+                            // SỬA LỖI TRIỆT ĐỂ: Tự động chọn phương thức QR và hiển thị QR code ngay lập tức
+                            UI.elements.paymentGrid.classList.add('method-selected');
+                            UI.elements.rightPanel.classList.remove('placeholder');
+                            UI.elements.selectQrBtn.classList.add('active');
+                            UI.elements.selectCashBtn.classList.remove('active');
+                            UI.renderRightPanel('qr'); // Render the QR code display
+
+                            // Populate QR image and memo using the payload directly
+                            if (payload.qrImageUrl) {
+                                document.getElementById('qr-code-image').src = payload.qrImageUrl;
+                                document.getElementById('qr-memo').textContent = payload.paymentMemo;
+                            }
+
+                            this.sendMessage('PLAY_SOUND', { payload: `Cảm ơn quý khách đã sử dụng dịch vụ. Phí gửi xe của quý khách là ${payload.totalAmount.replace('đ', 'đồng')} cho tổng thời gian là ${payload.readableDuration}. Mời quý khách lựa chọn hình thức thanh toán.` });
+                            break;
+
+                        case 'VEHICLE_CHECKIN_COMPLETE':
+                            UI.showView('checkinSuccessView');
+                            UI.updateCheckinSuccessView(payload);
+                            UI.startConfetti('checkin-confetti-container');
+                            this.sendMessage('PLAY_SOUND', { payload: payload.soundText });
+                            setTimeout(() => { UI.showView('idleView'); StateManager.startInactivityTimer(); }, 10000);
+                            break;
+
+                        case 'PAYMENT_METHOD_SELECTED':
+                            UI.elements.paymentGrid.classList.add('method-selected');
+                            UI.elements.rightPanel.classList.remove('placeholder');
+                            const lastMessage = JSON.parse(sessionStorage.getItem('lastCheckoutInitiate'));
+                            if (method === 'qr') {
+                                UI.elements.selectQrBtn.classList.add('active');
+                                UI.elements.selectCashBtn.classList.remove('active');
+                                UI.renderRightPanel('qr');
+                                if (lastMessage) {
+                                    document.getElementById('qr-code-image').src = lastMessage.qrImageUrl;
+                                    document.getElementById('qr-memo').textContent = lastMessage.paymentMemo;
+                                }
+                            } else if (method === 'cash') {
+                                UI.elements.selectCashBtn.classList.add('active');
+                                UI.elements.selectQrBtn.classList.remove('active');
+                                UI.renderRightPanel('cash');
+                            }
+                            break;
+
+                        case 'CHECKOUT_COMPLETE':
+                            UI.showView('successView');
+                            UI.updateCheckoutSuccessView(payload);
+                            UI.startConfetti('confetti-container');
+                            setTimeout(() => { UI.showView('idleView'); StateManager.startInactivityTimer(); }, 10000);
+                            break;
+
+                        case 'TRANSACTION_CANCELED':
+                            UI.showView('idleView');
+                            // SỬA LỖI: Reset kiosk khi hủy giao dịch
+                            UI.resetKiosk();
+                            StateManager.startInactivityTimer();
+                            break;
+                    }
+                },
+
+                setupDOMEventListeners() {
+                    // Sự kiện tương tác chung
+                    ['click', 'mousemove', 'touchstart'].forEach(eventType => {
+                        window.addEventListener(eventType, () => StateManager.resetInactivity(), { passive: true });
+                    });
+
+                    // Nút chọn phương thức thanh toán
+                    UI.elements.selectQrBtn.addEventListener('click', () => this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'qr' }));
+                    UI.elements.selectCashBtn.addEventListener('click', () => this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'cash' }));
+
+                    // MỚI: Nút hủy giao dịch trên màn hình phụ
+                    if (UI.elements.customerCancelBtn) {
+                        UI.elements.customerCancelBtn.addEventListener('click', () => {
+                            // Gửi tín hiệu cho màn hình chính
+                            this.sendMessage('TRANSACTION_CANCELED');
+                            // Đồng thời, chuyển view ngay lập tức để có phản hồi tức thì
+                            UI.showView('idleView');
+                            // SỬA LỖI: Reset kiosk ngay khi hủy
+                            UI.resetKiosk();
+                        });
+                    }
+
+                    // Kiosk tự phục vụ
+                    UI.elements.kioskInput.addEventListener('input', () => {
+                        const isValid = UI.elements.kioskInput.value.trim().length >= 4;
+                        UI.elements.kioskCheckinBtn.disabled = !isValid;
+                        UI.elements.kioskCheckoutBtn.disabled = !isValid;
+                    });
+                    UI.elements.kioskCheckinBtn.addEventListener('click', () => {
+                        this.sendMessage('SELF_SERVICE_CHECKIN_REQUEST', { payload: { plate: UI.elements.kioskInput.value.toUpperCase() } });
+                    });
+                    UI.elements.kioskCheckoutBtn.addEventListener('click', () => {
+                        this.sendMessage('SELF_SERVICE_CHECKOUT_REQUEST', { payload: { plate: UI.elements.kioskInput.value.toUpperCase() } });
+                    });
+
+                    // Video quảng cáo
+                    if (UI.elements.adVideo) UI.elements.adVideo.onended = () => StateManager.playNextVideo();
+                }
+            };
+
+            // --- 4. MODULE TIỆN ÍCH & KHỞI TẠO ---
+            const App = {
+                init() {
+                    this.setupClock();
+                    this.setupWeather();
+                    
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const locationName = urlParams.get('locationName');
+                    if (locationName) UI.setLocationName(locationName);
+
+                    EventHandler.init();
+                    StateManager.startInactivityTimer();
+                    UI.showView('idleView');
+                },
+
+                setupClock() {
+                    const update = () => {
+                        const timeString = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+                        document.getElementById('clock-display').textContent = timeString;
+                        document.getElementById('corner-clock-display').textContent = timeString;
+                    };
+                    update();
+                    setInterval(update, 1000);
+                },
+
+                async setupWeather() {
+                    const weatherWidget = document.getElementById('weather-widget');
+                    if (!weatherWidget) return;
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const lat = urlParams.get('lat'), lon = urlParams.get('lng');
+                    const apiKey = APP_CONFIG.weather.apiKey;
+
+                    if (!apiKey || apiKey === "YOUR_OPENWEATHERMAP_API_KEY" || !lat || !lon) {
+                        weatherWidget.innerHTML = `<span>Thời tiết không khả dụng</span>`;
+                        return;
+                    }
+                    try {
+                        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=vi`;
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error(`Lỗi HTTP: ${response.status}`);
+                        const data = await response.json();
+                        weatherWidget.innerHTML = `<img id="weather-icon" src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Thời tiết" style="display: inline;"><span id="weather-temp">${Math.round(data.main.temp)}°C</span><span id="weather-desc">${data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)}</span>`;
+                    } catch (error) {
+                        console.error("Lỗi tải thời tiết:", error);
+                        weatherWidget.innerHTML = `<span>Lỗi thời tiết</span>`;
+                    }
+                }
+            };
+
+            // --- BẮT ĐẦU CHẠY ỨNG DỤNG ---
+            App.init();
         });
     </script>
 </body>
