@@ -1112,14 +1112,6 @@
                         successView.classList.remove('hidden');
                         startConfetti('confetti-container');
 
-                        let soundTextComplete = `Xe ${payload.licensePlate} đã hoàn tất thanh toán. Mời xe di chuyển ra cổng. Xin cảm ơn!`;
-                        if (payload.checkoutReason === 'guest') {
-                            soundTextComplete = `Đã xác nhận thông tin xe ${payload.licensePlate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!`;
-                        } else if (payload.checkoutReason === 'quick_exit') {
-                            soundTextComplete = `Xe ${payload.licensePlate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;
-                        }
-                        requestSoundPlayback(soundTextComplete);
-                        
                         document.getElementById('success-plate').textContent = payload.licensePlate;
                         document.getElementById('success-time-in').textContent = payload.timeIn;
                         document.getElementById('success-time-out').textContent = payload.timeOut;

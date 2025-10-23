@@ -9,9 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="config.js"></script> <!-- Tải file cấu hình chung của ứng dụng -->
-    <!-- MỚI: Thêm thư viện crypto-js để xác thực iFLYTEK -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="config.js"></script> <!-- Tải file cấu hình chung của ứng dụng -->    
     <script src="locations.js"></script> <!-- Tải file cấu hình các điểm đỗ xe -->
     
     <style>
@@ -1147,19 +1145,6 @@
                 paymentChannel.addEventListener('message', (event) => {
                     const { type, method } = event.data;
                     if (type === 'CUSTOMER_PAYMENT_METHOD_SELECTED') {
-                        // Chỉ xử lý khi modal thanh toán đang mở
-                        if (!allElements.paymentModal || allElements.paymentModal.style.display !== 'flex') return;
-
-                        if (method === 'qr' && allElements.selectQrBtn) {
-                            allElements.selectQrBtn.click();
-                        } else if (method === 'cash' && allElements.selectCashBtn) {
-                            allElements.selectCashBtn.click();
-                        }
-                    } else if (type === 'PLAY_SOUND' && event.data.payload) {
-                        // MỚI: Nhận lệnh phát âm thanh từ màn hình phụ
-                        if (typeof playTTS === 'function') {
-                            playTTS(event.data.payload);
-                        }
                     }
                 });
             }
@@ -1194,9 +1179,6 @@
                 
                 // MỚI: Gọi hàm cập nhật footer
                 updateFooterInfo(location);
-
-                // SỬA LỖI: Kích hoạt audio khi người dùng chọn bãi xe
-                activateAudioContext();
 
                 // MỚI: Tải thời tiết cho vị trí đã chọn
                 if (typeof fetchWeather === 'function') fetchWeather(location.lat, location.lng);
@@ -1343,134 +1325,6 @@
                     toast.style.animation = 'fadeOutToast 0.5s ease forwards';
                     setTimeout(() => toast.remove(), 500);
                 }, 2500);
-            };
-
-            // =================================================================
-            // --- THAY THẾ: Chuyển sang Web Speech API (Text-to-Speech) để ổn định hơn ---
-            // =================================================================
-            let vietnameseVoice = null;
-
-            // =================================================================
-            // --- GIẢI PHÁP HYBRID: Kết hợp Google TTS (Online) và Web Speech API (Offline) ---
-            // --- Cải tiến với hàng đợi (Queue) để đảm bảo phát âm thanh ổn định ---
-            // =================================================================
-            // SỬA LỖI: Hàm kích hoạt audio để vượt qua chính sách Autoplay của trình duyệt
-            const activateAudioContext = () => {
-                const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaXRyYXRlV2lraSUyMFVERyUyMDIwMjEAAA');
-                silentAudio.volume = 0;
-                silentAudio.play().catch(e => {
-                    // Bỏ qua lỗi nếu không thể phát, sẽ thử lại ở lần tương tác sau
-                });
-                // Gỡ bỏ event listener sau khi đã kích hoạt thành công
-                document.body.removeEventListener('click', activateAudioContext, { once: true });
-            };
-            let audioQueue = []; // Hàng đợi chứa các đoạn text cần phát
-            let isPlaying = false; // Cờ để kiểm tra xem có đang phát âm thanh không
- 
-            // =================================================================
-            // --- NÂNG CẤP: Tích hợp iFLYTEK TTS qua WebSocket ---
-            // =================================================================
-            let audioContext;
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {
-                console.error("Trình duyệt không hỗ trợ Web Audio API.");
-            }
-
-            const processAudioQueue = () => {
-                if (isPlaying || audioQueue.length === 0 || !audioContext) return;
-
-                const config = APP_CONFIG.iflytek;
-                if (!config || !config.APPID || !config.APIKey || !config.APISecret) {
-                    console.error("Chưa cấu hình iFLYTEK trong config.js. Không thể phát âm thanh.");
-                    audioQueue = []; // Xóa hàng đợi để tránh lặp lại lỗi
-                    return;
-                }
-
-                isPlaying = true;
-                const text = audioQueue.shift();
-
-                const onEnded = () => {
-                    isPlaying = false;
-                    processAudioQueue();
-                };
-
-                // 1. Tạo URL xác thực
-                const host = "ws-api.xfyun.cn";
-                const date = new Date().toUTCString();
-                const signatureOrigin = `host: ${host}\ndate: ${date}\nGET /v2/tts HTTP/1.1`;
-                const signature = CryptoJS.HmacSHA256(signatureOrigin, config.APISecret).toString(CryptoJS.enc.Base64);
-                const authorization = `api_key="${config.APIKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
-                const url = `wss://${host}/v2/tts?authorization=${btoa(authorization)}&date=${encodeURIComponent(date)}&host=${host}`;
-
-                // 2. Kết nối WebSocket
-                const socket = new WebSocket(url);
-                let audioData = [];
-
-                socket.onopen = () => {
-                    // 3. Gửi yêu cầu tổng hợp giọng nói
-                    const frame = {
-                        common: { app_id: config.APPID },
-                        business: {
-                            aue: "lame", // Định dạng mp3
-                            sfl: 1,
-                            vcn: "vixuan", // Giọng nữ miền Bắc
-                            tte: "UTF8",
-                            speed: 50
-                        },
-                        data: {
-                            status: 2,
-                            text: btoa(unescape(encodeURIComponent(text)))
-                        }
-                    };
-                    socket.send(JSON.stringify(frame));
-                };
-
-                socket.onmessage = (event) => {
-                    // 4. Nhận dữ liệu âm thanh
-                    const res = JSON.parse(event.data);
-                    if (res.data && res.data.audio) {
-                        audioData.push(atob(res.data.audio));
-                    }
-                    if (res.data.status === 2) { // Kết thúc
-                        socket.close();
-                        playAudio(audioData, onEnded);
-                    }
-                };
-
-                socket.onerror = (error) => {
-                    console.error("Lỗi WebSocket iFLYTEK:", error);
-                    onEnded();
-                };
-
-                socket.onclose = () => {
-                    // Đảm bảo onEnded được gọi nếu kết nối đóng mà chưa phát xong
-                    if (isPlaying && audioData.length === 0) {
-                        onEnded();
-                    }
-                };
-            };
-
-            const playAudio = (audioChunks, onEndedCallback) => {
-                const blob = new Blob(audioChunks, { type: 'audio/mpeg' });
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audio.onended = () => {
-                    URL.revokeObjectURL(url);
-                    onEndedCallback();
-                };
-                audio.onerror = (e) => {
-                    console.error("Lỗi phát audio từ Blob:", e);
-                    URL.revokeObjectURL(url);
-                    onEndedCallback();
-                };
-                audio.play().catch(onEndedCallback);
-            };
-
-            const playTTS = (text) => {
-                if (!text) return;
-                audioQueue.push(text);
-                processAudioQueue();
             };
 
             const calculateDuration = (startTime) => {
@@ -1698,7 +1552,7 @@
             const updateDashboard = () => {
                 if (!vehiclesOnSelectedDate) return;
                 
-                const currentVehicles = vehiclesOnSelectedDate.filter(v => v.Status === 'Đang gửi');
+                const currentVehicles = vehiclesOnSelectedDate.filter(v => v.Status === 'Đang gửi'); // SỬA LỖI: Dùng dữ liệu đã lọc theo ngày
                 const vehiclesToday = vehiclesOnSelectedDate.filter(v => v.Date === formatDateForAPI(new Date(allElements.datePicker.value + 'T00:00:00')));
 
                 allElements.dashboardCurrent.textContent = currentVehicles.length;
@@ -1715,6 +1569,19 @@
                     const longest = currentVehicles.reduce((a, b) => new Date(a['Entry Time']) < new Date(b['Entry Time']) ? a : b);
                     allElements.dashboardLongest.textContent = calculateDuration(longest['Entry Time']);
                 } else { allElements.dashboardLongest.textContent = '--'; }
+
+                // Cập nhật Gauge sức chứa
+                if (currentCapacity > 0) {
+                    const percentage = Math.min(100, Math.round((currentVehicles.length / currentCapacity) * 100));
+                    const rotation = (percentage / 100) * 180; // 180 độ cho 100%
+                    if (allElements.capacityGaugeFill) {
+                        allElements.capacityGaugeFill.style.transform = `rotate(${135 + rotation}deg)`;
+                    }
+                    if (allElements.capacityGaugeText) {
+                        allElements.capacityGaugeText.textContent = `${percentage}%`;
+                    }
+                }
+
             };
 
             const updateUIFromCache = (plate) => {
@@ -1901,16 +1768,6 @@
                         const result = await response.json();
                         if (result.status === 'success') {
                             if (action === 'checkIn') {
-                                // =================================================================
-                                // GIẢI PHÁP MỚI: Sử dụng sessionStorage để giao tiếp
-                                // =================================================================
-                                const soundText = `Đã tiếp nhận xe ${originalPlate} vào bãi.`;
-                                const checkinSuccessPayload = {
-                                    licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime),
-                                    soundText: soundText // Gửi nội dung âm thanh cần phát
-                                };
-                                // GIẢI PHÁP MỚI: Gửi trực tiếp payload qua BroadcastChannel
-                                if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKIN_COMPLETE', payload: checkinSuccessPayload });
                                 showQrCode(originalPlate, entryTime, uniqueID);
                             }
                         } else { throw new Error(result.message); }
@@ -1918,14 +1775,6 @@
                         if (action === 'checkIn') {
                             const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
                             addToOfflineQueue(offlineAction);
-                            const soundText = `Đã tiếp nhận xe ${originalPlate} vào bãi.`;
-                            // GIẢI PHÁP MỚI (cho offline)
-                            const checkinSuccessPayload = {
-                                licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime),
-                                soundText: soundText
-                            };
-                            // GIẢI PHÁP MỚI (cho offline)
-                            if (paymentChannel) paymentChannel.postMessage({ type: 'VEHICLE_CHECKIN_COMPLETE', payload: checkinSuccessPayload });
                             showQrCode(originalPlate, entryTime, uniqueID);
                         }
                     }
@@ -1949,7 +1798,6 @@
                     if (allElements.qrcodeModal) {
                         allElements.qrcodeModal.style.display = 'flex';
                         allElements.qrcodeModal.classList && allElements.qrcodeModal.classList.add('open');
-                    // playSound(`Đã tiếp nhận xe ${plate} vào bãi.`); // Đã chuyển sang màn hình phụ
                     }
                 });
             };
@@ -2349,8 +2197,6 @@
                 await determineNearestLocation(); 
                 
                 // SỬA LỖI: Thêm listener để kích hoạt audio ở lần click đầu tiên của người dùng
-                document.body.addEventListener('click', activateAudioContext, { once: true });
-
                 resetMainForm();
 
                 if (autoRefreshInterval) clearInterval(autoRefreshInterval);
@@ -2371,8 +2217,6 @@
             if (allElements.checkInBtn) allElements.checkInBtn.addEventListener('click', async (e) => {
                 const btn = e.target;
                 btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
-                // SỬA LỖI: Kích hoạt audio context ngay khi người dùng tương tác
-                activateAudioContext();
                 try {
                     const phone = allElements.phoneNumberInput.value.trim();
                     await handleVehicleAction(null, phone, 'checkIn', capturedImageBase64);
@@ -2386,8 +2230,6 @@
                 // ==================================================================
                 const btn = e.target;
                 btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
-                // SỬA LỖI: Kích hoạt audio context ngay khi người dùng tương tác
-                activateAudioContext();
                 try {
                     if (!currentVehicleContext || currentVehicleContext.status !== 'parking') {
                         showToast('Vui lòng chọn một xe đang gửi để xử lý.', 'error');
@@ -2435,16 +2277,8 @@
                                     paymentMethod: paymentMethod,
                                     totalAmount: '0đ'
                                 };
-                                const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
-                                if (checkoutResult) {
-                                    // NÂNG CẤP: Thêm lý do checkout để màn hình phụ phát đúng âm thanh
-                                    // const checkoutReason = isVehicleVIP ? 'guest' : 'quick_exit';
-                                    // if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: { ...finalReceiptData, checkoutReason } });
-
-                                    // SỬA LỖI: Phát âm thanh trực tiếp từ màn hình chính khi cho xe ra miễn phí
-                                    const soundText = isVehicleVIP ? `Đã xác nhận thông tin xe ${vehicle.Plate}. Mời xe di chuyển ra cổng. Xin cảm ơn quý khách!` : `Xe ${vehicle.Plate} ra trong thời gian quy định miễn phí. Mời xe di chuyển ra cổng.`;
-                                    playTTS(soundText);
-
+                                const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });                                if (checkoutResult) {
+                                    if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
                                     showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success'); 
                                     resetMainForm();
                                     allElements.searchTermInput.value = '';
@@ -2472,21 +2306,11 @@
                 allElements.selectCashBtn.classList.remove('active');
                 const qrWrapper = document.getElementById('payment-qrcode-wrapper');
                 if (qrWrapper) qrWrapper.style.display = 'block';
-                allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
-                // Gửi thông báo cho cửa sổ phụ
-                // SỬA LỖI: Kích hoạt audio context tại đây để đảm bảo quyền phát âm thanh
-                activateAudioContext();
                 if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'qr' });
             });
             if (allElements.selectCashBtn) allElements.selectCashBtn.addEventListener('click', () => {
                 allElements.selectCashBtn.classList.add('active');
                 allElements.selectQrBtn.classList.remove('active');
-                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
-                if (qrWrapper) qrWrapper.style.display = 'none';
-                allElements.completePaymentBtn.disabled = false; // Kích hoạt nút hoàn tất
-                // Gửi thông báo cho cửa sổ phụ
-                // SỬA LỖI: Kích hoạt audio context tại đây để đảm bảo quyền phát âm thanh
-                activateAudioContext();
                 if (paymentChannel) {
                     paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
                 }
