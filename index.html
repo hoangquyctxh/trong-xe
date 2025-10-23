@@ -1731,6 +1731,7 @@
                 const vehicleInCache = vehiclesOnSelectedDate.find(v => 
                     v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi'
                 );
+                allElements.vehicleInfoPanel.style.display = 'none'; // Ẩn panel thông tin trước
 
                 if (vehicleInCache) {
                     const isVehicleVIP = vehicleInCache.VIP === 'Có'; // LOGIC MỚI
@@ -1771,12 +1772,14 @@
 
                     allElements.checkOutBtn.classList.remove('hidden');
                     allElements.checkInBtn.classList.add('hidden');
+                    allElements.vehicleInfoPanel.style.display = 'block'; // Hiện panel thông tin
                 } else {
                     currentVehicleContext = { plate, status: 'new' };
                     allElements.phoneItemMain.style.display = 'block';
                     allElements.photoCaptureGroup.style.display = 'flex'; // Hiện nút chụp ảnh
                     allElements.vipCheckboxContainer.style.display = 'flex'; // Hiện checkbox VIP
 
+                    resetMainForm(); // Reset để đảm bảo không còn thông tin cũ
                     allElements.checkInBtn.classList.remove('hidden');
                     allElements.checkOutBtn.classList.add('hidden');
                 }
