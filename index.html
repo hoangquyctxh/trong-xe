@@ -2292,6 +2292,8 @@
             if (allElements.checkInBtn) allElements.checkInBtn.addEventListener('click', async (e) => {
                 const btn = e.target;
                 btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
+                // SỬA LỖI: Kích hoạt audio context ngay khi người dùng tương tác
+                activateAudioContext();
                 try {
                     const phone = allElements.phoneNumberInput.value.trim();
                     await handleVehicleAction(null, phone, 'checkIn', capturedImageBase64);
@@ -2305,6 +2307,8 @@
                 // ==================================================================
                 const btn = e.target;
                 btn.disabled = true; // Vô hiệu hóa nút ngay khi bấm
+                // SỬA LỖI: Kích hoạt audio context ngay khi người dùng tương tác
+                activateAudioContext();
                 try {
                     if (!currentVehicleContext || currentVehicleContext.status !== 'parking') {
                         showToast('Vui lòng chọn một xe đang gửi để xử lý.', 'error');
