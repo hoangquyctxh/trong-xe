@@ -10,6 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="config.js"></script> <!-- Tải file cấu hình chung của ứng dụng -->
+    <!-- MỚI: Thêm thư viện crypto-js để xác thực iFLYTEK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="locations.js"></script> <!-- Tải file cấu hình các điểm đỗ xe -->
     
     <style>
@@ -1365,27 +1367,104 @@
             let audioQueue = []; // Hàng đợi chứa các đoạn text cần phát
             let isPlaying = false; // Cờ để kiểm tra xem có đang phát âm thanh không
  
-            // QUAY LẠI: Sử dụng Google Translate TTS với hàng đợi để đảm bảo ổn định
+            // =================================================================
+            // --- NÂNG CẤP: Tích hợp iFLYTEK TTS qua WebSocket ---
+            // =================================================================
+            let audioContext;
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.error("Trình duyệt không hỗ trợ Web Audio API.");
+            }
+
             const processAudioQueue = () => {
-                if (isPlaying || audioQueue.length === 0) return;
+                if (isPlaying || audioQueue.length === 0 || !audioContext) return;
+
+                const config = APP_CONFIG.iflytek;
+                if (!config || !config.APPID || !config.APIKey || !config.APISecret) {
+                    console.error("Chưa cấu hình iFLYTEK trong config.js. Không thể phát âm thanh.");
+                    audioQueue = []; // Xóa hàng đợi để tránh lặp lại lỗi
+                    return;
+                }
 
                 isPlaying = true;
                 const text = audioQueue.shift();
- 
+
                 const onEnded = () => {
                     isPlaying = false;
                     processAudioQueue();
                 };
- 
-                // Chỉ sử dụng API của Google Translate
-                const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=vi&client=tw-ob`);
-                audio.onended = onEnded;
-                // Nếu có lỗi (ví dụ: mất mạng), vẫn tiếp tục xử lý hàng đợi
-                audio.onerror = () => {
-                    console.error("Lỗi phát âm thanh Google TTS (có thể do mất mạng).");
-                    onEnded(); // Bỏ qua và xử lý mục tiếp theo
+
+                // 1. Tạo URL xác thực
+                const host = "ws-api.xfyun.cn";
+                const date = new Date().toUTCString();
+                const signatureOrigin = `host: ${host}\ndate: ${date}\nGET /v2/tts HTTP/1.1`;
+                const signature = CryptoJS.HmacSHA256(signatureOrigin, config.APISecret).toString(CryptoJS.enc.Base64);
+                const authorization = `api_key="${config.APIKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
+                const url = `wss://${host}/v2/tts?authorization=${btoa(authorization)}&date=${encodeURIComponent(date)}&host=${host}`;
+
+                // 2. Kết nối WebSocket
+                const socket = new WebSocket(url);
+                let audioData = [];
+
+                socket.onopen = () => {
+                    // 3. Gửi yêu cầu tổng hợp giọng nói
+                    const frame = {
+                        common: { app_id: config.APPID },
+                        business: {
+                            aue: "lame", // Định dạng mp3
+                            sfl: 1,
+                            vcn: "vixuan", // Giọng nữ miền Bắc
+                            tte: "UTF8",
+                            speed: 50
+                        },
+                        data: {
+                            status: 2,
+                            text: btoa(unescape(encodeURIComponent(text)))
+                        }
+                    };
+                    socket.send(JSON.stringify(frame));
                 };
-                audio.play().catch(onEnded); // Bắt lỗi nếu trình duyệt chặn tự động phát
+
+                socket.onmessage = (event) => {
+                    // 4. Nhận dữ liệu âm thanh
+                    const res = JSON.parse(event.data);
+                    if (res.data && res.data.audio) {
+                        audioData.push(atob(res.data.audio));
+                    }
+                    if (res.data.status === 2) { // Kết thúc
+                        socket.close();
+                        playAudio(audioData, onEnded);
+                    }
+                };
+
+                socket.onerror = (error) => {
+                    console.error("Lỗi WebSocket iFLYTEK:", error);
+                    onEnded();
+                };
+
+                socket.onclose = () => {
+                    // Đảm bảo onEnded được gọi nếu kết nối đóng mà chưa phát xong
+                    if (isPlaying && audioData.length === 0) {
+                        onEnded();
+                    }
+                };
+            };
+
+            const playAudio = (audioChunks, onEndedCallback) => {
+                const blob = new Blob(audioChunks, { type: 'audio/mpeg' });
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                audio.onended = () => {
+                    URL.revokeObjectURL(url);
+                    onEndedCallback();
+                };
+                audio.onerror = (e) => {
+                    console.error("Lỗi phát audio từ Blob:", e);
+                    URL.revokeObjectURL(url);
+                    onEndedCallback();
+                };
+                audio.play().catch(onEndedCallback);
             };
 
             const playTTS = (text) => {

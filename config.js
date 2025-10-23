@@ -21,6 +21,16 @@ const APP_CONFIG = {
         apiKey: "c9b24c823032912293817419cb0cd2dc" // <-- DÁN API KEY CỦA BẠN VÀO ĐÂY
     },
 
+    // =================================================================================
+    // --- MỚI: Cấu hình iFLYTEK TTS cho giọng nói chuyên nghiệp ---
+    // =================================================================================
+    iflytek: {
+        // Thông tin bạn đã cung cấp
+        APPID: "ga7f58d0",
+        APISecret: "7dec531996594931d2593d76eb7cc1f3",
+        APIKey: "2bff0096e287272e207614edca7def78"
+    },
+
     // Cấu hình tính phí gửi xe
     fee: {
         freeMinutes: 15,       // Số phút gửi xe miễn phí
