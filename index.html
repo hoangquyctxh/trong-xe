@@ -1736,6 +1736,23 @@
                 let payload;
                 let uniqueID; // SỬA LỖI: Khai báo uniqueID ở phạm vi rộng hơn
                 const entryTime = new Date();
+
+                // =================================================================
+                // --- TỐI ƯU HÓA TỐC ĐỘ (OPTIMISTIC UPDATE) ---
+                // --- Bước 1: Xử lý giao diện ngay lập tức ---
+                // =================================================================
+                if (action === 'checkIn') {
+                    originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
+                    if (!originalPlate) {
+                        showToast("Biển số không hợp lệ.", 'error');
+                        setIsLoading(false);
+                        return;
+                    }
+                    uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
+                    // Hiển thị QR Code ngay lập tức mà không cần chờ server
+                    showQrCode(originalPlate, entryTime, uniqueID);
+                }
+                // =================================================================
                 
                 if (action === 'checkIn') {
                     if (!currentLocation) {
@@ -1744,13 +1761,7 @@
                         determineNearestLocation(); // Thử lại
                         return;
                     }
-                    originalPlate = allElements.searchTermInput.value.trim().toUpperCase();
-                    if (!originalPlate) {
-                        showToast("Biển số không hợp lệ.", 'error');
-                        setIsLoading(false);
-                        return; // Thêm return để dừng hẳn nếu biển số không hợp lệ
-                    }
-                    uniqueID = '_' + Math.random().toString(36).substr(2, 9) + entryTime.getTime().toString(36);
+                    // originalPlate và uniqueID đã được tạo ở trên
                     // MỚI: Thêm isVIP vào payload
                     const isVIP = allElements.isVipCheckbox.checked;
                     payload = { action, plate: originalPlate, phone, uniqueID, locationId: currentLocation.id, imageData: imageBase64, isVIP: isVIP };
@@ -1759,6 +1770,12 @@
                     // Hàm này sẽ không xử lý check-out nữa
                 }
 
+                // =================================================================
+                // --- TỐI ƯU HÓA TỐC ĐỘ ---
+                // --- Bước 2: Gửi dữ liệu lên server ở chế độ nền ---
+                // =================================================================
+                // Thêm biển số vào payload sau khi đã hiển thị QR
+                if (action === 'checkIn') payload.plate = originalPlate;
                 try {
                     if (navigator.onLine) {
                         const response = await fetch(APP_CONFIG.googleScriptUrl, {
@@ -1767,25 +1784,15 @@
                         });
                         const result = await response.json();
                         if (result.status === 'success') {
-                            if (action === 'checkIn') {
-                                // MỚI: Gửi thông báo gửi xe thành công đến màn hình phụ
-                                if (paymentChannel) {
-                                    const soundText = `Đã ghi nhận xe ${originalPlate} vào bãi.`;
-                                    paymentChannel.postMessage({ 
-                                        type: 'VEHICLE_CHECKIN_COMPLETE', 
-                                        payload: { licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime), soundText: soundText }
-                                    });
-                                }
-                                // Kết thúc phần mới
-
-                                showQrCode(originalPlate, entryTime, uniqueID);
-                            }
+                            // Check-in thành công ở chế độ nền, không cần làm gì thêm ở UI
+                            // Có thể thêm log ở đây nếu cần
+                            console.log(`Optimistic check-in for ${originalPlate} synced successfully.`);
                         } else { throw new Error(result.message); }
                     } else {
                         if (action === 'checkIn') {
                             const offlineAction = { ...payload, timestamp: entryTime.toISOString() };
                             addToOfflineQueue(offlineAction);
-                            showQrCode(originalPlate, entryTime, uniqueID);
+                            // UI đã được cập nhật ở trên, chỉ cần lưu vào hàng đợi offline
                             // MỚI: Gửi thông báo gửi xe thành công đến màn hình phụ (chế độ offline)
                             if (paymentChannel) {
                                 const soundText = `Đã ghi nhận xe ${originalPlate} vào bãi.`;
@@ -1796,6 +1803,15 @@
                             }
                             // Kết thúc phần mới
                         }
+                    }
+                    // Gửi thông báo đến màn hình phụ sau khi đã chắc chắn hiển thị QR
+                    if (action === 'checkIn' && paymentChannel) {
+                        const soundText = `Đã ghi nhận xe ${originalPlate} vào bãi.`;
+                        paymentChannel.postMessage({ 
+                            type: 'VEHICLE_CHECKIN_COMPLETE', 
+                            payload: { licensePlate: originalPlate, timeIn: formatDateTimeForDisplay(entryTime), soundText: soundText }
+                        });
+                        // Đã di chuyển từ trong khối try..catch ra đây
                     }
                 } catch (error) {
                     showToast(`Lỗi đồng bộ: ${error.message}`, 'error');
@@ -1941,41 +1957,34 @@
                 // Đóng modal thanh toán ngay lập tức
                 allElements.paymentModal.style.display = 'none';
             
-                // 1. Chuẩn bị dữ liệu biên lai cuối cùng
+                // TỐI ƯU HÓA: Hiển thị thông báo và cập nhật UI ngay lập tức
+                // 1. Hiển thị toast thành công
+                showToast('Đã hoàn tất cho xe ra!', 'success');
+
+                // 2. Chuẩn bị dữ liệu biên lai cuối cùng và gửi đến màn hình phụ
                 const finalReceiptData = {
                     licensePlate: currentVehicleContext.plate,
                     timeIn: allElements.paymentEntryTime.textContent,
                     timeOut: formatDateTimeForDisplay(new Date()),
                     duration: allElements.paymentDuration.textContent,
                     paymentMethod: paymentMethod,
-                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`
+                    totalAmount: `${fee.toLocaleString('vi-VN')}đ`,
+                    soundText: `Đã cho xe ${currentVehicleContext.plate} ra khỏi bãi. Cảm ơn quý khách.`
                 };
+                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
 
-                // 2. Gửi yêu cầu xử lý check-out lên server (chạy ngầm)
-                const checkoutResult = await processCheckOut({
+                // 3. Reset form và tải lại dữ liệu
+                resetMainForm();
+                allElements.searchTermInput.value = '';
+                await fetchVehiclesForDate(allElements.datePicker.value);
+
+                // 4. Gửi yêu cầu xử lý check-out lên server (chạy ngầm ở cuối cùng)
+                processCheckOut({
                     uniqueID: currentVehicleContext.uniqueID,
                     plate: currentVehicleContext.plate,
                     fee: fee,
                     paymentMethod: paymentMethod
                 });
-            
-                // 3. Nếu xử lý thất bại, dừng lại và thông báo lỗi
-                if (!checkoutResult) return; 
-            
-                // 4. Nếu thành công, gửi thông báo hoàn tất đến cửa sổ phụ
-                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
-
-
-                // 5. Hiển thị thông báo và reset form
-                showToast('Đã hoàn tất cho xe ra!', 'success');
-            
-                // Reset và tải lại dữ liệu sau khi hoàn tất
-                resetMainForm();
-                allElements.searchTermInput.value = '';
-                allElements.phoneNumberInput.value = '';
-                capturedImageBase64 = null;
-                allElements.photoPreviewThumb.style.display = 'none';
-                await fetchVehiclesForDate(allElements.datePicker.value);
             };
 
             // MỚI: Hàm kiểm tra thiết bị di động
@@ -2288,17 +2297,21 @@
                                 reason: paymentMethod
                             },
                             async () => {
+                                // TỐI ƯU HÓA: Cập nhật UI ngay lập tức
+                                showToast(`Đã cho xe ${vehicle.Plate} ra (${paymentMethod}).`, 'success'); 
                                 const finalReceiptData = {
                                     licensePlate: vehicle.Plate,
                                     timeIn: formatDateTimeForDisplay(vehicle['Entry Time']),
                                     timeOut: formatDateTimeForDisplay(new Date()),
                                     duration: calculateDuration(vehicle['Entry Time']),
                                     paymentMethod: paymentMethod,
-                                    totalAmount: '0đ'
+                                    totalAmount: '0đ',
+                                    soundText: `Đã cho xe ${vehicle.Plate} ra khỏi bãi. Cảm ơn quý khách.`
                                 };
-                                const checkoutResult = await processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });                                if (checkoutResult) {
-                                    if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
-                                    showToast(`Đã cho xe ${vehicle.Plate} ra (Miễn phí).`, 'success'); 
+                                if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+                                
+                                // Reset form và gửi yêu cầu lên server ở chế độ nền
+                                processCheckOut({ uniqueID: vehicle.UniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: paymentMethod });
                                     resetMainForm();
                                     allElements.searchTermInput.value = '';
                                     await fetchVehiclesForDate(allElements.datePicker.value);
