@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let cameraStream = null;
     let currentVehicleContext = null;
     let scanAnimation = null;
-    let paymentChannel = null; // MỚI: Kênh giao tiếp giữa các cửa sổ
+    let paymentChannel = null; // Kênh giao tiếp giữa các cửa sổ
     // SỬA LỖI QUAN TRỌNG: Khởi tạo kênh giao tiếp ngay từ đầu
     try {
         paymentChannel = new BroadcastChannel('parking_payment_channel');
@@ -856,8 +856,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const closeQrCode = () => {
-        // GIẢI PHÁP TRIỆT ĐỂ: Đảm bảo giao diện luôn được mở khóa và làm mới
-        setIsLoading(false); // 1. Luôn mở khóa tất cả các nút và input
+        // SỬA LỖI: Giao diện bị khóa sau khi thêm xe
+        // Nguyên nhân: Hàm này được gọi sau khi thêm xe, nhưng lại không mở khóa các nút.
 
         // 2. Ẩn modal và xóa QR code cũ
         if (allElements.qrcodeModal) {
@@ -878,6 +878,9 @@ document.addEventListener('DOMContentLoaded', () => {
         capturedImageBase64 = null;
         allElements.photoPreviewThumb.style.display = 'none';
         resetMainForm();
+        // Mở khóa các nút để có thể tiếp tục thao tác
+        setIsLoading(false);
+
         // SỬA LỖI: Tải lại dữ liệu ở chế độ nền (silent) để không làm gián đoạn công việc của nhân viên
         fetchVehiclesForDate(allElements.datePicker ? allElements.datePicker.value : formatDateForAPI(new Date()), true);
     };
@@ -970,6 +973,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.paymentQrcodeImage.style.opacity = '0'; // Ẩn ảnh cũ
         
         // YÊU CẦU MỚI: Mặc định ẩn QR và bỏ chọn các nút
+        allElements.paymentQrcodeImage.src = ''; // Xóa ảnh QR cũ
         const qrWrapper = document.getElementById('payment-qrcode-wrapper');
         if (qrWrapper) qrWrapper.style.display = 'none';
         allElements.selectQrBtn.classList.remove('active');
@@ -978,51 +982,65 @@ document.addEventListener('DOMContentLoaded', () => {
         // MỚI: Vô hiệu hóa nút hoàn tất khi chưa chọn phương thức
         allElements.completePaymentBtn.disabled = true;
         allElements.qrSpinner.style.display = 'block'; // Hiện spinner
+        
 
         // =================================================================
         // SỬA LỖI QUAN TRỌNG: Đảm bảo kênh được tạo trước khi gửi tin
         // =================================================================
 
         // =================================================================
-        // --- QUAY LẠI PHƯƠNG PHÁP TẠO QR TĨNH TỪ CONFIG.JS ---
+        // --- TẠO QR ZALOPAY ĐỘNG ---
+        // --- THAY THẾ: TẠO QR VIETQR TĨNH ---
         // =================================================================
-        const paymentInfoTextNoDiacritics = removeDiacritics(paymentInfoText);
-        const encodedDescription = encodeURIComponent(paymentInfoTextNoDiacritics);
-        const qrImageUrl = `${APP_CONFIG.payment.baseUrl}&amount=${fee}&des=${encodedDescription}`;
+        const generateStaticVietQR = () => {
+            allElements.qrSpinner.style.display = 'block';
+            allElements.paymentQrcodeImage.style.opacity = '0';
 
-        // Hiển thị ảnh QR
-        allElements.paymentQrcodeImage.src = qrImageUrl;
-        // Sau khi ảnh tải xong
-        allElements.paymentQrcodeImage.onload = () => {
-            allElements.qrSpinner.style.display = 'none'; // Ẩn spinner
-            allElements.paymentQrcodeImage.style.opacity = '1'; // Hiện ảnh mới
+            // Tạo URL VietQR với các tham số động
+            const encodedMemo = encodeURIComponent(paymentInfoText);
+            const qrImageUrl = `${APP_CONFIG.payment.baseUrl}&amount=${fee}&addInfo=${encodedMemo}`;
+
+            allElements.paymentQrcodeImage.src = qrImageUrl;
+            allElements.paymentQrcodeImage.onload = () => {
+                allElements.qrSpinner.style.display = 'none';
+                allElements.paymentQrcodeImage.style.opacity = '1';
+                // Tự động chọn phương thức QR và hiển thị QR code ngay lập tức
+                allElements.selectQrBtn.classList.add('active');
+                allElements.selectCashBtn.classList.remove('active');
+                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
+                if (qrWrapper) qrWrapper.style.display = 'block';
+                // Gửi thông báo đến màn hình phụ
+                if (paymentChannel && confirmationWindow && !confirmationWindow.closed) {
+                    const payloadForConfirmation = createInitialDataForConfirmation(vehicle, qrImageUrl, paymentInfoText);
+                    if (payloadForConfirmation) {
+                        paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: payloadForConfirmation });
+                    }
+                }
+            };
+            allElements.paymentQrcodeImage.onerror = () => {
+                showToast('Không thể tải ảnh QR. Vui lòng kiểm tra lại cấu hình.', 'error');
+                allElements.qrSpinner.style.display = 'none';
+            };
         };
-        allElements.paymentQrcodeImage.onerror = () => {
-            allElements.qrSpinner.style.display = 'none';
-            showToast('Lỗi tải mã QR từ VietQR.', 'error');
-        }
 
-        // SỬA LỖI: Gửi dữ liệu đến cửa sổ phụ (nếu có)
-        if (paymentChannel && confirmationWindow && !confirmationWindow.closed) {
-            const payloadForConfirmation = createInitialDataForConfirmation(vehicle, qrImageUrl, paymentInfoText);
-            if (payloadForConfirmation) {
-                paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: payloadForConfirmation });
-            }
-        }
+        // Gọi hàm tạo QR
+        generateStaticVietQR();
     };
 
-    const completePayment = async () => {
+    const completePayment = async (paymentMethodTrigger = 'manual') => { // MỚI: Thêm tham số để biết nguồn kích hoạt
         if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
     
         const fee = parseFloat(allElements.paymentAmountDisplay.textContent.replace(/\./g, '')) || 0;
+        
+        // Xác định phương thức từ UI
         let paymentMethod = 'Chưa chọn';
         if (allElements.selectCashBtn.classList.contains('active')) {
             paymentMethod = 'Tiền mặt';
         } else if (allElements.selectQrBtn.classList.contains('active')) {
             paymentMethod = 'Chuyển khoản QR';
         }
-        
-        // Đóng modal thanh toán ngay lập tức
+
+        // Đóng modal thanh toán
         allElements.paymentModal.style.display = 'none';
     
         // 1. Chuẩn bị dữ liệu biên lai cuối cùng
@@ -1451,6 +1469,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bắt sự kiện click vào label của checkbox VIP
     if (allElements.vipCheckboxContainer) allElements.vipCheckboxContainer.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT') allElements.isVipCheckbox.checked = !allElements.isVipCheckbox.checked; });
     
+    if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => { allElements.paymentModal.style.display = 'none'; });
     // --- Event Listeners cho Modal Thanh toán mới ---
     if (allElements.completePaymentBtn) allElements.completePaymentBtn.addEventListener('click', () => {
         // Nút này giờ xử lý cả 2 trường hợp
@@ -1469,7 +1488,6 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.selectCashBtn.classList.add('active');
         allElements.selectQrBtn.classList.remove('active');
         allElements.completePaymentBtn.disabled = false; // SỬA LỖI: Kích hoạt nút hoàn tất
-
         // SỬA LỖI: Ẩn khu vực QR code khi chọn tiền mặt
         const qrWrapper = document.getElementById('payment-qrcode-wrapper');
         if (qrWrapper) qrWrapper.style.display = 'none';
@@ -1477,12 +1495,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (paymentChannel) {
             paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'cash' });
         }
-    });
-
-    if (allElements.closePaymentModalBtn) allElements.closePaymentModalBtn.addEventListener('click', () => {
-        allElements.paymentModal.style.display = 'none';
-        // MỚI: Gửi tín hiệu hủy giao dịch đến cửa sổ phụ
-        if (paymentChannel) paymentChannel.postMessage({ type: 'TRANSACTION_CANCELED' });
     });
 
     // HÀM MỚI: Tạo dữ liệu để gửi sang cửa sổ phụ

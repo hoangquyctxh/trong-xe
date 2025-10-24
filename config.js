@@ -9,11 +9,12 @@
 
 const APP_CONFIG = {
     // Cập nhật URL mới nhất từ Google Apps Script
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbwoav-2k-pfSIhFos8e8qyxW8t-bA340YmExQU2YeBygRF97aIQZ9AV7BbjA7kUJFdpsQ/exec",
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycbz-v6G4RhkTh5IbTQEb8n8tmztxQg99K0SLnNr2CHOjiHyNGXQo5UnJwJv-aAglIgj_AA/exec",
 
     // Cấu hình thanh toán QR (SỬ DỤNG LẠI PHƯƠP PHÁP TĨNH)
+    // Thay thế ZaloPay bằng VietQR tĩnh
     payment: {
-        baseUrl: "https://qr.sepay.vn/img?bank=Oceanbank&acc=666686989&template=compact"
+        baseUrl: "https://api.vietqr.io/image/971011-2FIN0837290703-UVAd7f2.jpg?accountName=VNPTFINTECH%20NGUYEN%20CAO%20HOANG%20QUY"
     },
 
     // Cấu hình API thời tiết (MỚI)
