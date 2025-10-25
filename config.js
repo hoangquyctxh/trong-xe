@@ -14,7 +14,7 @@ const APP_CONFIG = {
     // Cấu hình thanh toán QR (SỬ DỤNG LẠI PHƯƠP PHÁP TĨNH)
     // Thay thế ZaloPay bằng VietQR tĩnh
     payment: {
-        baseUrl: "https://api.vietqr.io/image/970415-2FIN0837290703-UVAd7f2.jpg?accountName=VNPTFINTECH%20NGUYEN%20CAO%20HOANG%20QUY&amount=0&addInfo=0"
+        baseUrl: "https://api.vietqr.io/image/970415-2FIN0837290703-UVAd7f2.jpg?accountName=VNPTFINTECH%20NGUYEN%20CAO%20HOANG%20QUY"
     },
 
     // Cấu hình API thời tiết (MỚI)
