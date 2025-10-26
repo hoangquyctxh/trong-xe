@@ -14,25 +14,25 @@
     
     <style>
         :root {
-            /* --- BẢNG MÀU MỚI: Hiện đại & Chuyên nghiệp --- */
-            --bg-main: #f8f9fa; /* Nền chính sáng hơn, sạch sẽ hơn */
+            /* --- BẢNG MÀU CỔ ĐIỂN: Đơn giản & Rõ ràng --- */
+            --bg-main: #f4f7f9;
             --bg-card: #ffffff;
-            --bg-header: #ffffff; /* Giữ nguyên header trắng */
-            --border-color: #dee2e6; /* Viền nhẹ nhàng hơn */
-            --primary-accent: #0056b3; /* Xanh đậm, sang trọng hơn */
-            --primary-accent-light: #007bff; /* Xanh sáng hơn, năng động */
-            --secondary-accent: #ffc107; /* Vàng amber cho các điểm nhấn */
-            --text-primary: #212529; /* Đen đậm hơn cho văn bản chính */
-            --text-secondary: #6c757d; /* Xám cho văn bản phụ */
-            --text-light: #f9fafb;
-            --danger-color: #dc3545; /* Đỏ an toàn hơn */
-            --success-color: #28a745; /* Xanh lá cây rõ ràng */
-            /* --- Hiệu ứng đổ bóng & bo góc được tinh chỉnh --- */
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.075);
-            --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.1);
-            --border-radius-lg: 0.75rem; /* Giảm nhẹ bo góc lớn */
-            --border-radius-md: 0.375rem; /* Bo góc vừa phải, sắc nét hơn */
+            --bg-header: #ffffff;
+            --border-color: #e2e8f0;
+            --primary-accent: #2563eb;
+            --primary-accent-light: #3b82f6;
+            --secondary-accent: #f59e0b;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-light: #ffffff;
+            --danger-color: #ef4444;
+            --success-color: #22c55e;
+            /* --- Hiệu ứng đổ bóng & bo góc đơn giản --- */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --border-radius-lg: 0.5rem;
+            --border-radius-md: 0.375rem;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
@@ -45,26 +45,26 @@
         }
         .container { max-width: 1280px; margin: auto; padding: 25px; }
         header { 
-            background: var(--bg-header);
-            padding: 15px 0; /* Giảm padding dọc */
+            background: var(--bg-header); padding: 15px 0;
             border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
         }
         .header-title { display: flex; align-items: center; gap: 15px; }
         .header-title .logo img { width: 50px; height: auto; }
         .title-group { display: flex; flex-direction: column; }
         .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
-        .header-title h1 { font-size: 1.9rem; color: var(--primary-accent); font-weight: 800; line-height: 1.2; margin: 0; }
-        .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+        .header-title h1 { font-size: 1.8rem; color: var(--primary-accent); font-weight: 700; line-height: 1.2; margin: 0; }
+        .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-main); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
         .date-selector label { font-weight: 600; color: var(--text-secondary); }
         .date-selector input[type="date"] { background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
-        /* --- MỚI: Thiết kế lại cụm điều khiển header --- */
+        /* --- Cụm điều khiển header --- */
         .header-controls { display: flex; align-items: center; gap: 12px; }
         .clock-widget, .weather-widget {
             display: flex; align-items: center; gap: 8px;
             background: var(--bg-main);
             padding: 8px 12px;
             border-radius: var(--border-radius-md);
-            border: 1px solid var(--border-color);
+            border: 1px solid transparent;
             font-size: 0.9rem;
             color: var(--text-secondary);
         }
@@ -75,10 +75,7 @@
 
         .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
         .card { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-lg); padding: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
-        /* --- MỚI: Thay thế dải màu gradient bằng một đường viền tinh tế --- */
-        .card::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: var(--primary-accent); }
-        
-        .card h2 { color: var(--text-primary); font-size: 1.25rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .card h2 { color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .card h2 svg { color: var(--primary-accent); }
         .full-width { grid-column: 1 / -1; }
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -86,25 +83,22 @@
         .input-wrapper svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 20px; transition: color 0.2s; }
         .input-wrapper input { width: 100%; padding: 14px 15px 14px 45px; border: 1px solid var(--border-color); color: var(--text-primary); background: #f9fafb; border-radius: var(--border-radius-md); font-size: 1rem; transition: all 0.2s; }
         .input-wrapper input::placeholder { color: #9ca3af; }
-        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent-light); box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2); }
+        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
         .input-wrapper input:focus + svg { color: var(--primary-accent); }
         #search-term, #filter-input { text-transform: uppercase; }
         .action-button { width: 100%; padding: 14px; border: none; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
-        .action-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
-        /* --- MỚI: Hiệu ứng nhấn nút --- */
-        .action-button:active:not(:disabled) { transform: translateY(-1px) scale(0.98); filter: brightness(0.95); }
+        .action-button:hover:not(:disabled) { filter: brightness(1.1); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        /* --- MỚI: Checkbox VIP --- */
-        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px 15px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; transition: background 0.2s; }
-        .vip-checkbox-wrapper:hover { background: #ffecb3; }
-        .vip-checkbox-wrapper input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--secondary-accent); }
-        .vip-checkbox-wrapper label { font-weight: 700; color: #b45309; cursor: pointer; }
+        /* --- Checkbox VIP --- */
+        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fffbeb; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; }
+        .vip-checkbox-wrapper input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--secondary-accent); }
+        .vip-checkbox-wrapper label { font-weight: 600; color: #b45309; cursor: pointer; }
 
-        /* --- MỚI: Nút chụp ảnh --- */
+        /* --- Nút chụp ảnh --- */
         .photo-capture-group { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
-        .btn-capture-photo { flex-grow: 1; padding: 14px; border: 1px dashed var(--primary-accent); background: #eff6ff; color: var(--primary-accent); font-weight: 700; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-capture-photo:hover { background: #dbeafe; }
+        .btn-capture-photo { flex-grow: 1; padding: 14px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-primary); font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-capture-photo:hover { background: #e2e8f0; }
         #photo-preview-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); display: none; }
         #vehicle-image-display {
             width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--border-radius-md);
@@ -114,20 +108,11 @@
 
         .icon-btn { flex-shrink: 0; width: 52px; height: 52px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
         .icon-btn:hover:not(:disabled) { background-color: var(--bg-main); color: var(--primary-accent); }
-        .icon-btn:active:not(:disabled) { transform: scale(0.95); }
-        .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); animation: pulse-red 1.5s infinite; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        .btn-check-in { background: linear-gradient(45deg, var(--primary-accent), var(--primary-accent-light)); box-shadow: 0 4px 15px 0 rgba(0, 123, 255, 0.3); }
-        /* MỚI: Animation cho màu nền động */
-        @keyframes animated-gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        .btn-check-out { background: linear-gradient(45deg, var(--danger-color), #fd7e14); box-shadow: 0 4px 15px 0 rgba(220, 53, 69, 0.3); }
-        /* --- MỚI: Hiệu ứng xuất hiện mượt mà hơn --- */
-        #vehicle-info-panel { display: none; animation: fadeIn 0.4s ease; margin-top: 20px; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); }
+        .btn-check-in { background-color: var(--primary-accent); }
+        .btn-check-out { background-color: var(--danger-color); }
+        #vehicle-info-panel { display: none; margin-top: 20px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .info-grid { display: flex; flex-direction: column; gap: 15px; }
         .info-item { display: flex; align-items: center; gap: 15px; background: var(--bg-main); padding: 12px 15px; border-radius: var(--border-radius-md); }
         .info-item .icon { color: var(--primary-accent); }
@@ -139,10 +124,8 @@
         .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
         #vehicle-list-container { max-height: 60vh; overflow-y: auto; padding-right: 5px; }
         .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .vehicle-item:hover { transform: translateX(5px); border-color: var(--primary-accent); box-shadow: var(--shadow-md); }
-        /* --- MỚI: Cải thiện hiệu ứng hover cho danh sách --- */
-        .vehicle-item:hover { transform: translateY(-3px) translateX(3px); box-shadow: var(--shadow-md); border-color: var(--primary-accent-light); }        .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .vehicle-item:hover { border-color: var(--primary-accent); background-color: #f9fafb; }
+        .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .vehicle-item .details { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; }
         .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1.1rem; margin-bottom: 5px; }
@@ -158,11 +141,11 @@
             background-color: var(--bg-main);
             border-radius: 50%;
         }
-        /* --- MỚI: Icon VIP trong danh sách --- */
-        .vehicle-item.is-vip .icon { background-color: #fff3cd; color: var(--secondary-accent); }
+        /* --- Icon VIP trong danh sách --- */
+        .vehicle-item.is-vip .icon { background-color: #fffbeb; color: var(--secondary-accent); }
         .vehicle-item.is-vip { border-left: 4px solid var(--secondary-accent); }
 
-        /* --- MỚI: Icon camera trên danh sách --- */
+        /* --- Icon camera trên danh sách --- */
         .vehicle-item .photo-indicator { position: absolute; bottom: -2px; right: -2px; background: var(--primary-accent); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
         .vehicle-item .photo-indicator svg { width: 10px; height: 10px; }
 
@@ -170,27 +153,23 @@
         .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; }
         .toast.success { background-color: var(--success-color); } .toast.error { background-color: var(--danger-color); }
         @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; transform: scale(0.9); } }
+        @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; } }
         .modal { 
             position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; 
-            overflow: auto; background-color: rgba(17, 24, 39, 0.6); 
+            overflow: auto; background-color: rgba(0, 0, 0, 0.5); 
             display: none; align-items: center; justify-content: center; 
-            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
-            animation: fadeInBackdrop 0.3s ease forwards;
-            perspective: 1000px;
         }
-        @keyframes fadeInBackdrop { from { opacity: 0; } to { opacity: 1; } }
         #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
         .hidden { display: none !important; }
         .scan-success-overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             border-radius: 12px;
             box-shadow: inset 0 0 0 5px var(--success-color);
-            animation: fadeOutOverlay 0.5s ease-out forwards;
+            animation: fadeOut 0.5s ease-out forwards;
         }
-        @keyframes fadeOutOverlay { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         
-        /* --- GIAO DIỆN VÉ ĐIỆN TỬ MỚI (ĐƠN GIẢN & ỔN ĐỊNH) --- */
+        /* --- GIAO DIỆN VÉ ĐIỆN TỬ (ĐƠN GIẢN) --- */
         #qrcode-modal .modal-content {
             background-color: var(--bg-card);
             padding: 25px;
@@ -198,9 +177,7 @@
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 380px;
-            text-align: center;            
-            /* --- MỚI: Hiệu ứng modal nảy lên --- */
-            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            text-align: center;
         }
         .ticket-header-new {
             display: flex;
@@ -217,7 +194,7 @@
         }
         .ticket-org-name-new {
             font-size: 0.9rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-primary);
             text-transform: uppercase;
             line-height: 1.4;
@@ -225,7 +202,7 @@
         }
         .ticket-title-new {
             font-size: 1.5rem;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--primary-accent);
             margin-bottom: 10px;
         }
@@ -305,23 +282,22 @@
         .footer-column p strong { color: var(--text-primary); font-weight: 700; }
         .copyright { margin-top: 20px !important; font-size: 0.9rem; color: #9ca3af; text-align: center; }
         #offline-indicator { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: var(--danger-color); color: white; padding: 8px 15px; border-radius: 20px; box-shadow: var(--shadow-lg); z-index: 10000; display: none; align-items: center; gap: 8px; font-weight: 500; animation: fadeIn 0.5s; }
-
-        /* --- REDESIGN: DASHBOARD (Bảng tin nhanh) --- */
+        
+        /* --- DASHBOARD (Bảng tin nhanh) --- */
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .stat-item { 
             background: var(--bg-main); 
             padding: 20px; 
-            border-radius: var(--border-radius-lg); /* Bo góc lớn hơn */
-            text-align: left; /* Căn trái */
+            border-radius: var(--border-radius-md);
+            text-align: left;
             border: 1px solid var(--border-color);
-            transition: all 0.2s ease;
         }
-        .stat-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-sm); }
         .stat-item .label { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
-        .stat-item .value { font-size: 2rem; font-weight: 700; color: var(--primary-accent); line-height: 1.1; }
+        .stat-item .value { font-size: 1.8rem; font-weight: 700; color: var(--primary-accent); line-height: 1.1; }
         .stat-item .info-duration { font-size: 1.5rem; }
         .dashboard-gauge { grid-column: 1 / -1; text-align: center; }
         
+        /* --- Gauge sức chứa --- */
         .gauge-container { position: relative; width: 180px; height: 90px; overflow: hidden; margin: 0 auto 10px auto; }
         .gauge-bg, .gauge-fill {
             position: absolute;
@@ -338,14 +314,14 @@
         .gauge-text { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
         .gauge-label { font-size: 1rem; color: var(--text-secondary); font-weight: 500; }
 
-        /* MỚI: CSS cho thông báo trạng thái sức chứa */
+        /* CSS cho thông báo trạng thái sức chứa */
         .capacity-status-message {
             margin-top: 12px;
             padding: 10px 15px;
             border-radius: var(--border-radius-md);
             font-weight: 600;
             text-align: center;
-            display: none; /* Ẩn theo mặc định */
+            display: none;
             animation: fadeIn 0.5s;
             border: 1px solid transparent;
         }
@@ -378,7 +354,7 @@
             .dashboard-grid { grid-template-columns: 1fr; }
         }
 
-        /* --- CẢI TIẾN GIAO DIỆN LỊCH SỬ GỬI XE (TIMELINE) --- */
+        /* --- GIAO DIỆN LỊCH SỬ GỬI XE (TIMELINE) --- */
         #info-history-list {
             position: relative;
             padding-left: 25px;
@@ -403,8 +379,7 @@
         }
         .history-item::before {
             content: '';
-            position: absolute;
-            left: -24px; /* (25px padding-left) - (10px width / 2) - (1px border) */
+            position: absolute; left: -24px;
             top: 50%;
             transform: translateY(-50%);
             width: 12px;
@@ -433,152 +408,74 @@
             border-bottom: 1px dashed var(--border-color);
         }
 
-        /* ================================================== */
-        /* --- THIẾT KẾ LẠI BIÊN LAI CAO CẤP - TOP 1 --- */
-        /* ================================================== */
+        /* --- GIAO DIỆN BIÊN LAI THANH TOÁN (ĐƠN GIẢN) --- */
         #payment-modal .modal-content {
             background-color: var(--bg-card);
-            padding: 0; /* Bỏ padding cũ */
+            padding: 25px;
             border-radius: var(--border-radius-lg);
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 400px; 
             text-align: center;
-            animation: slideDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards, fadeIn 0.5s ease;
-            position: relative; 
-            overflow: hidden; /* Để bo góc cho header */
-        }
-        /* Họa tiết chìm (watermark) */
-        #payment-modal .modal-content::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 250px;
-            height: 250px;
-            background-image: url('https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            transform: translate(-50%, -50%) rotate(-15deg);
-            opacity: 0.05;
-            z-index: 0;
         }
         .receipt-header {
-            background-color: var(--primary-accent);
-            color: white;
-            padding: 20px 25px;
-            text-align: left;
+            margin-bottom: 20px;
         }
-        .receipt-header h2 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin: 0;
-            line-height: 1.2;
-        }
-        .receipt-header p {
-            font-size: 1rem;
-            opacity: 0.9;
-            margin: 0;
-        }
-        .receipt-body {
-            padding: 25px;
-            position: relative; /* Để các phần tử con nổi trên watermark */
-            z-index: 1;
-        }
+        .receipt-header h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; color: var(--primary-accent); }
+        .receipt-header p { font-size: 1rem; color: var(--text-secondary); margin: 0; }
+
         .receipt-info-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            display: flex; flex-direction: column; gap: 12px;
             margin-bottom: 25px;
             text-align: left;
         }
         .receipt-info-grid .info-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1rem;
+            display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);
         }
-        .receipt-info-grid .info-row svg {
-            width: 20px;
-            height: 20px;
-            color: var(--primary-accent);
-            flex-shrink: 0;
-        }
-        .receipt-info-grid .info-label {
-            color: var(--text-secondary);
-        }
-        .receipt-info-grid .info-value {
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-left: auto; /* Đẩy giá trị sang phải */
-        }
-        .receipt-info-grid .plate-with-thumb {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .receipt-info-grid .info-row:last-child { border-bottom: none; }
+        .receipt-info-grid .info-label { color: var(--text-secondary); }
+        .receipt-info-grid .info-value { font-weight: 600; color: var(--text-primary); }
+
         .receipt-total-fee {
             margin-bottom: 20px;
+            padding: 15px; background: #fffbe6; border-radius: var(--border-radius-md);
         }
-        .receipt-total-fee .label {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-        }
+        .receipt-total-fee .label { font-size: 1rem; color: var(--text-secondary); margin-bottom: 5px; }
         .receipt-total-fee .amount {
-            font-size: 3.5rem;
-            font-weight: 800;
+            font-size: 2.5rem;
+            font-weight: 700;
             color: var(--danger-color);
             line-height: 1;
         }
         .receipt-total-fee .amount sup {
-            font-size: 1.8rem;
-            font-weight: 700;
+            font-size: 1.5rem;
         }
-        .receipt-footer {
-            background-color: var(--bg-main);
-            padding: 20px 25px;
-            border-top: 1px solid var(--border-color);
-        }
-        /* --- MỚI: Bố cục cho QR Code Area --- */
-        .receipt-qr-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .receipt-footer { padding-top: 20px; border-top: 1px solid var(--border-color); }
+
         .payment-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            display: flex; justify-content: flex-end; gap: 10px;
+            position: absolute; top: 15px; right: 15px;
         }
         .payment-actions .icon-btn-small {
             width: 36px; height: 36px;
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
+            background: transparent; border: none;
             color: var(--text-secondary);
-            border-radius: 50%;
-            cursor: pointer;
+            cursor: pointer; transition: color 0.2s;
         }
-        /* MỚI: Nút chọn phương thức thanh toán */
+        .payment-actions .icon-btn-small:hover { color: var(--primary-accent); }
+
+        /* Nút chọn phương thức thanh toán */
         .payment-method-selector {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
         .method-btn {
-            flex-grow: 1; padding: 12px; border-radius: var(--border-radius-md); border: 2px solid var(--border-color); background: var(--bg-main); color: var(--text-secondary); font-weight: 700; cursor: pointer; transition: all 0.2s;
+            flex-grow: 1; padding: 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
         .method-btn.active { background: var(--primary-accent); color: white; border-color: var(--primary-accent); }
         
-        /* --- MỚI: Bố cục ngang cho Tablet và Desktop --- */
-        /* ĐÃ XÓA: Bỏ hoàn toàn bố cục 2 cột để đảm bảo tính đồng nhất và ổn định */
-
         /* Responsive cho biên lai thanh toán trên màn hình nhỏ */
-        /* Áp dụng cho cả màn hình nhỏ */
         @media (max-width: 450px) {
             #payment-modal .modal-content {
                 padding: 20px;
@@ -586,13 +483,9 @@
             }
             .receipt-header h2 { font-size: 1.4rem; }
             .receipt-total-fee .amount { font-size: 2.8rem; }
-            .receipt-body, .receipt-footer { padding: 20px; }
         }
-        /* Đảm bảo các nút luôn xếp chồng trên màn hình nhỏ */
-        @media (max-width: 400px) {
-            .receipt-footer .action-buttons-container { flex-direction: column; }
-        }
-        /* --- THIẾT KẾ LẠI: Ảnh thumbnail trong biên lai --- */
+
+        /* --- Ảnh thumbnail trong biên lai --- */
         .plate-with-thumb {
             display: flex;
             align-items: center;
@@ -602,11 +495,10 @@
             width: 48px; height: 48px; object-fit: cover;
             border-radius: var(--border-radius-md); border: 1px solid var(--border-color);
             cursor: pointer; transition: transform 0.2s;
-            display: none; /* Ẩn mặc định */
+            display: none;
         }
         #payment-thumb-image:hover { transform: scale(1.1); }
 
-        /* --- MỚI: Spinner tải QR code --- */
         .qr-spinner {
             width: 40px;
             height: 40px;
@@ -619,22 +511,20 @@
             left: 50%;
             margin-top: -20px;
             margin-left: -20px;
-            display: none; /* Ẩn mặc định */
+            display: none;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* ================================================== */
-        /* --- REDESIGN: Modal chọn bãi đỗ xe - TOP 1 --- */
-        /* ================================================== */
+        /* --- Modal chọn bãi đỗ xe --- */
         #location-select-modal .modal-content {
-            max-width: 480px; /* Tăng nhẹ độ rộng */
-            padding: 0; /* Bỏ padding cũ */
-            overflow: hidden; /* Để bo góc cho header */
+            max-width: 480px;
+            padding: 25px;
         }
         .location-select-header {
-            padding: 20px 25px;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
         }
         .location-select-body {
@@ -652,11 +542,9 @@
             padding: 15px;
             background: var(--bg-main);
             border-radius: var(--border-radius-lg);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 2px solid transparent;
+            cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent;
         }
-        .location-option:hover {
+        .location-option:hover { 
             border-color: var(--primary-accent);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
@@ -665,7 +553,7 @@
             flex-shrink: 0;
             width: 48px;
             height: 48px;
-            border-radius: 50%;
+            border-radius: var(--border-radius-md);
             background: #dbeafe;
             color: var(--primary-accent);
             display: flex;
@@ -678,25 +566,19 @@
             font-weight: 700;
             color: var(--text-secondary);
         }
-        /* --- MỚI: Modal xác nhận chung --- */
+        /* --- Modal xác nhận chung --- */
         #confirmation-modal .modal-content {
-            max-width: 420px; padding: 0; overflow: hidden;
+            max-width: 420px; padding: 25px; text-align: center;
         }
-        #confirmation-modal .receipt-header {
-            background: linear-gradient(135deg, var(--primary-accent-light), var(--primary-accent));
-            text-align: center;
-        }
-        #confirmation-modal .receipt-body {
-            padding: 25px; text-align: center;
-        }
+        #confirmation-modal #confirmation-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
         #confirmation-modal #confirmation-message {
             font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6; margin: 0;
         }
         #confirmation-modal .receipt-footer {
-            display: flex; gap: 12px; padding: 20px;
+            display: flex; gap: 12px; padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color);
         }
         #confirmation-modal #cancel-confirmation-btn {
-            background: var(--bg-main); color: var(--text-secondary); flex-grow: 1;
+            background: var(--bg-main); color: var(--text-secondary); flex-grow: 1; border: 1px solid var(--border-color);
         }
         #confirmation-modal #confirm-action-btn {
             flex-grow: 1;
@@ -1035,27 +917,16 @@
 
     <!-- MỚI: Modal Xác nhận Chung (REPLACED with modern layout) -->
     <div id="confirmation-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
-        <div class="modal-content" style="max-width: 420px; padding: 0; overflow: hidden;">
-            <div class="receipt-header" style="background: linear-gradient(135deg, var(--primary-accent-light), var(--primary-accent), var(--primary-accent-light)); text-align: left; background-size: 200% 200%; animation: animated-gradient 4s ease infinite;">
-                <div class="ticket-header-new" style="border: none; padding: 0; margin: 0; justify-content: flex-start;">
-                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new" style="width: 40px; height: 40px;">
-                    <div class="ticket-org-name-new" style="color: white; font-size: 0.85rem;">
-                        Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
-                    </div>
-                </div>
-                <h2 id="confirmation-title" style="margin-top: 10px; text-align: center;">Hoàn tất cho xe ra</h2>
-            </div>
-
-            <div class="receipt-body" style="padding:22px; text-align:center; background: var(--bg-card);">
-                <p id="confirmation-message" style="font-size:1.05rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h2 id="confirmation-title">Hoàn tất cho xe ra</h2>
+                <p id="confirmation-message">
                     <!-- Nội dung sẽ được chèn bằng JS -->
                 </p>
-                <p style="margin-top:14px; color:var(--text-secondary); font-size:0.9rem;">Hành động này có thể không hoàn tác. Vui lòng kiểm tra kỹ biển số trước khi xác nhận.</p>
             </div>
-
-            <div class="receipt-footer" style="display:flex; gap:12px; padding:16px; border-top:1px solid var(--border-color); justify-content:flex-end; background:var(--bg-card);">
-                <button id="cancel-confirmation-btn" class="action-button" style="background: var(--bg-main); color: var(--text-secondary); padding:10px 16px; border-radius:10px;" type="button">Hủy bỏ</button>
-                <button id="confirm-action-btn" class="action-button btn-check-out" type="button" style="padding:10px 16px; border-radius:10px;">Xác nhận</button>
+            <div class="receipt-footer">
+                <button id="cancel-confirmation-btn" class="action-button" type="button">Hủy bỏ</button>
+                <button id="confirm-action-btn" class="action-button btn-check-out" type="button">Xác nhận</button>
             </div>
         </div>
     </div>
