@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Quản trị - Hệ thống Quản lý xe</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Đã loại bỏ Google Fonts để dùng font hệ thống -->
@@ -11,6 +10,7 @@
     <!-- Thêm thư viện bản đồ Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="config.js"></script>
+    <title>Trang Quản trị - Hệ thống Quản lý xe</title>
     <script src="locations.js"></script>
     <style>
         :root {
@@ -19,7 +19,7 @@
             --bg-card: #ffffff;
             --bg-header: #ffffff;
             --border-color: #d1d5db;
-            --primary-accent: #0d47a1; /* Xanh đậm, trang trọng */
+            --primary-accent: #0d47a1;
             --primary-accent-light: #1565c0;
             --secondary-accent: #f57c00;
             --text-primary: #333333;
@@ -110,9 +110,9 @@
         .header-controls { display: flex; align-items: center; gap: 15px; }
         .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-main); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
         .date-selector label { font-weight: 600; color: var(--text-secondary); }
-        .date-selector input[type="date"], .form-group input, .form-group select {
-            background: transparent; border: none; border-radius: 6px; padding: 5px;
-            font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary);
+        .date-selector input[type="date"] {
+            background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: Arial, Helvetica, sans-serif;
+            font-size: 0.95rem; color: var(--text-primary);
         }
 
         .header-title { display: flex; align-items: center; gap: 15px; }
@@ -138,7 +138,7 @@
             font-size: 1.1rem;
             margin: 0;
             padding: 10px 15px;
-            display: flex;
+            display: flex; background-color: #f5f5f5; border-bottom: 1px solid var(--border-color);
             align-items: center;
             gap: 10px;
             font-weight: 600;
@@ -146,7 +146,7 @@
         .stat-card {
             padding: 20px;
         }
-        .card-body {
+        .stat-card .card-body {
             display: flex;
             align-items: center;
             gap: 20px;
@@ -323,8 +323,8 @@
         .modal-header h2 { margin: 0; font-size: 1.4rem; color: white; }
         .modal-body { display: flex; flex-direction: column; gap: 15px; padding: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group label { font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; }
-        .form-group input, .form-group select {
+        .form-group label { font-weight: bold; color: var(--text-secondary); font-size: 0.9rem; }
+        .form-group input, .form-group select, .date-selector input[type="date"] {
             width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
             color: var(--text-primary); background: #f9fafb; border-radius: var(--border-radius-md);
             font-size: 1rem; transition: all 0.2s; font-family: 'Be Vietnam Pro', sans-serif;
@@ -338,7 +338,7 @@
             margin-top: 0; padding: 15px; border-top: 1px solid var(--border-color); background-color: #f5f5f5;
         }
         .action-button {
-            padding: 12px 20px; border: none; color: white; font-size: 0.95rem;
+            padding: 10px 20px; border: none; color: white; font-size: 0.95rem;
             font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer;
             transition: all 0.2s ease-in-out;
         }
@@ -428,7 +428,7 @@
                 <div id="page-dashboard" class="page-content active">
                     <div class="main-grid">
                         <!-- Summary Cards -->
-                        <div class="card stat-card revenue" style="padding: 20px;">
+                        <div class="card stat-card revenue">
                             <div class="icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                             </div>
@@ -437,7 +437,7 @@
                                 <div class="value" id="total-revenue">0 <sup>đ</sup></div>
                             </div>
                         </div>
-                        <div class="card stat-card total-vehicles" style="padding: 20px;">
+                        <div class="card stat-card total-vehicles">
                             <div class="icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>
                             </div>
@@ -446,7 +446,7 @@
                                 <div class="value" id="total-vehicles">0</div>
                             </div>
                         </div>
-                        <div class="card stat-card current-vehicles" style="padding: 20px;">
+                        <div class="card stat-card current-vehicles">
                             <div class="icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v9c0 .6.4 1 1 1h2"/><path d="M7 12V2H3v10"/><path d="M5 18h1"/><path d="M6 18v-4h4"/></svg>
                             </div>

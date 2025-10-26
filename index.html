@@ -54,8 +54,8 @@
         .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
         .header-title h1 { font-size: 1.8rem; color: var(--text-primary); font-weight: 700; line-height: 1.2; margin: 0; }
         .date-selector { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border-color); }
-        .date-selector label { font-weight: 600; color: var(--text-secondary); }
-        .date-selector input[type="date"] { background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
+        .date-selector label { font-weight: bold; color: var(--text-secondary); }
+        .date-selector input[type="date"] { background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: Arial, Helvetica, sans-serif; font-size: 0.95rem; color: var(--text-primary); }
         /* --- Cụm điều khiển header --- */
         .header-controls { display: flex; align-items: center; gap: 12px; }
         .clock-widget, .weather-widget {
@@ -85,7 +85,7 @@
         .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent); box-shadow: none; }
         .input-wrapper input:focus + svg { color: var(--primary-accent); }
         #search-term, #filter-input { text-transform: uppercase; }
-        .action-button { width: 100%; padding: 10px; border: 1px solid #a0a0a0; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
+        .action-button { width: 100%; padding: 10px; border: 1px solid #a0a0a0; color: white; font-size: 1rem; font-weight: bold; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
         .action-button:hover:not(:disabled) { filter: brightness(1.1); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; border-color: #ccc !important; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -112,7 +112,7 @@
         .btn-check-out { background-image: linear-gradient(to bottom, #e4605c, var(--danger-color)); border-color: var(--danger-color); }
         #vehicle-info-panel { display: none; margin-top: 20px; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .info-grid { display: flex; flex-direction: column; gap: 15px; }
+        .info-grid { display: flex; flex-direction: column; gap: 10px; }
         .info-item { display: flex; align-items: center; gap: 15px; background: var(--bg-main); padding: 12px 15px; border-radius: var(--border-radius-md); }
         .info-item .icon { color: var(--primary-accent); }
         .info-item .label { font-size: 0.9rem; color: var(--text-secondary); }
@@ -122,7 +122,7 @@
         .status-badge.departed { background-color: var(--text-secondary); }
         .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
         #vehicle-list-container { max-height: 60vh; overflow-y: auto; padding-right: 5px; }
-        .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 10px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
+        .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
         .vehicle-item:hover { border-color: var(--primary-accent); background-color: #f5f5f5; }
         .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 78px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -177,7 +177,7 @@
             max-width: 380px;
             text-align: center; border: 1px solid #999; overflow: hidden;
         }
-        .ticket-header-new {
+        #qrcode-modal .modal-header {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -186,7 +186,7 @@
             padding: 15px;
             background-color: var(--primary-accent); color: white;
         }
-        .ticket-logo-new {
+        #qrcode-modal .modal-header .ticket-logo-new {
             width: 45px;
             height: 45px;
         }
@@ -198,7 +198,7 @@
             line-height: 1.4;
             text-align: left;
         }
-        .ticket-title-new {
+        #qrcode-modal .ticket-title-new {
             font-size: 1.3rem;
             font-weight: 700;
             color: var(--primary-accent);
@@ -423,7 +423,7 @@
             background-color: var(--primary-accent); color: white;
         }
         .receipt-header h2 { font-size: 1.3rem; font-weight: 700; margin: 0; color: white; }
-        .receipt-header p { font-size: 1rem; color: var(--text-secondary); margin: 0; }
+        .receipt-header p { font-size: 1rem; color: #e0e0e0; margin: 0; }
 
         .receipt-info-grid {
             display: flex; flex-direction: column; gap: 12px;
@@ -475,7 +475,7 @@
         .method-btn {
             flex-grow: 1; padding: 10px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: #f0f0f0; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
-        .method-btn.active { background-image: linear-gradient(to bottom, var(--primary-accent-light), var(--primary-accent)); color: white; border-color: var(--primary-accent); }
+        .method-btn.active { background-image: linear-gradient(to bottom, var(--primary-accent-light), var(--primary-accent)); color: white; border-color: var(--primary-accent); font-weight: bold; }
         
         /* Responsive cho biên lai thanh toán trên màn hình nhỏ */
         @media (max-width: 450px) {
@@ -576,10 +576,10 @@
         #confirmation-modal #confirmation-message {
             font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6; margin: 0;
         }
-        #confirmation-modal .receipt-footer {
+        #confirmation-modal .modal-footer {
             display: flex; gap: 12px; padding: 15px; margin-top: 0; border-top: 1px solid var(--border-color); justify-content: flex-end; background-color: #f5f5f5;
         }
-        #confirmation-modal #cancel-confirmation-btn {
+        #confirmation-modal .modal-footer #cancel-confirmation-btn {
             background-image: linear-gradient(to bottom, #ffffff, #f0f0f0); color: var(--text-primary); flex-grow: 0; border: 1px solid var(--border-color);
         }
         #confirmation-modal #confirm-action-btn {
@@ -789,13 +789,15 @@
 
     <div id="qrcode-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
-            <div class="card-body" style="padding: 0;">
-                <div class="ticket-header-new">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
                     <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new">
                     <div class="ticket-org-name-new">
                         Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
                     </div>
-                </div>
+                </div> 
+            </div>
+            <div class="card-body">
                 <h2 class="ticket-title-new" style="padding: 15px;">VÉ GỬI XE ĐIỆN TỬ</h2>
                 <p class="ticket-subtitle-new" id="ticket-location-display">--</p>
     
@@ -816,8 +818,8 @@
 
             </div>
 
-            <div class="action-buttons-container">
-                <button id="close-qrcode-btn" class="action-button btn-check-in" type="button">
+            <div class="action-buttons-container" style="padding-top: 20px; border-top: 1px solid var(--border-color);">
+                <button id="close-qrcode-btn" class="action-button" style="background-image: linear-gradient(to bottom, #f0f0f0, #e0e0e0); color: var(--text-primary);" type="button">
                     Hoàn tất
                 </button>
             </div>
@@ -930,13 +932,15 @@
     <!-- MỚI: Modal Xác nhận Chung (REPLACED with modern layout) -->
     <div id="confirmation-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="modal-content">
-            <div class="modal-body">
+            <div class="receipt-header">
                 <h2 id="confirmation-title">Hoàn tất cho xe ra</h2>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
                 <p id="confirmation-message">
                     <!-- Nội dung sẽ được chèn bằng JS -->
                 </p>
             </div>
-            <div class="receipt-footer">
+            <div class="modal-footer">
                 <button id="cancel-confirmation-btn" class="action-button" type="button">Hủy bỏ</button>
                 <button id="confirm-action-btn" class="action-button btn-check-out" type="button">Xác nhận</button>
             </div>
