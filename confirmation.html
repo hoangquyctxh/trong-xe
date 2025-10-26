@@ -161,10 +161,16 @@
             vertical-align: top;
         }
         .payment-content-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5em;
+            display: grid;
+            grid-template-columns: 1fr; /* Mặc định 1 cột cho mobile */
+            gap: 2em;
             margin-top: 1.5em;
+        }
+        /* Bố cục 2 cột cho màn hình lớn hơn */
+        @media (min-width: 768px) {
+            .payment-content-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
         .payment-details-panel {
             display: flex;
@@ -395,12 +401,12 @@
         /* ================================================== */
         .success-details-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr; /* Mặc định 1 cột */
             gap: 0.8em 2.5em;
             margin-top: 1.5em; 
             padding: 1.2em 1.8em;
             background: #f9f9f9;
-            border-radius: var(--border-radius-lg);
+            border-radius: 0;
             border: 1px solid var(--border-color);
             text-align: left;
             animation: fadeInUp 0.5s 2s backwards;
@@ -409,15 +415,25 @@
             font-size: 1.1rem;
         } 
         .success-details-grid .detail-item .label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             color: var(--text-secondary);
-            display: block;
             font-size: 0.9rem;
+        }
+        .success-details-grid .detail-item .label svg {
+            width: 16px; height: 16px;
         }
         .success-details-grid .detail-item .value {
             font-weight: 600;
             color: var(--text-primary);
             font-size: 1.2rem;
             font-weight: 700;
+            padding-left: 24px; /* Căn lề với label */
+        }
+        /* Bố cục 2 cột cho màn hình lớn hơn */
+        @media (min-width: 500px) {
+            .success-details-grid { grid-template-columns: 1fr 1fr; }
         }
         .success-duration-highlight {
             grid-column: 1 / -1;
@@ -934,17 +950,21 @@
             <!-- --- KHU VỰC CHI TIẾT ĐÃ ĐƯỢC THIẾT KẾ LẠI --- -->
             <!-- ================================================== -->
             <div class="success-details-grid">
-                <div class="detail-item" style="grid-column: 1 / -1;">
-                    <span class="label">Phương thức</span><span class="value" id="success-payment-method">--</span>
+                <div class="detail-item">
+                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>Giờ vào</span>
+                    <span class="value" id="success-time-in">--</span>
                 </div>
                 <div class="detail-item">
-                    <span class="label">Giờ vào</span><span class="value" id="success-time-in">--</span>
+                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H3v-6"/><path d="M14 10 3 21"/></svg>Giờ ra</span>
+                    <span class="value" id="success-time-out">--</span>
                 </div>
-                <div class="detail-item" style="text-align: right;">
-                    <span class="label">Giờ ra</span><span class="value" id="success-time-out">--</span>
+                <div class="detail-item full-span" style="grid-column: 1 / -1;">
+                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Phương thức</span>
+                    <span class="value" id="success-payment-method">--</span>
                 </div>
                 <div class="success-duration-highlight detail-item">
-                    <span class="label">Tổng thời gian</span><span class="value" id="success-duration">--</span>
+                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Tổng thời gian</span>
+                    <span class="value" id="success-duration">--</span>
                 </div>
             </div>
         </div>
