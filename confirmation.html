@@ -1269,18 +1269,18 @@
                     this.inactivityTimer = setTimeout(() => {
                         UI.showView('adView'); 
                         this.playNextVideo(); 
-                    }, 15000); // 15 giây
+                    }, 30000); // Tăng lên 30 giây
                 },
 
-                stopInactivityTimerAndAds() {
-                    clearTimeout(this.inactivityTimer);
+                stopInactivityTimer() { // Đổi tên hàm cho rõ nghĩa hơn
+                    clearTimeout(this.inactivityTimer); // Chỉ dừng timer
                     if (UI.elements.adVideo && !UI.elements.adVideo.paused) UI.elements.adVideo.pause();
                     UI.showView('idleView');
                 },
 
                 resetInactivity() {
                     if (!UI.elements.adView.classList.contains('hidden')) {
-                        this.stopInactivityTimerAndAds();
+                        this.stopInactivityTimer();
                     }
                     this.startInactivityTimer();
                 },
@@ -1320,13 +1320,16 @@
 
                 handleChannelMessage(event) {
                     const { type, payload, method } = event.data;
-                    StateManager.resetInactivity(); // Reset timer khi có bất kỳ tin nhắn nào
+                    // SỬA LỖI: Chỉ reset timer khi đang ở màn hình chờ.
+                    // Nếu đang ở các màn hình khác, ta sẽ dừng hẳn timer.
+                    if (UI.elements.idleView.classList.contains('hidden')) {
+                        StateManager.stopInactivityTimer();
+                    } else {
+                        StateManager.resetInactivity();
+                    }
 
                     switch (type) {
                         case 'VEHICLE_CHECKOUT_INITIATE':
-                            sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
-                            UI.showView('paymentView');
-                            UI.updatePaymentView(payload);
 
                             // SỬA LỖI TRIỆT ĐỂ: Tự động chọn phương thức QR và hiển thị QR code ngay lập tức
                             if (UI.elements.selectQrBtn) {
@@ -1340,6 +1343,11 @@
                                     document.getElementById('qr-memo').textContent = payload.paymentMemo;
                                 }
                             }
+                            
+                            // Cập nhật và hiển thị view sau khi đã xử lý logic
+                            sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
+                            UI.updatePaymentView(payload);
+                            UI.showView('paymentView');
 
                             this.sendMessage('PLAY_SOUND', { payload: `Cảm ơn quý khách đã sử dụng dịch vụ. Phí gửi xe của quý khách là ${payload.totalAmount.replace('đ', 'đồng')} cho tổng thời gian là ${payload.readableDuration}. Mời quý khách lựa chọn hình thức thanh toán.` });
                             break;
@@ -1349,7 +1357,10 @@
                             UI.updateCheckinSuccessView(payload);
                             UI.startConfetti('checkin-confetti-container');
                             this.sendMessage('PLAY_SOUND', { payload: payload.soundText });
-                            setTimeout(() => { UI.showView('idleView'); StateManager.startInactivityTimer(); }, 10000);
+                            setTimeout(() => { 
+                                UI.showView('idleView'); 
+                                StateManager.startInactivityTimer(); // Chỉ khởi động lại timer khi đã về màn hình chờ
+                            }, 10000);
                             break;  
 
                         case 'PAYMENT_METHOD_SELECTED':
@@ -1375,7 +1386,10 @@
                             UI.showView('successView');
                             UI.updateCheckoutSuccessView(payload);
                             UI.startConfetti('confetti-container');
-                            setTimeout(() => { UI.showView('idleView'); StateManager.startInactivityTimer(); }, 10000);  
+                            setTimeout(() => { 
+                                UI.showView('idleView'); 
+                                StateManager.startInactivityTimer(); // Chỉ khởi động lại timer khi đã về màn hình chờ
+                            }, 10000);  
                             break;
 
                         case 'TRANSACTION_CANCELED':
