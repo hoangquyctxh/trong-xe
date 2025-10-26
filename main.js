@@ -956,10 +956,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // --- THIẾT KẾ LẠI: Hiển thị ảnh thumbnail ---
         if (vehicle.ImageUrl) {
+            document.getElementById('receipt-image-container').style.display = 'block';
             allElements.paymentThumbImage.src = vehicle.ImageUrl;
-            allElements.paymentThumbImage.style.display = 'block';
         } else {
-            allElements.paymentThumbImage.style.display = 'none';
+            document.getElementById('receipt-image-container').style.display = 'none';
+            allElements.paymentThumbImage.src = '';
         }
 
         // Cập nhật nội dung chuyển khoản theo yêu cầu mới, lấy tên bãi đỗ từ currentLocation

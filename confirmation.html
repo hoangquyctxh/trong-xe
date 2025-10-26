@@ -1119,8 +1119,8 @@
         /**
          * =================================================================
          * HỆ THỐNG QUẢN LÝ MÀN HÌNH PHỤ (CONFIRMATION.HTML) - VIẾT LẠI
-         * Phiên bản: 2.0 - Tái cấu trúc toàn bộ
-         * Tác giả: Nguyễn Cao Hoàng Quý
+         * Phiên bản: 3.0 - Ổn định và Tin cậy
+         * Tác giả: Gemini Code Assist
          * Mục tiêu: Ổn định, rõ ràng, dễ bảo trì và sửa lỗi triệt để.
          * =================================================================
          */
@@ -1139,30 +1139,26 @@
                     selectCashBtn: document.getElementById('select-cash-btn'),
                     rightPanel: document.getElementById('right-panel-content'),
                     paymentGrid: document.querySelector('.payment-content-grid'),
-                    kioskInput: document.getElementById('kiosk-plate-input'), // Giữ lại
-                    kioskActionBtn: document.getElementById('kiosk-action-btn'), // THAY ĐỔI
-                    customerCancelBtn: document.getElementById('customer-cancel-btn'), // MỚI
-                    kioskPhoneWrapper: document.getElementById('kiosk-phone-wrapper'), // MỚI
-                    kioskPhoneInput: document.getElementById('kiosk-phone-input'), // MỚI
+                    kioskInput: document.getElementById('kiosk-plate-input'),
+                    kioskActionBtn: document.getElementById('kiosk-action-btn'),
+                    customerCancelBtn: document.getElementById('customer-cancel-btn'),
+                    kioskPhoneWrapper: document.getElementById('kiosk-phone-wrapper'),
+                    kioskPhoneInput: document.getElementById('kiosk-phone-input'),
                     kioskOverlay: document.getElementById('kiosk-processing-overlay'),
                 },
                 views: ['paymentView', 'successView', 'checkinSuccessView', 'idleView', 'adView'],
 
-                // Hiển thị một view cụ thể và ẩn các view khác
                 showView(viewName) {
                     this.views.forEach(v => {
                         if (this.elements[v]) {
                             this.elements[v].classList.toggle('hidden', v !== viewName);
                         }
                     });
-
-                    // NÂNG CẤP: Tự động reset kiosk mỗi khi quay về màn hình chờ
                     if (viewName === 'idleView') {
                         this.resetKiosk();
                     }
                 },
 
-                // Cập nhật thông tin trên màn hình thanh toán
                 updatePaymentView(payload) {
                     this.elements.paymentGrid.classList.remove('method-selected');
                     this.elements.rightPanel.classList.add('placeholder');
@@ -1176,7 +1172,6 @@
                     if (payload.locationName) this.setLocationName(payload.locationName);
                 },
 
-                // Cập nhật thông tin trên màn hình gửi xe thành công
                 updateCheckinSuccessView(payload) {
                     document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
                     document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
@@ -1188,7 +1183,6 @@
                     }
                 },
 
-                // Cập nhật thông tin trên màn hình thanh toán thành công
                 updateCheckoutSuccessView(payload) {
                     document.getElementById('success-plate').textContent = payload.licensePlate;
                     document.getElementById('success-time-in').textContent = payload.timeIn;
@@ -1198,7 +1192,6 @@
                     document.getElementById('success-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
                 },
 
-                // Render nội dung cho cột bên phải của màn hình thanh toán
                 renderRightPanel(state) {
                     let content = '';
                     switch (state) {
@@ -1214,18 +1207,10 @@
                     this.elements.rightPanel.innerHTML = content;
                 },
 
-                // NÂNG CẤP: Hàm chuyên dụng để reset trạng thái Kiosk
                 resetKiosk() {
-                    // NÂNG CẤP TRIỆT ĐỂ: Mô phỏng hành động nhấn nút "CE" (clear)
                     const clearButton = document.querySelector('.kb-btn[data-key="clear"]');
-                    if (clearButton) {
-                        clearButton.click();
-                    }
-                    // Ẩn lớp phủ xử lý (nếu có)
-                    if (this.elements.kioskOverlay) {
-                        this.elements.kioskOverlay.classList.add('hidden');
-                    }
-                    // Reset nút hành động về trạng thái ban đầu
+                    if (clearButton) clearButton.click();
+                    if (this.elements.kioskOverlay) this.elements.kioskOverlay.classList.add('hidden');
                     this.elements.kioskActionBtn.classList.remove('check-in', 'check-out');
                     this.elements.kioskActionBtn.removeAttribute('data-action');
                     this.elements.kioskActionBtn.disabled = true;
@@ -1234,13 +1219,12 @@
                     this.elements.kioskPhoneInput.value = '';
                 },
 
-                // Cập nhật tên bãi đỗ xe
                 setLocationName(name) {
                     const decodedName = decodeURIComponent(name);
                     document.getElementById('header-location-name').textContent = decodedName;
                     document.getElementById('idle-location-display').textContent = decodedName;
                 },
-                // Hiệu ứng confetti
+                
                 startConfetti(containerId) {
                     const container = document.getElementById(containerId);
                     if (!container) return; 
@@ -1252,7 +1236,7 @@
                         container.appendChild(confetti);
                         const angle = Math.random() * 360, radius = Math.random() * 300 + 150;
                         const endX = radius * Math.cos(angle * Math.PI / 180), endY = radius * Math.sin(angle * Math.PI / 180);
-                        confetti.animate([ { transform: `translate(0, 0) rotate(${Math.random()*360}deg)`, opacity: 1 }, { transform: `translate(${endX}px, ${endY}px) rotate(${Math.random()*720}deg)`, opacity: 0 } ], { duration: 1500 + Math.random() * 1000, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'forwards' });
+                        confetti.animate([ { transform: `translate(0, 0) rotate(${Math.random()*360}deg)`, opacity: 1 }, { transform: `translate(px, px) rotate(${Math.random()*720}deg)`, opacity: 0 } ], { duration: 1500 + Math.random() * 1000, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'forwards' });
                         setTimeout(() => confetti.remove(), 2500);
                     }
                 } 
@@ -1269,18 +1253,17 @@
                     this.inactivityTimer = setTimeout(() => {
                         UI.showView('adView'); 
                         this.playNextVideo(); 
-                    }, 30000); // Tăng lên 30 giây
+                    }, 30000);
                 },
 
-                stopInactivityTimer() { // Đổi tên hàm cho rõ nghĩa hơn
-                    clearTimeout(this.inactivityTimer); // Chỉ dừng timer
-                    if (UI.elements.adVideo && !UI.elements.adVideo.paused) UI.elements.adVideo.pause();
-                    UI.showView('idleView');
+                stopInactivityTimer() {
+                    clearTimeout(this.inactivityTimer);
                 },
 
                 resetInactivity() {
                     if (!UI.elements.adView.classList.contains('hidden')) {
-                        this.stopInactivityTimer();
+                        UI.showView('idleView');
+                        if (UI.elements.adVideo && !UI.elements.adVideo.paused) UI.elements.adVideo.pause();
                     }
                     this.startInactivityTimer();
                 },
@@ -1296,17 +1279,16 @@
             // --- 3. MODULE GIAO TIẾP & SỰ KIỆN ---
             const EventHandler = {
                 paymentChannel: new BroadcastChannel('parking_payment_channel'),
-                // NÂNG CẤP: Quản lý trạng thái T9 tập trung tại đây
                 t9Timer: null,
                 lastKey: null,
                 keyPressCount: 0,
+                foundVehicleData: null,
 
                 init() {
                     this.paymentChannel.onmessage = this.handleChannelMessage.bind(this); 
                     this.setupDOMEventListeners();
                 },
 
-                // NÂNG CẤP: Hàm chuyên dụng để reset trạng thái T9
                 resetT9State() {
                     clearTimeout(this.t9Timer);
                     this.t9Timer = null;
@@ -1319,40 +1301,32 @@
                 },
 
                 handleChannelMessage(event) {
-                    const { type, payload, method } = event.data;
-                    StateManager.resetInactivity(); // Reset timer khi có bất kỳ tin nhắn nào
+                    const { type, payload } = event.data;
+
+                    // SỬA LỖI TRIỆT ĐỂ: Dừng hẳn timer quảng cáo nếu không phải ở màn hình chờ
+                    if (UI.elements.idleView.classList.contains('hidden')) {
+                        clearTimeout(StateManager.inactivityTimer);
+                    } else {
+                        StateManager.resetInactivity();
+                    }
 
                     switch (type) {
                         case 'VEHICLE_CHECKOUT_INITIATE':
                             sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
-                            UI.showView('paymentView');
                             UI.updatePaymentView(payload);
-
-                            // SỬA LỖI TRIỆT ĐỂ: Tự động chọn phương thức QR và hiển thị QR code ngay lập tức
-                            if (UI.elements.selectQrBtn) {
-                                UI.elements.paymentGrid.classList.add('method-selected');
-                                UI.elements.rightPanel.classList.remove('placeholder');
-                                UI.elements.selectQrBtn.classList.add('active');
-                                UI.elements.selectCashBtn.classList.remove('active');
-                                UI.renderRightPanel('qr');
-                                if (payload.qrImageUrl) {
-                                    document.getElementById('qr-code-image').src = payload.qrImageUrl;
-                                    document.getElementById('qr-memo').textContent = payload.paymentMemo;
-                                }
-                            }
-
-                            this.sendMessage('PLAY_SOUND', { payload: `Cảm ơn quý khách đã sử dụng dịch vụ. Phí gửi xe của quý khách là ${payload.totalAmount.replace('đ', 'đồng')} cho tổng thời gian là ${payload.readableDuration}. Mời quý khách lựa chọn hình thức thanh toán.` });
+                            UI.showView('paymentView'); // Hiển thị view SAU KHI cập nhật
                             break;
 
                         case 'VEHICLE_CHECKIN_COMPLETE':
                             UI.showView('checkinSuccessView');
                             UI.updateCheckinSuccessView(payload);
                             UI.startConfetti('checkin-confetti-container');
-                            this.sendMessage('PLAY_SOUND', { payload: payload.soundText });
+                            this.sendMessage('PLAY_SOUND', { payload: payload.soundText });                            
                             setTimeout(() => { UI.showView('idleView'); StateManager.startInactivityTimer(); }, 10000);
                             break;  
 
                         case 'PAYMENT_METHOD_SELECTED':
+                            const { method } = event.data;
                             UI.elements.paymentGrid.classList.add('method-selected');
                             UI.elements.rightPanel.classList.remove('placeholder');
                             const lastMessage = JSON.parse(sessionStorage.getItem('lastCheckoutInitiate'));
@@ -1360,7 +1334,7 @@
                                 UI.elements.selectQrBtn.classList.add('active');
                                 UI.elements.selectCashBtn.classList.remove('active');
                                 UI.renderRightPanel('qr');
-                                if (lastMessage) {
+                                if (lastMessage && lastMessage.qrImageUrl) {
                                     document.getElementById('qr-code-image').src = lastMessage.qrImageUrl;
                                     document.getElementById('qr-memo').textContent = lastMessage.paymentMemo;
                                 }
@@ -1386,31 +1360,20 @@
                 },
 
                 setupDOMEventListeners() {
-                    // Sự kiện tương tác chung
                     ['click', 'mousemove', 'touchstart'].forEach(eventType => {
                         window.addEventListener(eventType, () => StateManager.resetInactivity(), { passive: true });
                     });
 
-                    // Nút chọn phương thức thanh toán
-                    // SỬA LỖI: Gửi tin nhắn và chờ phản hồi thay vì tự cập nhật UI
-                    UI.elements.selectQrBtn.addEventListener('click', () => {
-                        this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'qr' });
-                    });
-                    UI.elements.selectCashBtn.addEventListener('click', () => {
-                        this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'cash' });
-                    });
+                    UI.elements.selectQrBtn.addEventListener('click', () => this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'qr' }));
+                    UI.elements.selectCashBtn.addEventListener('click', () => this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'cash' }));
 
-                    // Nút hủy giao dịch trên màn hình phụ
                     if (UI.elements.customerCancelBtn) {
                         UI.elements.customerCancelBtn.addEventListener('click', () => {
-                            // Gửi tín hiệu cho màn hình chính
                             this.sendMessage('TRANSACTION_CANCELED');
-                            // Chuyển view ngay lập tức, hàm showView sẽ tự động reset kiosk
                             UI.showView('idleView'); 
                         });
                     }
 
-                    // NÂNG CẤP: Xử lý bàn phím ảo
                     const keyboard = document.querySelector('.virtual-keyboard');
                     const t9Map = { '1': '1', '2': '2ABC', '3': '3DEF', '4': '4GHI', '5': '5JKL', '6': '6MNO', '7': '7PQRS', '8': '8TUV', '9': '9WXYZ', '0': '0' };
                     const T9_TIMEOUT = 1200;
@@ -1423,39 +1386,32 @@
                             const key = btn.dataset.key;
                             const input = UI.elements.kioskInput;
  
-                            clearTimeout(this.t9Timer); // Xóa bộ đếm thời gian cũ
+                            clearTimeout(this.t9Timer);
  
                             if (key === 'backspace') {
                                 input.value = input.value.slice(0, -1);
-                                this.lastKey = null; // Reset T9 state
+                                this.resetT9State();
                             } else if (key === 'clear') {
                                 input.value = '';
-                                this.lastKey = null; // Reset T9 state
+                                this.resetT9State();
                             } else if (key === this.lastKey) {
-                                // Người dùng bấm lại phím cũ -> xoay vòng ký tự
                                 this.keyPressCount++;
                                 const chars = t9Map[key];
                                 const newChar = chars[this.keyPressCount % chars.length];
                                 input.value = input.value.slice(0, -1) + newChar;
                             } else {
-                                // Người dùng bấm phím mới
                                 this.keyPressCount = 0;
                                 this.lastKey = key;
                                 const chars = t9Map[key];
-                                input.value += chars[0]; // Luôn thêm số trước
+                                input.value += chars[0];
                             }
  
-                            // Đặt bộ đếm thời gian mới để "chốt" ký tự
-                            this.t9Timer = setTimeout(() => {
-                                this.lastKey = null;
-                            }, T9_TIMEOUT);
+                            this.t9Timer = setTimeout(() => this.resetT9State(), T9_TIMEOUT);
  
-                            // NÂNG CẤP: Gọi hàm kiểm tra xe thay vì chỉ bật/tắt nút
                             this.handleKioskInput();
                         });
                     }
 
-                    // NÂNG CẤP: Gắn sự kiện cho các nút kiosk
                     UI.elements.kioskActionBtn.addEventListener('click', () => {
                         const btn = UI.elements.kioskActionBtn;
                         const plate = UI.elements.kioskInput.value.toUpperCase();
@@ -1466,51 +1422,40 @@
                             const phone = UI.elements.kioskPhoneInput.value;
                             this.sendMessage('SELF_SERVICE_CHECKIN_REQUEST', { payload: { plate, phone } });
                         } else if (action === 'check-out') {
-                            // Gửi yêu cầu hiển thị biên lai / xử lý checkout cho xe đã tìm thấy
                             if (this.foundVehicleData) {
                                 this.sendMessage('SHOW_PAYMENT_MODAL_FOR_VEHICLE', { payload: { vehicle: this.foundVehicleData } });
                             }
-                        } else {
-                            // Không có action hợp lệ — bỏ qua (an toàn)
-                            console.warn('Kiosk: no action assigned on button.');
                         }
                     });
                 },
 
-                // NÂNG CẤP: Hàm xử lý logic khi người dùng nhập biển số trên kiosk
                 async handleKioskInput() {
                     const plate = UI.elements.kioskInput.value.trim().toUpperCase();
-                    this.foundVehicleData = null; // Reset dữ liệu xe đã tìm thấy
+                    this.foundVehicleData = null;
 
-                    // Reset trạng thái
                     const actionBtn = UI.elements.kioskActionBtn;
                     const btnText = actionBtn.querySelector('.btn-text');
 
                     actionBtn.classList.remove('check-in', 'check-out');
-                    actionBtn.removeAttribute('data-action'); // đảm bảo không còn action cũ
+                    actionBtn.removeAttribute('data-action');
                     actionBtn.disabled = true;
                     UI.elements.kioskPhoneWrapper.classList.add('hidden');
 
                     if (plate.length < 4) {
                         btnText.textContent = 'NHẬP BIỂN SỐ';
-                        return; // Chưa đủ ký tự để tìm
+                        return;
                     }
 
                     try {
-                        // Sử dụng action `getVehicleStatus` mới
-                        const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicleStatus&plate=${plate}&v=${new Date().getTime()}`);
+                        const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicleStatus&plate=&v=${new Date().getTime()}`);
                         const result = await response.json();
 
-                        // Thêm hiệu ứng chuyển đổi
                         const textWrapper = actionBtn.querySelector('.btn-text-wrapper');
                         textWrapper.style.transform = 'translateY(100%)';
 
-                        // LƯU LẠI DỮ LIỆU XE TÌM THẤY
                         this.foundVehicleData = result.data.vehicle || null;
                         if (result.status === 'success' && result.data.isParking) {
-                            // Xe đang gửi
                             setTimeout(() => {
-                                // đảm bảo trạng thái hợp lệ và đồng bộ
                                 actionBtn.classList.remove('check-in');
                                 actionBtn.classList.add('check-out');
                                 actionBtn.dataset.action = 'check-out';
@@ -1519,7 +1464,6 @@
                                 actionBtn.disabled = false;
                             }, 150);
                         } else {
-                            // Xe không có trong bãi hoặc có lỗi
                             setTimeout(() => {
                                 UI.elements.kioskPhoneWrapper.classList.remove('hidden');
                                 actionBtn.classList.remove('check-out');
@@ -1532,7 +1476,6 @@
                         }
                     } catch (error) {
                         console.error("Lỗi kiểm tra trạng thái xe:", error);
-                        // Nếu có lỗi mạng, mặc định hiển thị form gửi xe mới
                         UI.elements.kioskPhoneWrapper.classList.remove('hidden');
                         actionBtn.classList.remove('check-out');
                         actionBtn.classList.add('check-in');
@@ -1580,7 +1523,7 @@
                         return; 
                     }
                     try {
-                        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=vi`;
+                        const url = `https://api.openweathermap.org/data/2.5/weather?lat=&lon=&appid=&units=metric&lang=vi`;
                         const response = await fetch(url);
                         if (!response.ok) throw new Error(`Lỗi HTTP: ${response.status}`);
                         const data = await response.json();
