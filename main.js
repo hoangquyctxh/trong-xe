@@ -979,6 +979,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.selectQrBtn.classList.remove('active');
         allElements.selectCashBtn.classList.remove('active');
         
+        // SỬA LỖI: Luôn vô hiệu hóa nút hoàn tất khi modal vừa mở
         // MỚI: Vô hiệu hóa nút hoàn tất khi chưa chọn phương thức
         allElements.completePaymentBtn.disabled = true;
         allElements.qrSpinner.style.display = 'block'; // Hiện spinner
@@ -993,10 +994,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- THAY THẾ: TẠO QR VIETQR TĨNH ---
         // =================================================================
         const generateStaticVietQR = () => {
+            if (allElements.paymentQrcodeImage.src) return; // Không tạo lại nếu đã có QR
             allElements.qrSpinner.style.display = 'block';
             allElements.paymentQrcodeImage.style.opacity = '0';
 
-            // Tạo URL VietQR với các tham số động
+            // Tạo URL VietQR
             const encodedMemo = encodeURIComponent(paymentInfoText);
             const qrImageUrl = `${APP_CONFIG.payment.baseUrl}&amount=${fee}&addInfo=${encodedMemo}`;
 
@@ -1004,12 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allElements.paymentQrcodeImage.onload = () => {
                 allElements.qrSpinner.style.display = 'none';
                 allElements.paymentQrcodeImage.style.opacity = '1';
-                // Tự động chọn phương thức QR và hiển thị QR code ngay lập tức
-                allElements.selectQrBtn.classList.add('active');
-                allElements.selectCashBtn.classList.remove('active');
-                const qrWrapper = document.getElementById('payment-qrcode-wrapper');
-                if (qrWrapper) qrWrapper.style.display = 'block';
-                // Gửi thông báo đến màn hình phụ
+                // Gửi thông báo đến màn hình phụ (nếu cần)
                 if (paymentChannel && confirmationWindow && !confirmationWindow.closed) {
                     const payloadForConfirmation = createInitialDataForConfirmation(vehicle, qrImageUrl, paymentInfoText);
                     if (payloadForConfirmation) {
@@ -1023,8 +1020,17 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         };
 
-        // Gọi hàm tạo QR
-        generateStaticVietQR();
+        // SỬA LỖI: Không gọi hàm tạo QR ngay lập tức.
+        // Thay vào đó, gửi thông tin đến màn hình phụ để nó tự quyết định.
+        if (paymentChannel && confirmationWindow && !confirmationWindow.closed) {
+            const payloadForConfirmation = createInitialDataForConfirmation(vehicle, null, paymentInfoText); // Không gửi QR URL
+            if (payloadForConfirmation) {
+                paymentChannel.postMessage({ type: 'VEHICLE_CHECKOUT_INITIATE', payload: payloadForConfirmation });
+            }
+        }
+
+        // Gán lại sự kiện click để tạo QR khi cần
+        allElements.selectQrBtn.onclick = () => generateStaticVietQR();
     };
 
     const completePayment = async (paymentMethodTrigger = 'manual') => { // MỚI: Thêm tham số để biết nguồn kích hoạt
@@ -1484,15 +1490,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (allElements.selectQrBtn) allElements.selectQrBtn.addEventListener('click', () => {
         allElements.selectQrBtn.classList.add('active');
         allElements.selectCashBtn.classList.remove('active');
-        allElements.completePaymentBtn.disabled = false; // SỬA LỖI: Kích hoạt nút hoàn tất
+        allElements.completePaymentBtn.disabled = false;
         const qrWrapper = document.getElementById('payment-qrcode-wrapper');
         if (qrWrapper) qrWrapper.style.display = 'block';
+        // Gọi hàm tạo QR khi bấm nút
+        if (allElements.selectQrBtn.onclick) allElements.selectQrBtn.onclick();
         if (paymentChannel) paymentChannel.postMessage({ type: 'PAYMENT_METHOD_SELECTED', method: 'qr' });
     });
     if (allElements.selectCashBtn) allElements.selectCashBtn.addEventListener('click', () => {
         allElements.selectCashBtn.classList.add('active');
         allElements.selectQrBtn.classList.remove('active');
-        allElements.completePaymentBtn.disabled = false; // SỬA LỖI: Kích hoạt nút hoàn tất
+        allElements.completePaymentBtn.disabled = false;
         // SỬA LỖI: Ẩn khu vực QR code khi chọn tiền mặt
         const qrWrapper = document.getElementById('payment-qrcode-wrapper');
         if (qrWrapper) qrWrapper.style.display = 'none';

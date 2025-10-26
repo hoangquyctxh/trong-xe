@@ -1320,21 +1320,26 @@
 
                 handleChannelMessage(event) {
                     const { type, payload, method } = event.data;
-                    // SỬA LỖI: Chỉ reset timer khi đang ở màn hình chờ.
-                    // Nếu đang ở các màn hình khác, ta sẽ dừng hẳn timer.
-                    if (UI.elements.idleView.classList.contains('hidden')) {
-                        StateManager.stopInactivityTimer();
-                    } else {
-                        StateManager.resetInactivity();
-                    }
+                    StateManager.resetInactivity(); // Reset timer khi có bất kỳ tin nhắn nào
 
                     switch (type) {
                         case 'VEHICLE_CHECKOUT_INITIATE':
-                            
-                            // Cập nhật và hiển thị view sau khi đã xử lý logic
                             sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
-                            UI.updatePaymentView(payload);
                             UI.showView('paymentView');
+                            UI.updatePaymentView(payload);
+
+                            // SỬA LỖI TRIỆT ĐỂ: Tự động chọn phương thức QR và hiển thị QR code ngay lập tức
+                            if (UI.elements.selectQrBtn) {
+                                UI.elements.paymentGrid.classList.add('method-selected');
+                                UI.elements.rightPanel.classList.remove('placeholder');
+                                UI.elements.selectQrBtn.classList.add('active');
+                                UI.elements.selectCashBtn.classList.remove('active');
+                                UI.renderRightPanel('qr');
+                                if (payload.qrImageUrl) {
+                                    document.getElementById('qr-code-image').src = payload.qrImageUrl;
+                                    document.getElementById('qr-memo').textContent = payload.paymentMemo;
+                                }
+                            }
 
                             this.sendMessage('PLAY_SOUND', { payload: `Cảm ơn quý khách đã sử dụng dịch vụ. Phí gửi xe của quý khách là ${payload.totalAmount.replace('đ', 'đồng')} cho tổng thời gian là ${payload.readableDuration}. Mời quý khách lựa chọn hình thức thanh toán.` });
                             break;
@@ -1344,10 +1349,7 @@
                             UI.updateCheckinSuccessView(payload);
                             UI.startConfetti('checkin-confetti-container');
                             this.sendMessage('PLAY_SOUND', { payload: payload.soundText });
-                            setTimeout(() => { 
-                                UI.showView('idleView'); 
-                                StateManager.startInactivityTimer(); // Chỉ khởi động lại timer khi đã về màn hình chờ
-                            }, 10000);
+                            setTimeout(() => { UI.showView('idleView'); StateManager.startInactivityTimer(); }, 10000);
                             break;  
 
                         case 'PAYMENT_METHOD_SELECTED':
@@ -1373,10 +1375,7 @@
                             UI.showView('successView');
                             UI.updateCheckoutSuccessView(payload);
                             UI.startConfetti('confetti-container');
-                            setTimeout(() => { 
-                                UI.showView('idleView'); 
-                                StateManager.startInactivityTimer(); // Chỉ khởi động lại timer khi đã về màn hình chờ
-                            }, 10000);  
+                            setTimeout(() => { UI.showView('idleView'); StateManager.startInactivityTimer(); }, 10000);  
                             break;
 
                         case 'TRANSACTION_CANCELED':
