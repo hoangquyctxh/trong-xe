@@ -1330,19 +1330,6 @@
 
                     switch (type) {
                         case 'VEHICLE_CHECKOUT_INITIATE':
-
-                            // SỬA LỖI TRIỆT ĐỂ: Tự động chọn phương thức QR và hiển thị QR code ngay lập tức
-                            if (UI.elements.selectQrBtn) {
-                                UI.elements.paymentGrid.classList.add('method-selected');
-                                UI.elements.rightPanel.classList.remove('placeholder');
-                                UI.elements.selectQrBtn.classList.add('active');
-                                UI.elements.selectCashBtn.classList.remove('active');
-                                UI.renderRightPanel('qr');
-                                if (payload.qrImageUrl) {
-                                    document.getElementById('qr-code-image').src = payload.qrImageUrl;
-                                    document.getElementById('qr-memo').textContent = payload.paymentMemo;
-                                }
-                            }
                             
                             // Cập nhật và hiển thị view sau khi đã xử lý logic
                             sessionStorage.setItem('lastCheckoutInitiate', JSON.stringify(payload));
@@ -1406,8 +1393,13 @@
                     });
 
                     // Nút chọn phương thức thanh toán
-                    UI.elements.selectQrBtn.addEventListener('click', () => this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'qr' }));
-                    UI.elements.selectCashBtn.addEventListener('click', () => this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'cash' }));
+                    // SỬA LỖI: Gửi tin nhắn và chờ phản hồi thay vì tự cập nhật UI
+                    UI.elements.selectQrBtn.addEventListener('click', () => {
+                        this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'qr' });
+                    });
+                    UI.elements.selectCashBtn.addEventListener('click', () => {
+                        this.sendMessage('CUSTOMER_PAYMENT_METHOD_SELECTED', { method: 'cash' });
+                    });
 
                     // Nút hủy giao dịch trên màn hình phụ
                     if (UI.elements.customerCancelBtn) {

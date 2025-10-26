@@ -1605,5 +1605,5 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     // SỬA LỖI: Khởi chạy đồng hồ và hàm khởi tạo chính của ứng dụng
     setInterval(updateClock, 1000);
-    initialize(); // <--- LỜI GỌI HÀM BỊ THIẾU ĐÃ ĐƯỢC BỔ SUNG
+    initialize();
 });
