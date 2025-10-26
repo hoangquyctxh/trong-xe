@@ -14,25 +14,25 @@
     
     <style>
         :root {
-            /* --- BẢNG MÀU CỔ ĐIỂN: Đơn giản & Rõ ràng --- */
-            --bg-main: #f4f7f9;
+            /* --- BẢNG MÀU "2015": Cổ điển, vuông vức, rõ ràng --- */
+            --bg-main: #eeeeee; /* Nền xám cổ điển */
             --bg-card: #ffffff;
             --bg-header: #ffffff;
-            --border-color: #e2e8f0;
-            --primary-accent: #2563eb;
-            --primary-accent-light: #3b82f6;
-            --secondary-accent: #f59e0b;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
+            --border-color: #cccccc; /* Viền đậm, rõ ràng hơn */
+            --primary-accent: #337ab7; /* Màu xanh Bootstrap 3 đặc trưng */
+            --primary-accent-light: #286090; /* Màu xanh đậm hơn cho hover */
+            --secondary-accent: #f0ad4e; /* Màu vàng cam */
+            --text-primary: #333333; /* Màu chữ chính */
+            --text-secondary: #777777; /* Màu chữ phụ */
             --text-light: #ffffff;
-            --danger-color: #ef4444;
-            --success-color: #22c55e;
-            /* --- Hiệu ứng đổ bóng & bo góc đơn giản --- */
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --border-radius-lg: 0.5rem;
-            --border-radius-md: 0.375rem;
+            --danger-color: #d9534f; /* Đỏ */
+            --success-color: #5cb85c; /* Xanh lá */
+            /* --- Loại bỏ hoàn toàn đổ bóng, bo góc tối thiểu --- */
+            --shadow-sm: none;
+            --shadow-md: none;
+            --shadow-lg: none;
+            --border-radius-lg: 4px;
+            --border-radius-md: 3px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
@@ -46,22 +46,21 @@
         .container { max-width: 1280px; margin: auto; padding: 25px; }
         header { 
             background: var(--bg-header); padding: 15px 0;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
             box-shadow: var(--shadow-sm);
         }
         .header-title { display: flex; align-items: center; gap: 15px; }
         .header-title .logo img { width: 50px; height: auto; }
         .title-group { display: flex; flex-direction: column; }
         .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
-        .header-title h1 { font-size: 1.8rem; color: var(--primary-accent); font-weight: 700; line-height: 1.2; margin: 0; }
-        .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-main); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
+        .header-title h1 { font-size: 1.8rem; color: var(--text-primary); font-weight: 700; line-height: 1.2; margin: 0; }
+        .date-selector { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
         .date-selector label { font-weight: 600; color: var(--text-secondary); }
         .date-selector input[type="date"] { background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
         /* --- Cụm điều khiển header --- */
         .header-controls { display: flex; align-items: center; gap: 12px; }
         .clock-widget, .weather-widget {
-            display: flex; align-items: center; gap: 8px;
-            background: var(--bg-main);
+            display: flex; align-items: center; gap: 8px; background: none;
             padding: 8px 12px;
             border-radius: var(--border-radius-md);
             border: 1px solid transparent;
@@ -73,7 +72,7 @@
         #weather-temp { font-weight: 600; color: var(--text-primary); }
         #weather-icon { height: 20px; width: auto; }
 
-        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 25px; }
         .card { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-lg); padding: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
         .card h2 { color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .card h2 svg { color: var(--primary-accent); }
@@ -81,24 +80,24 @@
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .input-wrapper { position: relative; flex-grow: 1; }
         .input-wrapper svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 20px; transition: color 0.2s; }
-        .input-wrapper input { width: 100%; padding: 14px 15px 14px 45px; border: 1px solid var(--border-color); color: var(--text-primary); background: #f9fafb; border-radius: var(--border-radius-md); font-size: 1rem; transition: all 0.2s; }
+        .input-wrapper input { width: 100%; padding: 10px 15px 10px 45px; border: 1px solid var(--border-color); color: var(--text-primary); background: #fdfdfd; border-radius: var(--border-radius-md); font-size: 1rem; transition: all 0.2s; box-shadow: inset 0 1px 1px rgba(0,0,0,.075); }
         .input-wrapper input::placeholder { color: #9ca3af; }
-        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent); box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102,175,233,.6); }
         .input-wrapper input:focus + svg { color: var(--primary-accent); }
         #search-term, #filter-input { text-transform: uppercase; }
-        .action-button { width: 100%; padding: 14px; border: none; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
-        .action-button:hover:not(:disabled) { filter: brightness(1.1); }
-        .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; }
+        .action-button { width: 100%; padding: 10px; border: 1px solid transparent; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
+        .action-button:hover:not(:disabled) { filter: brightness(0.9); }
+        .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; border-color: #ccc !important; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
         /* --- Checkbox VIP --- */
-        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fffbeb; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; }
+        .vip-checkbox-wrapper { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fcf8e3; border: 1px solid #faebcc; border-radius: var(--border-radius-md); margin-bottom: 15px; cursor: pointer; }
         .vip-checkbox-wrapper input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--secondary-accent); }
-        .vip-checkbox-wrapper label { font-weight: 600; color: #b45309; cursor: pointer; }
+        .vip-checkbox-wrapper label { font-weight: 600; color: #8a6d3b; cursor: pointer; }
 
         /* --- Nút chụp ảnh --- */
         .photo-capture-group { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
-        .btn-capture-photo { flex-grow: 1; padding: 14px; border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-primary); font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-capture-photo:hover { background: #e2e8f0; }
+        .btn-capture-photo { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); background: #f5f5f5; color: var(--text-primary); font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-capture-photo:hover { background: #e9e9e9; }
         #photo-preview-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); display: none; }
         #vehicle-image-display {
             width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--border-radius-md);
@@ -106,11 +105,11 @@
             cursor: pointer;
         }
 
-        .icon-btn { flex-shrink: 0; width: 52px; height: 52px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
-        .icon-btn:hover:not(:disabled) { background-color: var(--bg-main); color: var(--primary-accent); }
-        .icon-btn.active { color: var(--danger-color); background-color: #fee2e2; border-color: var(--danger-color); }
-        .btn-check-in { background-color: var(--primary-accent); }
-        .btn-check-out { background-color: var(--danger-color); }
+        .icon-btn { flex-shrink: 0; width: 42px; height: 42px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
+        .icon-btn:hover:not(:disabled) { background-color: #e7e7e7; color: var(--primary-accent); }
+        .icon-btn.active { color: var(--danger-color); background-color: #f2dede; border-color: var(--danger-color); }
+        .btn-check-in { background-color: var(--primary-accent); border-color: var(--primary-accent-light); }
+        .btn-check-out { background-color: var(--danger-color); border-color: #d43f3a; }
         #vehicle-info-panel { display: none; margin-top: 20px; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .info-grid { display: flex; flex-direction: column; gap: 15px; }
@@ -124,8 +123,8 @@
         .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
         #vehicle-list-container { max-height: 60vh; overflow-y: auto; padding-right: 5px; }
         .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
-        .vehicle-item:hover { border-color: var(--primary-accent); background-color: #f9fafb; }
-        .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 85px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .vehicle-item:hover { border-color: var(--primary-accent); background-color: #f5f5f5; }
+        .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 78px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .vehicle-item .details { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; }
         .vehicle-item .plate { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 1.1rem; margin-bottom: 5px; }
@@ -141,8 +140,8 @@
             background-color: var(--bg-main);
             border-radius: 50%;
         }
-        /* --- Icon VIP trong danh sách --- */
-        .vehicle-item.is-vip .icon { background-color: #fffbeb; color: var(--secondary-accent); }
+        /* --- Icon VIP trong danh sách (cổ điển) --- */
+        .vehicle-item.is-vip .icon { background-color: #fcf8e3; color: var(--secondary-accent); }
         .vehicle-item.is-vip { border-left: 4px solid var(--secondary-accent); }
 
         /* --- Icon camera trên danh sách --- */
@@ -150,13 +149,13 @@
         .vehicle-item .photo-indicator svg { width: 10px; height: 10px; }
 
         #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; }
+        .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; border: 1px solid rgba(0,0,0,0.1); }
         .toast.success { background-color: var(--success-color); } .toast.error { background-color: var(--danger-color); }
         @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; } }
         .modal { 
-            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; 
-            overflow: auto; background-color: rgba(0, 0, 0, 0.5); 
+            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; 
+            background-color: rgba(0, 0, 0, 0.4); /* Nền đen mờ cổ điển */
             display: none; align-items: center; justify-content: center; 
         }
         #camera-feed { width: 100%; max-height: 60vh; border-radius: var(--border-radius-md); margin-bottom: 15px; }
@@ -169,7 +168,7 @@
         }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         
-        /* --- GIAO DIỆN VÉ ĐIỆN TỬ (ĐƠN GIẢN) --- */
+        /* --- GIAO DIỆN VÉ ĐIỆN TỬ (CỔ ĐIỂN) --- */
         #qrcode-modal .modal-content {
             background-color: var(--bg-card);
             padding: 25px;
@@ -177,7 +176,7 @@
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 380px;
-            text-align: center;
+            text-align: center; border: 1px solid #999;
         }
         .ticket-header-new {
             display: flex;
@@ -194,14 +193,14 @@
         }
         .ticket-org-name-new {
             font-size: 0.9rem;
-            font-weight: 700;
+            font-weight: bold;
             color: var(--text-primary);
             text-transform: uppercase;
             line-height: 1.4;
             text-align: left;
         }
         .ticket-title-new {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--primary-accent);
             margin-bottom: 10px;
@@ -278,12 +277,12 @@
         .footer-column h3, .footer-column h4 { display: flex; align-items: center; gap: 10px; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 15px; }
         .footer-column h3 img { width: 30px; height: 30px; }
         .footer-column svg { width: 24px; height: 24px; color: var(--primary-accent); }
-        .footer-column p { color: var(--text-secondary); margin-bottom: 10px; line-height: 1.7; }
+        .footer-column p { color: var(--text-secondary); margin-bottom: 10px; line-height: 1.7; font-size: 0.95rem; }
         .footer-column p strong { color: var(--text-primary); font-weight: 700; }
         .copyright { margin-top: 20px !important; font-size: 0.9rem; color: #9ca3af; text-align: center; }
         #offline-indicator { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: var(--danger-color); color: white; padding: 8px 15px; border-radius: 20px; box-shadow: var(--shadow-lg); z-index: 10000; display: none; align-items: center; gap: 8px; font-weight: 500; animation: fadeIn 0.5s; }
         
-        /* --- DASHBOARD (Bảng tin nhanh) --- */
+        /* --- DASHBOARD (Cổ điển) --- */
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .stat-item { 
             background: var(--bg-main); 
@@ -292,7 +291,7 @@
             text-align: left;
             border: 1px solid var(--border-color);
         }
-        .stat-item .label { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+        .stat-item .label { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; }
         .stat-item .value { font-size: 1.8rem; font-weight: 700; color: var(--primary-accent); line-height: 1.1; }
         .stat-item .info-duration { font-size: 1.5rem; }
         .dashboard-gauge { grid-column: 1 / -1; text-align: center; }
@@ -310,7 +309,7 @@
             border-color: var(--primary-accent) var(--primary-accent) transparent transparent;
             transform: rotate(135deg);
             transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        }
+        } 
         .gauge-text { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
         .gauge-label { font-size: 1rem; color: var(--text-secondary); font-weight: 500; }
 
@@ -324,16 +323,16 @@
             display: none;
             animation: fadeIn 0.5s;
             border: 1px solid transparent;
-        }
+        } 
         .capacity-status-message.warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border-color: #ffeeba;
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+            border-color: #faebcc;
         }
         .capacity-status-message.danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
+            background-color: #f2dede;
+            color: #a94442;
+            border-color: #ebccd1;
         }
 
         @media (max-width: 960px) { .main-grid { grid-template-columns: 1fr; } }
@@ -341,7 +340,7 @@
             body { padding: 0; }
             .container { padding: 20px; }
             header { flex-direction: column; align-items: flex-start; } 
-            .date-selector { width: 100%; justify-content: space-between; } 
+            .date-selector { width: 100%; justify-content: space-between; margin-top: 10px; } 
         }
         @media (max-width: 600px) { 
             .container { padding: 15px; }
@@ -349,12 +348,12 @@
             .input-group { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; }
             .input-wrapper { grid-column: 1 / -1; }
             #phone-item-main { grid-column: 1 / -1; }
-            .icon-btn { grid-row: 1; height: 52px; }
+            .icon-btn { grid-row: 1; height: 42px; }
             #mic-btn { grid-column: 2; } #scan-qr-btn { grid-column: 3; }
             .dashboard-grid { grid-template-columns: 1fr; }
         }
 
-        /* --- GIAO DIỆN LỊCH SỬ GỬI XE (TIMELINE) --- */
+        /* --- GIAO DIỆN LỊCH SỬ GỬI XE (CỔ ĐIỂN) --- */
         #info-history-list {
             position: relative;
             padding-left: 25px;
@@ -408,18 +407,18 @@
             border-bottom: 1px dashed var(--border-color);
         }
 
-        /* --- GIAO DIỆN BIÊN LAI THANH TOÁN (ĐƠN GIẢN) --- */
+        /* --- GIAO DIỆN BIÊN LAI THANH TOÁN (CỔ ĐIỂN) --- */
         #payment-modal .modal-content {
             background-color: var(--bg-card);
             padding: 25px;
             border-radius: var(--border-radius-lg);
             box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 400px; 
+            max-width: 400px; border: 1px solid #999;
             text-align: center;
         }
         .receipt-header {
-            margin-bottom: 20px;
+            margin-bottom: 20px; text-align: center;
         }
         .receipt-header h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; color: var(--primary-accent); }
         .receipt-header p { font-size: 1rem; color: var(--text-secondary); margin: 0; }
@@ -437,10 +436,10 @@
         .receipt-info-grid .info-value { font-weight: 600; color: var(--text-primary); }
 
         .receipt-total-fee {
-            margin-bottom: 20px;
-            padding: 15px; background: #fffbe6; border-radius: var(--border-radius-md);
+            margin: 20px 0;
+            padding: 15px; background: #f2dede; border-radius: var(--border-radius-md); border: 1px solid #ebccd1;
         }
-        .receipt-total-fee .label { font-size: 1rem; color: var(--text-secondary); margin-bottom: 5px; }
+        .receipt-total-fee .label { font-size: 1rem; color: #a94442; margin-bottom: 5px; font-weight: bold; }
         .receipt-total-fee .amount {
             font-size: 2.5rem;
             font-weight: 700;
@@ -450,7 +449,7 @@
         .receipt-total-fee .amount sup {
             font-size: 1.5rem;
         }
-        .receipt-footer { padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .receipt-footer { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color); }
 
         .payment-actions {
             display: flex; justify-content: flex-end; gap: 10px;
@@ -471,9 +470,9 @@
             margin-bottom: 20px;
         }
         .method-btn {
-            flex-grow: 1; padding: 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: all 0.2s;
+            flex-grow: 1; padding: 10px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: #f5f5f5; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
-        .method-btn.active { background: var(--primary-accent); color: white; border-color: var(--primary-accent); }
+        .method-btn.active { background: var(--primary-accent); color: white; border-color: var(--primary-accent-light); }
         
         /* Responsive cho biên lai thanh toán trên màn hình nhỏ */
         @media (max-width: 450px) {
@@ -517,7 +516,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* --- Modal chọn bãi đỗ xe --- */
+        /* --- Modal chọn bãi đỗ xe (Cổ điển) --- */
         #location-select-modal .modal-content {
             max-width: 480px;
             padding: 25px;
@@ -542,11 +541,11 @@
             padding: 15px;
             background: var(--bg-main);
             border-radius: var(--border-radius-lg);
-            cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent;
+            cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-color);
         }
         .location-option:hover { 
             border-color: var(--primary-accent);
-            transform: translateY(-2px);
+            background-color: #d4eaff;
             box-shadow: var(--shadow-md);
         }
         .location-option .icon-wrapper {
@@ -554,7 +553,7 @@
             width: 48px;
             height: 48px;
             border-radius: var(--border-radius-md);
-            background: #dbeafe;
+            background: #e4eefe;
             color: var(--primary-accent);
             display: flex;
             align-items: center;
@@ -566,22 +565,22 @@
             font-weight: 700;
             color: var(--text-secondary);
         }
-        /* --- Modal xác nhận chung --- */
+        /* --- Modal xác nhận chung (Cổ điển) --- */
         #confirmation-modal .modal-content {
-            max-width: 420px; padding: 25px; text-align: center;
+            max-width: 420px; padding: 25px; text-align: center; border: 1px solid #999;
         }
         #confirmation-modal #confirmation-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
         #confirmation-modal #confirmation-message {
             font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6; margin: 0;
         }
         #confirmation-modal .receipt-footer {
-            display: flex; gap: 12px; padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color);
+            display: flex; gap: 12px; padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color); justify-content: flex-end;
         }
         #confirmation-modal #cancel-confirmation-btn {
-            background: var(--bg-main); color: var(--text-secondary); flex-grow: 1; border: 1px solid var(--border-color);
+            background: #ffffff; color: var(--text-primary); flex-grow: 0; border: 1px solid var(--border-color);
         }
         #confirmation-modal #confirm-action-btn {
-            flex-grow: 1;
+            flex-grow: 0;
         }
     </style>
 </head>
@@ -601,7 +600,7 @@
                 <div class="title-group">
                     <p class="subtitle" id="location-subtitle">Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
                     <h1>Bảng điều hành bãi xe</h1>
-                </div>
+                </div> 
             </div>
             <!-- CỘT GIỮA: CHỌN NGÀY -->
             <div class="date-selector">
@@ -610,7 +609,7 @@
             </div>
             <!-- CỘT PHẢI: ĐỒNG HỒ & THỜI TIẾT -->
             <div class="header-controls"> <!-- Cấu trúc HTML mới cho cụm này -->
-                <div id="clock-widget" class="clock-widget" title="Thời gian thực">
+                <div id="clock-widget" class="clock-widget" title="Thời gian thực" style="border: 1px solid var(--border-color); background: var(--bg-main);">
                     <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span id="clock-display">--:--:--</span>
                 </div>
@@ -636,10 +635,10 @@
                             <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
                         </div>
                         <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                         </button>
                         <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để check-out">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                         </button>
                     </div>
                      <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
@@ -888,7 +887,7 @@
 
             <div class="receipt-footer">
                 <div class="action-buttons-container" style="display: flex; gap: 10px;">
-                <button id="close-payment-modal-btn" class="action-button" style="background: var(--text-secondary);" type="button">Hủy</button>
+                <button id="close-payment-modal-btn" class="action-button" style="background: #fff; color: var(--text-primary); border: 1px solid var(--border-color);" type="button">Hủy</button>
                 <button id="complete-payment-btn" class="action-button btn-check-in" type="button">
                     Hoàn tất & Cho xe ra
                 </button>
@@ -909,7 +908,7 @@
                     <!-- Danh sách các điểm trực sẽ được chèn vào đây bằng JS -->
                 </div>
                 <div class="action-buttons-container" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                    <button id="use-default-location-btn" class="action-button" style="background: var(--text-secondary);" type="button">Sử dụng bãi đỗ xe mặc định</button>
+                    <button id="use-default-location-btn" class="action-button" style="background: #fff; color: var(--text-primary); border: 1px solid var(--border-color);" type="button">Sử dụng bãi đỗ xe mặc định</button>
                 </div>
             </div>
         </div>
