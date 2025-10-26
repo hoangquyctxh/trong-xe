@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống Quản lý xe Tình nguyện</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <!-- Đã loại bỏ Google Fonts để dùng font hệ thống -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="config.js"></script> <!-- Tải file cấu hình chung của ứng dụng -->    
@@ -14,39 +13,39 @@
     
     <style>
         :root {
-            /* --- BẢNG MÀU "2015": Cổ điển, vuông vức, rõ ràng --- */
-            --bg-main: #eeeeee; /* Nền xám cổ điển */
+            /* --- BẢNG MÀU "TRANG NHÀ NƯỚC": Trang trọng, vuông vức --- */
+            --bg-main: #e9ebee; /* Nền xám nhạt hơn */
             --bg-card: #ffffff;
             --bg-header: #ffffff;
-            --border-color: #cccccc; /* Viền đậm, rõ ràng hơn */
-            --primary-accent: #337ab7; /* Màu xanh Bootstrap 3 đặc trưng */
-            --primary-accent-light: #286090; /* Màu xanh đậm hơn cho hover */
-            --secondary-accent: #f0ad4e; /* Màu vàng cam */
+            --border-color: #d1d5db; /* Viền xám nhạt */
+            --primary-accent: #0d47a1; /* Xanh đậm, trang trọng */
+            --primary-accent-light: #1565c0; /* Xanh sáng hơn cho gradient */
+            --secondary-accent: #f57c00; /* Cam đậm */
             --text-primary: #333333; /* Màu chữ chính */
             --text-secondary: #777777; /* Màu chữ phụ */
             --text-light: #ffffff;
-            --danger-color: #d9534f; /* Đỏ */
-            --success-color: #5cb85c; /* Xanh lá */
-            /* --- Loại bỏ hoàn toàn đổ bóng, bo góc tối thiểu --- */
+            --danger-color: #c62828; /* Đỏ đậm */
+            --success-color: #2e7d32; /* Xanh lá đậm */
+            /* --- Loại bỏ hoàn toàn đổ bóng và bo góc --- */
             --shadow-sm: none;
             --shadow-md: none;
             --shadow-lg: none;
-            --border-radius-lg: 4px;
-            --border-radius-md: 3px;
+            --border-radius-lg: 0;
+            --border-radius-md: 0;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: Arial, Helvetica, sans-serif; /* Font chữ hệ thống */
             background-color: var(--bg-main);
             color: var(--text-primary);
             line-height: 1.6;
             padding: 0;
         }
         .container { max-width: 1280px; margin: auto; padding: 25px; }
-        header { 
+        header {
             background: var(--bg-header); padding: 15px 0;
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
             box-shadow: var(--shadow-sm);
         }
         .header-title { display: flex; align-items: center; gap: 15px; }
@@ -54,7 +53,7 @@
         .title-group { display: flex; flex-direction: column; }
         .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
         .header-title h1 { font-size: 1.8rem; color: var(--text-primary); font-weight: 700; line-height: 1.2; margin: 0; }
-        .date-selector { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
+        .date-selector { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border-color); }
         .date-selector label { font-weight: 600; color: var(--text-secondary); }
         .date-selector input[type="date"] { background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; color: var(--text-primary); }
         /* --- Cụm điều khiển header --- */
@@ -73,20 +72,21 @@
         #weather-icon { height: 20px; width: auto; }
 
         .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 25px; }
-        .card { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-lg); padding: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
-        .card h2 { color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); padding: 0; position: relative; overflow: hidden; }
+        .card h2 { color: var(--text-primary); font-size: 1.1rem; margin: 0; padding: 10px 15px; display: flex; align-items: center; gap: 10px; font-weight: bold; border-bottom: 1px solid var(--border-color); background-color: #f5f5f5; }
         .card h2 svg { color: var(--primary-accent); }
+        .card-body { padding: 20px; }
         .full-width { grid-column: 1 / -1; }
         .input-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .input-wrapper { position: relative; flex-grow: 1; }
         .input-wrapper svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); width: 20px; transition: color 0.2s; }
-        .input-wrapper input { width: 100%; padding: 10px 15px 10px 45px; border: 1px solid var(--border-color); color: var(--text-primary); background: #fdfdfd; border-radius: var(--border-radius-md); font-size: 1rem; transition: all 0.2s; box-shadow: inset 0 1px 1px rgba(0,0,0,.075); }
+        .input-wrapper input { width: 100%; padding: 10px 15px 10px 45px; border: 1px solid var(--border-color); color: var(--text-primary); background: #fdfdfd; border-radius: var(--border-radius-md); font-size: 1rem; transition: all 0.2s; box-shadow: none; }
         .input-wrapper input::placeholder { color: #9ca3af; }
-        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent); box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102,175,233,.6); }
+        .input-wrapper input:focus { outline: none; background: white; border-color: var(--primary-accent); box-shadow: none; }
         .input-wrapper input:focus + svg { color: var(--primary-accent); }
         #search-term, #filter-input { text-transform: uppercase; }
-        .action-button { width: 100%; padding: 10px; border: 1px solid transparent; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
-        .action-button:hover:not(:disabled) { filter: brightness(0.9); }
+        .action-button { width: 100%; padding: 10px; border: 1px solid #a0a0a0; color: white; font-size: 1rem; font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s ease-in-out; }
+        .action-button:hover:not(:disabled) { filter: brightness(1.1); }
         .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; box-shadow: none; transform: none; filter: none; border-color: #ccc !important; }
         .action-buttons-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
         /* --- Checkbox VIP --- */
@@ -96,7 +96,7 @@
 
         /* --- Nút chụp ảnh --- */
         .photo-capture-group { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
-        .btn-capture-photo { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); background: #f5f5f5; color: var(--text-primary); font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-capture-photo { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); background: #f0f0f0; color: var(--text-primary); font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-capture-photo:hover { background: #e9e9e9; }
         #photo-preview-thumb { width: 52px; height: 52px; object-fit: cover; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); display: none; }
         #vehicle-image-display {
@@ -107,9 +107,9 @@
 
         .icon-btn { flex-shrink: 0; width: 42px; height: 42px; border: 1px solid var(--border-color); background-color: white; color: var(--text-secondary); cursor: pointer; border-radius: var(--border-radius-md); transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; position: relative; }
         .icon-btn:hover:not(:disabled) { background-color: #e7e7e7; color: var(--primary-accent); }
-        .icon-btn.active { color: var(--danger-color); background-color: #f2dede; border-color: var(--danger-color); }
-        .btn-check-in { background-color: var(--primary-accent); border-color: var(--primary-accent-light); }
-        .btn-check-out { background-color: var(--danger-color); border-color: #d43f3a; }
+        .icon-btn.active { color: var(--danger-color); background-color: #f2dede; border-color: var(--danger-color); }        
+        .btn-check-in { background-image: linear-gradient(to bottom, var(--primary-accent-light), var(--primary-accent)); border-color: var(--primary-accent); }
+        .btn-check-out { background-image: linear-gradient(to bottom, #e4605c, var(--danger-color)); border-color: var(--danger-color); }
         #vehicle-info-panel { display: none; margin-top: 20px; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .info-grid { display: flex; flex-direction: column; gap: 15px; }
@@ -122,7 +122,7 @@
         .status-badge.departed { background-color: var(--text-secondary); }
         .list-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 15px; }
         #vehicle-list-container { max-height: 60vh; overflow-y: auto; padding-right: 5px; }
-        .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
+        .vehicle-item { display: flex; align-items: center; gap: 15px; padding: 10px; background: white; border-radius: var(--border-radius-md); margin-bottom: 10px; border: 1px solid var(--border-color); transition: all 0.3s ease; animation: fadeIn 0.5s ease forwards; cursor: pointer; }
         .vehicle-item:hover { border-color: var(--primary-accent); background-color: #f5f5f5; }
         .skeleton-item { background: #e9ecef; border-radius: var(--border-radius-md); height: 78px; margin-bottom: 10px; animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -170,13 +170,12 @@
         
         /* --- GIAO DIỆN VÉ ĐIỆN TỬ (CỔ ĐIỂN) --- */
         #qrcode-modal .modal-content {
-            background-color: var(--bg-card);
-            padding: 25px;
+            background-color: var(--bg-card); padding: 0;
             border-radius: var(--border-radius-lg);
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 380px;
-            text-align: center; border: 1px solid #999;
+            text-align: center; border: 1px solid #999; overflow: hidden;
         }
         .ticket-header-new {
             display: flex;
@@ -184,8 +183,8 @@
             justify-content: center;
             gap: 15px;
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed var(--border-color);
+            padding: 15px;
+            background-color: var(--primary-accent); color: white;
         }
         .ticket-logo-new {
             width: 45px;
@@ -194,13 +193,13 @@
         .ticket-org-name-new {
             font-size: 0.9rem;
             font-weight: bold;
-            color: var(--text-primary);
+            color: white;
             text-transform: uppercase;
             line-height: 1.4;
             text-align: left;
         }
         .ticket-title-new {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--primary-accent);
             margin-bottom: 10px;
@@ -224,7 +223,7 @@
             height: 100% !important;
         }
         .ticket-info-new {
-            text-align: left;
+            text-align: left; padding: 0 25px;
             margin-bottom: 25px;
         }
         .ticket-info-new .info-row {
@@ -247,6 +246,10 @@
         #ticket-plate-display {
             font-family: monospace;
             font-size: 1.1rem;
+        }
+        #qrcode-modal .action-buttons-container {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
         }
 
         /* print stylesheet - only the ticket */
@@ -285,7 +288,7 @@
         /* --- DASHBOARD (Cổ điển) --- */
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .stat-item { 
-            background: var(--bg-main); 
+            background: #f9f9f9; 
             padding: 20px; 
             border-radius: var(--border-radius-md);
             text-align: left;
@@ -345,7 +348,7 @@
         @media (max-width: 600px) { 
             .container { padding: 15px; }
             .card { padding: 20px; } 
-            .input-group { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; }
+            .input-group { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; } .card-body { padding: 15px; }
             .input-wrapper { grid-column: 1 / -1; }
             #phone-item-main { grid-column: 1 / -1; }
             .icon-btn { grid-row: 1; height: 42px; }
@@ -409,18 +412,17 @@
 
         /* --- GIAO DIỆN BIÊN LAI THANH TOÁN (CỔ ĐIỂN) --- */
         #payment-modal .modal-content {
-            background-color: var(--bg-card);
-            padding: 25px;
+            background-color: var(--bg-card); padding: 0;
             border-radius: var(--border-radius-lg);
             box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 400px; border: 1px solid #999;
-            text-align: center;
+            max-width: 400px; border: 1px solid #999; overflow: hidden;
         }
         .receipt-header {
-            margin-bottom: 20px; text-align: center;
+            margin-bottom: 0; text-align: left; padding: 15px 20px;
+            background-color: var(--primary-accent); color: white;
         }
-        .receipt-header h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 5px; color: var(--primary-accent); }
+        .receipt-header h2 { font-size: 1.3rem; font-weight: 700; margin: 0; color: white; }
         .receipt-header p { font-size: 1rem; color: var(--text-secondary); margin: 0; }
 
         .receipt-info-grid {
@@ -436,10 +438,10 @@
         .receipt-info-grid .info-value { font-weight: 600; color: var(--text-primary); }
 
         .receipt-total-fee {
-            margin: 20px 0;
-            padding: 15px; background: #f2dede; border-radius: var(--border-radius-md); border: 1px solid #ebccd1;
+            margin: 20px 0; text-align: center;
+            padding: 15px; background: #fff8e1; border-radius: var(--border-radius-md); border: 1px solid #ffecb3;
         }
-        .receipt-total-fee .label { font-size: 1rem; color: #a94442; margin-bottom: 5px; font-weight: bold; }
+        .receipt-total-fee .label { font-size: 1rem; color: #6f4f12; margin-bottom: 5px; font-weight: bold; }
         .receipt-total-fee .amount {
             font-size: 2.5rem;
             font-weight: 700;
@@ -449,7 +451,8 @@
         .receipt-total-fee .amount sup {
             font-size: 1.5rem;
         }
-        .receipt-footer { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color); }
+        .receipt-body { padding: 20px; }
+        .receipt-footer { padding: 20px; margin-top: 0; border-top: 1px solid var(--border-color); background-color: #f5f5f5; }
 
         .payment-actions {
             display: flex; justify-content: flex-end; gap: 10px;
@@ -470,9 +473,9 @@
             margin-bottom: 20px;
         }
         .method-btn {
-            flex-grow: 1; padding: 10px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: #f5f5f5; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.2s;
+            flex-grow: 1; padding: 10px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); background: #f0f0f0; color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
-        .method-btn.active { background: var(--primary-accent); color: white; border-color: var(--primary-accent-light); }
+        .method-btn.active { background-image: linear-gradient(to bottom, var(--primary-accent-light), var(--primary-accent)); color: white; border-color: var(--primary-accent); }
         
         /* Responsive cho biên lai thanh toán trên màn hình nhỏ */
         @media (max-width: 450px) {
@@ -519,11 +522,11 @@
         /* --- Modal chọn bãi đỗ xe (Cổ điển) --- */
         #location-select-modal .modal-content {
             max-width: 480px;
-            padding: 25px;
+            padding: 0;
         }
         .location-select-header {
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            padding: 15px 20px;
+            margin-bottom: 0;
             border-bottom: 1px solid var(--border-color);
         }
         .location-select-body {
@@ -542,7 +545,7 @@
             background: var(--bg-main);
             border-radius: var(--border-radius-lg);
             cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-color);
-        }
+        } 
         .location-option:hover { 
             border-color: var(--primary-accent);
             background-color: #d4eaff;
@@ -567,17 +570,17 @@
         }
         /* --- Modal xác nhận chung (Cổ điển) --- */
         #confirmation-modal .modal-content {
-            max-width: 420px; padding: 25px; text-align: center; border: 1px solid #999;
+            max-width: 420px; padding: 0; text-align: center; border: 1px solid #999; overflow: hidden;
         }
         #confirmation-modal #confirmation-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
         #confirmation-modal #confirmation-message {
             font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6; margin: 0;
         }
         #confirmation-modal .receipt-footer {
-            display: flex; gap: 12px; padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border-color); justify-content: flex-end;
+            display: flex; gap: 12px; padding: 15px; margin-top: 0; border-top: 1px solid var(--border-color); justify-content: flex-end; background-color: #f5f5f5;
         }
         #confirmation-modal #cancel-confirmation-btn {
-            background: #ffffff; color: var(--text-primary); flex-grow: 0; border: 1px solid var(--border-color);
+            background-image: linear-gradient(to bottom, #ffffff, #f0f0f0); color: var(--text-primary); flex-grow: 0; border: 1px solid var(--border-color);
         }
         #confirmation-modal #confirm-action-btn {
             flex-grow: 0;
@@ -609,7 +612,7 @@
             </div>
             <!-- CỘT PHẢI: ĐỒNG HỒ & THỜI TIẾT -->
             <div class="header-controls"> <!-- Cấu trúc HTML mới cho cụm này -->
-                <div id="clock-widget" class="clock-widget" title="Thời gian thực" style="border: 1px solid var(--border-color); background: var(--bg-main);">
+                <div id="clock-widget" class="clock-widget" title="Thời gian thực" style="border: 1px solid var(--border-color); background: #f5f5f5;">
                     <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <span id="clock-display">--:--:--</span>
                 </div>
@@ -629,76 +632,78 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="m10 12-4 4"/><path d="M12 10h6"/><path d="m14 8 2 2-2 2"/><path d="m6 14 2 2-2 2"/></svg>
                     Tra cứu & Xử lý
                 </h2>
-                <div id="main-form">
-                    <div class="input-group">
-                        <div class="input-wrapper">
-                            <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
+                <div class="card-body">
+                    <div id="main-form">
+                        <div class="input-group">
+                            <div class="input-wrapper">
+                                <input type="text" id="search-term" placeholder="Nhập Biển số xe..." required>
+                            </div>
+                            <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                            </button>
+                            <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để check-out">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            </button>
                         </div>
-                        <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                        </button>
-                        <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để check-out">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                        </button>
-                    </div>
-                     <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
-                        <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
-                    </div>
-                    <!-- ================== MỚI: CHECKBOX KHÁCH MỜI/VIP ================== -->
-                    <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
-                        <input type="checkbox" id="is-vip-checkbox">
-                        <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
-                    </div>
-
-                    <!-- ================== MỚI: NÚT CHỤP ẢNH ================== -->
-                    <div class="photo-capture-group" id="photo-capture-group">
-                        <button type="button" class="btn-capture-photo" id="capture-photo-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                            Chụp ảnh xe
-                        </button>
-                        <img id="photo-preview-thumb" src="" alt="Ảnh xe xem trước">
-                        <input type="file" id="photo-file-input" accept="image/*" capture="environment" class="hidden">
-                    </div>
-                    
-                    <div class="action-buttons-container">
-                        <button type="button" id="check-in-btn" class="action-button btn-check-in hidden">Xác nhận gửi xe</button>
-                        <button type="button" id="check-out-btn" class="action-button btn-check-out hidden">Xác nhận cho xe ra</button>
-                    </div>
-                </div>
-
-                <div id="vehicle-info-panel">
-                    <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Thông tin chi tiết</h3>
-                    <div class="info-grid" style="margin-top: 20px;">
-                        <div class="info-item">
-                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
-                            <span class="label">Trạng thái</span>
-                            <span class="value" id="info-status">--</span>
+                         <div class="input-wrapper" id="phone-item-main" style="margin-bottom: 15px;">
+                            <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
                         </div>
-                        <div class="info-item">
-                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></span>
-                            <span class="label">Giờ vào</span>
-                            <span class="value" id="info-entry-time">--</span>
+                        <!-- ================== MỚI: CHECKBOX KHÁCH MỜI/VIP ================== -->
+                        <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
+                            <input type="checkbox" id="is-vip-checkbox">
+                            <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
                         </div>
-                        <div class="info-item" id="duration-item">
-                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
-                            <span class="label">Thời gian gửi</span>
-                            <span class="value info-duration" id="info-duration">--</span>
+    
+                        <!-- ================== MỚI: NÚT CHỤP ẢNH ================== -->
+                        <div class="photo-capture-group" id="photo-capture-group">
+                            <button type="button" class="btn-capture-photo" id="capture-photo-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                Chụp ảnh xe
+                            </button>
+                            <img id="photo-preview-thumb" src="" alt="Ảnh xe xem trước">
+                            <input type="file" id="photo-file-input" accept="image/*" capture="environment" class="hidden">
                         </div>
-                        <div class="info-item" id="fee-item">
-                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-                            <span class="label">Phí tạm tính</span>
-                            <span class="value" id="info-fee" style="color: var(--danger-color);">--</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></span>
-                            <span class="label">Số điện thoại</span>
-                            <span class="value" id="info-phone-number">--</span>
+                        
+                        <div class="action-buttons-container">
+                            <button type="button" id="check-in-btn" class="action-button btn-check-in hidden">Xác nhận gửi xe</button>
+                            <button type="button" id="check-out-btn" class="action-button btn-check-out hidden">Xác nhận cho xe ra</button>
                         </div>
                     </div>
-                    <!-- ================== MỚI: HIỂN THỊ ẢNH ĐÃ CHỤP ================== -->
-                    <img id="vehicle-image-display" src="" alt="Ảnh xe đã chụp">
-                    <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1rem;">Lịch sử gửi xe</h3>
-                    <ul class="history-list" id="info-history-list"></ul>
+    
+                    <div id="vehicle-info-panel">
+                        <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Thông tin chi tiết</h3>
+                        <div class="info-grid" style="margin-top: 20px;">
+                            <div class="info-item">
+                                <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+                                <span class="label">Trạng thái</span>
+                                <span class="value" id="info-status">--</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></span>
+                                <span class="label">Giờ vào</span>
+                                <span class="value" id="info-entry-time">--</span>
+                            </div>
+                            <div class="info-item" id="duration-item">
+                                <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+                                <span class="label">Thời gian gửi</span>
+                                <span class="value info-duration" id="info-duration">--</span>
+                            </div>
+                            <div class="info-item" id="fee-item">
+                                <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+                                <span class="label">Phí tạm tính</span>
+                                <span class="value" id="info-fee" style="color: var(--danger-color);">--</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></span>
+                                <span class="label">Số điện thoại</span>
+                                <span class="value" id="info-phone-number">--</span>
+                            </div>
+                        </div>
+                        <!-- ================== MỚI: HIỂN THỊ ẢNH ĐÃ CHỤP ================== -->
+                        <img id="vehicle-image-display" src="" alt="Ảnh xe đã chụp">
+                        <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1rem;">Lịch sử gửi xe</h3>
+                        <ul class="history-list" id="info-history-list"></ul>
+                    </div>
                 </div>
             </div>
 
@@ -707,6 +712,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>
                     Bảng tin nhanh
                 </h2>
+                <div class="card-body">
                 <div class="dashboard-gauge">
                     <div class="gauge-container">
                         <div class="gauge-bg"></div>
@@ -735,17 +741,21 @@
                         <div class="value info-duration" id="dashboard-longest">--</div>
                     </div>
                 </div>
+                </div>
             </div>
             
             <div class="card full-width">
-                 <div class="list-header">
-                    <h2 id="list-title">Danh sách xe</h2>
-                    <div class="input-wrapper" style="max-width: 300px;">
-                         <input type="text" id="filter-input" placeholder="Lọc danh sách theo biển số, SĐT...">
+                <h2 id="list-title">Danh sách xe</h2>
+                <div class="card-body">
+                    <div class="list-header">
+                        <p style="color: var(--text-secondary);">Danh sách xe trong ngày được chọn.</p>
+                        <div class="input-wrapper" style="max-width: 300px;">
+                             <input type="text" id="filter-input" placeholder="Lọc danh sách theo biển số, SĐT...">
+                        </div>
                     </div>
-                 </div>
-                <div class="list-content">
-                    <div id="vehicle-list-container"></div>
+                    <div class="list-content">
+                        <div id="vehicle-list-container"></div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -779,28 +789,31 @@
 
     <div id="qrcode-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
-            <div class="ticket-header-new">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new">
-                <div class="ticket-org-name-new">
-                    Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
+            <div class="card-body" style="padding: 0;">
+                <div class="ticket-header-new">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="ticket-logo-new">
+                    <div class="ticket-org-name-new">
+                        Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình
+                    </div>
                 </div>
-            </div>
-            <h2 class="ticket-title-new">VÉ GỬI XE ĐIỆN TỬ</h2>
-            <p class="ticket-subtitle-new" id="ticket-location-display">--</p>
+                <h2 class="ticket-title-new" style="padding: 15px;">VÉ GỬI XE ĐIỆN TỬ</h2>
+                <p class="ticket-subtitle-new" id="ticket-location-display">--</p>
+    
+                <div id="qrcode-canvas-wrapper">
+                    <canvas id="qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
+                </div>
+    
+                <div class="ticket-info-new">
+                    <div class="info-row">
+                        <span class="info-label">Biển số xe:</span>
+                        <span class="info-value" id="ticket-plate-display">--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Thời gian vào:</span>
+                        <span class="info-value" id="ticket-time-display">--</span>
+                    </div>
+                </div>
 
-            <div id="qrcode-canvas-wrapper">
-                <canvas id="qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
-            </div>
-
-            <div class="ticket-info-new">
-                <div class="info-row">
-                    <span class="info-label">Biển số xe:</span>
-                    <span class="info-value" id="ticket-plate-display">--</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Thời gian vào:</span>
-                    <span class="info-value" id="ticket-time-display">--</span>
-                </div>
             </div>
 
             <div class="action-buttons-container">
@@ -837,10 +850,10 @@
             </div>
 
             <div class="receipt-header">
-                <p>Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
                 <h2>BIÊN LAI THANH TOÁN</h2>
+                <p>Đoàn TNCS Hồ Chí Minh Phường Ba Đình</p>
             </div>
-
+            
             <div class="receipt-body">
                 <div class="receipt-total-fee">
                     <p class="label">TỔNG PHÍ</p>
@@ -887,8 +900,8 @@
 
             <div class="receipt-footer">
                 <div class="action-buttons-container" style="display: flex; gap: 10px;">
-                <button id="close-payment-modal-btn" class="action-button" style="background: #fff; color: var(--text-primary); border: 1px solid var(--border-color);" type="button">Hủy</button>
-                <button id="complete-payment-btn" class="action-button btn-check-in" type="button">
+                <button id="close-payment-modal-btn" class="action-button" style="background-image: linear-gradient(to bottom, #ffffff, #f0f0f0); color: var(--text-primary); border: 1px solid var(--border-color);" type="button">Hủy</button>
+                <button id="complete-payment-btn" class="action-button btn-check-in" type="button" style="background-image: linear-gradient(to bottom, #6ab85c, var(--success-color)); border-color: var(--success-color);">
                     Hoàn tất & Cho xe ra
                 </button>
                 </div>
@@ -899,7 +912,7 @@
     <!-- MỚI: Modal chọn bãi đỗ xe -->
     <div id="location-select-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
-            <div class="location-select-header">
+            <div class="location-select-header receipt-header">
                 <h2 class="ticket-title-new" style="text-align: left; margin-bottom: 5px;">Xác nhận Bãi đỗ xe</h2>
                 <p class="ticket-subtitle-new" style="text-align: left; margin: 0;">Vui lòng chọn đúng điểm bạn đang có mặt từ danh sách bên dưới.</p>
             </div>
@@ -907,7 +920,7 @@
                 <div id="location-list-container" class="location-list">
                     <!-- Danh sách các điểm trực sẽ được chèn vào đây bằng JS -->
                 </div>
-                <div class="action-buttons-container" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                <div class="action-buttons-container" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 20px; background-color: #f5f5f5; margin: 25px -25px -25px -25px; padding: 20px;">
                     <button id="use-default-location-btn" class="action-button" style="background: #fff; color: var(--text-primary); border: 1px solid var(--border-color);" type="button">Sử dụng bãi đỗ xe mặc định</button>
                 </div>
             </div>
