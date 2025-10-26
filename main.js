@@ -1028,56 +1028,61 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const completePayment = async (paymentMethodTrigger = 'manual') => { // MỚI: Thêm tham số để biết nguồn kích hoạt
-        if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
-    
-        const fee = parseFloat(allElements.paymentAmountDisplay.textContent.replace(/\./g, '')) || 0;
+        // SỬA LỖI QUAN TRỌNG: Bọc toàn bộ logic trong try...finally để đảm bảo UI được mở khóa
+        try {
+            if (!currentVehicleContext || currentVehicleContext.status !== 'parking') return;
         
-        // Xác định phương thức từ UI
-        let paymentMethod = 'Chưa chọn';
-        if (allElements.selectCashBtn.classList.contains('active')) {
-            paymentMethod = 'Tiền mặt';
-        } else if (allElements.selectQrBtn.classList.contains('active')) {
-            paymentMethod = 'Chuyển khoản QR';
+            const fee = parseFloat(allElements.paymentAmountDisplay.textContent.replace(/\./g, '')) || 0;
+            
+            // Xác định phương thức từ UI
+            let paymentMethod = 'Chưa chọn';
+            if (allElements.selectCashBtn.classList.contains('active')) {
+                paymentMethod = 'Tiền mặt';
+            } else if (allElements.selectQrBtn.classList.contains('active')) {
+                paymentMethod = 'Chuyển khoản QR';
+            }
+
+            // Đóng modal thanh toán
+            allElements.paymentModal.style.display = 'none';
+        
+            // 1. Chuẩn bị dữ liệu biên lai cuối cùng
+            const finalReceiptData = {
+                licensePlate: currentVehicleContext.plate,
+                timeIn: allElements.paymentEntryTime.textContent,
+                timeOut: formatDateTimeForDisplay(new Date()),
+                duration: allElements.paymentDuration.textContent,
+                paymentMethod: paymentMethod,
+                totalAmount: `${fee.toLocaleString('vi-VN')}đ`
+            };
+
+            // 2. Gửi yêu cầu xử lý check-out lên server (chạy ngầm)
+            const checkoutResult = await processCheckOut({
+                uniqueID: currentVehicleContext.uniqueID,
+                plate: currentVehicleContext.plate,
+                fee: fee,
+                paymentMethod: paymentMethod
+            });
+        
+            // 3. Nếu xử lý thất bại, dừng lại và thông báo lỗi
+            if (!checkoutResult) return; 
+        
+            // 4. Nếu thành công, gửi thông báo hoàn tất đến cửa sổ phụ
+            if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
+
+            // 5. Hiển thị thông báo và reset form
+            showToast('Đã hoàn tất cho xe ra!', 'success');
+        
+            // Reset và tải lại dữ liệu sau khi hoàn tất
+            resetMainForm();
+            allElements.searchTermInput.value = '';
+            allElements.phoneNumberInput.value = '';
+            capturedImageBase64 = null;
+            allElements.photoPreviewThumb.style.display = 'none';
+            await fetchVehiclesForDate(allElements.datePicker.value);
+        } finally {
+            // ĐẢM BẢO MỞ KHÓA GIAO DIỆN DÙ CÓ LỖI GÌ XẢY RA
+            setIsLoading(false);
         }
-
-        // Đóng modal thanh toán
-        allElements.paymentModal.style.display = 'none';
-    
-        // 1. Chuẩn bị dữ liệu biên lai cuối cùng
-        const finalReceiptData = {
-            licensePlate: currentVehicleContext.plate,
-            timeIn: allElements.paymentEntryTime.textContent,
-            timeOut: formatDateTimeForDisplay(new Date()),
-            duration: allElements.paymentDuration.textContent,
-            paymentMethod: paymentMethod,
-            totalAmount: `${fee.toLocaleString('vi-VN')}đ`
-        };
-
-        // 2. Gửi yêu cầu xử lý check-out lên server (chạy ngầm)
-        const checkoutResult = await processCheckOut({
-            uniqueID: currentVehicleContext.uniqueID,
-            plate: currentVehicleContext.plate,
-            fee: fee,
-            paymentMethod: paymentMethod
-        });
-    
-        // 3. Nếu xử lý thất bại, dừng lại và thông báo lỗi
-        if (!checkoutResult) return; 
-    
-        // 4. Nếu thành công, gửi thông báo hoàn tất đến cửa sổ phụ
-        if (paymentChannel) paymentChannel.postMessage({ type: 'CHECKOUT_COMPLETE', payload: finalReceiptData });
-
-
-        // 5. Hiển thị thông báo và reset form
-        showToast('Đã hoàn tất cho xe ra!', 'success');
-    
-        // Reset và tải lại dữ liệu sau khi hoàn tất
-        resetMainForm();
-        allElements.searchTermInput.value = '';
-        allElements.phoneNumberInput.value = '';
-        capturedImageBase64 = null;
-        allElements.photoPreviewThumb.style.display = 'none';
-        await fetchVehiclesForDate(allElements.datePicker.value);
     };
 
     // MỚI: Hàm kiểm tra thiết bị di động

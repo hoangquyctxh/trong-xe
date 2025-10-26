@@ -34,6 +34,14 @@
             --border-radius-lg: 0;
             --border-radius-md: 0;
         }
+        /* --- MỚI: CSS cho Toast (Thông báo) --- */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: 0 3px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 3.5s forwards; border: 1px solid rgba(0,0,0,0.1); }
+        .toast.success { background-color: var(--success-color); } .toast.error { background-color: var(--danger-color); } .toast.info { background-color: var(--primary-accent); }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; } }
+        /* --- Kết thúc CSS cho Toast --- */
+
 
         /* --- MỚI: Bố cục Dashboard với Sidebar --- */
         .dashboard-layout {
@@ -372,6 +380,7 @@
     </style>
 </head>
 <body>
+    <div id="toast-container"></div>
     <div id="loader">
         <div class="spinner"></div>
         <span>Đang tải dữ liệu quản trị...</span>

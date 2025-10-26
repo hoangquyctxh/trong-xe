@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
         editFee: document.getElementById('edit-fee'),
         editPaymentMethod: document.getElementById('edit-payment-method'),
         editStatus: document.getElementById('edit-status'),
+        paginationControls: document.getElementById('pagination-controls'), // MỚI
+        toastContainer: document.getElementById('toast-container'), // MỚI
 
     };
 
@@ -45,11 +47,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return locationMap[locationId] || locationId || '--';
     };
 
-    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval, allTransactions = [];
+    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
+    
+    // MỚI: Biến cho phân trang
+    let currentPage = 1;
+    const rowsPerPage = 15;
 
     const formatCurrency = (value) => {
         const numValue = Number(value);
         return isNaN(numValue) ? '0' : numValue.toLocaleString('vi-VN');
+    };
+
+    // MỚI: Hàm hiển thị thông báo toast
+    const showToast = (message, type = 'info') => {
+        if (!elements.toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+        elements.toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutToast 0.5s ease forwards';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
     };
 
     const filterDataByLocation = (locationId) => {
@@ -170,16 +190,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const renderTransactionTable = (transactions) => {
+    // NÂNG CẤP: Hàm render bảng giao dịch với logic phân trang
+    const renderTransactionTable = (transactions, page = 1) => {
         if (!elements.transactionLogBody) return;
         elements.transactionLogBody.innerHTML = '';
+        currentPage = page;
 
         if (!transactions || transactions.length === 0) {
             elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">Không có giao dịch.</td></tr>`;
+            setupPagination(0, 1); // Reset phân trang
             return;
         }
 
-        transactions.forEach(tx => {
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const paginatedItems = transactions.slice(startIndex, endIndex);
+
+        paginatedItems.forEach(tx => {
             const row = document.createElement('tr');
             const statusClass = tx.Status === 'Đang gửi' ? 'parking' : 'departed';
             const feeDisplay = tx.Fee ? `${formatCurrency(tx.Fee)}đ` : '--';
@@ -197,12 +224,14 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             elements.transactionLogBody.appendChild(row);
         });
+
+        setupPagination(transactions.length, page);
     };
 
     const openEditModal = (uniqueID) => {
         const transaction = fullAdminData.transactions.find(tx => tx.UniqueID === uniqueID);
         if (!transaction) {
-            alert('Không tìm thấy giao dịch.');
+            showToast('Không tìm thấy giao dịch.', 'error');
             return;
         }
 
@@ -253,11 +282,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await response.json();
             if (result.status !== 'success') throw new Error(result.message);
-                alert('Cập nhật thành công!');
+                showToast('Cập nhật thành công!', 'success');
                 closeEditModal();
                 fetchAdminData(currentSecretKey, true, elements.adminDatePicker.value);
         } catch (error) {
-            alert(`Lỗi khi lưu: ${error.message}`);
+            showToast(`Lỗi khi lưu: ${error.message}`, 'error');
         } finally {
             elements.saveEditBtn.disabled = false;
             elements.saveEditBtn.textContent = 'Lưu thay đổi';
@@ -281,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Bỏ render bảng giao dịch ở đây, chỉ render khi có dữ liệu giao dịch được tải riêng
         if (data?.transactions) {
-            renderTransactionTable(data.transactions);
+            renderTransactionTable(data.transactions, 1); // Luôn bắt đầu từ trang 1
         }
 
         const locationData = {
@@ -414,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         } catch (error) {
             if (!isSilent) {
-                alert(`Không thể tải dữ liệu quản trị: ${error.message}`);
+                showToast(`Không thể tải dữ liệu quản trị: ${error.message}`, 'error');
                 console.error('ADMIN ERROR LOG:', error);
                 showLoginScreen('Đã xảy ra lỗi. Vui lòng thử lại.');
             }
@@ -459,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.startSessionBtn.style.display = 'none';
             }
     
-            const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "");
+            const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "1");
             if (!secretKey) {
                 showLoginScreen('Cần có mật khẩu để truy cập.');
                 return;
@@ -498,6 +527,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // MỚI: Hàm thiết lập các nút phân trang
+    const setupPagination = (totalItems, currentPage) => {
+        if (!elements.paginationControls) return;
+        elements.paginationControls.innerHTML = '';
+        const pageCount = Math.ceil(totalItems / rowsPerPage);
+
+        if (pageCount <= 1) return;
+
+        // Nút "Trang trước"
+        const prevButton = document.createElement('button');
+        prevButton.textContent = '« Trước';
+        prevButton.className = 'action-button btn-secondary';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                renderTransactionTable(fullAdminData.transactions, currentPage - 1);
+            }
+        });
+        elements.paginationControls.appendChild(prevButton);
+
+        // Hiển thị thông tin trang
+        const pageInfo = document.createElement('span');
+        pageInfo.textContent = `Trang ${currentPage} / ${pageCount}`;
+        pageInfo.style.fontWeight = 'bold';
+        pageInfo.style.margin = '0 10px';
+        elements.paginationControls.appendChild(pageInfo);
+
+        // Nút "Trang sau"
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'Sau »';
+        nextButton.className = 'action-button btn-secondary';
+        nextButton.disabled = currentPage === pageCount;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < pageCount) {
+                renderTransactionTable(fullAdminData.transactions, currentPage + 1);
+            }
+        });
+        elements.paginationControls.appendChild(nextButton);
+
+        // Thêm style cho các nút phân trang
+        elements.paginationControls.querySelectorAll('button').forEach(btn => {
+            btn.style.width = 'auto';
+            btn.style.padding = '8px 16px';
+        });
+    };
+
     const showLoginScreen = (message) => {
         if (elements.loader) {
             elements.loader.style.display = 'flex';
@@ -534,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
             showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
         } catch (error) {
-            console.error("Lỗi trong quá trình khởi tạo:", error);
+            console.error("Lỗi nghiêm trọng khi khởi tạo:", error);
             document.body.innerHTML = `<h1 style="text-align: center; margin-top: 50px;">LỖI KHỞI TẠO TRANG. VUI LÒNG TẢI LẠI.</h1><p style="text-align: center;">Chi tiết: ${error.message}</p>`;
         }
     };

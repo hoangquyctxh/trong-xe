@@ -467,6 +467,22 @@
             text-align: right;
             flex-grow: 1;
         }
+        /* --- MỚI: BỐ CỤC NGANG CHO BIÊN LAI TRÊN DESKTOP --- */
+        @media (min-width: 768px) {
+            #payment-modal .modal-content {
+                max-width: 800px; /* Tăng độ rộng modal */
+            }
+            .receipt-horizontal-grid {
+                display: grid;
+                grid-template-columns: 320px 1fr; /* Cột trái cố định, cột phải co giãn */
+                gap: 30px;
+            }
+            .receipt-right-panel {
+                padding-left: 30px;
+                border-left: 1px dashed var(--border-color);
+            }
+            .receipt-right-panel .receipt-info-grid { margin-bottom: 0; }
+        }
         .receipt-body { padding: 20px; }
         .receipt-footer { padding: 20px; margin-top: 0; border-top: 1px solid var(--border-color); background-color: #f5f5f5; }
 
@@ -873,41 +889,49 @@
             </div>
             
             <div class="receipt-body">
-                <div class="receipt-total-fee">
-                    <p class="label">TỔNG PHÍ</p>
-                    <div class="amount">
-                        <span id="payment-amount-display">0</span><sup>đ</sup>
-                    </div>
-                </div>
-
-                <!-- MỚI: Lựa chọn phương thức thanh toán -->
-                <div class="payment-method-selector">
-                    <button id="select-qr-btn" class="method-btn" type="button">Thanh toán QR</button>
-                    <button id="select-cash-btn" class="method-btn" type="button">Tiền mặt</button>
-                </div>
-
-                <div id="payment-qrcode-wrapper" style="padding: 10px; background: #fff; border-radius: var(--border-radius-md); max-width: 250px; margin: 0 auto 15px auto; position: relative;">
-                    <div class="qr-spinner" id="qr-spinner"></div>
-                    <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: 100%; object-fit: contain;">
-                </div>
-                <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 25px;">Nội dung: <strong id="payment-memo-display" style="font-family: monospace;">--</strong></p>
-
-                <div class="receipt-info-grid" style="border-top: 1px dashed var(--border-color); padding-top: 20px;">
-                    <div class="info-row full-span">
-                        <span class="info-label">Biển số xe:</span> 
-                        <div class="info-value plate-with-thumb">
-                            <span id="payment-plate-display" style="font-family: monospace; font-size: 1.1rem;">--</span>
-                            <img id="payment-thumb-image" src="" alt="Ảnh xe">
+                <!-- MỚI: Bố cục ngang cho màn hình lớn -->
+                <div class="receipt-horizontal-grid">
+                    <!-- CỘT TRÁI: THANH TOÁN -->
+                    <div class="receipt-left-panel">
+                        <div class="receipt-total-fee">
+                            <p class="label">TỔNG PHÍ</p>
+                            <div class="amount">
+                                <span id="payment-amount-display">0</span><sup>đ</sup>
+                            </div>
                         </div>
+        
+                        <!-- MỚI: Lựa chọn phương thức thanh toán -->
+                        <div class="payment-method-selector">
+                            <button id="select-qr-btn" class="method-btn" type="button">Thanh toán QR</button>
+                            <button id="select-cash-btn" class="method-btn" type="button">Tiền mặt</button>
+                        </div>
+        
+                        <div id="payment-qrcode-wrapper" style="padding: 10px; background: #fff; border-radius: var(--border-radius-md); max-width: 250px; margin: 0 auto 15px auto; position: relative;">
+                            <div class="qr-spinner" id="qr-spinner"></div>
+                            <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 25px;">Nội dung: <strong id="payment-memo-display" style="font-family: monospace;">--</strong></p>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Giờ vào:</span><span class="info-value" id="payment-entry-time">--</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Giờ ra:</span><span class="info-value" id="payment-exit-time">--</span>
-                    </div>
-                    <div class="info-row full-span">
-                        <span class="info-label">Tổng thời gian:</span><span class="info-value" id="payment-duration">--</span>
+                    <!-- CỘT PHẢI: CHI TIẾT BIÊN LAI -->
+                    <div class="receipt-right-panel">
+                        <div class="receipt-info-grid">
+                            <div class="info-row full-span">
+                                <span class="info-label">Biển số xe:</span> 
+                                <div class="info-value plate-with-thumb">
+                                    <span id="payment-plate-display" style="font-family: monospace; font-size: 1.1rem;">--</span>
+                                    <img id="payment-thumb-image" src="" alt="Ảnh xe">
+                                </div>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Giờ vào:</span><span class="info-value" id="payment-entry-time">--</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Giờ ra:</span><span class="info-value" id="payment-exit-time">--</span>
+                            </div>
+                            <div class="info-row full-span">
+                                <span class="info-label">Tổng thời gian:</span><span class="info-value" id="payment-duration">--</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
