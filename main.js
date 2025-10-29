@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paymentExitTime: document.getElementById('payment-exit-time'),
         paymentDuration: document.getElementById('payment-duration'),
         downloadQrBtn: document.getElementById('download-qr-btn'),
+        downloadPdfReceiptBtn: document.getElementById('download-pdf-receipt-btn'), // MỚI: Nút tải PDF
         printReceiptBtn: document.getElementById('print-receipt-btn'),
         qrSpinner: document.getElementById('qr-spinner'),
         capacityGaugeFill: document.getElementById('capacity-gauge-fill'),
@@ -383,6 +384,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const skeleton = document.createElement('div');
             skeleton.className = 'skeleton-item';
             allElements.vehicleListContainer.appendChild(skeleton);
+        }
+    };
+
+    /**
+     * MỚI: Tải biên lai PDF.
+     */
+    const downloadPdfReceipt = async (uniqueID) => {
+        if (!uniqueID) {
+            showToast('Không có UniqueID để tải biên lai PDF.', 'error');
+            return;
+        }
+        showToast('Đang tạo và tải biên lai PDF...', 'info');
+        try {
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=downloadPdfReceipt&uniqueID=${uniqueID}`);
+            if (!response.ok) throw new Error('Lỗi mạng khi tải PDF.');
+            const result = await response.json();
+            if (result.status === 'success' && result.data) {
+                const link = document.createElement('a');
+                link.href = `data:application/pdf;base64,${result.data}`;
+                link.download = `BienLai_${uniqueID}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Tải biên lai PDF thành công!', 'success');
+            } else { throw new Error(result.message || 'Không thể tạo biên lai PDF.'); }
+        } catch (error) {
+            showToast(`Lỗi tải biên lai PDF: ${error.message}`, 'error');
         }
     };
 
@@ -1425,6 +1453,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (allElements.downloadQrBtn) allElements.downloadQrBtn.addEventListener('click', downloadQRCode);
+    if (allElements.downloadPdfReceiptBtn) allElements.downloadPdfReceiptBtn.addEventListener('click', () => downloadPdfReceipt(currentVehicleContext.uniqueID)); // MỚI
     if (allElements.printReceiptBtn) allElements.printReceiptBtn.addEventListener('click', () => window.print());
 
     if (allElements.searchTermInput) allElements.searchTermInput.addEventListener('input', () => {

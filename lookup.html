@@ -4,109 +4,209 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tra cứu Lịch sử Gửi xe</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="config.js"></script>
     <style>
+        /* --- ĐỒNG BỘ GIAO DIỆN VỚI TRANG CHÍNH --- */
         :root {
-            --bg-main: #f4f5f7;
+            --bg-main: #e9ebee;
             --bg-card: #ffffff;
-            --border-color: #e0e0e0;
+            --border-color: #d1d5db;
             --primary-accent: #0d47a1;
+            --primary-accent-light: #1565c0;
             --text-primary: #333333;
             --text-secondary: #777777;
             --success-color: #2e7d32;
-            --border-radius-md: 8px;
+            --border-radius-md: 0; /* Vuông vức */
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: Arial, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-primary);
             margin: 0;
-            padding: 2em;
+            padding: 0;
         }
         .container {
             max-width: 800px;
             margin: auto;
+            padding: 25px;
         }
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 2em;
+        /* --- HEADER MỚI --- */
+        header {
+            background: var(--bg-card); padding: 15px 25px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
         }
-        .header img { width: 50px; }
-        .header h1 { font-size: 1.8rem; color: var(--primary-accent); }
+        .header-title { display: flex; align-items: center; gap: 15px; }
+        .header-title .logo img { width: 50px; height: auto; }
+        .title-group { display: flex; flex-direction: column; }
+        .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
+        .header-title h1 { font-size: 1.8rem; color: var(--text-primary); font-weight: 700; line-height: 1.2; margin: 0; }
+
+        /* --- NÂNG CẤP: KHU VỰC TÌM KIẾM --- */
+        #search-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+        }
+        .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-form input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        .search-form button, .btn-scan-qr {
+            padding: 10px 20px;
+            border: 1px solid var(--primary-accent);
+            background-image: linear-gradient(to bottom, var(--primary-accent-light), var(--primary-accent));
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .or-divider { text-align: center; color: var(--text-secondary); margin-bottom: 15px; font-weight: bold; }
+        .btn-scan-qr { width: 100%; }
+
+        /* --- KHUNG BIỂN SỐ --- */
+        .plate-display-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .plate-display-wrapper .label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
         .plate-display {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: bold;
             font-family: monospace;
-            background: var(--bg-card);
-            padding: 15px 20px;
-            border-radius: var(--border-radius-md);
-            border: 1px solid var(--border-color);
-            text-align: center;
-            margin-bottom: 2em;
+            color: var(--primary-accent);
         }
+
+        /* --- DANH SÁCH LỊCH SỬ --- */
         .history-list {
             display: flex;
             flex-direction: column;
-            gap: 1.5em;
+            gap: 25px;
         }
         .history-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius-md);
-            padding: 1.5em;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1em 2em;
+            overflow: hidden; /* Để header có nền */
         }
+        .history-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .history-card-header .date {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .history-card-body { padding: 0; }
         .history-card .detail-item {
-            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
         }
+        .history-card .detail-item:last-child { border-bottom: none; }
         .history-card .label {
             color: var(--text-secondary);
-            display: block;
-            margin-bottom: 0.25em;
         }
         .history-card .value {
             font-weight: 600;
-            font-size: 1.1rem;
         }
         .history-card .status-badge {
             font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white;
         }
         .history-card .status-badge.parking { background-color: var(--success-color); }
         .history-card .status-badge.departed { background-color: var(--text-secondary); }
+        
+        /* --- NÚT HÀNH ĐỘNG --- */
         .receipt-action {
-            grid-column: 1 / -1;
-            margin-top: 1em;
-            padding-top: 1em;
-            border-top: 1px dashed var(--border-color);
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-top: 1px solid var(--border-color);
+            text-align: right;
         }
         .btn-print {
             background: var(--primary-accent); color: white; border: none; padding: 10px 15px;
-            border-radius: 5px; cursor: pointer; font-weight: bold;
+            border-radius: var(--border-radius-md); cursor: pointer; font-weight: bold; text-decoration: none;
+            display: inline-block;
+            white-space: nowrap; /* Ngăn nút bị xuống dòng */
         }
         .message-box {
             text-align: center; padding: 3em; background: var(--bg-card); border: 1px solid var(--border-color);
         }
+
+        /* --- MODAL QUÉT QR --- */
+        .modal { 
+            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; align-items: center; justify-content: center; 
+        }
+        .modal-content {
+            background: var(--bg-card); padding: 20px; max-width: 500px; width: 90%;
+        }
+        #camera-feed { width: 100%; height: auto; border: 1px solid var(--border-color); }
     </style>
 </head>
 <body>
+    <header>
+        <div class="header-title">
+            <div class="logo">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
+            </div>
+            <div class="title-group">
+                <p class="subtitle">Cổng tra cứu thông tin khách hàng</p>
+                <h1>Lịch sử Gửi xe</h1>
+            </div> 
+        </div>
+    </header>
+
     <div class="container">
-        <div class="header">
-            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
-            <h1>Lịch sử Gửi xe</h1>
+        <!-- NÂNG CẤP: Khu vực tìm kiếm -->
+        <div id="search-section">
+            <form id="plate-search-form" class="search-form">
+                <input type="text" id="plate-input" placeholder="Nhập biển số xe của bạn..." required>
+                <button type="submit">Tìm kiếm</button>
+            </form>
+            <div class="or-divider">HOẶC</div>
+            <button id="scan-qr-btn" class="btn-scan-qr" type="button">Quét mã QR từ vé xe</button>
         </div>
 
-        <div id="plate-display" class="plate-display" style="display: none;"></div>
-
-        <div id="history-container" class="history-list">
-            <!-- Lịch sử sẽ được chèn vào đây -->
+        <div id="results-section" style="display: none;">
+            <div id="plate-display-wrapper" class="plate-display-wrapper">
+                <div class="label">Biển số xe tra cứu</div>
+                <div id="plate-display" class="plate-display"></div>
+            </div>
+            <div id="history-container" class="history-list">
+                <!-- Lịch sử sẽ được chèn vào đây -->
+            </div>
         </div>
 
         <div id="message-box" class="message-box" style="display: none;">
             <!-- Thông báo lỗi hoặc đang tải -->
+        </div>
+    </div>
+
+    <!-- NÂNG CẤP: Modal quét QR -->
+    <div id="qr-scanner-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Quét mã QR trên vé xe</h3>
+            <video id="camera-feed" playsinline></video>
+            <button id="close-scanner-btn" style="width: 100%; margin-top: 15px; background: #6c757d; border-color: #6c757d;" class="btn-scan-qr">Đóng</button>
         </div>
     </div>
 
