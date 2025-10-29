@@ -300,9 +300,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fullAdminData = data;
         
         // SỬA LỖI: Hiển thị dữ liệu theo ngày đã chọn hoặc hôm nay
-        const isFilteredByDate = elements.adminDatePicker.value !== "";
-        const revenueToShow = isFilteredByDate ? (data?.totalRevenueForDate ?? 0) : (data?.totalRevenueToday ?? 0);
-        const vehiclesToShow = isFilteredByDate ? (data?.totalVehiclesForDate ?? 0) : (data?.totalVehiclesToday ?? 0);
+        const isFilteredByDate = !!elements.adminDatePicker.value;
+        const revenueToShow = isFilteredByDate ? (data.totalRevenueForDate ?? 0) : (data.totalRevenueToday ?? 0);
+        const vehiclesToShow = isFilteredByDate ? (data.totalVehiclesForDate ?? 0) : (data.totalVehiclesToday ?? 0);
 
         elements.totalRevenue.innerHTML = `${formatCurrency(revenueToShow)} <sup>đ</sup>`;
         elements.totalVehicles.textContent = vehiclesToShow;

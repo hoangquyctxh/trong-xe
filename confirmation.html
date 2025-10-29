@@ -1195,9 +1195,11 @@
                 renderRightPanel(state) {
                     let content = '';
                     switch (state) {
-                        case 'qr':
-                            content = `<div class="qr-code-display" style="animation: fadeInUp 0.5s ease;"><img id="qr-code-image" src="" alt="Mã QR thanh toán"><p style="margin-top: 15px;">Nội dung: <strong id="qr-memo">--</strong></p></div>`;
-                            break;
+                        case 'qr': // TỐI ƯU: Tạo spinner và img container
+                            content = `<div class="qr-code-display" style="animation: fadeInUp 0.5s ease; position: relative; min-height: 280px; display: flex; align-items: center; justify-content: center;">
+                                           <div class="spinner" style="display: block;"></div>
+                                           <img id="qr-code-image" src="" alt="Mã QR thanh toán" style="opacity: 0; transition: opacity 0.3s ease;"><p style="position: absolute; bottom: 15px; left: 15px; right: 15px; margin:0;">Nội dung: <strong id="qr-memo">--</strong></p></div>`;
+                            break; 
                         case 'cash':
                             content = `<div style="text-align: center; animation: fadeInUp 0.5s ease;"><div class="cash-payment-animation"><div class="coin"></div><div class="coin"></div><div class="coin"></div><div class="coin"></div><svg class="wallet-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><h3 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5em; font-weight: 700;">Thanh toán bằng Tiền mặt</h3><p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p></div>`; 
                             break;
@@ -1334,10 +1336,24 @@
                                 UI.elements.selectQrBtn.classList.add('active');
                                 UI.elements.selectCashBtn.classList.remove('active');
                                 UI.renderRightPanel('qr');
-                                if (lastMessage && lastMessage.qrImageUrl) {
-                                    document.getElementById('qr-code-image').src = lastMessage.qrImageUrl;
-                                    document.getElementById('qr-memo').textContent = lastMessage.paymentMemo;
+                                // SỬA LỖI & TỐI ƯU: Đảm bảo các phần tử tồn tại trước khi gán
+                                const spinner = UI.elements.rightPanel.querySelector('.spinner');
+                                const qrImage = document.getElementById('qr-code-image');
+                                const qrMemo = document.getElementById('qr-memo');
+                                if (qrImage && lastMessage) {
+                                    const fee = lastMessage.totalAmount.replace(/\D/g, '');
+                                    const encodedMemo = encodeURIComponent(lastMessage.paymentMemo);
+                                    const qrImageUrl = `${APP_CONFIG.payment.imageUrlBase}&amount=${fee}&addInfo=${encodedMemo}`;
+                                    
+                                    qrImage.src = qrImageUrl;
+                                    if(qrMemo) qrMemo.textContent = lastMessage.paymentMemo;
+
+                                    qrImage.onload = () => {
+                                        if(spinner) spinner.style.display = 'none';
+                                        qrImage.style.opacity = '1';
+                                    };
                                 }
+
                             } else if (method === 'cash') {
                                 UI.elements.selectCashBtn.classList.add('active');
                                 UI.elements.selectQrBtn.classList.remove('active');
@@ -1447,7 +1463,7 @@
                     }
 
                     try {
-                        const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicleStatus&plate=&v=${new Date().getTime()}`);
+                        const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicleStatus&plate=${plate}&v=${new Date().getTime()}`);
                         const result = await response.json();
 
                         const textWrapper = actionBtn.querySelector('.btn-text-wrapper');

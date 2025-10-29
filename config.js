@@ -11,10 +11,10 @@ const APP_CONFIG = {
     // Cập nhật URL mới nhất từ Google Apps Script
     googleScriptUrl: "https://script.google.com/macros/s/AKfycbz-v6G4RhkTh5IbTQEb8n8tmztxQg99K0SLnNr2CHOjiHyNGXQo5UnJwJv-aAglIgj_AA/exec",
 
-    // Cấu hình thanh toán QR (SỬ DỤNG LẠI PHƯƠP PHÁP TĨNH)
-    // Thay thế ZaloPay bằng VietQR tĩnh
+    // Cấu hình thanh toán QR bằng cách tạo ảnh từ API của VietQR
     payment: {
-        baseUrl: "https://img.vietqr.io/image/vietinbank-2FIN0837290703-compact.jpg?accountName=VNPTFINTECH%20NGUYEN%20CAO%20HOANG%20QUY"
+        // URL gốc để tạo ảnh QR. Các tham số `amount` và `addInfo` sẽ được thêm vào sau.
+        imageUrlBase: "https://img.vietqr.io/image/970415-2FIN0837290703-UVAd7f2.jpg?accountName=VNPTFINTECH%20NGUYEN%20CAO%20HOANG%20QUY"
     },
 
     // Cấu hình API thời tiết (MỚI)

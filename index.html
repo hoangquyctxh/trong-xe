@@ -145,8 +145,6 @@
         .vehicle-item.is-vip { border-left: 4px solid var(--secondary-accent); }
 
         /* --- Icon camera trên danh sách --- */
-        .vehicle-item .photo-indicator { position: absolute; bottom: -2px; right: -2px; background: var(--primary-accent); color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
-        .vehicle-item .photo-indicator svg { width: 10px; height: 10px; }
 
         #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 2.5s forwards; border: 1px solid rgba(0,0,0,0.1); }
@@ -692,16 +690,6 @@
                             <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
                         </div>
     
-                        <!-- ================== MỚI: NÚT CHỤP ẢNH ================== -->
-                        <div class="photo-capture-group" id="photo-capture-group">
-                            <button type="button" class="btn-capture-photo" id="capture-photo-btn">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                Chụp ảnh xe
-                            </button>
-                            <img id="photo-preview-thumb" src="" alt="Ảnh xe xem trước">
-                            <input type="file" id="photo-file-input" accept="image/*" capture="environment" class="hidden">
-                        </div>
-                        
                         <div class="action-buttons-container">
                             <button type="button" id="check-in-btn" class="action-button btn-check-in hidden">Xác nhận gửi xe</button>
                             <button type="button" id="check-out-btn" class="action-button btn-check-out hidden">Xác nhận cho xe ra</button>
@@ -737,8 +725,6 @@
                                 <span class="value" id="info-phone-number">--</span>
                             </div>
                         </div>
-                        <!-- ================== MỚI: HIỂN THỊ ẢNH ĐÃ CHỤP ================== -->
-                        <img id="vehicle-image-display" src="" alt="Ảnh xe đã chụp">
                         <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1rem;">Lịch sử gửi xe</h3>
                         <ul class="history-list" id="info-history-list"></ul>
                     </div>
@@ -912,9 +898,10 @@
                             <button id="select-cash-btn" class="method-btn" type="button">Tiền mặt</button>
                         </div>
         
-                        <div id="payment-qrcode-wrapper" style="padding: 10px; background: #fff; border-radius: var(--border-radius-md); max-width: 250px; margin: 0 auto 15px auto; position: relative;">
+                        <!-- TÁI CẤU TRÚC: Loại bỏ div 'payment-qrcode-wrapper' và đặt spinner, img trực tiếp -->
+                        <div id="payment-qrcode-wrapper" style="max-width: 250px; margin: 0 auto 15px auto; position: relative; min-height: 250px; display: none; align-items: center; justify-content: center; background: #fff; border-radius: var(--border-radius-md); padding: 10px;">
                             <div class="qr-spinner" id="qr-spinner"></div>
-                            <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: 100%; object-fit: contain;">
+                            <img id="payment-qrcode-image" alt="Mã QR thanh toán" style="width: 100%; height: auto; object-fit: contain; display: none;">
                         </div>
                         <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 25px;">Nội dung: <strong id="payment-memo-display" style="font-family: monospace;">--</strong></p>
                     </div>
@@ -934,11 +921,6 @@
                             <div class="info-row full-span">
                                 <span class="info-label">Tổng thời gian:</span><span class="info-value" id="payment-duration">--</span>
                             </div>
-                        </div>
-                        <!-- MỚI: Khu vực hiển thị ảnh xe -->
-                        <div id="receipt-image-container">
-                            <p style="font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Ảnh xe vào</p>
-                            <img id="payment-thumb-image" src="" alt="Ảnh xe">
                         </div>
                     </div>
                 </div>
