@@ -38,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeScannerBtn: document.getElementById('close-scanner-btn'),
         ticketPlateDisplay: document.getElementById('ticket-plate-display'),
         ticketTimeDisplay: document.getElementById('ticket-time-display'),
+        ticketLookupLink: document.getElementById('ticket-lookup-link-anchor'), // NÂNG CẤP
+        reprintReceiptBtn: document.getElementById('reprint-receipt-btn'), // NÂNG CẤP
         offlineIndicator: document.getElementById('offline-indicator'),
         locationSubtitle: document.getElementById('location-subtitle'),
         ticketLocationDisplay: document.getElementById('ticket-location-display'),
@@ -175,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Tính khoảng thời gian giữa hai mốc thời gian.
      * @param {string | Date} startTime - Thời gian bắt đầu.
-     * @param {string | Date} endTime - Thời gian kết thúc.
+     * @param {string | Date | null} endTime - Thời gian kết thúc.
      */
     const calculateDurationBetween = (startTime, endTime) => {
         if (!startTime || !endTime) return '--';
@@ -488,12 +490,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateUIFromCache = (plate) => {
         clearAllIntervals();
         
-        const vehicleInCache = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi');
+        const vehicleParking = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi');
+        const vehicleDeparted = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status !== 'Đang gửi');
+
         allElements.vehicleInfoPanel.style.display = 'none'; // Ẩn panel thông tin trước
 
-        if (vehicleInCache) {
-            const isVehicleVIP = vehicleInCache.VIP === 'Có';
-            currentVehicleContext = { plate: vehicleInCache.Plate, status: 'parking', uniqueID: vehicleInCache.UniqueID, isVIP: isVehicleVIP };
+        if (vehicleParking) {
+            const isVehicleVIP = vehicleParking.VIP === 'Có';
+            currentVehicleContext = { plate: vehicleParking.Plate, status: 'parking', uniqueID: vehicleParking.UniqueID, isVIP: isVehicleVIP };
             allElements.phoneItemMain.style.display = 'none';
             allElements.vipCheckboxContainer.style.display = 'none'; // Ẩn checkbox VIP
 
@@ -504,24 +508,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 allElements.infoStatus.innerHTML = `<span class="status-badge parking">Đang gửi</span>`;
             }
 
-            allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleInCache['Entry Time']);
-            allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleInCache.Phone);
+            allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleParking['Entry Time']);
+            allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleParking.Phone);
             allElements.durationItem.style.display = 'flex';
             allElements.feeItem.style.display = 'flex';
 
             const updateLiveInfo = () => {
-                const duration = calculateDuration(vehicleInCache['Entry Time']) || '--';
-                const fee = calculateFee(vehicleInCache['Entry Time'], null, isVehicleVIP);
+                const duration = calculateDuration(vehicleParking['Entry Time']) || '--';
+                const fee = calculateFee(vehicleParking['Entry Time'], null, isVehicleVIP);
                 allElements.infoDuration.textContent = duration;
                 allElements.infoFee.textContent = `${fee.toLocaleString('vi-VN')}đ`;
             };
             updateLiveInfo();
             const interval = setInterval(updateLiveInfo, 10000); // Cập nhật mỗi 10s
             durationIntervals.push(interval);
-
+            
+            allElements.reprintReceiptBtn.classList.add('hidden');
             allElements.checkOutBtn.classList.remove('hidden');
+            allElements.checkOutBtn.disabled = false; // SỬA LỖI: Kích hoạt lại nút "Cho xe ra"
             allElements.checkInBtn.classList.add('hidden');
             allElements.vehicleInfoPanel.style.display = 'block'; // Hiện panel thông tin
+
+        } else if (vehicleDeparted) {
+            // NÂNG CẤP: Xử lý trường hợp xe đã rời bãi
+            currentVehicleContext = { plate: vehicleDeparted.Plate, status: 'departed', uniqueID: vehicleDeparted.UniqueID, isVIP: vehicleDeparted.VIP === 'Có' };
+            allElements.phoneItemMain.style.display = 'none';
+            allElements.vipCheckboxContainer.style.display = 'none';
+
+            allElements.infoStatus.innerHTML = `<span class="status-badge departed">Đã rời bãi</span>`;
+            allElements.infoEntryTime.textContent = formatDateTimeForDisplay(vehicleDeparted['Entry Time']);
+            allElements.infoPhoneNumber.textContent = formatPhoneNumberForDisplay(vehicleDeparted.Phone);
+            
+            // Hiển thị thông tin cố định
+            allElements.durationItem.style.display = 'flex';
+            allElements.feeItem.style.display = 'flex';
+            allElements.infoDuration.textContent = calculateDurationBetween(vehicleDeparted['Entry Time'], vehicleDeparted['Exit Time']);
+            allElements.infoFee.textContent = `${(vehicleDeparted.Fee || 0).toLocaleString('vi-VN')}đ`;
+
+            // Hiển thị nút "In lại biên lai"
+            allElements.reprintReceiptBtn.classList.remove('hidden');
+            allElements.checkInBtn.classList.add('hidden');
+            allElements.checkOutBtn.classList.add('hidden');
+            allElements.vehicleInfoPanel.style.display = 'block';
+
+            // Gắn sự kiện cho nút in lại
+            allElements.reprintReceiptBtn.onclick = () => showReceiptForDepartedVehicle(vehicleDeparted);
+
         } else {
             currentVehicleContext = { plate: plate, status: 'new' };
             allElements.phoneItemMain.style.display = 'block';
@@ -529,6 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             resetMainForm(); // Reset để đảm bảo không còn thông tin cũ
             allElements.checkInBtn.classList.remove('hidden');
+            allElements.reprintReceiptBtn.classList.add('hidden');
             allElements.checkOutBtn.classList.add('hidden');
         }
 
@@ -584,6 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.phoneItemMain.style.display = 'block';
         allElements.vipCheckboxContainer.style.display = 'flex';
         allElements.checkInBtn.classList.add('hidden');
+        allElements.reprintReceiptBtn.classList.add('hidden');
         allElements.checkOutBtn.classList.add('hidden');
         allElements.infoPhoneNumber.textContent = '--';
         allElements.isVipCheckbox.checked = false;
@@ -685,12 +719,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allElements.ticketLocationDisplay && currentLocation) {
             allElements.ticketLocationDisplay.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
         }
+        
+        // SỬA LỖI: Thêm kiểm tra an toàn cho ticketLookupLink
+        if (allElements.ticketLookupLink) {
+            const lookupUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}lookup.html?id=${uniqueID}`;
+            allElements.ticketLookupLink.href = lookupUrl;
+        }
 
         QRCode.toCanvas(allElements.qrcodeCanvas, uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
             if (error) { showToast('Lỗi tạo mã QR.', 'error'); return; }
             
             if (allElements.qrcodeModal) allElements.qrcodeModal.style.display = 'flex';
         });
+    };
+
+    /**
+     * NÂNG CẤP: Hiển thị lại biên lai cho xe đã rời bãi.
+     */
+    const showReceiptForDepartedVehicle = (vehicle) => {
+        if (!vehicle) return;
+
+        // Điền thông tin vào biên lai
+        allElements.paymentPlateDisplay.textContent = vehicle.Plate;
+        allElements.paymentEntryTime.textContent = formatDateTimeForDisplay(vehicle['Entry Time']);
+        allElements.paymentExitTime.textContent = formatDateTimeForDisplay(vehicle['Exit Time']);
+        allElements.paymentDuration.textContent = calculateDurationBetween(vehicle['Entry Time'], vehicle['Exit Time']);
+        allElements.paymentAmountDisplay.textContent = (vehicle.Fee || 0).toLocaleString('vi-VN');
+        allElements.paymentMemoDisplay.textContent = `TTGX ${vehicle.Plate} ${vehicle.UniqueID}`;
+
+        // Ẩn các phần không cần thiết
+        document.querySelector('.payment-method-selector').style.display = 'none';
+        allElements.paymentQrcodeImage.style.display = 'none';
+        document.getElementById('payment-qrcode-wrapper').style.display = 'none';
+        allElements.completePaymentBtn.style.display = 'none';
+
+        // Đảm bảo các nút khác hiển thị đúng
+        allElements.closePaymentModalBtn.style.display = 'block';
+
+        // Hiển thị modal
+        allElements.paymentModal.style.display = 'flex';
     };
 
     /**
@@ -729,6 +796,12 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.selectQrBtn.classList.remove('active');
         allElements.selectCashBtn.classList.remove('active');
         
+        // Đảm bảo các nút được hiển thị lại (trường hợp xem lại biên lai cũ)
+        document.querySelector('.payment-method-selector').style.display = 'flex';
+        allElements.completePaymentBtn.style.display = 'block';
+        allElements.closePaymentModalBtn.style.display = 'block';
+
+
         allElements.completePaymentBtn.disabled = true;
 
         // Gửi thông tin đến màn hình phụ để nó tự quyết định hiển thị.

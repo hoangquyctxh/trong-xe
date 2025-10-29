@@ -1,8 +1,7 @@
 /**
  * @file code.gs
- * @version 2.2 - Rewritten & Stabilized
- * @description Phiên bản được viết lại hoàn toàn để đảm bảo sự ổn định, rõ ràng và loại bỏ các lỗi cú pháp.
- * Hệ thống giữ nguyên toàn bộ logic xử lý dữ liệu xe, VIP, lưu ảnh, trang quản trị và cache.
+ * @version 2.4 - Critical Bug Fix & Refactoring
+ * @description Sửa lỗi nghiêm trọng khiến các trang không tải được dữ liệu. Tái cấu trúc lại hàm doGet để xử lý cả request cũ và mới.
  * Tác giả: Nguyễn Cao Hoàng Quý (Được hỗ trợ bởi Gemini Code Assist)
  */
 
@@ -24,27 +23,41 @@ const SCRIPT_CACHE = CacheService.getScriptCache();
 function doGet(e) {
   try {
     const params = e.parameter;
-    switch (params.action) {
-      case 'getAdminOverview':
-        return getAdminOverview(params.secret, params.date);
-      case 'getTransactions':
-        return getTransactions(params.secret, params.date);
-      case 'getVehicleStatus':
-        return getVehicleStatus(params.plate);
-      case 'getVehicles':
+
+    // --- SỬA LỖI NGHIÊM TRỌNG: Tái cấu trúc logic để xử lý cả request cũ và mới ---
+    if (params.action) {
+      // Xử lý các request mới có tham số 'action'
+      switch (params.action) {
+        case 'getAdminOverview':
+          return getAdminOverview(params.secret, params.date);
+        case 'getTransactions':
+          return getTransactions(params.secret, params.date);
+        case 'getVehicleStatus':
+          return getVehicleStatus(params.plate);
+        case 'getVehicles':
+          return createJsonResponse({ status: 'success', data: getRecordsForDate(params.date) });
+        case 'getVehicleHistoryByUniqueID':
+          return getVehicleHistoryByUniqueID(params.uniqueID);
+        default:
+          throw new Error(`Hành động '${params.action}' không hợp lệ.`);
+      }
+    } else {
+      // Xử lý các request cũ để đảm bảo tương thích ngược
+      if (params.plate) {
+        return createJsonResponse({ status: 'success', data: getVehicleHistory(params.plate) });
+      }
+      // Đây là request mặc định để tải dữ liệu cho trang index
+      if (params.date !== undefined) {
         return createJsonResponse({ status: 'success', data: getRecordsForDate(params.date) });
-      default:
-        // Xử lý các request cũ để tương thích
-        if (params.plate) {
-          return createJsonResponse({ status: 'success', data: getVehicleHistory(params.plate) });
-        }
-        throw new Error("Yêu cầu không hợp lệ hoặc thiếu tham số 'action'.");
+      }
+      throw new Error("Yêu cầu không hợp lệ hoặc thiếu tham số.");
     }
   } catch (error) {
     logError('doGet', error);
     return createJsonResponse({ status: 'error', message: `Lỗi xử lý yêu cầu: ${error.message}` });
   }
 }
+
 
 /**
  * Xử lý các yêu cầu POST (ghi dữ liệu).
@@ -300,6 +313,42 @@ function getVehicleHistory(plate) {
     .map(row => arrayToObject(headers, row))
     .sort((a, b) => new Date(getObjectValueCaseInsensitive(b, 'Entry Time')) - new Date(getObjectValueCaseInsensitive(a, 'Entry Time')));
 }
+
+/**
+ * Lấy lịch sử gửi xe của một biển số dựa trên UniqueID của một giao dịch.
+ */
+function getVehicleHistoryByUniqueID(uniqueID) {
+  if (!uniqueID) {
+    throw new Error("Thiếu tham số uniqueID.");
+  }
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const plateIndex = headers.indexOf("Plate");
+  const uniqueIDIndex = headers.indexOf("UniqueID");
+
+  let plateNumber = null;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][uniqueIDIndex] === uniqueID) {
+      plateNumber = data[i][plateIndex];
+      break;
+    }
+  }
+
+  if (!plateNumber) {
+    throw new Error("Không tìm thấy giao dịch với UniqueID này.");
+  }
+
+  const history = [];
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][plateIndex] === plateNumber) {
+      history.push(arrayToObject(headers, data[i]));
+    }
+  }
+  
+  return createJsonResponse({ status: 'success', data: history });
+}
+
 
 /**
  * Lấy danh sách các xe trong một ngày cụ thể (bao gồm cả xe từ ngày cũ còn gửi).

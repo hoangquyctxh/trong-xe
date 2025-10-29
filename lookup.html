@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu Lịch sử Gửi xe</title>
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --bg-main: #f4f5f7;
+            --bg-card: #ffffff;
+            --border-color: #e0e0e0;
+            --primary-accent: #0d47a1;
+            --text-primary: #333333;
+            --text-secondary: #777777;
+            --success-color: #2e7d32;
+            --border-radius-md: 8px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2em;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 2em;
+        }
+        .header img { width: 50px; }
+        .header h1 { font-size: 1.8rem; color: var(--primary-accent); }
+        .plate-display {
+            font-size: 2rem;
+            font-weight: bold;
+            font-family: monospace;
+            background: var(--bg-card);
+            padding: 15px 20px;
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            margin-bottom: 2em;
+        }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5em;
+        }
+        .history-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: 1.5em;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em 2em;
+        }
+        .history-card .detail-item {
+            font-size: 1rem;
+        }
+        .history-card .label {
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 0.25em;
+        }
+        .history-card .value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .history-card .status-badge {
+            font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white;
+        }
+        .history-card .status-badge.parking { background-color: var(--success-color); }
+        .history-card .status-badge.departed { background-color: var(--text-secondary); }
+        .receipt-action {
+            grid-column: 1 / -1;
+            margin-top: 1em;
+            padding-top: 1em;
+            border-top: 1px dashed var(--border-color);
+        }
+        .btn-print {
+            background: var(--primary-accent); color: white; border: none; padding: 10px 15px;
+            border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
+        .message-box {
+            text-align: center; padding: 3em; background: var(--bg-card); border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
+            <h1>Lịch sử Gửi xe</h1>
+        </div>
+
+        <div id="plate-display" class="plate-display" style="display: none;"></div>
+
+        <div id="history-container" class="history-list">
+            <!-- Lịch sử sẽ được chèn vào đây -->
+        </div>
+
+        <div id="message-box" class="message-box" style="display: none;">
+            <!-- Thông báo lỗi hoặc đang tải -->
+        </div>
+    </div>
+
+    <script src="lookup.js"></script>
+</body>
+</html>

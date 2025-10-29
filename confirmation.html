@@ -436,6 +436,119 @@
         }
 
         /* ================================================== */
+        /* --- GIAO DIỆN MỚI CHO VIEW THÀNH CÔNG --- */
+        /* ================================================== */
+        .success-grid-new {
+            display: grid;
+            grid-template-columns: 350px 1fr; /* Cột trái cố định, cột phải co giãn */
+            min-height: 600px;
+        }
+        .success-left-panel {
+            background-color: #f0f9ff;
+            padding: 3em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .success-title-new {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-accent);
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+        .success-subtitle-new {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            max-width: 30ch;
+        }
+        .success-footer-actions {
+            margin-top: auto; /* Đẩy xuống cuối */
+            padding-top: 2em;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        #feedback-qr-code {
+            width: 100px;
+            height: 100px;
+            margin: 10px auto 0 auto;
+            background: white;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .success-receipt-panel {
+            padding: 2.5em;
+            display: flex;
+            flex-direction: column;
+        }
+        .receipt-header-new {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 1.5em;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .receipt-header-new img {
+            width: 50px;
+            height: 50px;
+        }
+        .receipt-header-new .org-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .receipt-header-new .org-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        .receipt-header-new .org-location {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .receipt-body-new {
+            padding: 2em 0;
+            flex-grow: 1;
+        }
+        .receipt-body-new .receipt-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 1.5em;
+            color: var(--text-primary);
+        }
+        .receipt-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5em 2em;
+        }
+        .receipt-details-grid .detail-item {
+            font-size: 1rem;
+        }
+        .receipt-details-grid .detail-item .label {
+            color: var(--text-secondary);
+            margin-bottom: 0.25em;
+            display: block;
+        }
+        .receipt-details-grid .detail-item .value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        .receipt-details-grid .detail-item.total .value {
+            font-size: 1.8rem;
+            color: var(--danger-color);
+        }
+        .receipt-footer-new {
+            text-align: center;
+            padding-top: 2em;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        /* ================================================== */
         /* --- MỚI: GIAO DIỆN MÀN HÌNH CHỜ (IDLE) --- */
         /* ================================================== */
         #idle-view .confirmation-card::after {
@@ -911,51 +1024,56 @@
     </div>
 
     <!-- View 2: Thanh toán thành công -->
-    <div id="success-view" class="confirmation-card hidden">
-        <div class="success-icon-wrapper">
-            <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-                <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-            </svg>
-        </div>
-        <h1 class="card-title success" style="margin-bottom: 0;">GIAO DỊCH THÀNH CÔNG</h1> 
-        
-        <div class="success-main-content">
-            <div class="success-amount-display">
-                <div class="label">Tổng phí đã thanh toán</div>
-                <div class="amount">
-                    <span id="success-total-amount">0</span><sup>đ</sup>
+    <div id="success-view" class="confirmation-card hidden" style="padding: 0; max-width: 850px;">
+        <div class="success-grid-new">
+            <!-- CỘT TRÁI: LỜI CẢM ƠN -->
+            <div class="success-left-panel">
+                <div class="success-icon-wrapper">
+                    <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                </div>
+                <h1 class="success-title-new">Thanh toán thành công!</h1>
+                <p class="success-subtitle-new">Cảm ơn Quý khách đã sử dụng dịch vụ. Chúc Quý khách một chuyến đi an toàn!</p>
+                <div class="success-footer-actions">
+                    <p>Quét mã để đánh giá dịch vụ</p>
+                    <div id="feedback-qr-code"></div>
                 </div>
             </div>
-            <div class="success-plate-display" id="success-plate">--</div>
-            
-            <!-- ================================================== -->
-            <!-- --- KHU VỰC CHI TIẾT ĐÃ ĐƯỢC THIẾT KẾ LẠI --- -->
-            <!-- ================================================== -->
-            <div class="success-details-grid">
-                <div class="detail-item">
-                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>Giờ vào</span>
-                    <span class="value" id="success-time-in">--</span>
+
+            <!-- CỘT PHẢI: BIÊN LAI -->
+            <div class="success-receipt-panel">
+                <div class="receipt-header-new">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
+                    <div class="org-details">
+                        <span class="org-name">ĐOÀN TNCS HỒ CHÍ MINH</span>
+                        <span class="org-location" id="receipt-location-name">PHƯỜNG BA ĐÌNH</span>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H3v-6"/><path d="M14 10 3 21"/></svg>Giờ ra</span>
-                    <span class="value" id="success-time-out">--</span>
+                <div class="receipt-body-new">
+                    <h3 class="receipt-title">BIÊN LAI THANH TOÁN</h3>
+                    <div class="receipt-details-grid">
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <span class="label">Biển số xe</span>
+                            <span class="value" id="success-plate" style="font-family: monospace; font-size: 1.5rem;">--</span>
+                        </div>
+                        <div class="detail-item"><span class="label">Giờ vào</span><span class="value" id="success-time-in">--</span></div>
+                        <div class="detail-item"><span class="label">Giờ ra</span><span class="value" id="success-time-out">--</span></div>
+                        <div class="detail-item"><span class="label">Tổng thời gian</span><span class="value" id="success-duration">--</span></div>
+                        <div class="detail-item"><span class="label">Phương thức</span><span class="value" id="success-payment-method">--</span></div>
+                        <div class="detail-item total" style="grid-column: 1 / -1; text-align: right; margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--border-color);">
+                            <span class="label" style="text-align: right;">TỔNG CỘNG</span>
+                            <span class="value" id="success-total-amount">0đ</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="detail-item full-span" style="grid-column: 1 / -1;">
-                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Phương thức</span>
-                    <span class="value" id="success-payment-method">--</span>
-                </div>
-                <div class="success-duration-highlight detail-item">
-                    <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Tổng thời gian</span>
-                    <span class="value" id="success-duration">--</span>
+                <div class="receipt-footer-new">
+                    <p class="thank-you-message" style="margin: 0; animation: none;">Hẹn gặp lại Quý khách!</p>
+                    <p class="auto-close-note" style="margin-top: 0.5em;">Cửa sổ sẽ tự động đóng sau 10 giây.</p>
                 </div>
             </div>
         </div>
-        <p class="thank-you-message">Cảm ơn Quý khách & Hẹn gặp lại!</p> 
-        <div class="receipt-footer">
-            <button class="btn-cancel" onclick="window.close()" style="text-decoration: none; background: var(--primary-accent); color: white; padding: 10px 25px; border-radius: var(--border-radius-md);">Đóng</button>
-        </div>
-        <p class="auto-close-note">Sẽ tự động chuyển sang màn hình chờ sau 10 giây.</p>
         <div id="confetti-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;"></div>
     </div>
 
@@ -1175,7 +1293,9 @@
                     document.getElementById('success-time-out').textContent = payload.timeOut;
                     document.getElementById('success-duration').textContent = payload.duration;
                     document.getElementById('success-payment-method').textContent = payload.paymentMethod;
-                    document.getElementById('success-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
+                    document.getElementById('success-total-amount').textContent = payload.totalAmount;
+                    // Cập nhật tên địa điểm trên biên lai mới
+                    if (payload.locationName) document.getElementById('receipt-location-name').textContent = payload.locationName.toUpperCase();
                 },
 
                 renderRightPanel(state) {
@@ -1512,6 +1632,11 @@
                     StateManager.startInactivityTimer();
                     UI.showView('idleView');
                 },
+                
+                setupFeedbackQR() {
+                    const feedbackQRContainer = document.getElementById('feedback-qr-code');
+                    if (feedbackQRContainer) QRCode.toCanvas(feedbackQRContainer, 'https://www.example.com/feedback', { width: 84, height: 84, margin: 1 });
+                },
 
                 setupClock() {
                     const update = () => {
@@ -1549,6 +1674,7 @@
 
             // --- BẮT ĐẦU CHẠY ỨNG DỤNG ---
             App.init();
+            App.setupFeedbackQR(); // Tạo mã QR feedback
         });
     </script>
 </body>

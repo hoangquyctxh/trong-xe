@@ -242,6 +242,12 @@
             font-weight: 700;
             color: var(--text-primary);
         }
+        /* NÂNG CẤP: Thêm link tra cứu */
+        .ticket-lookup-link {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
         #ticket-plate-display {
             font-family: monospace;
             font-size: 1.1rem;
@@ -694,6 +700,7 @@
                         <div class="action-buttons-container">
                             <button type="button" id="check-in-btn" class="action-button btn-check-in hidden">Xác nhận gửi xe</button>
                             <button type="button" id="check-out-btn" class="action-button btn-check-out hidden">Xác nhận cho xe ra</button>
+                            <button type="button" id="reprint-receipt-btn" class="action-button hidden" style="background-image: linear-gradient(to bottom, #17a2b8, #138496); border-color: #117a8b;">Xem & In lại Biên lai</button>
                         </div>
                     </div>
     
@@ -844,6 +851,10 @@
                     <div class="info-row">
                         <span class="info-label">Thời gian vào:</span>
                         <span class="info-value" id="ticket-time-display">--</span>
+                    </div>
+                    <!-- SỬA LỖI: Thêm lại phần tử chứa link tra cứu đã bị thiếu -->
+                    <div class="ticket-lookup-link">
+                        <a id="ticket-lookup-link-anchor" href="#" target="_blank">Tra cứu lịch sử & biên lai</a>
                     </div>
                 </div>
 
