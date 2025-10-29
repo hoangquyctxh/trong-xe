@@ -70,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelConfirmationBtn: document.getElementById('cancel-confirmation-btn'),
         selectQrBtn: document.getElementById('select-qr-btn'),
         selectCashBtn: document.getElementById('select-cash-btn'),
+        infoPlateType: document.getElementById('info-plate-type'), // NÂNG CẤP
+        plateInfoItem: document.getElementById('plate-info-item'), // NÂNG CẤP
     };
 
     // Biến trạng thái toàn cục
@@ -224,6 +226,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearAllIntervals = () => {
         durationIntervals.forEach(clearInterval);
         durationIntervals = [];
+    };
+
+    /**
+     * NÂNG CẤP: Giải mã thông tin từ biển số xe.
+     * @param {string} plate - Chuỗi biển số xe.
+     * @returns {string} - Chuỗi mô tả thông tin đã giải mã.
+     */
+    const decodePlateNumber = (plate) => {
+        if (!plate || typeof plate !== 'string' || typeof PLATE_DATA === 'undefined') return 'Chưa có thông tin';
+
+        const cleanedPlate = cleanPlateNumber(plate);
+
+        // --- BƯỚC 1: Ưu tiên quét các sê-ri đặc biệt (NG, NN, KT, CD...) trong toàn bộ biển số ---
+        for (const series in PLATE_DATA.specialSeries) {
+            if (cleanedPlate.includes(series)) {
+                // Xử lý chi tiết biển ngoại giao (NG)
+                if (series === 'NG') {
+                    const diplomaticCode = parseInt(cleanedPlate.replace('NG', '').substring(0, 3), 10);
+                    if (!isNaN(diplomaticCode)) {
+                        for (const range in PLATE_DATA.diplomaticSeries) {
+                            if (range.includes('-')) {
+                                const [start, end] = range.split('-').map(Number);
+                                if (diplomaticCode >= start && diplomaticCode <= end) {
+                                    return PLATE_DATA.diplomaticSeries[range];
+                                }
+                            } else if (diplomaticCode === parseInt(range, 10)) {
+                                return PLATE_DATA.diplomaticSeries[range];
+                            }
+                        }
+                    }
+                    return "Xe của cơ quan đại diện ngoại giao"; // Fallback
+                }
+                return PLATE_DATA.specialSeries[series]; // Trả về cho các loại đặc biệt khác
+            }
+        }
+
+        // --- BƯỚC 2: Phân tích biển số dân sự để phân biệt Ô tô / Xe máy dựa trên độ dài và cấu trúc ---
+        let provinceCode = '';
+        let vehicleType = 'Chưa xác định';
+
+        // Biển 5 số: 9 ký tự là xe máy, 8 ký tự là ô tô.
+        if (cleanedPlate.length === 9 && /^[0-9]{2}/.test(cleanedPlate)) {
+            provinceCode = cleanedPlate.substring(0, 2);
+            vehicleType = 'Xe máy';
+        } else if (cleanedPlate.length === 8 && /^[0-9]{2}/.test(cleanedPlate)) {
+            provinceCode = cleanedPlate.substring(0, 2);
+            vehicleType = 'Ô tô';
+        }
+
+        if (!provinceCode) return 'Biển số không xác định';
+
+        const provinceInfo = PLATE_DATA.provinces.find(p => p.codes.includes(provinceCode));
+        const provinceName = provinceInfo ? provinceInfo.name : 'Tỉnh không xác định';
+        
+        return `${provinceName} - ${vehicleType}`;
     };
 
     // =================================================================
@@ -474,6 +531,14 @@ document.addEventListener('DOMContentLoaded', () => {
             allElements.checkInBtn.classList.remove('hidden');
             allElements.checkOutBtn.classList.add('hidden');
         }
+
+        // NÂNG CẤP: Hiển thị thông tin giải mã biển số
+        const decodedInfo = decodePlateNumber(plate);
+        if (allElements.plateInfoItem && allElements.infoPlateType) {
+            allElements.infoPlateType.textContent = decodedInfo;
+            allElements.plateInfoItem.style.display = 'flex';
+        }
+
         fetchVehicleHistory(plate);
     };
 
@@ -524,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.isVipCheckbox.checked = false;
         currentVehicleContext = null;
         clearAllIntervals();
+        if (allElements.plateInfoItem) allElements.plateInfoItem.style.display = 'none'; // NÂNG CẤP: Ẩn mục nhận dạng
     };
     
     const processCheckOut = async (checkoutData) => {

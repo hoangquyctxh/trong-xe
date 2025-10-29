@@ -1,599 +1,645 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Đã loại bỏ Google Fonts để dùng font hệ thống -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Thêm thư viện bản đồ Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="config.js"></script>
-    <title>Trang Quản trị - Hệ thống Quản lý xe</title>
-    <script src="locations.js"></script>
-    <style>
-        :root {
-            /* --- BẢNG MÀU "TRANG NHÀ NƯỚC" --- */
-            --bg-main: #e9ebee;
-            --bg-card: #ffffff;
-            --bg-header: #ffffff;
-            --border-color: #d1d5db;
-            --primary-accent: #0d47a1;
-            --primary-accent-light: #1565c0;
-            --secondary-accent: #f57c00;
-            --text-primary: #333333;
-            --text-secondary: #777777;
-            --success-color: #2e7d32;
-            --danger-color: #c62828;
-            --info-color: #17a2b8;
-            /* --- Loại bỏ đổ bóng và bo góc --- */
-            --shadow-sm: none;
-            --shadow-md: none;
-            --shadow-lg: none;
-            --border-radius-lg: 0;
-            --border-radius-md: 0;
-        }
-        /* --- MỚI: CSS cho Toast (Thông báo) --- */
-        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { padding: 15px 20px; border-radius: var(--border-radius-md); color: white; box-shadow: 0 3px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 3.5s forwards; border: 1px solid rgba(0,0,0,0.1); }
-        .toast.success { background-color: var(--success-color); } .toast.error { background-color: var(--danger-color); } .toast.info { background-color: var(--primary-accent); }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; } }
-        /* --- Kết thúc CSS cho Toast --- */
+// admin.js
+document.addEventListener('DOMContentLoaded', () => {
+    const elements = {
+        loader: document.getElementById('loader'),
+        totalRevenue: document.getElementById('total-revenue'),
+        totalVehicles: document.getElementById('total-vehicles'),
+        currentVehicles: document.getElementById('current-vehicles'),
+        trafficChartCanvas: document.getElementById('traffic-chart'),
+        revenueChartCanvas: document.getElementById('revenue-chart'),
+        vehiclesChartCanvas: document.getElementById('vehicles-chart'),
+        revenueChartTitle: document.getElementById('revenue-chart-title'),
+        vehiclesChartTitle: document.getElementById('vehicles-chart-title'),
+        sidebar: document.querySelector('.sidebar'),
+        pages: document.querySelectorAll('.page-content'),
+        mapContainer: document.getElementById('map-container'),
+        resetFilterBtn: document.getElementById('reset-filter-btn'),
+        transactionLogBody: document.getElementById('transaction-log-body'),
+        adminDatePicker: document.getElementById('admin-date-picker'),
+        startSessionBtn: document.getElementById('start-session-btn'),
+        editModal: document.getElementById('edit-transaction-modal'),
+        editForm: document.getElementById('edit-transaction-form'),
+        closeEditModalBtn: document.getElementById('close-edit-modal-btn'),
+        cancelEditBtn: document.getElementById('cancel-edit-btn'),
+        saveEditBtn: document.getElementById('save-edit-btn'),
+        editUniqueID: document.getElementById('edit-unique-id'),
+        editPlate: document.getElementById('edit-plate'),
+        editEntryTime: document.getElementById('edit-entry-time'),
+        editExitTime: document.getElementById('edit-exit-time'),
+        editFee: document.getElementById('edit-fee'),
+        editPaymentMethod: document.getElementById('edit-payment-method'),
+        editStatus: document.getElementById('edit-status'),
+        paginationControls: document.getElementById('pagination-controls'), // MỚI
+        toastContainer: document.getElementById('toast-container'), // MỚI
 
+    };
 
-        /* --- MỚI: Bố cục Dashboard với Sidebar --- */
-        .dashboard-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 250px;
-            background-color: var(--bg-header);
-            border-right: 1px solid #ccc;
-            padding: 25px 15px;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100%;
-            z-index: 100;
-        }
-        .sidebar .logo-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 30px;
-            padding: 0 10px;
-        }
-        .sidebar .logo-group img { width: 60px; height: auto; margin-bottom: 10px; }
-        .sidebar .logo-group h2 { font-size: 1.1rem; text-align: center; color: var(--primary-accent); }
-
-        .nav-menu { list-style: none; padding: 0; margin: 0; }
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px 15px;
-            border-radius: var(--border-radius-md);
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 600;
-            margin-bottom: 5px;
-            transition: none;
-        }
-        .nav-link:hover { background-color: var(--bg-main); color: var(--primary-accent); }
-        .nav-link.active { background-color: var(--primary-accent); color: white; }
-        .nav-link svg { width: 20px; height: 20px; }
-
-        .main-content {
-            flex-grow: 1;
-            margin-left: 250px; /* Bằng chiều rộng của sidebar */
-        }
-        /* --- Kết thúc bố cục mới --- */
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 1400px; /* Tăng độ rộng container */
-            margin: auto;
-            padding: 25px;
-        }
-        header {
-            background: var(--bg-header);
-            padding: 15px 25px;
-            border-bottom: 1px solid #ccc;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        /* MỚI: CSS cho bộ chọn ngày */
-        .header-controls { display: flex; align-items: center; gap: 15px; }
-        .date-selector { display: flex; align-items: center; gap: 10px; background: var(--bg-main); padding: 8px 12px; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); }
-        .date-selector label { font-weight: 600; color: var(--text-secondary); }
-        .date-selector input[type="date"] {
-            background: transparent; border: none; border-radius: 6px; padding: 5px; font-family: Arial, Helvetica, sans-serif;
-            font-size: 0.95rem; color: var(--text-primary);
-        }
-
-        .header-title { display: flex; align-items: center; gap: 15px; }
-        .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
-        .header-title h1 { font-size: 1.9rem; color: var(--primary-accent); font-weight: 800; line-height: 1.2; margin: 0; }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-            margin-top: 25px;
-        }        
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            box-shadow: none;
-            border-radius: var(--border-radius-lg);
-            padding: 0;
-            position: relative;
-            overflow: hidden;            
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            margin: 0;
-            padding: 10px 15px;
-            display: flex; background-color: #f5f5f5; border-bottom: 1px solid var(--border-color);
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-        }
-        .stat-card {
-            padding: 20px;
-        }
-        .stat-card .card-body {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            padding: 20px;
-        }
-        .stat-card .icon {
-            flex-shrink: 0;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        .stat-card .icon svg {
-            width: 28px;
-            height: 28px;
-        }
-        .stat-card.revenue .icon { background-color: var(--success-color); }
-        .stat-card.total-vehicles .icon { background-color: var(--primary-accent-light); }
-        .stat-card.current-vehicles .icon { background-color: var(--secondary-accent); }
-
-        .stat-card .info {
-            text-align: left;
-        }
-        .stat-card .label {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-        }
-        .stat-card .value {
-            font-size: 2.8rem;
-            font-weight: 800;
-            line-height: 1.1;
-        }
-        .stat-card.revenue .value { color: var(--success-color); }
-        .stat-card.total-vehicles .value { color: var(--primary-accent-light); }
-        .stat-card.current-vehicles .value { color: var(--secondary-accent); }
-
-        .stat-card .value sup {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-        .chart-container {
-            position: relative;
-            height: 320px;
-            width: 100%;
-        }
-        #map-container {
-            height: 450px;
-            border-radius: 0;
-            width: 100%;
-        }
-        /* MỚI: CSS cho bảng giao dịch */
-        .transaction-table-wrapper {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .transaction-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-        .transaction-table th, 
-        .transaction-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-            white-space: nowrap; /* Ngăn các cột bị xuống dòng */
-        }
-        /* MỚI: Tinh chỉnh độ rộng các cột */
-        .transaction-table .col-plate { width: 12%; }
-        .transaction-table .col-time { width: 20%; }
-        .transaction-table .col-fee { width: 12%; text-align: right; }
-        .transaction-table .col-payment { width: 15%; }
-        .transaction-table .col-location { width: 18%; }
-        .transaction-table .col-status { width: 13%; text-align: center; }
-        .transaction-table .col-action { width: 10%; text-align: center; } /* MỚI */
-
-        .transaction-table thead th {
-            position: sticky;
-            top: 0;
-            background-color: #f5f5f5;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        .transaction-table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        .transaction-table .status-badge {
-            font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white;
-        }
-        .transaction-table .status-badge.parking { background-color: var(--success-color); }
-        .transaction-table .status-badge.departed { background-color: var(--text-secondary); }
-        .transaction-table .fee {
-            font-weight: 700;
-            color: var(--danger-color);
-            text-align: right; /* Căn phải cho dễ nhìn */
-        }
-        .transaction-table .plate {
-            font-weight: 700;
-            font-family: monospace;
-            font-size: 1rem;
-            width: 100%;
-        }
-        /* MỚI: CSS cho các trang con */
-        .page-content {
-            display: none; /* Ẩn tất cả các trang theo mặc định */
-            animation: fadeIn 0.5s ease;
-        }
-        .page-content.active {
-            display: block; /* Chỉ hiển thị trang có class active */
-        }
-        .full-width {
-            grid-column: 1 / -1;
-        }
-        #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--primary-accent);
-            flex-direction: column;
-            gap: 15px;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid var(--border-color);
-            border-left-color: var(--primary-accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- MỚI: CSS cho Modal Chỉnh sửa --- */
-        .modal {
-            position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%;
-            overflow: auto; background-color: rgba(17, 24, 39, 0.6);
-            display: none; align-items: center; justify-content: center; backdrop-filter: none;
-            animation: fadeIn 0.3s ease forwards;
-        }
-        .modal-content {
-            background-color: var(--bg-card);
-            padding: 0;
-            border-radius: var(--border-radius-lg);
-            box-shadow: 0 5px 15px rgba(0,0,0,.5);
-            width: 100%;
-            max-width: 550px; border: 1px solid #999;
-            animation: slideDown 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; margin-bottom: 0; border-bottom: 1px solid var(--border-color);
-            background-color: var(--primary-accent); color: white;
-        }
-        .modal-header h2 { margin: 0; font-size: 1.4rem; color: white; }
-        .modal-body { display: flex; flex-direction: column; gap: 15px; padding: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group label { font-weight: bold; color: var(--text-secondary); font-size: 0.9rem; }
-        .form-group input, .form-group select, .date-selector input[type="date"] {
-            width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
-            color: var(--text-primary); background: #f9fafb; border-radius: var(--border-radius-md);
-            font-size: 1rem; transition: all 0.2s; font-family: 'Be Vietnam Pro', sans-serif;
-        }
-        .form-group input:focus, .form-group select:focus {
-            outline: none; background: white; border-color: var(--primary-accent);
-            box-shadow: none;
-        }
-        .modal-footer {
-            display: flex; justify-content: flex-end; gap: 12px;
-            margin-top: 0; padding: 15px; border-top: 1px solid var(--border-color); background-color: #f5f5f5;
-        }
-        .action-button {
-            padding: 10px 20px; border: none; color: white; font-size: 0.95rem;
-            font-weight: 600; border-radius: var(--border-radius-md); cursor: pointer;
-            transition: all 0.2s ease-in-out;
-        }
-        .btn-primary { background-image: linear-gradient(to bottom, var(--primary-accent-light), var(--primary-accent)); border: 1px solid var(--primary-accent); }
-        .btn-secondary { background-image: linear-gradient(to bottom, #fdfdfd, #e6e6e6); color: var(--text-primary); border: 1px solid #ccc; }
-        .btn-primary:hover { filter: brightness(1.1); }
-        .btn-secondary:hover { filter: brightness(1.1); }
-        .action-button:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; }
-
-        .edit-btn {
-            background: none; border: 1px solid var(--primary-accent); color: var(--primary-accent);
-            padding: 5px 10px; border-radius: var(--border-radius-md); cursor: pointer; font-weight: 600;
-            transition: none;
-        }
-        .edit-btn:hover { background: var(--primary-accent); color: white; }
-
-        @media (max-width: 992px) {
-            .main-grid {
-                grid-template-columns: 1fr 1fr;
+    const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
+        ? LOCATIONS_CONFIG.reduce((map, loc) => {
+            if (loc && loc.id) {
+                map[loc.id] = loc.name || loc.id;
             }
+            return map;
+        }, {})
+        : {};
+
+    const getLocationName = (locationId) => {
+        return locationMap[locationId] || locationId || '--';
+    };
+
+    /**
+     * NÂNG CẤP: Giải mã thông tin từ biển số xe.
+     * @param {string} plate - Chuỗi biển số xe.
+     * @returns {string} - Chuỗi mô tả thông tin đã giải mã.
+     */
+    const decodePlateNumber = (plate) => {
+        if (!plate || typeof plate !== 'string' || typeof PLATE_DATA === 'undefined') return 'Không xác định';
+
+        const cleanedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const provinceCode = cleanedPlate.substring(0, 2);
+        const series = cleanedPlate.substring(2, 4);
+
+        let provinceName = PLATE_DATA.provinces[provinceCode] || 'Không xác định';
+        let plateType = 'Xe cá nhân/doanh nghiệp'; // Mặc định
+
+        // Kiểm tra các sê-ri đặc biệt
+        if (PLATE_DATA.specialSeries[series]) {
+            plateType = PLATE_DATA.specialSeries[series];
+        } else if (provinceCode === '80') {
+            provinceName = 'Cục CSGT';
+            plateType = 'Xe cơ quan Trung ương';
         }
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+
+        return `${provinceName} - ${plateType}`;
+    };
+
+    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
+    
+    // MỚI: Biến cho phân trang
+    let currentPage = 1;
+    const rowsPerPage = 15;
+
+    const formatCurrency = (value) => {
+        const numValue = Number(value);
+        return isNaN(numValue) ? '0' : numValue.toLocaleString('vi-VN');
+    };
+
+    // MỚI: Hàm hiển thị thông báo toast
+    const showToast = (message, type = 'info') => {
+        if (!elements.toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️');
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+        elements.toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'fadeOutToast 0.5s ease forwards';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    };
+
+    const filterDataByLocation = (locationId) => {
+        if (!fullAdminData) return;
+
+        const locationName = getLocationName(locationId);
+        elements.resetFilterBtn.style.display = 'block';
+
+        // Lọc các giao dịch đang gửi tại địa điểm được chọn
+        const currentVehiclesAtLocation = fullAdminData.transactions.filter(tx => tx.LocationID === locationId && tx.Status === 'Đang gửi').length;
+
+        // Cập nhật thẻ thống kê
+        elements.totalRevenue.innerHTML = `${formatCurrency(fullAdminData.revenueByLocation?.[locationId] || 0)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = fullAdminData.vehiclesByLocation?.[locationId] || 0;
+        // Cập nhật số xe đang gửi cho địa điểm cụ thể
+        elements.currentVehicles.textContent = currentVehiclesAtLocation;
+
+        // Cập nhật tiêu đề biểu đồ
+        elements.revenueChartTitle.textContent = `Doanh thu (Lọc: ${locationName})`;
+        elements.vehiclesChartTitle.textContent = `Lượt xe (Lọc: ${locationName})`;
+
+        // Làm nổi bật biểu đồ
+        highlightChartSlice(revenueChart, locationName);
+        highlightChartSlice(vehiclesChart, locationName);
+    };
+
+    const resetFilter = () => {
+        if (!fullAdminData) return;
+        updateDashboardUI(fullAdminData); // Vẽ lại mọi thứ với dữ liệu đầy đủ
+        elements.resetFilterBtn.style.display = 'none';
+        elements.revenueChartTitle.textContent = 'Doanh thu theo bãi đỗ xe';
+        elements.vehiclesChartTitle.textContent = 'Lượt xe theo bãi đỗ xe';
+    };
+
+    const highlightChartSlice = (chart, labelToHighlight) => {
+        if (!chart || !chart.data || !chart.data.datasets[0]?.originalBackgroundColor) return;
+        const labelIndex = chart.data.labels.indexOf(labelToHighlight);
+        chart.data.datasets.forEach(dataset => {
+            dataset.backgroundColor = dataset.originalBackgroundColor.map((color, index) => 
+                index === labelIndex ? color.replace(/, 0\.\d+\)/, ', 1)') : color.replace(/, 1\)/, ', 0.2)')
+            );
+        });
+        chart.update();
+    };
+
+    const updateMapPopups = (data) => {
+        if (!map || !map.markers) return;
+
+        Object.keys(map.markers).forEach(locationId => {
+            const marker = map.markers[locationId];
+            const loc = LOCATIONS_CONFIG.find(l => l.id === locationId);
+            if (!marker || !loc) return;
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
+            const newPopupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${loc.name}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> ${vehicleCount}</p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
+            
+            marker.setPopupContent(newPopupContent);
+        });
+    };
+
+    const initMap = (data) => {
+        if (map) {
+            map.remove();
         }
-    </style>
-</head>
-<body>
-    <div id="toast-container"></div>
-    <div id="loader">
-        <div class="spinner"></div>
-        <span>Đang tải dữ liệu quản trị...</span>
-        <!-- MỚI: Thêm nút để người dùng chủ động bắt đầu phiên -->
-        <button id="start-session-btn" class="action-button btn-primary" style="display: none; margin-top: 20px; width: auto; padding: 10px 25px;">Truy cập</button>
-    </div>
 
-    <div class="dashboard-layout">
-        <nav class="sidebar">
-            <div class="logo-group">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
-                <h2>Hệ thống Quản lý xe</h2>
-            </div>
-            <ul class="nav-menu">
-                <li><a href="#" class="nav-link active" data-target="page-dashboard">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3,13H11V3H3V13M3,21H11V15H3V21M13,21H21V11H13V21M13,3V9H21V3H13Z"></path></svg>
-                    <span>Tổng quan</span>
-                </a></li>
-                <li><a href="#" class="nav-link" data-target="page-map">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C15.86,2 19,5.13 19,9C19,14.25 12,22 12,22C12,22 5,14.25 5,9C5,5.13 8.14,2 12,2M12,11.5A2.5,2.5 0 0,0 14.5,9A2.5,2.5 0 0,0 12,6.5A2.5,2.5 0 0,0 9.5,9A2.5,2.5 0 0,0 12,11.5Z"></path></svg>
-                    <span>Bản đồ</span>
-                </a></li>
-                <li><a href="#" class="nav-link" data-target="page-transactions">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14,17H17V14H14M4.5,17H7.5V14H4.5M4.5,12H7.5V9H4.5M4.5,7H7.5V4H4.5M9,5H12V2H9M14,2V5H17V2M19,9H22V12H19M19,14H22V17H19M19,19H22V22H19M14,19H17V22H14M9,19H12V22H9M4,19H7V22H4M9,14H12V17H9M9,9H12V12H9M2,2V5H4V2M2,7V12H4V7M2,14V17H4V14M2,19V22H4V19Z"></path></svg>
-                    <span>Giao dịch</span>
-                </a></li>
-                <li><a href="#" class="nav-link" data-target="page-settings">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10M10.59,22L12,20.59L13.41,22L17.5,17.91L16.09,16.5L12,20.59L7.91,16.5L6.5,17.91L10.59,22M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"></path></svg>
-                    <span>Cài đặt</span>
-                </a></li>
-            </ul>
-        </nav>
+        map = L.map(elements.mapContainer).setView([21.035, 105.84], 14);
 
-        <main class="main-content">
-            <header>
-                <div class="header-title">
-                    <div class="title-group">
-                        <p class="subtitle">Hệ thống Quản lý xe Tình nguyện</p>
-                        <h1>Bảng điều khiển Quản trị</h1>
-                    </div>
-                </div>
-                <!-- MỚI: Thêm bộ chọn ngày vào header -->
-                <div class="header-controls">
-                    <div class="date-selector">
-                        <label for="admin-date-picker">Xem ngày:</label>
-                        <input type="date" id="admin-date-picker">
-                    </div>
-                    <button id="reset-filter-btn" class="action-button" style="display: none; width: auto; padding: 8px 16px; background: var(--text-secondary);">Hiển thị tất cả</button>
-                </div>
-            </header>
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
 
-            <div class="container">
-                <!-- Trang 1: Tổng quan -->
-                <div id="page-dashboard" class="page-content active">
-                    <div class="main-grid">
-                        <!-- Summary Cards -->
-                        <div class="card stat-card revenue">
-                            <div class="icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                            </div>
-                            <div class="info">
-                                <div class="label">Doanh thu hôm nay</div>
-                                <div class="value" id="total-revenue">0 <sup>đ</sup></div>
-                            </div>
-                        </div>
-                        <div class="card stat-card total-vehicles">
-                            <div class="icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>
-                            </div>
-                            <div class="info">
-                                <div class="label">Tổng lượt xe hôm nay</div>
-                                <div class="value" id="total-vehicles">0</div>
-                            </div>
-                        </div>
-                        <div class="card stat-card current-vehicles">
-                            <div class="icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L2 12v9c0 .6.4 1 1 1h2"/><path d="M7 12V2H3v10"/><path d="M5 18h1"/><path d="M6 18v-4h4"/></svg>
-                            </div>
-                            <div class="info">
-                                <div class="label">Xe đang gửi</div>
-                                <div class="value" id="current-vehicles">0</div>
-                            </div>
-                        </div>
-                        <!-- Biểu đồ được chuyển vào đây -->
-                        <div class="card full-width">
-                            <h2>Lưu lượng xe theo giờ (hôm nay)</h2>
-                            <div class="card-body" style="padding: 20px;">
-                                <div class="chart-container">
-                                    <canvas id="traffic-chart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card" style="grid-column: span 2;">
-                            <h2 id="revenue-chart-title">Doanh thu theo điểm</h2>
-                            <div class="card-body" style="padding: 20px;">
-                                <div class="chart-container">
-                                    <canvas id="revenue-chart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <h2 id="vehicles-chart-title">Lượt xe theo điểm</h2>
-                            <div class="card-body" style="padding: 20px;">
-                                <div class="chart-container">
-                                    <canvas id="vehicles-chart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        map.markers = {};
 
-                <!-- Trang 2: Bản đồ -->
-                <div id="page-map" class="page-content" style="padding: 20px;">
-                    <div class="card full-width">
-                        <h2>Bản đồ các điểm trực</h2>
-                        <div class="card-body" style="padding: 0;">
-                            <div class="chart-container" style="height: 60vh;">
-                                <div id="map-container"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        LOCATIONS_CONFIG.forEach(loc => {
+            const revenue = data.revenueByLocation?.[loc.id] || 0;
+            const vehicleCount = data.vehiclesByLocation?.[loc.id] || 0;
 
-                <!-- Trang 3: Giao dịch -->
-                <div id="page-transactions" class="page-content" style="padding: 20px;">
-                    <div class="card full-width">
-                        <h2>Chi tiết Giao dịch trong ngày</h2>
-                        <div class="card-body" style="padding: 0;">
-                            <div class="transaction-table-wrapper">
-                                <table class="transaction-table">
-                                    <thead>
-                                        <tr>
-                                            <th class="col-plate">Biển số</th>
-                                            <th class="col-time">Thời gian vào</th>
-                                            <th class="col-time">Thời gian ra</th>
-                                            <th class="col-fee">Phí</th>
-                                            <th class="col-payment">Thanh toán</th>
-                                            <th class="col-location">Điểm trực</th>
-                                            <th class="col-status">Trạng thái</th>
-                                            <th class="col-action">Hành động</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="transaction-log-body">
-                                        <!-- Dữ liệu sẽ được chèn vào đây bằng JS -->
-                                    </tbody>
-                                </table>
-                        </div>
-                        <!-- MỚI: Thêm khu vực cho các nút phân trang -->
-                        <div id="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; padding: 15px;">
-                            <!-- Các nút sẽ được tạo bằng JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            const popupContent = `<div style="font-family: 'Be Vietnam Pro', sans-serif;"><h4 style="margin: 0 0 8px 0;">${getLocationName(loc.id)}</h4><p style="margin: 0;"><strong>Lượt xe:</strong> ${vehicleCount}</p><p style="margin: 0;"><strong>Doanh thu:</strong> ${formatCurrency(revenue)} đ</p></div>`;
 
-                <!-- MỚI: Trang 5 - Cài đặt -->
-                <div id="page-settings" class="page-content">
-                    <!-- Nội dung trang cài đặt sẽ được thêm vào đây trong tương lai -->
-                    <p style="text-align: center; color: var(--text-secondary); padding: 50px 0;">Trang cài đặt đang được phát triển.</p>
-                </div>
+            const marker = L.marker([loc.lat, loc.lng])
+                .addTo(map)
+                .bindPopup(popupContent);
 
-            </div>
-        </main>
-    </div>
+            map.markers[loc.id] = marker;
 
-    <!-- MỚI: Modal Chỉnh sửa Giao dịch -->
-    <div id="edit-transaction-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Chỉnh sửa Giao dịch</h2>
-                <button id="close-edit-modal-btn" type="button" style="background: none; border: none; font-size: 2rem; color: white; cursor: pointer; line-height: 1;">&times;</button>
-            </div>
-            <form id="edit-transaction-form">
-                <div class="modal-body">
-                    <input type="hidden" id="edit-unique-id">
-                    <div class="form-group">
-                        <label for="edit-plate">Biển số xe</label>
-                        <input type="text" id="edit-plate" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-entry-time">Thời gian vào</label>
-                        <input type="datetime-local" id="edit-entry-time" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-exit-time">Thời gian ra</label>
-                        <input type="datetime-local" id="edit-exit-time">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-fee">Phí</label>
-                        <input type="number" id="edit-fee" placeholder="Để trống để tự tính toán">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-payment-method">Phương thức thanh toán</label>
-                        <input type="text" id="edit-payment-method">
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-status">Trạng thái</label>
-                        <select id="edit-status">
-                            <option value="Đang gửi">Đang gửi</option>
-                            <option value="Đã rời bãi">Đã rời đi</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="cancel-edit-btn" class="action-button btn-secondary">Hủy</button>
-                    <button type="submit" id="save-edit-btn" class="action-button btn-primary">Lưu thay đổi</button>
-                </div>
-            </form>
-        </div>
-    </div>
+            marker.on('click', () => {
+                filterDataByLocation(loc.id);
+            });
+        });
+    };
 
-    <!-- Thêm thư viện bản đồ Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="admin.js"></script>
-</body>
-</html>
+    const setupNavigation = () => {
+        if (!elements.sidebar) return;
+
+        elements.sidebar.addEventListener('click', (e) => {
+            const link = e.target.closest('.nav-link');
+            if (!link) return;
+
+            e.preventDefault();
+            const targetId = link.dataset.target;
+
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+
+            elements.pages.forEach(page => page.classList.toggle('active', page.id === targetId));
+
+            if (targetId === 'page-map' && map) {
+                setTimeout(() => map.invalidateSize(), 10);
+            }
+
+            // NÂNG CẤP: Chỉ tải dữ liệu giao dịch khi người dùng click vào tab "Giao dịch"
+            // và dữ liệu đó chưa được tải.
+            const isTransactionTab = targetId === 'page-transactions';
+            const transactionsLoaded = fullAdminData && fullAdminData.transactions;
+            if (isTransactionTab && !transactionsLoaded && currentSecretKey) {
+                fetchTransactionData(currentSecretKey, elements.adminDatePicker.value || null); // Pass null if date is empty
+            }
+        });
+    };
+
+    // NÂNG CẤP: Hàm render bảng giao dịch với logic phân trang
+    const renderTransactionTable = (transactions, page = 1) => {
+        if (!elements.transactionLogBody) return;
+        elements.transactionLogBody.innerHTML = '';
+        currentPage = page;
+
+        if (!transactions || transactions.length === 0) {
+            elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px;">Không có giao dịch.</td></tr>`;
+            setupPagination(0, 1); // Reset phân trang
+            return;
+        }
+
+        const startIndex = (page - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const paginatedItems = transactions.slice(startIndex, endIndex);
+
+        paginatedItems.forEach(tx => {
+            const row = document.createElement('tr');
+            const statusClass = tx.Status === 'Đang gửi' ? 'parking' : 'departed';
+            const feeDisplay = tx.Fee ? `${formatCurrency(tx.Fee)}đ` : '--';
+            const exitTimeDisplay = tx['Exit Time'] ? new Date(tx['Exit Time']).toLocaleString('vi-VN') : '--';
+            const decodedPlateInfo = decodePlateNumber(tx.Plate); // NÂNG CẤP: Giải mã biển số
+            
+            row.innerHTML = `
+                <td class="plate" title="${decodedPlateInfo}">${tx.Plate || '--'}</td>
+                <td>${new Date(tx['Entry Time']).toLocaleString('vi-VN')}</td>
+                <td>${exitTimeDisplay}</td>
+                <td class="fee">${feeDisplay}</td>
+                <td>${tx['Payment Method'] || '--'}</td>
+                <td>${getLocationName(tx.LocationID)}</td>
+                <td style="text-align: center;"><span class="status-badge ${statusClass}">${tx.Status}</span></td>
+                <td style="text-align: center;"><button class="edit-btn" data-uniqueid="${tx.UniqueID}">Sửa</button></td>
+            `;
+            elements.transactionLogBody.appendChild(row);
+        });
+
+        setupPagination(transactions.length, page);
+    };
+
+    const openEditModal = (uniqueID) => {
+        const transaction = fullAdminData.transactions.find(tx => tx.UniqueID === uniqueID);
+        if (!transaction) {
+            showToast('Không tìm thấy giao dịch.', 'error');
+            return;
+        }
+
+        const toLocalISOString = (date) => {
+            if (!date) return '';
+            const dt = new Date(date);
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+            return dt.toISOString().slice(0, 16);
+        };
+
+        elements.editUniqueID.value = transaction.UniqueID;
+        elements.editPlate.value = transaction.Plate || '';
+        elements.editEntryTime.value = toLocalISOString(transaction['Entry Time']);
+        elements.editExitTime.value = toLocalISOString(transaction['Exit Time']);
+        elements.editFee.value = transaction.Fee ?? '';
+        elements.editPaymentMethod.value = transaction['Payment Method'] || '';
+        elements.editStatus.value = transaction.Status || 'Đã rời bãi';
+
+        elements.editModal.style.display = 'flex';
+    };
+
+    const closeEditModal = () => {
+        elements.editModal.style.display = 'none';
+        elements.editForm.reset();
+    };
+
+    const saveTransactionChanges = async (event) => {
+        event.preventDefault();
+        elements.saveEditBtn.disabled = true;
+        elements.saveEditBtn.textContent = 'Đang lưu...';
+
+        const payload = {
+            action: 'editTransaction',
+            uniqueID: elements.editUniqueID.value,
+            plate: elements.editPlate.value,
+            entryTime: elements.editEntryTime.value ? new Date(elements.editEntryTime.value).toISOString() : null,
+            exitTime: elements.editExitTime.value ? new Date(elements.editExitTime.value).toISOString() : null,
+            fee: elements.editFee.value,
+            paymentMethod: elements.editPaymentMethod.value,
+            status: elements.editStatus.value,
+            secret: currentSecretKey
+        };
+
+        try {
+            const response = await fetch(APP_CONFIG.googleScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+                showToast('Cập nhật thành công!', 'success');
+                closeEditModal();
+                fetchAdminData(currentSecretKey, true, elements.adminDatePicker.value);
+        } catch (error) {
+            showToast(`Lỗi khi lưu: ${error.message}`, 'error');
+        } finally {
+            elements.saveEditBtn.disabled = false;
+            elements.saveEditBtn.textContent = 'Lưu thay đổi';
+        }
+    };
+
+    // ================================================================
+
+    const updateDashboardUI = (data, isSilentUpdate = false) => {
+        if (!data) return; // SỬA LỖI: Thoát nếu không có dữ liệu
+        fullAdminData = data;
+        
+        // SỬA LỖI: Hiển thị dữ liệu theo ngày đã chọn hoặc hôm nay
+        const isFilteredByDate = !!elements.adminDatePicker.value;
+        const revenueToShow = isFilteredByDate ? (data.totalRevenueForDate ?? 0) : (data.totalRevenueToday ?? 0);
+        const vehiclesToShow = isFilteredByDate ? (data.totalVehiclesForDate ?? 0) : (data.totalVehiclesToday ?? 0);
+
+        elements.totalRevenue.innerHTML = `${formatCurrency(revenueToShow)} <sup>đ</sup>`;
+        elements.totalVehicles.textContent = vehiclesToShow;
+        elements.currentVehicles.textContent = data?.vehiclesCurrentlyParking ?? 0;
+
+        // Bỏ render bảng giao dịch ở đây, chỉ render khi có dữ liệu giao dịch được tải riêng
+        if (data?.transactions) {
+            renderTransactionTable(data.transactions, 1); // Luôn bắt đầu từ trang 1
+        }
+
+        const locationData = {
+            names: [],
+            revenue: [],
+            vehicles: []
+        };
+
+        // SỬA LỖI: Lấy dữ liệu cho biểu đồ từ `data`
+        if (data?.revenueByLocation && data?.vehiclesByLocation) {
+            Object.keys(data.revenueByLocation).forEach(id => {
+                locationData.names.push(getLocationName(id));
+                locationData.revenue.push(data.revenueByLocation[id] || 0);
+                locationData.vehicles.push(data.vehiclesByLocation[id] || 0);
+            });
+        }
+
+        // SỬA LỖI: Thêm kiểm tra an toàn cho dữ liệu biểu đồ traffic
+        const trafficData = data?.trafficByHour || Array(24).fill(0);
+        if (trafficChart) trafficChart.destroy();
+        if (elements.trafficChartCanvas) {
+            trafficChart = new Chart(elements.trafficChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => `${i}h`),
+                    datasets: [{
+                        label: 'Số lượt xe vào',
+                        data: trafficData,
+                        backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        const chartColors = ['rgba(40, 167, 69, 0.8)', 'rgba(255, 193, 7, 0.8)', 'rgba(23, 162, 184, 0.8)', 'rgba(220, 53, 69, 0.8)', 'rgba(108, 117, 125, 0.8)'];
+        
+        if (revenueChart) revenueChart.destroy();
+        if (elements.revenueChartCanvas) {
+            revenueChart = new Chart(elements.revenueChartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: locationData.names,
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: locationData.revenue,
+                        backgroundColor: chartColors,
+                        originalBackgroundColor: [...chartColors]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label || ''}: ${formatCurrency(context.parsed)} đ`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        if (vehiclesChart) vehiclesChart.destroy();
+        if (elements.vehiclesChartCanvas) {
+            vehiclesChart = new Chart(elements.vehiclesChartCanvas, {
+                type: 'pie',
+                data: {
+                    labels: locationData.names,
+                    datasets: [{
+                        label: 'Lượt xe',
+                        data: locationData.vehicles,
+                        backgroundColor: [...chartColors].reverse(),
+                        originalBackgroundColor: [...chartColors].reverse()
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        }
+
+        if (!map && typeof L !== 'undefined' && LOCATIONS_CONFIG && elements.mapContainer) {
+            initMap(data);
+        } else if (isSilentUpdate) {
+            updateMapPopups(data);
+        }
+    };
+
+    const setTodayDate = () => {
+         // NÂNG CẤP: Để trống bộ chọn ngày ban đầu để tải tất cả dữ liệu
+        if (elements.adminDatePicker) {
+            elements.adminDatePicker.value = ''; // Để trống
+        }
+    };
+
+    // NÂNG CẤP: Tách hàm fetchAdminData thành 2 hàm: một cho dữ liệu tổng quan, một cho giao dịch
+    const fetchAdminData = async (secretKey, isSilent = false, date = null) => {
+        try {
+            const dateParam = date ? `&date=${date}` : '';
+            // Thay đổi action để chỉ lấy dữ liệu tổng quan (overview)
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getAdminOverview&secret=${secretKey}${dateParam}&v=${new Date().getTime()}`);
+
+            if (!response.ok) {
+                throw new Error(`Lỗi mạng: ${response.statusText}`);
+            }
+            const result = await response.json();
+
+            if (result.status !== 'success' || !result.data) {
+                throw new Error(result.message || 'Lỗi không xác định từ server');
+            }
+
+            // Gộp dữ liệu mới vào dữ liệu cũ (nếu có)
+            fullAdminData = { ...(fullAdminData || {}), ...result.data };
+            updateDashboardUI(fullAdminData, isSilent);
+
+            return true;
+        } catch (error) {
+            if (!isSilent) {
+                showToast(`Không thể tải dữ liệu quản trị: ${error.message}`, 'error');
+                console.error('ADMIN ERROR LOG:', error);
+                showLoginScreen('Đã xảy ra lỗi. Vui lòng thử lại.');
+            }
+            return false;
+        }
+    };
+
+    // NÂNG CẤP: Hàm mới chỉ để tải dữ liệu giao dịch
+    const fetchTransactionData = async (secretKey, date = null) => {
+        if (!elements.transactionLogBody) return;
+        
+        // Hiển thị trạng thái đang tải trong bảng
+        elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px;">Đang tải chi tiết giao dịch...</td></tr>`;
+
+        try {
+            const dateParam = date ? `&date=${date}` : '';
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getTransactions&secret=${secretKey}${dateParam}&v=${new Date().getTime()}`);
+
+            if (!response.ok) throw new Error(`Lỗi mạng: ${response.statusText}`);
+            
+            const result = await response.json();
+            if (result.status !== 'success' || !result.data) {
+                throw new Error(result.message || 'Lỗi không xác định từ server');
+            }
+
+            // Gộp dữ liệu giao dịch vào biến fullAdminData và render lại bảng
+            fullAdminData.transactions = result.data.transactions;
+            renderTransactionTable(fullAdminData.transactions);
+
+        } catch (error) {
+            elements.transactionLogBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--danger-color);">Lỗi tải giao dịch: ${error.message}</td></tr>`;
+            console.error('Lỗi tải giao dịch:', error);
+        }
+    };
+
+
+    const startAdminSession = async () => {
+        try {
+            if (elements.loader) {
+                elements.loader.querySelector('span').textContent = 'Đang xác thực và tải dữ liệu...';
+                elements.loader.querySelector('.spinner').style.display = 'block';
+                elements.startSessionBtn.style.display = 'none';
+            }
+    
+            const secretKey = prompt("Vui lòng nhập mật khẩu quản trị:", "1");
+            if (!secretKey) {
+                showLoginScreen('Cần có mật khẩu để truy cập.');
+                return;
+            }
+            currentSecretKey = secretKey;
+    
+            const dateToFetch = elements.adminDatePicker.value;
+    
+            // SỬA LỖI: Xử lý trường hợp fetchAdminData trả về false
+            const success = await fetchAdminData(secretKey, false, dateToFetch);
+    
+            if (success) {
+                elements.loader.style.display = 'none';
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+                autoRefreshInterval = setInterval(() => {
+                    // Chỉ làm mới dữ liệu tổng quan trong nền
+                    const currentDate = elements.adminDatePicker.value;
+                    fetchAdminData(secretKey, true, currentDate);
+                }, APP_CONFIG.autoRefreshInterval || 30000);
+
+                // Tải dữ liệu giao dịch nếu tab giao dịch đang hoạt động
+                if (document.getElementById('page-transactions').classList.contains('active')) {
+                    fetchTransactionData(secretKey, dateToFetch);
+                }
+            } else {
+                // Nếu không thành công, hàm fetchAdminData đã hiển thị lỗi và gọi showLoginScreen
+                // Không cần làm gì thêm ở đây.
+            }
+
+        } catch (error) {
+            console.error("Lỗi nghiêm trọng khi bắt đầu phiên quản trị:", error);
+            if (elements.loader) {
+                elements.loader.style.display = 'none';
+            }
+            alert("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.");
+        }
+    };
+
+    // MỚI: Hàm thiết lập các nút phân trang
+    const setupPagination = (totalItems, currentPage) => {
+        if (!elements.paginationControls) return;
+        elements.paginationControls.innerHTML = '';
+        const pageCount = Math.ceil(totalItems / rowsPerPage);
+
+        if (pageCount <= 1) return;
+
+        // Nút "Trang trước"
+        const prevButton = document.createElement('button');
+        prevButton.textContent = '« Trước';
+        prevButton.className = 'action-button btn-secondary';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                renderTransactionTable(fullAdminData.transactions, currentPage - 1);
+            }
+        });
+        elements.paginationControls.appendChild(prevButton);
+
+        // Hiển thị thông tin trang
+        const pageInfo = document.createElement('span');
+        pageInfo.textContent = `Trang ${currentPage} / ${pageCount}`;
+        pageInfo.style.fontWeight = 'bold';
+        pageInfo.style.margin = '0 10px';
+        elements.paginationControls.appendChild(pageInfo);
+
+        // Nút "Trang sau"
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'Sau »';
+        nextButton.className = 'action-button btn-secondary';
+        nextButton.disabled = currentPage === pageCount;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < pageCount) {
+                renderTransactionTable(fullAdminData.transactions, currentPage + 1);
+            }
+        });
+        elements.paginationControls.appendChild(nextButton);
+
+        // Thêm style cho các nút phân trang
+        elements.paginationControls.querySelectorAll('button').forEach(btn => {
+            btn.style.width = 'auto';
+            btn.style.padding = '8px 16px';
+        });
+    };
+
+    const showLoginScreen = (message) => {
+        if (elements.loader) {
+            elements.loader.style.display = 'flex';
+            elements.loader.querySelector('span').textContent = message || 'Vui lòng xác nhận để truy cập trang quản trị.';
+            elements.loader.querySelector('.spinner').style.display = 'none';
+            elements.startSessionBtn.style.display = 'block';
+        }
+    };
+
+    const init = () => {
+        try {
+            setTodayDate();
+            setupNavigation();
+    
+            if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
+            if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
+                if (currentSecretKey) {
+                    // Khi đổi ngày, xóa dữ liệu giao dịch cũ và tải lại cả hai
+                    if (fullAdminData) {
+                        fullAdminData.transactions = null; 
+                    }
+                    fetchAdminData(currentSecretKey, false, elements.adminDatePicker.value);
+                    if (document.getElementById('page-transactions').classList.contains('active')) {
+                        fetchTransactionData(currentSecretKey, elements.adminDatePicker.value);
+                    }
+                }
+            });
+            if (elements.transactionLogBody) elements.transactionLogBody.addEventListener('click', (e) => { if (e.target.classList.contains('edit-btn')) openEditModal(e.target.dataset.uniqueid); });
+            if (elements.closeEditModalBtn) elements.closeEditModalBtn.addEventListener('click', closeEditModal);
+            if (elements.cancelEditBtn) elements.cancelEditBtn.addEventListener('click', closeEditModal);
+            if (elements.editForm) elements.editForm.addEventListener('submit', saveTransactionChanges);
+            if (elements.startSessionBtn) elements.startSessionBtn.addEventListener('click', startAdminSession);
+
+    
+            showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
+        } catch (error) {
+            console.error("Lỗi nghiêm trọng khi khởi tạo:", error);
+            document.body.innerHTML = `<h1 style="text-align: center; margin-top: 50px;">LỖI KHỞI TẠO TRANG. VUI LÒNG TẢI LẠI.</h1><p style="text-align: center;">Chi tiết: ${error.message}</p>`;
+        }
+    };
+
+    init();
+});
