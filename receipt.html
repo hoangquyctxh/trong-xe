@@ -126,6 +126,9 @@
         </div>
     </div>
 
+    <!-- 1. Tích hợp thư viện html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
@@ -140,38 +143,38 @@
 
             const downloadBtn = document.getElementById('download-pdf-btn');
 
-            const downloadPdfReceipt = async () => {
-                if (!uniqueID) {
-                    alert('Lỗi: Không tìm thấy mã giao dịch để tải biên lai.');
-                    return;
-                }
-
+            // 2. Viết lại hoàn toàn hàm tải PDF
+            const downloadAsPdf = () => {
                 downloadBtn.disabled = true;
                 downloadBtn.textContent = 'Đang xử lý...';
 
-                try {
-                    const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=downloadPdfReceipt&uniqueID=${uniqueID}`);
-                    if (!response.ok) throw new Error('Lỗi mạng khi tải PDF.');
-                    
-                    const result = await response.json();
-                    if (result.status === 'success' && result.data) {
-                        const link = document.createElement('a');
-                        link.href = `data:application/pdf;base64,${result.data}`;
-                        link.download = `BienLai_${uniqueID}.pdf`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                    } else { throw new Error(result.message || 'Không thể tạo biên lai PDF.'); }
-                } catch (error) {
-                    alert(`Lỗi tải biên lai PDF: ${error.message}`);
-                } finally {
+                // Lấy phần tử chứa toàn bộ giao diện biên lai
+                const element = document.querySelector('.receipt-container');
+                const footerToHide = document.querySelector('.receipt-footer');
+
+                // Tạm thời ẩn nút bấm để nó không xuất hiện trong file PDF
+                footerToHide.style.display = 'none';
+
+                const opt = {
+                  margin:       0.5, // Lề file PDF (inch)
+                  filename:     `BienLai_${uniqueID || params.get('plate')}.pdf`,
+                  image:        { type: 'jpeg', quality: 0.98 },
+                  html2canvas:  { scale: 2, useCORS: true }, // QUAN TRỌNG: Cho phép tải ảnh từ domain khác
+                  jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+
+                // Gọi thư viện để tạo và tải file PDF
+                html2pdf().from(element).set(opt).save().then(() => {
+                    // Sau khi tải xong, hiện lại nút bấm
+                    footerToHide.style.display = 'block';
                     downloadBtn.disabled = false;
                     downloadBtn.textContent = 'Tải biên lai PDF';
-                }
+                });
             };
 
             if (downloadBtn) {
-                downloadBtn.addEventListener('click', downloadPdfReceipt);
+                // 3. Gắn hàm mới vào sự kiện click của nút
+                downloadBtn.addEventListener('click', downloadAsPdf);
             }
         });
     </script>

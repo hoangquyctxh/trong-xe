@@ -388,29 +388,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * MỚI: Tải biên lai PDF.
+     * MỚI: Gọi backend để tạo và tải biên lai PDF từ template.
      */
     const downloadPdfReceipt = async (uniqueID) => {
         if (!uniqueID) {
             showToast('Không có UniqueID để tải biên lai PDF.', 'error');
             return;
         }
-        showToast('Đang tạo và tải biên lai PDF...', 'info');
+        const btn = allElements.downloadPdfReceiptBtn;
+        if (btn) btn.disabled = true;
+        showToast('Đang tạo biên lai PDF, vui lòng chờ...', 'success');
         try {
-            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=downloadPdfReceipt&uniqueID=${uniqueID}`);
+            // Gọi đúng action 'generatePdfReceipt' đã định nghĩa trong doGet
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=generatePdfReceipt&uniqueID=${uniqueID}`);
             if (!response.ok) throw new Error('Lỗi mạng khi tải PDF.');
             const result = await response.json();
             if (result.status === 'success' && result.data) {
                 const link = document.createElement('a');
                 link.href = `data:application/pdf;base64,${result.data}`;
                 link.download = `BienLai_${uniqueID}.pdf`;
-                document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
-                showToast('Tải biên lai PDF thành công!', 'success');
             } else { throw new Error(result.message || 'Không thể tạo biên lai PDF.'); }
         } catch (error) {
             showToast(`Lỗi tải biên lai PDF: ${error.message}`, 'error');
+        } finally {
+            if (btn) btn.disabled = false;
         }
     };
 
@@ -1453,7 +1455,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (allElements.downloadQrBtn) allElements.downloadQrBtn.addEventListener('click', downloadQRCode);
-    if (allElements.downloadPdfReceiptBtn) allElements.downloadPdfReceiptBtn.addEventListener('click', () => downloadPdfReceipt(currentVehicleContext.uniqueID)); // MỚI
+    if (allElements.downloadPdfReceiptBtn) {
+        allElements.downloadPdfReceiptBtn.addEventListener('click', () => {
+            if (currentVehicleContext && currentVehicleContext.uniqueID) {
+                downloadPdfReceipt(currentVehicleContext.uniqueID);
+            }
+        });
+    }
     if (allElements.printReceiptBtn) allElements.printReceiptBtn.addEventListener('click', () => window.print());
 
     if (allElements.searchTermInput) allElements.searchTermInput.addEventListener('input', () => {
