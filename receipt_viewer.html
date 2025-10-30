@@ -102,8 +102,21 @@
             document.getElementById('exitTimeDisplay').textContent = data.exitTimeDisplay || '--';
             document.getElementById('duration').textContent = data.duration || '--';
             document.querySelectorAll('.feeDisplay').forEach(el => el.textContent = data.feeDisplay || '0');
-            document.getElementById('feeInWords').textContent = data.feeInWords || 'Không';
-            document.getElementById('paymentMethod').textContent = data.paymentMethod || '--';
+            document.getElementById('feeInWords').textContent = (data.feeInWords || 'Không');
+            
+            // NÂNG CẤP: Thêm phụ chú chi tiết, rõ ràng cho từng trường hợp miễn phí.
+            // Điều này giúp khách hàng hiểu rõ lý do và không cần hỏi lại nhân viên.
+            const paymentMethodSpan = document.getElementById('paymentMethod');
+            const paymentMethod = data.paymentMethod || '--';
+            if (paymentMethod === 'VIP') {
+                paymentMethodSpan.innerHTML = `${paymentMethod} <em style="font-size: 0.9em; color: #555;">(Miễn phí theo chính sách dành cho khách mời/xe ưu tiên)</em>`;
+            } else if (paymentMethod === 'Miễn phí') {
+                // SỬA LỖI: Lấy số phút miễn phí từ tham số URL
+                const freeMinutes = data.freeMinutes || 15; // Mặc định 15 nếu không có
+                paymentMethodSpan.innerHTML = `${paymentMethod} <em style="font-size: 0.9em; color: #555;">(Miễn phí do thời gian gửi xe dưới ${freeMinutes} phút)</em>`;
+            } else {
+                paymentMethodSpan.textContent = paymentMethod;
+            }
 
             // Hiển thị bảng diễn giải nếu có dữ liệu
             if (data.dayHours > 0 || data.nightHours > 0) {

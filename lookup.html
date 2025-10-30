@@ -6,6 +6,7 @@
     <title>Tra cứu Lịch sử Gửi xe</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="config.js"></script>
+    <script src="locations.js"></script> <!-- THÊM: Tải cấu hình các điểm đỗ xe -->
     <script src="plate_data.js"></script> <!-- THÊM DÒNG NÀY -->
     <style>
         /* --- ĐỒNG BỘ GIAO DIỆN VỚI TRANG CHÍNH --- */
@@ -207,6 +208,7 @@
             <div id="plate-display-wrapper" class="plate-display-wrapper">
                 <div class="label">Biển số xe tra cứu</div>
                 <div id="plate-display" class="plate-display"></div>
+                <button id="download-all-btn" class="btn-print" style="width: auto; margin-top: 15px; display: none; background: var(--success-color); border-color: #256628;">Xem & In tất cả biên lai</button>
             </div>
             <div id="history-container" class="history-list">
                 <!-- Lịch sử sẽ được chèn vào đây -->

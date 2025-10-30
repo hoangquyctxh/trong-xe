@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proxy</title>
+</head>
+<body>
+    <script>
+        // File này hoạt động như một cầu nối để vượt qua lỗi CORS khi chạy file HTML trực tiếp.
+        // Nó nhận yêu cầu từ các trang khác, gọi đến Google Script và gửi kết quả trở lại.
+        window.addEventListener('message', async (event) => {
+            // SỬA LỖI DỨT ĐIỂM: Đảm bảo tin nhắn đến từ cửa sổ cha (parent)
+            // và xử lý đúng cách cho cả môi trường file:// và http(s)://
+            if (event.source !== window.parent) {
+                return;
+            }
+
+            const { requestId, url } = event.data;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Lỗi mạng: ${response.status}`);
+                const data = await response.json();
+                window.parent.postMessage({ requestId, status: 'success', data }, '*'); // Sử dụng '*' cho file://
+            } catch (error) {
+                window.parent.postMessage({ requestId, status: 'error', error: error.message }, '*'); // Sử dụng '*' cho file://
+            }
+        });
+    </script>
+</body>
+</html>

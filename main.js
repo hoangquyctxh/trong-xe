@@ -185,6 +185,76 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${provinceName} - ${vehicleType}`;
     };
 
+    /**
+     * TÍCH HỢP: Tính toán chi tiết phí theo giờ ngày/đêm.
+     * Logic này được đồng bộ từ file lookup.js để đảm bảo tính nhất quán.
+     * @param {Date} startTime - Thời gian bắt đầu.
+     * @param {Date} endTime - Thời gian kết thúc.
+     * @param {boolean} isVIP - Xe có phải là VIP hay không.
+     * @returns {object} - { dayHours, nightHours }
+     */
+    const calculateFeeWithBreakdown = (startTime, endTime, isVIP) => {
+        if (isVIP || !startTime) return { dayHours: 0, nightHours: 0 };
+
+        const config = APP_CONFIG.fee;
+        const start = new Date(startTime);
+        const end = endTime ? new Date(endTime) : new Date();
+        const diffMinutes = Math.floor((end - start) / (1000 * 60));
+
+        if (diffMinutes <= config.freeMinutes) {
+            return { dayHours: 0, nightHours: 0 };
+        }
+
+        let dayHours = 0;
+        let nightHours = 0;
+        let chargeableStartTime = new Date(start.getTime() + config.freeMinutes * 60 * 1000);
+        const chargeableMinutes = diffMinutes - config.freeMinutes;
+        const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
+
+        for (let i = 0; i < totalChargeableHours; i++) {
+            let currentBlockStartHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
+            const isNight = currentBlockStartHour >= config.nightStartHour || currentBlockStartHour < config.nightEndHour;
+            isNight ? nightHours++ : dayHours++;
+        }
+        return { dayHours, nightHours };
+    };
+
+    /**
+     * TÍCH HỢP: Chuyển đổi số thành chữ tiếng Việt.
+     * @param {number} num - Số cần chuyển đổi.
+     * @returns {string} - Chuỗi chữ tiếng Việt.
+     */
+    const numberToWords = (num) => {
+        const units = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+        const teens = ["mười", "mười một", "mười hai", "mười ba", "mười bốn", "mười lăm", "mười sáu", "mười bảy", "mười tám", "mười chín"];
+        const tens = ["", "mười", "hai mươi", "ba mươi", "bốn mươi", "năm mươi", "sáu mươi", "bảy mươi", "tám mươi", "chín mươi"];
+        const thousands = ["", "nghìn", "triệu", "tỷ"];
+
+        if (num === 0) return 'Không';
+        if (num < 0) return "Âm " + numberToWords(Math.abs(num));
+
+        let word = '', i = 0;
+        while (num > 0) {
+            let chunk = num % 1000;
+            if (chunk > 0) {
+                let chunkWord = '';
+                const hundred = Math.floor(chunk / 100);
+                const remainder = chunk % 100;
+                if (hundred > 0) chunkWord += units[hundred] + ' trăm';
+                if (remainder > 0) {
+                    if (hundred > 0) chunkWord += ' ';
+                    if (remainder < 10) { if (hundred > 0) chunkWord += 'linh '; chunkWord += units[remainder]; }
+                    else if (remainder < 20) { chunkWord += teens[remainder - 10]; }
+                    else { const ten = Math.floor(remainder / 10); const one = remainder % 10; chunkWord += tens[ten]; if (one > 0) { chunkWord += (one === 1 && ten > 1) ? ' mốt' : ' ' + units[one]; } }
+                }
+                if (thousands[i]) word = chunkWord + ' ' + thousands[i] + ' ' + word; else word = chunkWord + ' ' + word;
+            }
+            num = Math.floor(num / 1000); i++;
+        }
+        let finalWord = word.trim();
+        return finalWord.charAt(0).toUpperCase() + finalWord.slice(1);
+    };
+
     // =================================================================
     // KHU VỰC 3: CÁC HÀM CẬP NHẬT GIAO DIỆN (UI FUNCTIONS)
     // =================================================================
@@ -360,7 +430,49 @@ document.addEventListener('DOMContentLoaded', () => {
             allElements.checkInBtn.classList.add('hidden');
             allElements.checkOutBtn.classList.add('hidden');
             allElements.vehicleInfoPanel.style.display = 'block';
-            allElements.reprintReceiptBtn.onclick = () => showReceiptForDepartedVehicle(vehicleDeparted);
+            // TÍCH HỢP: Khi nhấn nút "In lại biên lai", mở thẳng trang receipt_viewer.html
+            allElements.reprintReceiptBtn.onclick = () => {
+                const fee = vehicleDeparted.Fee || 0;
+                const exitTime = new Date(vehicleDeparted['Exit Time']);
+                const entryTime = new Date(vehicleDeparted['Entry Time']);
+                const feeDetails = calculateFeeWithBreakdown(entryTime, exitTime, vehicleDeparted.VIP === 'Có');
+
+                // SỬA LỖI: Xác định chính xác paymentMethod để hiển thị phụ chú
+                let actualPaymentMethod = vehicleDeparted['Payment Method'] || 'N/A';
+                const isVehicleVIP = vehicleDeparted.VIP === 'Có';
+                const calculatedFee = calculateFee(vehicleDeparted['Entry Time'], vehicleDeparted['Exit Time'], isVehicleVIP);
+
+                if (isVehicleVIP) {
+                    actualPaymentMethod = 'VIP';
+                } else if (calculatedFee === 0) {
+                    actualPaymentMethod = 'Miễn phí';
+                }
+                
+                const params = new URLSearchParams({
+                    orgName: currentLocation?.name || 'ĐOÀN TNCS HỒ CHÍ MINH PHƯỜNG BA ĐÌNH',
+                    orgAddress: currentLocation?.address || 'Đang cập nhật',
+                    taxId: '0123456789',
+                    orgHotline: currentLocation?.hotline || 'Đang cập nhật',
+                    exitDate: exitTime.getDate(),
+                    exitMonth: exitTime.getMonth() + 1,
+                    exitYear: exitTime.getFullYear(),
+                    uniqueID: vehicleDeparted.UniqueID,
+                    plate: vehicleDeparted.Plate,
+                    vehicleType: decodePlateNumber(vehicleDeparted.Plate),
+                    entryTimeDisplay: formatDateTimeForDisplay(vehicleDeparted['Entry Time']),
+                    exitTimeDisplay: formatDateTimeForDisplay(vehicleDeparted['Exit Time']),
+                    duration: calculateDurationBetween(vehicleDeparted['Entry Time'], vehicleDeparted['Exit Time']),
+                    feeDisplay: fee.toLocaleString('vi-VN'),
+                    feeInWords: numberToWords(fee),
+                    dayHours: feeDetails.dayHours, // SỬA LỖI: Đảm bảo truyền đúng feeDetails.dayHours
+                    nightHours: feeDetails.nightHours,
+                    dayRateFormatted: APP_CONFIG.fee.dayRate.toLocaleString('vi-VN') + 'đ',
+                    nightRateFormatted: APP_CONFIG.fee.nightRate.toLocaleString('vi-VN') + 'đ',
+                    paymentMethod: actualPaymentMethod, // Sử dụng phương thức đã xác định
+                    freeMinutes: APP_CONFIG.fee.freeMinutes, // THÊM: Truyền số phút miễn phí
+                });
+                window.open(`receipt_viewer.html?${params.toString()}`, '_blank');
+            };
         } else {
             currentVehicleContext = { plate: plate, status: 'new' };
             allElements.phoneItemMain.style.display = 'block';

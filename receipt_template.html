@@ -104,7 +104,16 @@
       </table>
 
       <p><strong>Số tiền bằng chữ:</strong> <?= feeInWords ?> đồng.</p>
-      <p><strong>Phương thức thanh toán:</strong> <?= paymentMethod ?></p>
+      <p><strong>Phương thức thanh toán:</strong>
+          <? if (paymentMethod === 'VIP') { ?>
+              VIP <em style="font-size: 0.9em; color: #555;">(Miễn phí theo chính sách dành cho khách mời/xe ưu tiên)</em>
+          <? } else if (paymentMethod === 'Miễn phí') { ?>
+              Miễn phí <em style="font-size: 0.9em; color: #555;">(Miễn phí do thời gian gửi xe dưới <?= freeMinutes ?> phút)</em>
+          <? } else { ?>
+              <?= paymentMethod ?>
+          <? } ?>
+      </p>
+
 
       <div class="footer">
         <div>
