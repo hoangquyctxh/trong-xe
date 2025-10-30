@@ -53,6 +53,143 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const cleanPlateNumber = (plateStr) => plateStr ? plateStr.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
 
+    /**
+     * NÂNG CẤP: Giải mã thông tin từ biển số xe.
+     * @param {string} plate - Chuỗi biển số xe.
+     * @returns {string} - Chuỗi mô tả thông tin đã giải mã.
+     */
+    const decodePlateNumber = (plate) => {
+        if (!plate || typeof plate !== 'string' || typeof PLATE_DATA === 'undefined') return 'Chưa có thông tin';
+
+        const cleanedPlate = cleanPlateNumber(plate);
+
+        // --- BƯỚC 1: Ưu tiên quét các sê-ri đặc biệt (NG, NN, KT, CD...) trong toàn bộ biển số ---
+        for (const series in PLATE_DATA.specialSeries) {
+            if (cleanedPlate.includes(series)) {
+                // Xử lý chi tiết biển ngoại giao (NG)
+                if (series === 'NG') {
+                    const diplomaticCode = parseInt(cleanedPlate.replace('NG', '').substring(0, 3), 10);
+                    if (!isNaN(diplomaticCode)) {
+                        for (const range in PLATE_DATA.diplomaticSeries) {
+                            if (range.includes('-')) {
+                                const [start, end] = range.split('-').map(Number);
+                                if (diplomaticCode >= start && diplomaticCode <= end) {
+                                    return PLATE_DATA.diplomaticSeries[range];
+                                }
+                            } else if (diplomaticCode === parseInt(range, 10)) {
+                                return PLATE_DATA.diplomaticSeries[range];
+                            }
+                        }
+                    }
+                    return "Xe của cơ quan đại diện ngoại giao"; // Fallback
+                }
+                return PLATE_DATA.specialSeries[series]; // Trả về cho các loại đặc biệt khác
+            }
+        }
+
+        // --- BƯỚC 2: Phân tích biển số dân sự để phân biệt Ô tô / Xe máy dựa trên độ dài và cấu trúc ---
+        let provinceCode = '';
+        let vehicleType = 'Chưa xác định';
+
+        // Biển 5 số: 9 ký tự là xe máy, 8 ký tự là ô tô.
+        if (cleanedPlate.length === 9 && /^[0-9]{2}/.test(cleanedPlate)) {
+            provinceCode = cleanedPlate.substring(0, 2);
+            vehicleType = 'Xe máy';
+        } else if (cleanedPlate.length === 8 && /^[0-9]{2}/.test(cleanedPlate)) {
+            provinceCode = cleanedPlate.substring(0, 2);
+            vehicleType = 'Ô tô';
+        }
+
+        if (!provinceCode) return 'Biển số không xác định';
+
+        const provinceInfo = PLATE_DATA.provinces.find(p => p.codes.includes(provinceCode));
+        const provinceName = provinceInfo ? provinceInfo.name : 'Tỉnh không xác định';
+        
+        return `${provinceName} - ${vehicleType}`;
+    };
+
+    /**
+     * SỬA LỖI: Bổ sung hàm chuyển đổi số thành chữ tiếng Việt.
+     * Hàm này được đồng bộ từ code.gs để đảm bảo tính nhất quán.
+     */
+    const numberToVietnameseWords = (num) => {
+        const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+        const teens = ['', 'mười', 'hai mươi', 'ba mươi', 'bốn mươi', 'năm mươi', 'sáu mươi', 'bảy mươi', 'tám mươi', 'chín mươi'];
+        const hundreds = ['', 'một trăm', 'hai trăm', 'ba trăm', 'bốn trăm', 'năm trăm', 'sáu trăm', 'bảy trăm', 'tám trăm', 'chín trăm'];
+        const thousands = ['', 'nghìn', 'triệu', 'tỷ'];
+
+        if (num === 0) return 'Không';
+
+        let s = num.toString();
+        let result = '';
+        let i = 0;
+
+        while (s.length > 0) {
+            let chunk = parseInt(s.slice(-3));
+            s = s.slice(0, -3);
+
+            if (chunk === 0 && s.length > 0) {
+                i++;
+                continue;
+            }
+
+            let chunkWords = '';
+            let h = Math.floor(chunk / 100);
+            let t = Math.floor((chunk % 100) / 10);
+            let u = chunk % 10;
+
+            if (h > 0) chunkWords += units[h] + ' trăm ';
+            if (t > 1) {
+                chunkWords += teens[t] + ' ';
+                if (u === 1) chunkWords += 'mốt';
+                else if (u > 0) chunkWords += units[u];
+            } else if (t === 1) {
+                chunkWords += 'mười ';
+                if (u > 0) chunkWords += units[u];
+            } else if (u > 0 && (h > 0 || s.length > 0)) chunkWords += 'lẻ ' + units[u];
+            else if (u > 0) chunkWords += units[u];
+            if (chunkWords.trim() !== '') result = chunkWords.trim() + ' ' + thousands[i] + ' ' + result;
+            i++;
+        }
+        let finalResult = result.trim().replace(/\s+/g, ' ');
+        return finalResult.charAt(0).toUpperCase() + finalResult.slice(1);
+    }
+
+    /**
+     * NÂNG CẤP: Tính toán chi tiết phí theo giờ ngày/đêm.
+     * Logic này được đồng bộ từ file code.gs để đảm bảo tính nhất quán.
+     * @param {Date} startTime - Thời gian bắt đầu.
+     * @param {Date} endTime - Thời gian kết thúc.
+     * @param {boolean} isVIP - Xe có phải là VIP hay không.
+     * @returns {object} - { totalFee, dayHours, nightHours }
+     */
+    const calculateFeeWithBreakdown = (startTime, endTime, isVIP) => {
+        if (isVIP) return { totalFee: 0, dayHours: 0, nightHours: 0 };
+        if (!startTime) return { totalFee: 0, dayHours: 0, nightHours: 0 };
+
+        const config = APP_CONFIG.fee;
+        const start = new Date(startTime);
+        const end = endTime ? new Date(endTime) : new Date();
+        const diffMinutes = Math.floor((end - start) / (1000 * 60));
+
+        if (diffMinutes <= config.freeMinutes) {
+            return { totalFee: 0, dayHours: 0, nightHours: 0 };
+        }
+
+        let totalFee = 0;
+        let dayHours = 0;
+        let nightHours = 0;
+        let chargeableStartTime = new Date(start.getTime() + config.freeMinutes * 60 * 1000);
+        const chargeableMinutes = diffMinutes - config.freeMinutes;
+        const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
+
+        for (let i = 0; i < totalChargeableHours; i++) {
+            let currentBlockStartHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
+            const isNight = currentBlockStartHour >= config.nightStartHour || currentBlockStartHour < config.nightEndHour;
+            isNight ? nightHours++ : dayHours++;
+        }
+        return { dayHours, nightHours };
+    };
     // --- Core Logic ---
     const renderHistory = (history) => {
         if (!history || history.length === 0) {
@@ -77,9 +214,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let receiptActionHtml = '';
             if (isDeparted) {
-                // SỬA LỖI: Truyền cả uniqueID sang trang receipt.html
-                const receiptUrl = `receipt.html?plate=${encodeURIComponent(tx.Plate)}&entryTime=${encodeURIComponent(formatDateTime(tx['Entry Time']))}&exitTime=${encodeURIComponent(formatDateTime(tx['Exit Time']))}&duration=${encodeURIComponent(calculateDuration(tx['Entry Time'], tx['Exit Time']))}&fee=${encodeURIComponent((tx.Fee || 0).toLocaleString('vi-VN'))}&paymentMethod=${encodeURIComponent(tx['Payment Method'] || 'N/A')}&uniqueID=${tx.UniqueID}`;
-                // ĐƠN GIẢN HÓA: Chỉ còn 1 nút "Xem & Tải biên lai"
+                // GIẢI PHÁP MỚI: Tạo URL đến trang receipt_viewer.html với đầy đủ tham số.
+                const fee = tx.Fee || 0;
+                const exitTime = new Date(tx['Exit Time']);
+                const entryTime = new Date(tx['Entry Time']);
+                const feeDetails = calculateFeeWithBreakdown(entryTime, exitTime, tx.VIP === 'Có');
+                
+                const params = new URLSearchParams({
+                    orgName: 'ĐOÀN TNCS HỒ CHÍ MINH PHƯỜNG BA ĐÌNH',
+                    orgAddress: '68 Nguyễn Thái Học, Phường Ba Đình, Thành phố Hà Nội',
+                    taxId: '0123456789',
+                    orgHotline: 'Đang cập nhật',
+                    exitDate: exitTime.getDate(),
+                    exitMonth: exitTime.getMonth() + 1,
+                    exitYear: exitTime.getFullYear(),
+                    uniqueID: tx.UniqueID,
+                    plate: tx.Plate,
+                    vehicleType: decodePlateNumber(tx.Plate), // SỬA LỖI: Sử dụng hàm nhận dạng
+                    entryTimeDisplay: formatDateTime(tx['Entry Time']),
+                    exitTimeDisplay: formatDateTime(tx['Exit Time']),
+                    duration: calculateDuration(tx['Entry Time'], tx['Exit Time']),
+                    feeDisplay: fee.toLocaleString('vi-VN'),
+                    feeInWords: numberToVietnameseWords(fee), // SỬA LỖI: Thêm số tiền bằng chữ
+                    // THÊM DỮ LIỆU CHI TIẾT PHÍ
+                    dayHours: feeDetails.dayHours,
+                    nightHours: feeDetails.nightHours,
+                    dayRateFormatted: APP_CONFIG.fee.dayRate.toLocaleString('vi-VN') + 'đ',
+                    nightRateFormatted: APP_CONFIG.fee.nightRate.toLocaleString('vi-VN') + 'đ',
+                    paymentMethod: tx['PaymentMethod'] || 'N/A', // SỬA LỖI: Đọc đúng tên trường dữ liệu
+                });
+                const receiptUrl = `receipt_viewer.html?${params.toString()}`;
                 receiptActionHtml = `<div class="receipt-action"><a href="${receiptUrl}" target="_blank" class="btn-print">Xem & Tải biên lai</a></div>`;
             }
 

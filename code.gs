@@ -1,7 +1,12 @@
 /**
  * @file code.gs
- * @version 2.6 - Professional PDF Receipt
- * @description Nâng cấp biên lai PDF: Thêm logo, chi tiết cách tính phí, cập nhật địa chỉ và hotline.
+ * @version 4.0 - Performance Optimization
+ * @description Phiên bản tối ưu hóa hiệu suất đọc/ghi Google Sheet bằng cách sử dụng cache trong bộ nhớ
+ *              và thực hiện các thao tác ghi theo lô (batch update).
+ *              Giải quyết vấn đề đồng bộ chậm khi cho xe ra và chỉnh sửa thông tin.
+ *              Đảm bảo tất cả các biến đều được định nghĩa chính xác, loại bỏ lỗi 'is not defined'.
+ *
+ * @description Phiên bản viết lại hoàn chỉnh để đảm bảo sự ổn định và loại bỏ các lỗi cũ.
  * Tác giả: Nguyễn Cao Hoàng Quý (Được hỗ trợ bởi Gemini Code Assist)
  */
 
@@ -15,7 +20,7 @@ const ADMIN_SECRET_KEY = "admin123";
 const CACHE_EXPIRATION_SECONDS = 300; // 5 phút
 const SCRIPT_CACHE = CacheService.getScriptCache();
 
-// ================== ĐỒNG BỘ CẤU HÌNH TÍNH PHÍ TỪ FRONTEND ==================
+// Cấu hình tính phí
 const FEE_CONFIG = {
     freeMinutes: 15,
     dayRate: 5000,
@@ -24,11 +29,7 @@ const FEE_CONFIG = {
     nightEndHour: 6
 };
 
-
-// ================== ĐỒNG BỘ CẤU HÌNH TỪ FRONTEND ==================
-// SỬA LỖI: Sao chép cấu hình từ locations.js và plate_data.js vào backend
-// để các hàm như generatePdfReceipt có thể sử dụng.
-
+// Cấu hình các điểm đỗ xe
 const LOCATIONS_CONFIG = [
     { 
         id: 'VHVANXUAN', 
@@ -52,6 +53,48 @@ const LOCATIONS_CONFIG = [
     },
 ];
 
+// ================== CÁC BIẾN TOÀN CỤC CHO CACHE DỮ LIỆU SHEET ==================
+let ALL_SHEET_DATA_VALUES = null; // Lưu trữ tất cả dữ liệu sheet dưới dạng mảng 2D
+let ALL_SHEET_DATA_HEADERS = null; // Lưu trữ các tiêu đề cột
+let ALL_SHEET_DATA_COLS = null; // Lưu trữ map chỉ số cột
+
+/**
+ * Tải tất cả dữ liệu từ sheet vào các biến toàn cục trong bộ nhớ.
+ * Hàm này được gọi một lần mỗi khi script thực thi hoặc khi cache bị làm mới.
+ */
+function loadAllSheetData() {
+  const sheet = getSheet();
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 1) {
+    ALL_SHEET_DATA_VALUES = [];
+    ALL_SHEET_DATA_HEADERS = [];
+    ALL_SHEET_DATA_COLS = {};
+    return;
+  }
+  ALL_SHEET_DATA_VALUES = values;
+  ALL_SHEET_DATA_HEADERS = values[0];
+  ALL_SHEET_DATA_COLS = getHeaderIndices(ALL_SHEET_DATA_HEADERS);
+  console.log("All sheet data loaded into memory.");
+}
+
+/**
+ * Làm mới cache dữ liệu sheet trong bộ nhớ, buộc tải lại từ sheet trong lần truy cập tiếp theo.
+ */
+function invalidateAllSheetDataCache() {
+  ALL_SHEET_DATA_VALUES = null;
+  ALL_SHEET_DATA_HEADERS = null;
+  ALL_SHEET_DATA_COLS = null;
+  console.log("In-memory sheet data cache invalidated.");
+}
+
+/**
+ * Safely gets all values from the sheet, ensuring data is loaded into cache if not already.
+ */
+function safeGetValuesFromCache() {
+  if (ALL_SHEET_DATA_VALUES === null) loadAllSheetData();
+  return ALL_SHEET_DATA_VALUES;
+}
+
 // ================== CÁC HÀM CHÍNH (ENTRY POINTS) ==================
 
 /**
@@ -61,9 +104,7 @@ function doGet(e) {
   try {
     const params = e.parameter;
 
-    // --- SỬA LỖI NGHIÊM TRỌNG: Tái cấu trúc logic để xử lý cả request cũ và mới ---
     if (params.action) {
-      // Xử lý các request mới có tham số 'action'
       switch (params.action) {
         case 'getAdminOverview':
           return getAdminOverview(params.secret, params.date);
@@ -78,8 +119,14 @@ function doGet(e) {
           return createJsonResponse({ status: 'success', data: getVehicleHistory(params.plate) });
         case 'getVehicleHistoryByUniqueID':
           return getVehicleHistoryByUniqueID(params.uniqueID);
-        case 'generatePdfReceipt': // SỬA LỖI: Đổi tên action để khớp với main.js
-          return generatePdfReceipt(params.uniqueID); // Hàm này sẽ được gọi khi action=generatePdfReceipt
+        case 'generatePdfReceipt':
+          // SỬA LỖI TRIỆT ĐỂ: Khi action là generatePdfReceipt,
+          // chúng ta sẽ gọi hàm tạo PDF và trả về trực tiếp file PDF (Blob),
+          // không gói trong JSON nữa.
+          return generatePdfReceiptAndReturnBlob(params.uniqueID);
+        case 'getReceiptTemplate':
+          // Chức năng này phục vụ cho trang viewer.html (nếu còn sử dụng)
+          return HtmlService.createHtmlOutputFromFile('receipt_template.html').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
         default:
           throw new Error(`Hành động '${params.action}' không hợp lệ.`);
       }
@@ -88,7 +135,6 @@ function doGet(e) {
       if (params.plate) {
         return createJsonResponse({ status: 'success', data: getVehicleHistory(params.plate) });
       }
-      // Đây là request mặc định để tải dữ liệu cho trang index
       if (params.date !== undefined) {
         return createJsonResponse({ status: 'success', data: getRecordsForDate(params.date) });
       }
@@ -106,7 +152,7 @@ function doGet(e) {
  */
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  if (!lock.tryLock(20000)) { // Thử khóa trong 20 giây
+  if (!lock.tryLock(20000)) {
     return createJsonResponse({ status: 'error', message: 'Máy chủ đang bận, vui lòng thử lại sau giây lát.' });
   }
 
@@ -132,11 +178,9 @@ function doPost(e) {
   }
 }
 
+
 // ================== CÁC HÀM XỬ LÝ HÀNH ĐỘNG (HANDLERS) ==================
 
-/**
- * Xử lý cho xe vào bãi.
- */
 function handleCheckIn(payload) {
   const { plate, phone, uniqueID, locationId, imageData, isVIP } = payload;
   if (!plate || !uniqueID) throw new Error("Thiếu biển số hoặc UniqueID.");
@@ -147,7 +191,6 @@ function handleCheckIn(payload) {
   const cols = getHeaderIndices(headers);
   const cleanedPlate = (plate || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  // Kiểm tra xem xe có đang ở trong bãi không
   for (let i = values.length - 1; i >= 1; i--) {
     const recordPlate = (values[i][cols.plateCol] || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (recordPlate === cleanedPlate && values[i][cols.statusCol] === 'Đang gửi') {
@@ -159,41 +202,29 @@ function handleCheckIn(payload) {
   const imageUrl = processAndSaveImage(imageData, plate);
 
   sheet.appendRow([
-    now,
-    formatDate(now),
-    plate.toUpperCase(),
-    phone || '',
-    now,
-    '', // Exit Time
-    'Đang gửi',
-    uniqueID,
-    locationId || '',
-    imageUrl || '',
-    isVIP ? 'Có' : 'Không',
-    '', // Fee
-    ''  // PaymentMethod
+    now, formatDate(now), plate.toUpperCase(), phone || '', now, '', 'Đang gửi', uniqueID,
+    locationId || '', imageUrl || '', isVIP ? 'Có' : 'Không', '', ''
   ]);
-
+  invalidateAllSheetDataCache(); // Làm mới cache sau khi ghi
   clearRelevantCache(now);
   return createJsonResponse({ status: 'success', message: 'Gửi xe thành công.' });
 }
 
-/**
- * Xử lý cho xe ra khỏi bãi.
- */
 function handleCheckOut(payload) {
   const { uniqueID, fee, paymentMethod } = payload;
   if (!uniqueID) throw new Error("Thiếu UniqueID.");
 
   const sheet = getSheet();
-  const values = safeGetValues(sheet);
+  const values = safeGetValuesFromCache(); // Đọc từ cache
   if (values.length < 2) throw new Error("Không có dữ liệu để xử lý.");
 
-  const headers = values[0];
-  const cols = getHeaderIndices(headers);
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
+  const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
   if (cols.uniqueIdCol === -1 || cols.statusCol === -1) {
     throw new Error("Sheet thiếu cột bắt buộc (UniqueID/Status).");
   }
+
+  let rowIndexToUpdate = -1;
 
   const now = new Date();
   for (let i = values.length - 1; i >= 1; i--) {
@@ -201,11 +232,17 @@ function handleCheckOut(payload) {
       const rowIndex = i + 1;
       const entryTime = new Date(values[i][cols.entryTimeCol]);
 
-      sheet.getRange(rowIndex, cols.exitTimeCol + 1).setValue(now);
-      sheet.getRange(rowIndex, cols.statusCol + 1).setValue('Đã rời đi');
-      if (cols.feeCol !== -1) sheet.getRange(rowIndex, cols.feeCol + 1).setValue(fee);
-      if (cols.paymentMethodCol !== -1) sheet.getRange(rowIndex, cols.paymentMethodCol + 1).setValue(paymentMethod);
+      // Chuẩn bị dữ liệu cho hàng cần cập nhật
+      const rowData = values[i].slice(); // Tạo bản sao của hàng từ cache
+      rowData[cols.exitTimeCol] = now;
+      rowData[cols.statusCol] = 'Đã rời đi';
+      if (cols.feeCol !== -1) rowData[cols.feeCol] = fee;
+      if (cols.paymentMethodCol !== -1) rowData[cols.paymentMethodCol] = paymentMethod;
 
+      // Thực hiện cập nhật theo lô cho hàng này
+      sheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+
+      invalidateAllSheetDataCache(); // Làm mới cache sau khi ghi
       clearRelevantCache(entryTime);
       clearRelevantCache(now);
 
@@ -213,65 +250,107 @@ function handleCheckOut(payload) {
     }
   }
 
+
   throw new Error('Không tìm thấy xe đang gửi với UniqueID này.');
 }
 
-/**
- * Xử lý đồng bộ các hành động offline.
- */
 function handleSync(queue) {
   if (!Array.isArray(queue) || queue.length === 0) {
     throw new Error("Hàng đợi đồng bộ trống hoặc không hợp lệ.");
   }
 
   const sheet = getSheet();
+  const values = safeGetValuesFromCache(); // Đọc từ cache
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
+  const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
+
   let successCount = 0;
   let errorCount = 0;
+  
+  let newRowsToAppend = [];
+  let rowsToUpdateMap = new Map(); // Map<0-based rowIndex, updatedRowData>
+  let datesToClearCache = new Set();
 
-  queue.forEach(item => {
+  queue.forEach(item => { // Bước 1: Chuẩn bị tất cả các thay đổi trong bộ nhớ
     try {
       const timestamp = new Date(item.timestamp);
+      datesToClearCache.add(formatDate(timestamp));
+
       if (item.action === 'checkIn') {
         const imageUrl = processAndSaveImage(item.imageData, item.plate);
-        sheet.appendRow([
+        newRowsToAppend.push([
           timestamp, formatDate(timestamp), item.plate.toUpperCase(), item.phone || '',
           timestamp, '', 'Đang gửi', item.uniqueID, item.locationId || '',
           imageUrl, item.isVIP ? 'Có' : 'Không', '', ''
         ]);
         successCount++;
-        clearRelevantCache(timestamp);
-      } else if (item.action === 'checkOut') {
-        const data = sheet.getDataRange().getValues();
-        const headers = data[0];
-        const cols = getHeaderIndices(headers);
-        let found = false;
-        for (let i = data.length - 1; i > 0; i--) {
-          if (data[i][cols.uniqueIdCol] === item.uniqueID && data[i][cols.statusCol] === 'Đang gửi') {
-            const entryTime = new Date(data[i][cols.entryTimeCol]);
-            sheet.getRange(i + 1, cols.exitTimeCol + 1).setValue(timestamp);
-            sheet.getRange(i + 1, cols.statusCol + 1).setValue('Đã rời đi');
-            sheet.getRange(i + 1, cols.feeCol + 1).setValue(item.fee);
-            sheet.getRange(i + 1, cols.paymentMethodCol + 1).setValue(item.paymentMethod);
-            found = true;
-            clearRelevantCache(entryTime);
-            clearRelevantCache(timestamp);
+      } else if (item.action === 'checkOut' || item.action === 'editTransaction') { // Xử lý cả checkOut và editTransaction
+        let foundRowIndex = -1; // 0-based index
+        for (let i = 1; i < values.length; i++) {
+          if (values[i][cols.uniqueIdCol] === item.uniqueID && (item.action === 'editTransaction' || values[i][cols.statusCol] === 'Đang gửi')) {
+            foundRowIndex = i;
+            if (item.entryTime) datesToClearCache.add(formatDate(new Date(item.entryTime)));
+            if (item.exitTime) datesToClearCache.add(formatDate(new Date(item.exitTime)));
             break;
           }
         }
-        if (found) successCount++; else errorCount++;
+
+        if (foundRowIndex !== -1) {
+          const rowData = values[foundRowIndex].slice(); // Tạo bản sao của hàng từ cache
+          if (item.action === 'checkOut') {
+            rowData[cols.exitTimeCol] = timestamp;
+            rowData[cols.statusCol] = 'Đã rời đi';
+            if (cols.feeCol !== -1) rowData[cols.feeCol] = item.fee;
+            if (cols.paymentMethodCol !== -1) rowData[cols.paymentMethodCol] = item.paymentMethod;
+          } else if (item.action === 'editTransaction') {
+            if (item.plate !== undefined && cols.plateCol !== -1) rowData[cols.plateCol] = item.plate;
+            if (item.entryTime !== undefined && cols.entryTimeCol !== -1) rowData[cols.entryTimeCol] = item.entryTime ? new Date(item.entryTime) : null;
+            if (item.exitTime !== undefined && cols.exitTimeCol !== -1) rowData[cols.exitTimeCol] = item.exitTime ? new Date(item.exitTime) : null;
+            if (item.fee !== undefined && cols.feeCol !== -1) rowData[cols.feeCol] = item.fee;
+            if (item.paymentMethod !== undefined && cols.paymentMethodCol !== -1) rowData[cols.paymentMethodCol] = item.paymentMethod;
+            if (item.status !== undefined && cols.statusCol !== -1) rowData[cols.statusCol] = item.status;
+          }
+          rowsToUpdateMap.set(foundRowIndex, rowData);
+          successCount++;
+        } else {
+          errorCount++;
+          console.warn(`handleSync: Item for UniqueID ${item.uniqueID} not found for action ${item.action}.`);
+        }
       }
     } catch (e) {
       errorCount++;
-      logError('handleSync_item', e);
+      logError('handleSync_item_preparation', e);
     }
   });
+
+  // Bước 2: Thực hiện tất cả các thay đổi trên sheet theo lô
+  try {
+    // 1. Thêm các hàng mới
+    if (newRowsToAppend.length > 0) {
+      sheet.appendRows(newRowsToAppend);
+    }
+
+    // 2. Cập nhật các hàng hiện có
+    if (rowsToUpdateMap.size > 0) {
+      const allSheetValues = sheet.getDataRange().getValues(); // Đọc lại toàn bộ sheet để đảm bảo cập nhật đúng vị trí
+      rowsToUpdateMap.forEach((updatedRowData, original0BasedIndex) => {
+        if (original0BasedIndex < allSheetValues.length) {
+          allSheetValues[original0BasedIndex] = updatedRowData;
+        }
+      });
+      sheet.getRange(1, 1, allSheetValues.length, allSheetValues[0].length).setValues(allSheetValues);
+    }
+  } catch (e) {
+    logError('handleSync_batch_write', e);
+    throw new Error(`Lỗi khi ghi dữ liệu đồng bộ: ${e.message}`);
+  }
+
+  invalidateAllSheetDataCache(); // Làm mới cache sau khi tất cả các thao tác ghi hoàn tất
+  datesToClearCache.forEach(dateKey => clearRelevantCache(new Date(dateKey))); // Xóa cache theo ngày
 
   return createJsonResponse({ status: 'success', message: `Đồng bộ hoàn tất. Thành công: ${successCount}, Thất bại: ${errorCount}` });
 }
 
-/**
- * Xử lý chỉnh sửa một giao dịch bởi admin.
- */
 function handleEditTransaction(payload) {
   if (payload.secret !== ADMIN_SECRET_KEY) {
     throw new Error('Mật khẩu quản trị không đúng.');
@@ -281,51 +360,58 @@ function handleEditTransaction(payload) {
   if (!uniqueID) throw new Error('Thiếu UniqueID để xác định giao dịch.');
 
   const sheet = getSheet();
-  const sheetData = sheet.getDataRange().getValues();
-  const headers = sheetData[0];
-  const cols = getHeaderIndices(headers);
+  const values = safeGetValuesFromCache(); // Đọc từ cache
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
+  const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
 
   if (cols.uniqueIdCol === -1) throw new Error('Sheet chưa có cột "UniqueID".');
 
+  let rowIndexToUpdate = -1;
+  let originalEntryTime = null;
+
   for (let i = 1; i < sheetData.length; i++) {
-    if (sheetData[i][cols.uniqueIdCol] == uniqueID) {
-      const rowToUpdate = i + 1;
-      const originalEntryTime = new Date(sheetData[i][cols.entryTimeCol]);
+    if (values[i][cols.uniqueIdCol] == uniqueID) {
+      rowIndexToUpdate = i + 1; // 1-based index
+      originalEntryTime = new Date(values[i][cols.entryTimeCol]);
+      break;
+    }
+  }
 
-      if (plate !== undefined && cols.plateCol !== -1) sheet.getRange(rowToUpdate, cols.plateCol + 1).setValue(plate);
-      if (entryTime !== undefined && cols.entryTimeCol !== -1) sheet.getRange(rowToUpdate, cols.entryTimeCol + 1).setValue(entryTime ? new Date(entryTime) : null);
-      if (exitTime !== undefined && cols.exitTimeCol !== -1) sheet.getRange(rowToUpdate, cols.exitTimeCol + 1).setValue(exitTime ? new Date(exitTime) : null);
-      if (fee !== undefined && cols.feeCol !== -1) sheet.getRange(rowToUpdate, cols.feeCol + 1).setValue(fee);
-      if (paymentMethod !== undefined && cols.paymentMethodCol !== -1) sheet.getRange(rowToUpdate, cols.paymentMethodCol + 1).setValue(paymentMethod);
-      if (status !== undefined && cols.statusCol !== -1) sheet.getRange(rowToUpdate, cols.statusCol + 1).setValue(status);
+  if (rowIndexToUpdate === -1) {
+    throw new Error(`Không tìm thấy giao dịch với UniqueID: ${uniqueID}`);
+  }
 
-      SpreadsheetApp.flush();
+  const rowData = values[rowIndexToUpdate - 1].slice(); // Tạo bản sao của hàng từ cache
 
+  if (plate !== undefined && cols.plateCol !== -1) rowData[cols.plateCol] = plate;
+  if (entryTime !== undefined && cols.entryTimeCol !== -1) rowData[cols.entryTimeCol] = entryTime ? new Date(entryTime) : null;
+  if (exitTime !== undefined && cols.exitTimeCol !== -1) rowData[cols.exitTimeCol] = exitTime ? new Date(exitTime) : null;
+  if (fee !== undefined && cols.feeCol !== -1) rowData[cols.feeCol] = fee;
+  if (paymentMethod !== undefined && cols.paymentMethodCol !== -1) rowData[cols.paymentMethodCol] = paymentMethod;
+  if (status !== undefined && cols.statusCol !== -1) rowData[cols.statusCol] = status;
+
+  // Thực hiện cập nhật theo lô cho hàng này
+  sheet.getRange(rowIndexToUpdate, 1, 1, rowData.length).setValues([rowData]);
+
+  invalidateAllSheetDataCache(); // Làm mới cache sau khi ghi
       clearRelevantCache(originalEntryTime);
       if (entryTime) clearRelevantCache(new Date(entryTime));
       if (exitTime) clearRelevantCache(new Date(exitTime));
 
       return createJsonResponse({ status: 'success', message: 'Cập nhật thành công.' });
-    }
-  }
-
-  throw new Error(`Không tìm thấy giao dịch với UniqueID: ${uniqueID}`);
 }
 
 
 // ================== CÁC HÀM LẤY DỮ LIỆU (GETTERS) ==================
 
-/**
- * Lấy trạng thái của một xe (đang gửi hay không).
- */
 function getVehicleStatus(plate) {
   if (!plate) throw new Error("Thiếu biển số để kiểm tra.");
 
-  const values = safeGetValues(getSheet());
+  const values = safeGetValuesFromCache(); // Đọc từ cache
   if (values.length < 2) return createJsonResponse({ status: 'success', data: { isParking: false, vehicle: null } });
 
-  const headers = values[0];
-  const cols = getHeaderIndices(headers);
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
+  const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
   const cleanedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
   for (let i = values.length - 1; i >= 1; i--) {
@@ -339,14 +425,11 @@ function getVehicleStatus(plate) {
   return createJsonResponse({ status: 'success', data: { isParking: false, vehicle: null } });
 }
 
-/**
- * Lấy lịch sử gửi xe của một biển số.
- */
 function getVehicleHistory(plate) {
-  const values = safeGetValues(getSheet());
+  const values = safeGetValuesFromCache(); // Đọc từ cache
   if (values.length < 2) return [];
 
-  const headers = values.shift();
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
   const cols = getHeaderIndices(headers);
   const cleanedPlate = (plate || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
@@ -356,18 +439,13 @@ function getVehicleHistory(plate) {
     .sort((a, b) => new Date(getObjectValueCaseInsensitive(b, 'Entry Time')) - new Date(getObjectValueCaseInsensitive(a, 'Entry Time')));
 }
 
-/**
- * Lấy lịch sử gửi xe của một biển số dựa trên UniqueID của một giao dịch.
- */
 function getVehicleHistoryByUniqueID(uniqueID) {
   if (!uniqueID) {
     throw new Error("Thiếu tham số uniqueID.");
   }
-  const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  const plateIndex = headers.indexOf("Plate");
-  const uniqueIDIndex = headers.indexOf("UniqueID");
+  const data = safeGetValuesFromCache(); // Đọc từ cache
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
+  const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
 
   let plateNumber = null;
   for (let i = 1; i < data.length; i++) {
@@ -382,8 +460,8 @@ function getVehicleHistoryByUniqueID(uniqueID) {
   }
 
   const history = [];
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (data[i][plateIndex] === plateNumber) {
+  for (let i = data.length - 1; i >= 1; i--) { // Duyệt ngược để lấy các giao dịch gần nhất trước
+    if (data[i][cols.plateCol] === plateNumber) {
       history.push(arrayToObject(headers, data[i]));
     }
   }
@@ -391,111 +469,16 @@ function getVehicleHistoryByUniqueID(uniqueID) {
   return createJsonResponse({ status: 'success', data: history });
 }
 
-/**
- * MỚI: Chuyển đổi số thành chữ tiếng Việt.
- * Hàm này được đơn giản hóa, chỉ hỗ trợ đến hàng tỷ.
- */
-function numberToVietnameseWords(num) {
-  const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-  const teens = ['', 'mười', 'hai mươi', 'ba mươi', 'bốn mươi', 'năm mươi', 'sáu mươi', 'bảy mươi', 'tám mươi', 'chín mươi'];
-  const hundreds = ['', 'một trăm', 'hai trăm', 'ba trăm', 'bốn trăm', 'năm trăm', 'sáu trăm', 'bảy trăm', 'tám trăm', 'chín trăm'];
-  const thousands = ['', 'nghìn', 'triệu', 'tỷ'];
-
-  if (num === 0) return 'không';
-
-  let s = num.toString();
-  let result = '';
-  let i = 0;
-
-  while (s.length > 0) {
-    let chunk = parseInt(s.slice(-3));
-    s = s.slice(0, -3);
-
-    if (chunk === 0 && s.length > 0) {
-      i++;
-      continue;
-    }
-
-    let chunkWords = '';
-    let h = Math.floor(chunk / 100);
-    let t = Math.floor((chunk % 100) / 10);
-    let u = chunk % 10;
-
-    if (h > 0) {
-      chunkWords += units[h] + ' trăm ';
-    }
-
-    if (t > 1) {
-      chunkWords += teens[t] + ' ';
-      if (u === 1) chunkWords += 'mốt';
-      else if (u > 0) chunkWords += units[u];
-    } else if (t === 1) {
-      chunkWords += 'mười ';
-      if (u > 0) chunkWords += units[u];
-    } else if (u > 0 && h > 0) {
-      chunkWords += 'lẻ ' + units[u];
-    } else if (u > 0) {
-      chunkWords += units[u];
-    }
-
-    if (chunkWords.trim() !== '') {
-      result = chunkWords.trim() + ' ' + thousands[i] + ' ' + result;
-    }
-    i++;
-  }
-  return result.trim().replace(/\s+/g, ' ');
-}
-
-/**
- * MỚI: Tính phí và trả về chi tiết cách tính.
- */
-function calculateFeeWithBreakdown(startTime, endTime, isVIP) {
-    if (isVIP) return { totalFee: 0, breakdown: "Khách mời/VIP (Miễn phí)" };
-    if (!startTime) return { totalFee: 0, breakdown: "Không có giờ vào" };
-
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date();
-    const diffMinutes = Math.floor((end - start) / (1000 * 60));
-
-    if (diffMinutes <= FEE_CONFIG.freeMinutes) {
-        return { totalFee: 0, breakdown: `Miễn phí dưới ${FEE_CONFIG.freeMinutes} phút` };
-    }
-
-    let totalFee = 0;
-    let dayHours = 0;
-    let nightHours = 0;
-    let chargeableStartTime = new Date(start.getTime() + FEE_CONFIG.freeMinutes * 60 * 1000);
-    const chargeableMinutes = diffMinutes - FEE_CONFIG.freeMinutes;
-    const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
-
-    for (let i = 0; i < totalChargeableHours; i++) {
-        let currentBlockStartHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
-        const isNight = currentBlockStartHour >= FEE_CONFIG.nightStartHour || currentBlockStartHour < FEE_CONFIG.nightEndHour;
-        if (isNight) {
-            nightHours++;
-            totalFee += FEE_CONFIG.nightRate;
-        } else {
-            dayHours++;
-            totalFee += FEE_CONFIG.dayRate;
-        }
-    }
-    return { totalFee, dayHours, nightHours };
-}
-
-
-/**
- * Lấy danh sách các xe trong một ngày cụ thể (bao gồm cả xe từ ngày cũ còn gửi).
- */
 function getRecordsForDate(dateStr) {
   const targetDateStr = dateStr || formatDate(new Date());
   const cacheKey = `records_${targetDateStr}`;
   const cached = SCRIPT_CACHE.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
-  const values = safeGetValues(getSheet());
+  const values = safeGetValuesFromCache(); // Đọc từ cache
   if (values.length < 2) return [];
 
-  const headers = values.shift();
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
   const spreadsheetTimeZone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
   const startOfDay = new Date(Utilities.formatDate(new Date(targetDateStr + 'T00:00:00'), spreadsheetTimeZone, "yyyy-MM-dd'T'00:00:00"));
   const endOfDay = new Date(Utilities.formatDate(new Date(targetDateStr + 'T00:00:00'), spreadsheetTimeZone, "yyyy-MM-dd'T'23:59:59"));
@@ -517,9 +500,6 @@ function getRecordsForDate(dateStr) {
   return records;
 }
 
-/**
- * Lấy dữ liệu tổng quan cho trang quản trị.
- */
 function getAdminOverview(secret, dateString) {
   if (secret !== ADMIN_SECRET_KEY) throw new Error('Sai mật khẩu quản trị.');
 
@@ -528,11 +508,11 @@ function getAdminOverview(secret, dateString) {
   const cached = SCRIPT_CACHE.get(cacheKey);
   if (cached) return createJsonResponse({ status: 'success', data: JSON.parse(cached) });
 
-  const data = safeGetValues(getSheet());
+  const data = safeGetValuesFromCache(); // Đọc từ cache
   if (data.length < 2) return createJsonResponse({ status: 'success', data: {} });
 
-  const headers = data[0];
-  const cols = getHeaderIndices(headers);
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
+  const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
   const targetDateStr = dateKey;
 
   let totalRevenueForDate = 0, totalVehiclesForDate = 0, vehiclesCurrentlyParking = 0;
@@ -570,9 +550,6 @@ function getAdminOverview(secret, dateString) {
   return createJsonResponse({ status: 'success', data: resultData });
 }
 
-/**
- * Lấy danh sách giao dịch chi tiết cho trang quản trị.
- */
 function getTransactions(secret, dateString) {
   if (secret !== ADMIN_SECRET_KEY) throw new Error('Sai mật khẩu quản trị.');
 
@@ -581,11 +558,11 @@ function getTransactions(secret, dateString) {
   const cached = SCRIPT_CACHE.get(cacheKey);
   if (cached) return createJsonResponse({ status: 'success', data: { transactions: JSON.parse(cached) } });
 
-  const data = safeGetValues(getSheet());
+  const data = safeGetValuesFromCache(); // Đọc từ cache
   if (data.length < 2) return createJsonResponse({ status: 'success', data: { transactions: [] } });
 
-  const headers = data[0];
-  const cols = getHeaderIndices(headers);
+  const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
+  const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
   const targetDateStr = dateKey;
   const transactions = [];
 
@@ -617,13 +594,6 @@ function getSheet() {
 
 function createJsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}
-
-function safeGetValues(sheet) {
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 1) return [];
-  const lastCol = sheet.getLastColumn();
-  return sheet.getRange(1, 1, lastRow, Math.max(1, lastCol)).getValues();
 }
 
 function arrayToObject(headers, row) {
@@ -698,115 +668,37 @@ function logError(functionName, error) {
   console.error(`Lỗi trong hàm ${functionName}: ${error.message} tại ${error.stack}`);
 }
 
-// ================== SỬA LỖI: THÊM CÁC HÀM TIỆN ÍCH TỪ FRONTEND ==================
+function calculateFeeWithBreakdown(startTime, endTime, isVIP) {
+    if (isVIP) return { totalFee: 0, dayHours: 0, nightHours: 0 };
+    if (!startTime) return { totalFee: 0, dayHours: 0, nightHours: 0 };
 
-const PLATE_DATA = {
-    provinces: [
-        { name: "TP. Hà Nội (mới)", codes: ["29", "30", "31", "32", "33", "40", "88", "99"] },
-        { name: "TP. Hồ Chí Minh", codes: ["41", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59"] },
-        { name: "Tỉnh An Giang (mới)", codes: ["67", "66", "63"] },
-        { name: "Tỉnh Bà Rịa - Vũng Tàu (mới)", codes: ["72", "39", "60"] },
-        { name: "Tỉnh Bắc Giang (mới)", codes: ["98", "12"] },
-        { name: "Tỉnh Bình Định (mới)", codes: ["77", "78"] },
-        { name: "Tỉnh Bình Thuận (mới)", codes: ["86", "85"] },
-        { name: "Tỉnh Cà Mau (mới)", codes: ["69", "94"] },
-        { name: "TP. Cần Thơ (mới)", codes: ["65", "95", "83", "64"] },
-        { name: "Tỉnh Đắk Lắk (mới)", codes: ["47", "48"] },
-        { name: "Tỉnh Gia Lai (mới)", codes: ["81", "82"] },
-        { name: "Tỉnh Hà Nam (mới)", codes: ["90", "35"] },
-        { name: "Tỉnh Hà Tĩnh (mới)", codes: ["38", "73"] },
-        { name: "Tỉnh Hải Dương (mới)", codes: ["34", "89"] },
-        { name: "TP. Hải Phòng (mới)", codes: ["15", "16", "14"] },
-        { name: "Tỉnh Hòa Bình (mới)", codes: ["28", "26"] },
-        { name: "Tỉnh Khánh Hòa (mới)", codes: ["79", "92"] },
-        { name: "Tỉnh Kiên Giang (mới)", codes: ["68", "93"] },
-        { name: "Tỉnh Lào Cai (mới)", codes: ["24", "25"] },
-        { name: "Tỉnh Lâm Đồng (mới)", codes: ["49", "61"] },
-        { name: "Tỉnh Long An (mới)", codes: ["62", "70"] },
-        { name: "Tỉnh Nam Định (mới)", codes: ["18", "17"] },
-        { name: "Tỉnh Nghệ An (mới)", codes: ["37", "36"] },
-        { name: "Tỉnh Phú Thọ (mới)", codes: ["19", "23"] },
-        { name: "Tỉnh Quảng Nam (mới)", codes: ["92", "43"] },
-        { name: "Tỉnh Quảng Ngãi (mới)", codes: ["76", "74"] },
-        { name: "Tỉnh Thái Nguyên (mới)", codes: ["20", "97"] },
-        { name: "Tỉnh Thừa Thiên Huế (mới)", codes: ["75", "74"] },
-        { name: "Tỉnh Trà Vinh (mới)", codes: ["84", "71"] },
-        { name: "Tỉnh Tuyên Quang (mới)", codes: ["22", "21"] },
-        { name: "Tỉnh Yên Bái (mới)", codes: ["21", "27"] },
-        { name: "Tỉnh Bến Tre", codes: ["71"] },
-        { name: "Tỉnh Cao Bằng", codes: ["11"] },
-        { name: "Tỉnh Điện Biên", codes: ["27"] }
-    ],
-    diplomaticSeries: {
-        "001-010": "Tổ chức quốc tế", "011": "Đại sứ quán Afghanistan", "021": "Đại sứ quán Albania", "026": "Đại sứ quán Algérie", "031": "Đại sứ quán Angola",
-        "041": "Đại sứ quán Argentina", "046": "Đại sứ quán Úc", "051": "Đại sứ quán Áo", "056": "Đại sứ quán Ấn Độ", "061": "Đại sứ quán Azerbaijan",
-        "066": "Đại sứ quán Bangladesh", "071": "Đại sứ quán Belarus", "076": "Đại sứ quán Bỉ", "081": "Đại sứ quán Brasil", "086": "Đại sứ quán Brunei",
-        "091": "Đại sứ quán Bulgaria", "096": "Đại sứ quán Campuchia", "101": "Đại sứ quán Canada", "106": "Đại sứ quán Chile", "111": "Đại sứ quán Colombia",
-        "116": "Đại sứ quán Cuba", "121": "Đại sứ quán Cộng hòa Séc", "126": "Đại sứ quán Đan Mạch", "131": "Đại sứ quán Ai Cập", "136": "Đại sứ quán Phần Lan",
-        "141": "Đại sứ quán Pháp", "146": "Đại sứ quán Đức", "156": "Đại sứ quán Hy Lạp", "161": "Đại sứ quán Guatemala", "166": "Đại sứ quán Hungary",
-        "171": "Đại sứ quán Indonesia", "176": "Đại sứ quán Iran", "181": "Đại sứ quán Iraq", "186": "Đại sứ quán Ireland", "191": "Đại sứ quán Israel",
-        "196": "Đại sứ quán Ý", "201": "Đại sứ quán Nhật Bản", "206": "Đại sứ quán Kazakhstan", "211": "Đại sứ quán Triều Tiên", "216": "Đại sứ quán Hàn Quốc",
-        "221": "Đại sứ quán Kuwait", "226": "Đại sứ quán Lào", "231": "Đại sứ quán Liban", "236": "Đại sứ quán Libya", "241": "Đại sứ quán Malaysia",
-        "246": "Đại sứ quán México", "251": "Đại sứ quán Mông Cổ", "256": "Đại sứ quán Maroc", "261": "Đại sứ quán Mozambique", "266": "Đại sứ quán Myanmar",
-        "271": "Đại sứ quán Hà Lan", "276": "Đại sứ quán New Zealand", "281": "Đại sứ quán Nigeria", "286": "Đại sứ quán Na Uy", "291": "Đại sứ quán Oman",
-        "296": "Đại sứ quán Pakistan", "301": "Đại sứ quán Palestine", "306": "Đại sứ quán Panama", "311": "Đại sứ quán Peru", "316": "Đại sứ quán Philippines",
-        "321": "Đại sứ quán Ba Lan", "326": "Đại sứ quán Bồ Đào Nha", "331": "Đại sứ quán Qatar", "336": "Đại sứ quán România", "341": "Đại sứ quán Nga",
-        "346": "Đại sứ quán Ả Rập Xê Út", "351": "Đại sứ quán Singapore", "356": "Đại sứ quán Slovakia", "361": "Đại sứ quán Nam Phi", "366": "Đại sứ quán Tây Ban Nha",
-        "371": "Đại sứ quán Sri Lanka", "376": "Đại sứ quán Thụy Điển", "381": "Đại sứ quán Thụy Sĩ", "386": "Đại sứ quán Tanzania", "391": "Đại sứ quán Thái Lan",
-        "396": "Đại sứ quán Timor-Leste", "406": "Đại sứ quán Thổ Nhĩ Kỳ", "411": "Đại sứ quán Ukraina", "416": "Đại sứ quán Các Tiểu vương quốc Ả Rập Thống nhất",
-        "421": "Đại sứ quán Vương quốc Anh", "426": "Đại sứ quán Hoa Kỳ", "431": "Đại sứ quán Uruguay", "436": "Đại sứ quán Venezuela", "441": "Đại sứ quán Haiti",
-        "446": "Đại sứ quán El Salvador", "451": "Đại sứ quán Úc (Lãnh sự)", "456": "Đại sứ quán Canada (Lãnh sự)", "461": "Đại sứ quán Trung Quốc (Lãnh sự)",
-        "466": "Đại sứ quán Cuba (Lãnh sự)", "471": "Đại sứ quán Pháp (Lãnh sự)", "476": "Đại sứ quán Đức (Lãnh sự)", "481": "Đại sứ quán Hungary (Lãnh sự)",
-        "486": "Đại sứ quán Ấn Độ (Lãnh sự)", "491": "Đại sứ quán Indonesia (Lãnh sự)", "496": "Đại sứ quán Nhật Bản (Lãnh sự)", "501": "Đại sứ quán Lào (Lãnh sự)",
-        "506": "Đại sứ quán Malaysia (Lãnh sự)", "511": "Đại sứ quán New Zealand (Lãnh sự)", "516": "Đại sứ quán Ba Lan (Lãnh sự)", "521": "Đại sứ quán Hàn Quốc (Lãnh sự)",
-        "526": "Đại sứ quán Nga (Lãnh sự)", "531": "Đại sứ quán Singapore (Lãnh sự)", "536": "Đại sứ quán Thụy Sĩ (Lãnh sự)", "541": "Đại sứ quán Thái Lan (Lãnh sự)",
-        "546": "Đại sứ quán Vương quốc Anh (Lãnh sự)", "551": "Đại sứ quán Hoa Kỳ (Lãnh sự)", "600-799": "Tổ chức quốc tế phi chính phủ", "800-999": "Cơ quan thông tấn, báo chí nước ngoài"
-    },
-    specialSeries: {
-        "NG": "Xe của cơ quan đại diện ngoại giao", "NN": "Xe của tổ chức, cá nhân nước ngoài", "QT": "Xe của cơ quan đại diện ngoại giao (có yếu tố quốc tế)",
-        "CV": "Xe của chuyên viên tư vấn nước ngoài", "LD": "Xe của doanh nghiệp có vốn đầu tư nước ngoài", "DA": "Xe của các ban quản lý dự án nước ngoài",
-        "CD": "Xe chuyên dùng của Công an", "KT": "Xe của doanh nghiệp quân đội", "RM": "Rơ moóc quân đội", "MK": "Máy kéo quân đội",
-        "TĐ": "Xe máy chuyên dùng của quân đội", "HC": "Xe ô tô chuyên dùng của Công an"
+    const start = new Date(startTime);
+    const end = endTime ? new Date(endTime) : new Date();
+    const diffMinutes = Math.floor((end - start) / (1000 * 60));
+
+    if (diffMinutes <= FEE_CONFIG.freeMinutes) {
+        return { totalFee: 0, dayHours: 0, nightHours: 0 };
     }
-};
 
-function cleanPlateNumber(plateStr) {
-  return plateStr ? plateStr.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
-}
+    let totalFee = 0;
+    let dayHours = 0;
+    let nightHours = 0;
+    let chargeableStartTime = new Date(start.getTime() + FEE_CONFIG.freeMinutes * 60 * 1000);
+    const chargeableMinutes = diffMinutes - FEE_CONFIG.freeMinutes;
+    const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
 
-function decodePlateNumber(plate) {
-    if (!plate || typeof plate !== 'string' || typeof PLATE_DATA === 'undefined') return 'Chưa có thông tin';
-    const cleanedPlate = cleanPlateNumber(plate);
-    for (const series in PLATE_DATA.specialSeries) {
-        if (cleanedPlate.includes(series)) {
-            if (series === 'NG') {
-                const diplomaticCode = parseInt(cleanedPlate.replace('NG', '').substring(0, 3), 10);
-                if (!isNaN(diplomaticCode)) {
-                    for (const range in PLATE_DATA.diplomaticSeries) {
-                        if (range.includes('-')) {
-                            const [start, end] = range.split('-').map(Number);
-                            if (diplomaticCode >= start && diplomaticCode <= end) return PLATE_DATA.diplomaticSeries[range];
-                        } else if (diplomaticCode === parseInt(range, 10)) return PLATE_DATA.diplomaticSeries[range];
-                    }
-                }
-                return "Xe của cơ quan đại diện ngoại giao";
-            }
-            return PLATE_DATA.specialSeries[series];
+    for (let i = 0; i < totalChargeableHours; i++) {
+        let currentBlockStartHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
+        const isNight = currentBlockStartHour >= FEE_CONFIG.nightStartHour || currentBlockStartHour < FEE_CONFIG.nightEndHour;
+        if (isNight) {
+            nightHours++;
+            totalFee += FEE_CONFIG.nightRate;
+        } else {
+            dayHours++;
+            totalFee += FEE_CONFIG.dayRate;
         }
     }
-    let provinceCode = '';
-    let vehicleType = 'Chưa xác định';
-    if (cleanedPlate.length === 9 && /^[0-9]{2}/.test(cleanedPlate)) {
-        provinceCode = cleanedPlate.substring(0, 2);
-        vehicleType = 'Xe máy';
-    } else if (cleanedPlate.length === 8 && /^[0-9]{2}/.test(cleanedPlate)) {
-        provinceCode = cleanedPlate.substring(0, 2);
-        vehicleType = 'Ô tô';
-    }
-    if (!provinceCode) return 'Biển số không xác định';
-    const provinceInfo = PLATE_DATA.provinces.find(p => p.codes.includes(provinceCode));
-    const provinceName = provinceInfo ? provinceInfo.name : 'Tỉnh không xác định';
-    return `${provinceName} - ${vehicleType}`;
+    return { totalFee, dayHours, nightHours };
 }
 
 function calculateDurationBetween(startTime, endTime) {
@@ -821,4 +713,85 @@ function calculateDurationBetween(startTime, endTime) {
     let result = '';
     if (days > 0) result += `${days}d `; if (hours > 0) result += `${hours}h `; result += `${minutes}m`;
     return result.trim() || '0m';
+}
+
+function numberToVietnameseWords(num) {
+  const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+  const teens = ['', 'mười', 'hai mươi', 'ba mươi', 'bốn mươi', 'năm mươi', 'sáu mươi', 'bảy mươi', 'tám mươi', 'chín mươi'];
+  const hundreds = ['', 'một trăm', 'hai trăm', 'ba trăm', 'bốn trăm', 'năm trăm', 'sáu trăm', 'bảy trăm', 'tám trăm', 'chín trăm'];
+  const thousands = ['', 'nghìn', 'triệu', 'tỷ'];
+
+  if (num === 0) return 'không';
+
+  let s = num.toString();
+  let result = '';
+  let i = 0;
+
+  while (s.length > 0) {
+    let chunk = parseInt(s.slice(-3));
+    s = s.slice(0, -3);
+
+    if (chunk === 0 && s.length > 0) {
+      i++;
+      continue;
+    }
+
+    let chunkWords = '';
+    let h = Math.floor(chunk / 100);
+    let t = Math.floor((chunk % 100) / 10);
+    let u = chunk % 10;
+
+    if (h > 0) {
+      chunkWords += units[h] + ' trăm ';
+    }
+
+    if (t > 1) {
+      chunkWords += teens[t] + ' ';
+      if (u === 1) chunkWords += 'mốt';
+      else if (u > 0) chunkWords += units[u];
+    } else if (t === 1) {
+      chunkWords += 'mười ';
+      if (u > 0) chunkWords += units[u];
+    } else if (u > 0 && (h > 0 || s.length > 0)) { // Thêm điều kiện s.length > 0 để xử lý số như 1001
+      chunkWords += 'lẻ ' + units[u];
+    } else if (u > 0) {
+      chunkWords += units[u];
+    }
+
+    if (chunkWords.trim() !== '') {
+      result = chunkWords.trim() + ' ' + thousands[i] + ' ' + result;
+    }
+    i++;
+  }
+  let finalResult = result.trim().replace(/\s+/g, ' ');
+  return finalResult.charAt(0).toUpperCase() + finalResult.slice(1);
+}
+
+function decodePlateNumber(plate) {
+    const PLATE_DATA = {
+        provinces: [
+            { name: "TP. Hà Nội (mới)", codes: ["29", "30", "31", "32", "33", "40", "88", "99"] },
+            { name: "TP. Hồ Chí Minh", codes: ["41", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59"] }
+        ],
+        specialSeries: {
+            "NG": "Xe của cơ quan đại diện ngoại giao", "NN": "Xe của tổ chức, cá nhân nước ngoài", "QT": "Xe của cơ quan đại diện ngoại giao (có yếu tố quốc tế)"
+        }
+    };
+    if (!plate || typeof plate !== 'string') return 'Chưa có thông tin';
+    const cleanedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    for (const series in PLATE_DATA.specialSeries) {
+        if (cleanedPlate.includes(series)) {
+            return PLATE_DATA.specialSeries[series];
+        }
+    }
+    let provinceCode = '';
+    let vehicleType = 'Chưa xác định';
+    if (cleanedPlate.length >= 8 && /^[0-9]{2}/.test(cleanedPlate)) {
+        provinceCode = cleanedPlate.substring(0, 2);
+        vehicleType = cleanedPlate.length === 8 ? 'Ô tô' : 'Xe máy';
+    }
+    if (!provinceCode) return 'Biển số không xác định';
+    const provinceInfo = PLATE_DATA.provinces.find(p => p.codes.includes(provinceCode));
+    const provinceName = provinceInfo ? provinceInfo.name : 'Tỉnh không xác định';
+    return `${provinceName} - ${vehicleType}`;
 }

@@ -79,7 +79,30 @@
         </tbody>
       </table>
 
-      <?!= feeBreakdownHtml ?>
+      <!-- MỚI: Bảng diễn giải chi tiết cách tính phí -->
+      <div class="section-title">Diễn giải cách tính phí</div>
+      <table>
+          <thead>
+              <tr>
+                  <th>Loại giờ</th>
+                  <th>Số giờ</th>
+                  <th>Đơn giá (/giờ)</th>
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  <td>Giờ ban ngày</td>
+                  <td><?= dayHours ?></td>
+                  <td><?= dayRateFormatted ?></td>
+              </tr>
+              <tr>
+                  <td>Giờ ban đêm</td>
+                  <td><?= nightHours ?></td>
+                  <td><?= nightRateFormatted ?></td>
+              </tr>
+          </tbody>
+      </table>
+
       <p><strong>Số tiền bằng chữ:</strong> <?= feeInWords ?> đồng.</p>
       <p><strong>Phương thức thanh toán:</strong> <?= paymentMethod ?></p>
 

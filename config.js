@@ -9,7 +9,7 @@
 
 const APP_CONFIG = {
     // Cập nhật URL mới nhất từ Google Apps Script
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbw00c1w-elDpNFnIwzoFWYJbVkwsUbb2FrKm_ky6fg9YmRpR3L0kfLjHFEfI9nkX1mmTA/exec",
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycby8tlaJ_wGLqWrpQ-mPGigmHljk1_J6xamkZgbqEUQBbKE-uAbUxeJ6W_GwM9QNejz0Ag/exec",
 
     // Cấu hình thanh toán QR bằng cách tạo ảnh từ API của VietQR
     payment: {
