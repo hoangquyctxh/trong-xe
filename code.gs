@@ -439,6 +439,12 @@ function getVehicleHistory(plate) {
     .sort((a, b) => new Date(getObjectValueCaseInsensitive(b, 'Entry Time')) - new Date(getObjectValueCaseInsensitive(a, 'Entry Time')));
 }
 
+/**
+ * SỬA LỖI & TỐI ƯU: Tìm chính xác MỘT giao dịch dựa trên UniqueID.
+ * Hàm cũ đã sai khi trả về toàn bộ lịch sử của biển số, gây ra lỗi.
+ * @param {string} uniqueID - Mã giao dịch duy nhất cần tìm.
+ * @returns {ContentService} - JSON response chứa một mảng với một đối tượng giao dịch duy nhất nếu tìm thấy.
+ */
 function getVehicleHistoryByUniqueID(uniqueID) {
   if (!uniqueID) {
     throw new Error("Thiếu tham số uniqueID.");
@@ -446,27 +452,15 @@ function getVehicleHistoryByUniqueID(uniqueID) {
   const data = safeGetValuesFromCache(); // Đọc từ cache
   const headers = ALL_SHEET_DATA_HEADERS; // Đọc từ cache
   const cols = ALL_SHEET_DATA_COLS; // Đọc từ cache
-
-  let plateNumber = null;
   for (let i = 1; i < data.length; i++) {
-    if (data[i][uniqueIDIndex] === uniqueID) {
-      plateNumber = data[i][plateIndex];
-      break;
-    }
-  }
-
-  if (!plateNumber) {
-    throw new Error("Không tìm thấy giao dịch với UniqueID này.");
-  }
-
-  const history = [];
-  for (let i = data.length - 1; i >= 1; i--) { // Duyệt ngược để lấy các giao dịch gần nhất trước
-    if (data[i][cols.plateCol] === plateNumber) {
-      history.push(arrayToObject(headers, data[i]));
+    if (data[i][cols.uniqueIdCol] === uniqueID) {
+      const history = [arrayToObject(headers, data[i])]; // Trả về một mảng chỉ chứa giao dịch này
+      return createJsonResponse({ status: 'success', data: history });
     }
   }
   
-  return createJsonResponse({ status: 'success', data: history });
+  // Nếu không tìm thấy, trả về mảng rỗng.
+  return createJsonResponse({ status: 'success', data: [] });
 }
 
 function getRecordsForDate(dateStr) {

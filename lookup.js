@@ -313,21 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const fetchData = async (params) => {
-        showLoading();
-        currentActionParams = params;
-        try {
-            const result = await fetchViaProxy(params);
-            if (result.status === 'success') {
-                renderHistory(result.data, params.plate || params.phone);
-            } else {
-                showMessage(result.message || 'Lỗi không xác định từ máy chủ.', true);
-            }
-        } catch (error) {
-            showMessage(error.message, true);
-        }
-    };
-
     const fetchVehiclesToday = async () => {
         try {
             const params = { action: 'getVehicles', date: new Date().toISOString().slice(0, 10), v: new Date().getTime() };
@@ -339,6 +324,66 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error("Lỗi tải danh sách xe trong ngày:", error);
+        }
+    };
+
+    /**
+     * NÂNG CẤP: Hàm tìm kiếm đa năng, xử lý cả UniqueID, Biển số và SĐT.
+     * Đây là giải pháp cốt lõi để sửa lỗi "Không tìm thấy".
+     * @param {string} searchTerm - Nội dung cần tìm kiếm.
+     * @param {string[]} methods - Các phương thức tìm kiếm cần thử, theo thứ tự ưu tiên.
+     */
+    const universalSearch = async (searchTerm, methods = ['uniqueID', 'plate', 'phone']) => {
+        if (!methods || methods.length === 0) {
+            showMessage('Không tìm thấy kết quả phù hợp.', true);
+            return;
+        }
+
+        showLoading();
+        const methodToTry = methods[0];
+        const remainingMethods = methods.slice(1);
+        let params = {};
+
+        switch (methodToTry) {
+            case 'uniqueID':
+                params = { action: 'getVehicleHistoryByUniqueID', uniqueID: searchTerm };
+                break;
+            case 'plate':
+                params = { action: 'getVehicleHistoryByPlate', plate: searchTerm };
+                break;
+            case 'phone':
+                // Chỉ thử tìm theo SĐT nếu searchTerm là số
+                if (!/^\d+$/.test(searchTerm)) {
+                    universalSearch(searchTerm, remainingMethods); // Bỏ qua và thử cách tiếp theo
+                    return;
+                }
+                params = { action: 'getVehicleHistoryByPhone', phone: searchTerm };
+                break;
+            default:
+                universalSearch(searchTerm, remainingMethods); // Bỏ qua phương thức không hợp lệ
+                return;
+        }
+
+        try {
+            const result = await fetchViaProxy(params);
+            // Nếu tìm thấy kết quả (dù là mảng rỗng nhưng status là success) và có dữ liệu
+            // NÂNG CẤP: Kiểm tra kỹ hơn, đảm bảo kết quả trả về thực sự chứa thông tin đang tìm kiếm
+            let foundMatch = false;
+            if (result.status === 'success' && result.data && result.data.length > 0) {
+                if (methodToTry === 'uniqueID') {
+                    foundMatch = result.data.some(tx => tx.UniqueID === searchTerm);
+                } else { foundMatch = true; } // Với các phương thức khác, chỉ cần có data là đủ
+            }
+            if (foundMatch) {
+                renderHistory(result.data, searchTerm);
+            } else {
+                // Nếu không có kết quả, thử phương thức tiếp theo
+                universalSearch(searchTerm, remainingMethods);
+            }
+        } catch (error) {
+            // Nếu có lỗi mạng hoặc lỗi server, thử phương thức tiếp theo
+            console.error(`Lỗi khi tìm bằng ${methodToTry}:`, error);
+            universalSearch(searchTerm, remainingMethods);
         }
     };
 
@@ -624,15 +669,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (code) {
                 closeQrScanner();
                 const uniqueID = code.data;
-                // GIẢI PHÁP HOÀN THIỆN:
-                // 1. Tìm xe trong danh sách đã tải để lấy biển số.
-                const vehicle = vehiclesToday.find(v => v.UniqueID === uniqueID);
-                if (vehicle && vehicle.Plate) {
-                    // 2. Nếu tìm thấy, dùng biển số để tra cứu lịch sử (cách này chắc chắn hoạt động).
-                    fetchData({ action: 'getVehicleHistoryByPlate', plate: vehicle.Plate });
-                } else {
-                    showMessage(`Không tìm thấy thông tin cho mã vé ${uniqueID}. Vui lòng thử lại sau ít phút hoặc nhập biển số.`, true);
-                }
+                // SỬA LỖI & NÂNG CẤP: Sử dụng hàm tìm kiếm đa năng.
+                // Nó sẽ tự động thử tìm bằng UniqueID trước, sau đó là biển số.
+                universalSearch(uniqueID, ['uniqueID', 'plate']);
             }
         }
         scanAnimation = requestAnimationFrame(tick);
@@ -648,12 +687,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (uniqueID) {
             // GIẢI PHÁP HOÀN THIỆN: Chờ dữ liệu nền tải xong rồi tìm kiếm
             setTimeout(() => {
-                const vehicle = vehiclesToday.find(v => v.UniqueID === uniqueID);
-                if (vehicle && vehicle.Plate) {
-                    fetchData({ action: 'getVehicleHistoryByPlate', plate: vehicle.Plate });
-                } else {
-                    showMessage(`Không tìm thấy thông tin cho mã vé ${uniqueID}. Vui lòng thử lại sau ít phút hoặc nhập biển số.`, true);
-                }
+                // SỬA LỖI & NÂNG CẤP: Sử dụng hàm tìm kiếm đa năng.
+                universalSearch(uniqueID, ['uniqueID', 'plate']);
             }, 1500); // Chờ 1.5s để dữ liệu nền có thể tải xong
         }
 
@@ -662,7 +697,8 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const searchTerm = elements.plateInput.value.trim();
             if (searchTerm) {
-                fetchData({ action: 'getVehicleHistoryByPlate', plate: searchTerm });
+                // SỬA LỖI & NÂNG CẤP: Sử dụng hàm tìm kiếm đa năng.
+                universalSearch(searchTerm, ['plate', 'phone', 'uniqueID']);
             }
         });
 
