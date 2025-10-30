@@ -186,10 +186,10 @@ function handleCheckIn(payload) {
   if (!plate || !uniqueID) throw new Error("Thiếu biển số hoặc UniqueID.");
 
   const sheet = getSheet();
-  const values = safeGetValues(sheet);
-  const headers = values[0] || [];
-  const cols = getHeaderIndices(headers);
-  const cleanedPlate = (plate || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const values = safeGetValuesFromCache(); // SỬA LỖI: Sử dụng cache
+  const headers = ALL_SHEET_DATA_HEADERS; // SỬA LỖI: Sử dụng headers từ cache
+  const cols = ALL_SHEET_DATA_COLS; // SỬA LỖI: Sử dụng cols từ cache
+  const cleanedPlate = cleanPlateNumber(plate); // Sử dụng hàm tiện ích
 
   for (let i = values.length - 1; i >= 1; i--) {
     const recordPlate = (values[i][cols.plateCol] || '').toString().toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -666,6 +666,14 @@ function clearRelevantCache(date) {
 
 function logError(functionName, error) {
   console.error(`Lỗi trong hàm ${functionName}: ${error.message} tại ${error.stack}`);
+}
+
+/**
+ * SỬA LỖI: Bổ sung hàm tiện ích còn thiếu.
+ * Làm sạch và chuẩn hóa chuỗi biển số xe.
+ */
+function cleanPlateNumber(plateStr) {
+  return plateStr ? String(plateStr).toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
 }
 
 function calculateFeeWithBreakdown(startTime, endTime, isVIP) {

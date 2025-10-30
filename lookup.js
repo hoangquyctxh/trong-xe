@@ -109,53 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * SỬA LỖI: Bổ sung hàm chuyển đổi số thành chữ tiếng Việt.
-     * Hàm này được đồng bộ từ code.gs để đảm bảo tính nhất quán.
-     */
-    const numberToVietnameseWords = (num) => {
-        const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-        const teens = ['', 'mười', 'hai mươi', 'ba mươi', 'bốn mươi', 'năm mươi', 'sáu mươi', 'bảy mươi', 'tám mươi', 'chín mươi'];
-        const hundreds = ['', 'một trăm', 'hai trăm', 'ba trăm', 'bốn trăm', 'năm trăm', 'sáu trăm', 'bảy trăm', 'tám trăm', 'chín trăm'];
-        const thousands = ['', 'nghìn', 'triệu', 'tỷ'];
-
-        if (num === 0) return 'Không';
-
-        let s = num.toString();
-        let result = '';
-        let i = 0;
-
-        while (s.length > 0) {
-            let chunk = parseInt(s.slice(-3));
-            s = s.slice(0, -3);
-
-            if (chunk === 0 && s.length > 0) {
-                i++;
-                continue;
-            }
-
-            let chunkWords = '';
-            let h = Math.floor(chunk / 100);
-            let t = Math.floor((chunk % 100) / 10);
-            let u = chunk % 10;
-
-            if (h > 0) chunkWords += units[h] + ' trăm ';
-            if (t > 1) {
-                chunkWords += teens[t] + ' ';
-                if (u === 1) chunkWords += 'mốt';
-                else if (u > 0) chunkWords += units[u];
-            } else if (t === 1) {
-                chunkWords += 'mười ';
-                if (u > 0) chunkWords += units[u];
-            } else if (u > 0 && (h > 0 || s.length > 0)) chunkWords += 'lẻ ' + units[u];
-            else if (u > 0) chunkWords += units[u];
-            if (chunkWords.trim() !== '') result = chunkWords.trim() + ' ' + thousands[i] + ' ' + result;
-            i++;
-        }
-        let finalResult = result.trim().replace(/\s+/g, ' ');
-        return finalResult.charAt(0).toUpperCase() + finalResult.slice(1);
-    }
-
-    /**
      * NÂNG CẤP: Tính toán chi tiết phí theo giờ ngày/đêm.
      * Logic này được đồng bộ từ file code.gs để đảm bảo tính nhất quán.
      * @param {Date} startTime - Thời gian bắt đầu.
@@ -235,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     exitTimeDisplay: formatDateTime(tx['Exit Time']),
                     duration: calculateDuration(tx['Entry Time'], tx['Exit Time']),
                     feeDisplay: fee.toLocaleString('vi-VN'),
-                    feeInWords: numberToVietnameseWords(fee), // SỬA LỖI: Thêm số tiền bằng chữ
                     // THÊM DỮ LIỆU CHI TIẾT PHÍ
                     dayHours: feeDetails.dayHours,
                     nightHours: feeDetails.nightHours,
