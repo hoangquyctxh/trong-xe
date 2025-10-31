@@ -196,10 +196,11 @@
         </div>
         <nav class="nav-menu">
             <ul>
+                <li><a href="index.html" title="Quay về trang điều hành chính"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Về Bảng điều hành</a></li>
                 <li><a href="#" class="nav-link active" data-target="page-dashboard"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg>Tổng quan</a></li>
                 <li><a href="#" class="nav-link" data-target="page-transactions"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/><path d="m15 5 3 3"/></svg>Giao dịch</a></li>
                 <li><a href="#" class="nav-link" data-target="page-map"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Bản đồ</a></li>
-                <li><a href="#" class="nav-link" data-target="page-tools"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Công cụ</a></li>
+                <li><a href="#" class="nav-link" data-target="page-security"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>An ninh</a></li>
             </ul>
         </nav>
     </div>
@@ -296,43 +297,33 @@
             </div>
         </div>
 
-        <!-- PAGE: CÔNG CỤ -->
-        <div id="page-tools" class="page-content">
-            <h2>Công cụ quản trị</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Các công cụ hỗ trợ cho quản trị viên hệ thống.</p>
-            <div class="tools-grid">
-                <div class="tool-card">
-                    <div class="tool-icon" style="background-color: #cfe2ff; color: #0d6efd;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/><path d="m15 5 3 3"/></svg>
-                    </div>
-                    <h3>Chỉnh sửa giao dịch</h3>
-                    <p class="description">Xem và chỉnh sửa chi tiết các giao dịch đã ghi nhận trong hệ thống.</p>
-                </div>
-
-                <!-- ================== MỚI: CÔNG CỤ CẢNH BÁO AN NINH ================== -->
+        <!-- PAGE: AN NINH (MỚI) -->
+        <div id="page-security" class="page-content">
+            <h2>Công cụ An ninh</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Các công cụ chuyên biệt để quản lý và giám sát an ninh hệ thống.</p>
+            <!-- SỬA LỖI: Thay thế hoàn toàn class 'tools-grid' bằng 'security-layout-grid' để áp dụng đúng bố cục 2 cột. -->
+            <div class="security-layout-grid">
+                <!-- CỘT BÊN TRÁI: GỬI CẢNH BÁO -->
                 <div class="tool-card">
                     <div class="tool-icon" style="background-color: #f2dede; color: #a94442;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     </div>
-                    <h3>Cảnh báo An ninh</h3>
+                    <h3>Gửi Cảnh báo An ninh</h3>
                     <p class="description">Gửi cảnh báo khẩn cấp về một biển số xe đến tất cả các điểm trực.</p>
                     <div class="tool-actions" style="margin-top: 15px;">
                         <div class="input-group-admin" style="flex-direction: column; gap: 10px;">
                             <input type="text" id="security-alert-plate" placeholder="Nhập biển số cần cảnh báo...">
                             <textarea id="security-alert-reason" placeholder="Lý do cảnh báo (ví dụ: Xe nghi vấn, báo mất)..." rows="2" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); font-size: 1rem; font-family: inherit; resize: vertical;"></textarea>
-                            <!-- MỚI: Ghi chú mặc định -->
                             <div id="default-reasons-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">
                                 <button type="button" class="default-reason-btn">Xe nghi vấn</button>
                                 <button type="button" class="default-reason-btn">Báo mất cắp</button>
                                 <button type="button" class="default-reason-btn">Yêu cầu giữ lại</button>
                                 <button type="button" class="default-reason-btn">An ninh kiểm tra</button>
                             </div>
-                            <!-- MỚI: Chọn mức độ cảnh báo -->
                             <div id="alert-level-container" style="display: flex; gap: 20px; margin-top: 15px; font-size: 0.95rem; justify-content: center;">
                                 <label style="cursor: pointer;"><input type="radio" name="alert-level" value="warning" checked> <strong>Cảnh báo</strong> (Hiển thị thông báo)</label>
                                 <label style="cursor: pointer; color: var(--danger-color);"><input type="radio" name="alert-level" value="block"> <strong>Chặn Lấy Xe</strong> (Không cho phép checkout)</label>
                             </div>
-                            <!-- MỚI: Nút gỡ cảnh báo -->
                             <div style="margin-top: 10px; text-align: center;">
                                 <a href="#" id="remove-alert-btn" style="font-size: 0.9rem; color: var(--text-secondary);">Gỡ cảnh báo cho biển số này</a>
                             </div>
@@ -343,14 +334,14 @@
                     </div>
                 </div>
 
-                <!-- ================== MỚI: BẢNG ĐIỀU KHIỂN CẢNH BÁO TẬP TRUNG ================== -->
-                <div class="card" style="grid-column: 1 / -1;">
+                <!-- CỘT BÊN PHẢI: GIÁM SÁT CẢNH BÁO -->
+                <div class="card">
                     <div class="card-header">
                         <h3><span style="color: var(--danger-color);">🚨</span> Giám sát Cảnh báo Đang Hoạt động</h3>
                     </div>
                     <div class="card-body" style="padding: 0;">
-                        <div id="active-alerts-list">
-                            <!-- Danh sách cảnh báo sẽ được chèn vào đây -->
+                        <div id="active-alerts-list" class="scrollable-alert-list">
+                            <!-- Danh sách cảnh báo sẽ được chèn vào đây bởi admin.js -->
                         </div>
                     </div>
                 </div>

@@ -270,6 +270,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return finalWord.charAt(0).toUpperCase() + finalWord.slice(1);
     };
 
+    // MỚI: Hàm tải danh sách cảnh báo từ Google Sheets
+    const fetchActiveAlerts = async () => {
+        try {
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getActiveAlerts&v=${new Date().getTime()}`);
+            if (!response.ok) throw new Error(`Lỗi mạng: ${response.statusText}`);
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+            
+            activeSecurityAlerts = result.data || {};
+            updateGlobalAlertStrip(); // Cập nhật dải băng cảnh báo
+            // Cập nhật lại UI nếu xe đang hiển thị có trong danh sách cảnh báo
+            if (currentVehicleContext && currentVehicleContext.plate) {
+                updateUIFromCache(cleanPlateNumber(currentVehicleContext.plate));
+            }
+        } catch (error) {
+            console.error('Lỗi tải danh sách cảnh báo:', error);
+        }
+    };
+
     // =================================================================
     // KHU VỰC 3: CÁC HÀM CẬP NHẬT GIAO DIỆN (UI FUNCTIONS)
     // =================================================================
@@ -1051,6 +1070,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // MỚI: Lắng nghe các tin nhắn cảnh báo an ninh
         securityChannel.addEventListener('message', handleSecurityAlert);
+
+        // NÂNG CẤP: Tải danh sách cảnh báo từ Google Sheets khi khởi tạo
+        fetchActiveAlerts();
 
         if (LOCATIONS_CONFIG.length > 0) {
             currentLocation = LOCATIONS_CONFIG[0]; currentCapacity = currentLocation.capacity || 0;
