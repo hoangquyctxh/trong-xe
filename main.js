@@ -73,11 +73,26 @@ document.addEventListener('DOMContentLoaded', () => {
         selectCashBtn: document.getElementById('select-cash-btn'),
         infoPlateType: document.getElementById('info-plate-type'),
         plateInfoItem: document.getElementById('plate-info-item'),
+        // MỚI: Các phần tử cho modal cảnh báo an ninh
+        securityAlertModal: document.getElementById('security-alert-modal'),
+        securityAlertPlateDisplay: document.getElementById('security-alert-plate-display'),
+        securityAlertStatus: document.getElementById('security-alert-status'),
+        securityAlertReasonDisplay: document.getElementById('security-alert-reason-display'),
+        acknowledgeAlertBtn: document.getElementById('acknowledge-alert-btn'),
+        selectedVehicleAlert: document.getElementById('selected-vehicle-alert'),
+        globalAlertStrip: document.getElementById('global-alert-strip'), // MỚI
     };
 
     let vehiclesOnSelectedDate = [], isLoading = false, durationIntervals = [], cameraStream = null;
     let currentVehicleContext = null, scanAnimation = null, paymentChannel = null, confirmationWindow = null;
     let autoRefreshInterval = null, currentLocation = null, currentCapacity = 0;
+    // MỚI: Khởi tạo BroadcastChannel để nhận cảnh báo
+    const securityChannel = new BroadcastChannel('security_alert_channel');
+    // MỚI: Biến cho hiệu ứng nhấp nháy tiêu đề
+    let titleAlertInterval = null;
+    const originalTitle = document.title;
+    // MỚI: Lưu trữ các cảnh báo đang hoạt động
+    let activeSecurityAlerts = {};
 
     // =================================================================
     // KHU VỰC 2: CÁC HÀM TIỆN ÍCH (UTILITY FUNCTIONS)
@@ -390,6 +405,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const vehicleParking = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status === 'Đang gửi');
         const vehicleDeparted = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status !== 'Đang gửi');
         allElements.vehicleInfoPanel.style.display = 'none';
+
+        // NÂNG CẤP: Hiển thị cảnh báo ngay trên panel thông tin xe và ô tìm kiếm
+        const alertInfo = activeSecurityAlerts[plate];
+        if (alertInfo) {
+            allElements.selectedVehicleAlert.style.display = 'block';
+            let reasonText = alertInfo.reason || 'Không có ghi chú cụ thể.';
+            if (alertInfo.level === 'block') {
+                reasonText += ' <strong>(MỨC ĐỘ: CHẶN LẤY XE)</strong>';
+            }
+            document.getElementById('selected-vehicle-alert-reason').innerHTML = reasonText;
+            allElements.searchTermInput.classList.add('alerted'); // Làm nhấp nháy ô tìm kiếm
+        } else {
+            allElements.selectedVehicleAlert.style.display = 'none';
+            allElements.searchTermInput.classList.remove('alerted');
+        }
+
         if (vehicleParking) {
             const isVehicleVIP = vehicleParking.VIP === 'Có';
             currentVehicleContext = { plate: vehicleParking.Plate, status: 'parking', uniqueID: vehicleParking.UniqueID, isVIP: isVehicleVIP };
@@ -413,6 +444,13 @@ document.addEventListener('DOMContentLoaded', () => {
             allElements.reprintReceiptBtn.classList.add('hidden');
             allElements.checkOutBtn.classList.remove('hidden');
             allElements.checkOutBtn.disabled = false;
+            allElements.checkOutBtn.style.backgroundImage = ''; // Reset style
+            // NÂNG CẤP: Vô hiệu hóa nút checkout nếu xe bị chặn
+            if (alertInfo && alertInfo.level === 'block') {
+                allElements.checkOutBtn.disabled = true;
+                allElements.checkOutBtn.title = `XE BỊ CHẶN: ${alertInfo.reason || 'Không thể lấy xe.'}`; // Sửa lỗi chính tả
+                allElements.checkOutBtn.style.backgroundImage = 'linear-gradient(to bottom, #777, #555)';
+            }
             allElements.checkInBtn.classList.add('hidden');
             allElements.vehicleInfoPanel.style.display = 'block';
         } else if (vehicleDeparted) {
@@ -529,7 +567,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allElements.plateInfoItem) allElements.plateInfoItem.style.display = 'none';
     };
     
+    // MỚI: Hàm cập nhật dải băng cảnh báo toàn cục
+    const updateGlobalAlertStrip = () => {
+        const hasActiveAlerts = Object.keys(activeSecurityAlerts).length > 0;
+        allElements.globalAlertStrip.style.display = hasActiveAlerts ? 'block' : 'none';
+    };
+
     const processCheckOut = async (checkoutData) => {
+        // ================== SỬA LỖI BẢO MẬT QUAN TRỌNG ==================
+        // Luôn kiểm tra cảnh báo chặn ngay tại hàm checkout cốt lõi.
+        if (!checkAlertBeforeCheckout(checkoutData.plate)) {
+            return false; // Ngăn chặn hành vi ngay lập tức
+        }
+        // ===============================================================
         if (isLoading) return;
         setIsLoading(true);
         const payload = { action: 'checkOut', ...checkoutData };
@@ -720,6 +770,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const processFreeCheckoutFromKiosk = async (vehicle) => {
+        // ================== SỬA LỖI BẢO MẬT QUAN TRỌNG ==================
+        // Thêm bước kiểm tra cảnh báo trước khi tự động cho xe ra từ Kiosk.
+        if (!checkAlertBeforeCheckout(vehicle.Plate)) {
+            return; // Dừng lại nếu xe bị chặn
+        }
+        // ===============================================================
         const isVehicleVIP = vehicle.VIP === 'Có';
         const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
         const finalReceiptData = {
@@ -732,6 +788,82 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast(`Đã tự động cho xe ${vehicle.Plate} ra (${paymentMethod}).`, 'success');
             await fetchVehiclesForDate(allElements.datePicker.value, true);
         }
+    };
+
+    // =================================================================
+    // MỚI: KHU VỰC LOGIC CẢNH BÁO AN NINH
+    // =================================================================
+    const handleSecurityAlert = (event) => {
+        const { type, plate, reason, level } = event.data;
+
+        if (type === 'REMOVE_SECURITY_ALERT' && plate) {
+            const cleanedPlate = cleanPlateNumber(plate);
+            if (activeSecurityAlerts[cleanedPlate]) {
+                delete activeSecurityAlerts[cleanedPlate];
+                showToast(`Đã gỡ cảnh báo cho xe ${plate}.`, 'success');
+                // Nếu xe đang được hiển thị, cập nhật lại UI
+                if (currentVehicleContext && cleanPlateNumber(currentVehicleContext.plate) === cleanedPlate) {
+                    updateUIFromCache(cleanedPlate);
+                }
+                updateGlobalAlertStrip(); // Cập nhật dải băng
+            }
+            return;
+        }
+
+        if (type !== 'SECURITY_ALERT' || !plate) return;
+        const cleanedPlate = cleanPlateNumber(plate);
+
+        // NÂNG CẤP: Lưu lại cảnh báo
+        activeSecurityAlerts[cleanedPlate] = { reason, level };
+
+        // NÂNG CẤP: Hiệu ứng nhấp nháy tiêu đề tab
+        if (titleAlertInterval) clearInterval(titleAlertInterval);
+        let isTitleAlerted = false;
+        titleAlertInterval = setInterval(() => {
+            document.title = isTitleAlerted ? originalTitle : `🚨 CẢNH BÁO: ${plate}`; // Giữ lại icon 🚨
+            isTitleAlerted = !isTitleAlerted;
+        }, 1000);
+
+        // NÂNG CẤP: Âm thanh cảnh báo theo mức độ
+        const alertSoundUrl = level === 'block' ? 'https://cdn.jsdelivr.net/gh/haitrieu/cdn/emergency-alarm.mp3' : 'https://cdn.jsdelivr.net/gh/haitrieu/cdn/ting.mp3';
+        const alertSound = new Audio(alertSoundUrl);
+        alertSound.play().catch(e => console.warn("Không thể phát âm thanh cảnh báo:", e));
+
+        // NÂNG CẤP: Hiển thị lý do cảnh báo
+        if (reason && allElements.securityAlertReasonDisplay) {
+            allElements.securityAlertReasonDisplay.textContent = `Lý do: ${reason}`;
+            allElements.securityAlertReasonDisplay.style.display = 'block';
+        } else {
+            if (allElements.securityAlertReasonDisplay) {
+                allElements.securityAlertReasonDisplay.style.display = 'none';
+            }
+        }
+
+        // Hiển thị thông tin trên modal
+        allElements.securityAlertPlateDisplay.textContent = plate;
+
+        // Kiểm tra trạng thái xe trong danh sách hiện tại
+        const vehicleInLot = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === cleanedPlate && v.Status === 'Đang gửi');
+
+        if (vehicleInLot) {
+            allElements.securityAlertStatus.textContent = "⚠️ CẢNH BÁO: Xe này ĐANG CÓ TRONG BÃI!";
+            allElements.securityAlertStatus.style.color = 'var(--danger-color)';
+            // Tự động điền và tìm kiếm xe
+            allElements.searchTermInput.value = plate;
+            allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // Cuộn tới xe trong danh sách
+            const vehicleItem = allElements.vehicleListContainer.querySelector(`[data-plate="${vehicleInLot.Plate}"]`);
+            if (vehicleItem) {
+                vehicleItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                vehicleItem.style.backgroundColor = '#f2dede'; // Highlight màu đỏ nhạt
+            }
+        } else {
+            allElements.securityAlertStatus.textContent = "Thông báo: Xe này hiện không có trong bãi.";
+            allElements.securityAlertStatus.style.color = 'var(--text-primary)';
+        }
+
+        // Hiển thị modal
+        allElements.securityAlertModal.style.display = 'flex';
     };
 
     // =================================================================
@@ -774,7 +906,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
                         if (fee > 0) {
                             currentVehicleContext = { plate: vehicle.Plate, status: 'parking', uniqueID: vehicle.UniqueID, isVIP: isVehicleVIP };
-                            showPaymentModal();
+                                // SỬA LỖI: Kiểm tra cảnh báo trước khi hiển thị modal thanh toán
+                                if (checkAlertBeforeCheckout(vehicle.Plate)) {
+                                    showPaymentModal();
+                                }
                         } else {
                             processCheckOut({ uniqueID: uniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: isVehicleVIP ? 'VIP' : 'Miễn phí' });
                             showToast(`Xe ${vehicle.Plate} ra thành công (miễn phí).`, 'success');
@@ -827,6 +962,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateOnlineStatus = () => {
         if (navigator.onLine) { allElements.offlineIndicator.style.display = 'none'; syncOfflineQueue(); } 
         else { allElements.offlineIndicator.style.display = 'flex'; }
+    };
+
+    // NÂNG CẤP: Kiểm tra cảnh báo trước khi checkout
+    const checkAlertBeforeCheckout = (plate) => {
+        const cleanedPlate = cleanPlateNumber(plate);
+        const alertInfo = activeSecurityAlerts[cleanedPlate];
+        if (alertInfo) {
+            const message = `Lý do: ${alertInfo.reason || 'Không có ghi chú'}.`;
+            if (alertInfo.level === 'block') {
+                showToast(`KHÔNG THỂ LẤY XE! Xe ${plate} đang trong diện cảnh báo chặn. ${message}`, 'error');
+                return false; // Chặn hành vi
+            }
+        }
+        return true; // Cho phép hành vi
+    };
+
+    // MỚI: Hàm dừng hiệu ứng cảnh báo
+    const stopTitleAlert = () => {
+        if (titleAlertInterval) clearInterval(titleAlertInterval);
+        titleAlertInterval = null;
+        document.title = originalTitle;
     };
 
     // =================================================================
@@ -892,6 +1048,10 @@ document.addEventListener('DOMContentLoaded', () => {
             paymentChannel = new BroadcastChannel('parking_payment_channel');
             if (paymentChannel) paymentChannel.addEventListener('message', handlePaymentChannelMessage);
         } catch (e) { console.error("Trình duyệt không hỗ trợ BroadcastChannel.", e); }
+
+        // MỚI: Lắng nghe các tin nhắn cảnh báo an ninh
+        securityChannel.addEventListener('message', handleSecurityAlert);
+
         if (LOCATIONS_CONFIG.length > 0) {
             currentLocation = LOCATIONS_CONFIG[0]; currentCapacity = currentLocation.capacity || 0;
             allElements.locationSubtitle.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
@@ -938,6 +1098,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = e.target;
         try {
             if (!currentVehicleContext || currentVehicleContext.status !== 'parking') { showToast('Vui lòng chọn một xe đang gửi để xử lý.', 'error'); return; }
+            // NÂNG CẤP: Kiểm tra cảnh báo trước khi thực hiện
+            if (!checkAlertBeforeCheckout(currentVehicleContext.plate)) {
+                return; // Dừng lại nếu xe bị chặn
+            }
+
             const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === currentVehicleContext.uniqueID);
             if (!vehicle) { showToast('Không tìm thấy thông tin xe để xử lý.', 'error'); return; }
             const isVehicleVIP = vehicle.VIP === 'Có';
@@ -1036,6 +1201,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (allElements.scanQrBtn) allElements.scanQrBtn.addEventListener('click', openQrScanner);
     if (allElements.closeQrcodeBtn) allElements.closeQrcodeBtn.addEventListener('click', closeQrCode);
     if (allElements.closeScannerBtn) allElements.closeScannerBtn.addEventListener('click', closeQrScanner);
+    // MỚI: Gắn sự kiện cho nút "Đã rõ" trên modal cảnh báo
+    if (allElements.acknowledgeAlertBtn) allElements.acknowledgeAlertBtn.addEventListener('click', () => { 
+        allElements.securityAlertModal.style.display = 'none'; 
+        stopTitleAlert(); // Dừng hiệu ứng nhấp nháy tiêu đề
+    });
+
     
     if (allElements.vehicleListContainer) {
         allElements.vehicleListContainer.addEventListener('click', (e) => {

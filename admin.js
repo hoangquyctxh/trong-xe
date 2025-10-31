@@ -31,8 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
         editStatus: document.getElementById('edit-status'),
         paginationControls: document.getElementById('pagination-controls'), // MỚI
         toastContainer: document.getElementById('toast-container'), // MỚI
-
+        // MỚI: Các phần tử cho cảnh báo an ninh
+        securityAlertPlateInput: document.getElementById('security-alert-plate'),
+        securityAlertReasonInput: document.getElementById('security-alert-reason'),
+        defaultReasonsContainer: document.getElementById('default-reasons-container'),
+        sendSecurityAlertBtn: document.getElementById('send-security-alert-btn'),
+        removeAlertBtn: document.getElementById('remove-alert-btn'), // MỚI
     };
+
+    // MỚI: Khởi tạo BroadcastChannel cho tính năng cảnh báo
+    const securityChannel = new BroadcastChannel('security_alert_channel');
 
     const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
         ? LOCATIONS_CONFIG.reduce((map, loc) => {
@@ -107,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // MỚI: Biến cho phân trang
     let currentPage = 1;
     const rowsPerPage = 15;
+
+    // MỚI: Lưu trữ các cảnh báo đang hoạt động trên trang admin
+    let activeSecurityAlerts = {};
 
     const formatCurrency = (value) => {
         const numValue = Number(value);
@@ -314,6 +325,79 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.editForm.reset();
     };
 
+    // MỚI: Hàm render bảng điều khiển cảnh báo
+    const renderActiveAlertsDashboard = () => {
+        if (!elements.activeAlertsList) return;
+        elements.activeAlertsList.innerHTML = '';
+
+        const alertPlates = Object.keys(activeSecurityAlerts);
+
+        if (alertPlates.length === 0) {
+            elements.activeAlertsList.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Không có cảnh báo nào đang hoạt động.</div>`;
+            return;
+        }
+
+        alertPlates.forEach(plate => {
+            const alertInfo = activeSecurityAlerts[plate];
+            const alertItem = document.createElement('div');
+            alertItem.className = 'alert-item';
+            alertItem.innerHTML = `
+                <div class="alert-info">
+                    <span class="alert-plate">${plate}</span>
+                    <span class="alert-level ${alertInfo.level}">${alertInfo.level === 'block' ? 'CHẶN' : 'CẢNH BÁO'}</span>
+                    <p class="alert-reason">Lý do: ${alertInfo.reason || 'Không có ghi chú'}</p>
+                </div>
+                <button class="action-button btn-secondary remove-alert-inline-btn" data-plate="${plate}" style="padding: 5px 15px; width: auto;">Gỡ</button>
+            `;
+            elements.activeAlertsList.appendChild(alertItem);
+        });
+    };
+
+    // MỚI: Hàm gửi cảnh báo an ninh
+    const sendSecurityAlert = () => {
+        const plate = elements.securityAlertPlateInput.value.trim().toUpperCase();
+        const reason = elements.securityAlertReasonInput.value.trim();
+        if (!plate) {
+            showToast('Vui lòng nhập biển số xe cần cảnh báo.', 'error');
+            return;
+        }
+
+        const payload = {
+            type: 'SECURITY_ALERT',
+            plate: plate,
+            reason: reason,
+            sender: 'Admin',
+            timestamp: new Date().toISOString()
+        };
+
+        securityChannel.postMessage(payload);
+        showToast(`Đã gửi cảnh báo cho biển số ${plate} đến tất cả các điểm.`, 'success');
+        elements.securityAlertPlateInput.value = '';
+        elements.securityAlertReasonInput.value = '';
+    };
+
+    // MỚI: Hàm gỡ bỏ cảnh báo
+    const removeSecurityAlert = () => {
+        const plate = elements.securityAlertPlateInput.value.trim().toUpperCase();
+        if (!plate) {
+            showToast('Vui lòng nhập biển số xe cần gỡ cảnh báo.', 'error');
+            return;
+        }
+
+        const payload = {
+            type: 'REMOVE_SECURITY_ALERT',
+            plate: plate,
+            sender: 'Admin',
+            timestamp: new Date().toISOString()
+        };
+
+        securityChannel.postMessage(payload);
+        showToast(`Đã gửi yêu cầu gỡ cảnh báo cho biển số ${plate}.`, 'info');
+        // Không xóa input để admin có thể gửi cảnh báo mới nếu cần
+        // elements.securityAlertPlateInput.value = '';
+        // elements.securityAlertReasonInput.value = '';
+    };
+
     const saveTransactionChanges = async (event) => {
         event.preventDefault();
         elements.saveEditBtn.disabled = true;
@@ -347,6 +431,23 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.saveEditBtn.disabled = false;
             elements.saveEditBtn.textContent = 'Lưu thay đổi';
         }
+    };
+
+    // MỚI: Hàm xử lý tin nhắn cảnh báo trên trang admin
+    const handleSecurityChannelMessage = (event) => {
+        const { type, plate, reason, level } = event.data;
+        const cleanedPlate = plate ? plate.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+
+        if (!cleanedPlate) return;
+
+        if (type === 'SECURITY_ALERT') {
+            activeSecurityAlerts[cleanedPlate] = { reason, level };
+        } else if (type === 'REMOVE_SECURITY_ALERT') {
+            if (activeSecurityAlerts[cleanedPlate]) {
+                delete activeSecurityAlerts[cleanedPlate];
+            }
+        }
+        renderActiveAlertsDashboard();
     };
 
     // ================================================================
@@ -661,7 +762,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.cancelEditBtn) elements.cancelEditBtn.addEventListener('click', closeEditModal);
             if (elements.editForm) elements.editForm.addEventListener('submit', saveTransactionChanges);
             if (elements.startSessionBtn) elements.startSessionBtn.addEventListener('click', startAdminSession);
+            // MỚI: Gắn sự kiện cho nút gửi cảnh báo
+            if (elements.sendSecurityAlertBtn) elements.sendSecurityAlertBtn.addEventListener('click', sendSecurityAlert);
+            // MỚI: Gắn sự kiện cho nút gỡ cảnh báo
+            if (elements.removeAlertBtn) elements.removeAlertBtn.addEventListener('click', removeSecurityAlert);
+            // MỚI: Gắn sự kiện cho các nút ghi chú mặc định
+            if (elements.defaultReasonsContainer) {
+                elements.defaultReasonsContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('default-reason-btn')) {
+                        elements.securityAlertReasonInput.value = e.target.textContent;
+                    }
+                });
+            }
 
+            // MỚI: Lắng nghe tin nhắn trên kênh cảnh báo
+            securityChannel.addEventListener('message', handleSecurityChannelMessage);
+
+            // MỚI: Gắn sự kiện cho nút "Gỡ" trên bảng điều khiển
+            if (elements.activeAlertsList) {
+                elements.activeAlertsList.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('remove-alert-inline-btn')) {
+                        elements.securityAlertPlateInput.value = e.target.dataset.plate;
+                        removeSecurityAlert();
+                    }
+                });
+            }
     
             showLoginScreen('Vui lòng xác nhận để truy cập trang quản trị.');
         } catch (error) {
