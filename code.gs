@@ -19,7 +19,7 @@ const CONFIG = {
   // Tên các trang tính (sheet) trong file Google Sheets của bạn.
   // Quan trọng: Tên ở đây phải TRÙNG KHỚP 100% với tên bạn đặt trong file Google Sheets.
   SHEET_NAMES: {
-    TRANSACTIONS: "Transactions",    // Sheet chứa lịch sử giao dịch xe
+    TRANSACTIONS: "Sheet1",           // SỬA LỖI: Đổi tên sheet giao dịch về "Sheet1" theo yêu cầu.
     SECURITY_ALERTS: "SecurityAlerts" // Sheet chứa các cảnh báo an ninh
   },
 
@@ -96,6 +96,9 @@ function doPost(e) {
       // Điều hướng đến các hàm trong Security.gs
       case 'addOrUpdateAlert':
         return addOrUpdateAlert(payload);
+      // NÂNG CẤP: Thêm điều hướng cho hành động gửi phản hồi
+      case 'addAlertFeedback':
+        return addAlertFeedback(payload);
       case 'removeAlert':
         return removeAlert(payload);
       default:

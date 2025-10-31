@@ -1,5 +1,8 @@
 // admin.js
 document.addEventListener('DOMContentLoaded', () => {
+    // =================================================================
+    // KHU VỰC 1: KHAI BÁO BIẾN VÀ THAM CHIẾU DOM
+    // =================================================================
     const elements = {
         loader: document.getElementById('loader'),
         totalRevenue: document.getElementById('total-revenue'),
@@ -40,8 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
         activeAlertsList: document.getElementById('active-alerts-list'),
     };
 
-    const securityChannel = new BroadcastChannel('security_alert_channel');
-
     const locationMap = (typeof LOCATIONS_CONFIG !== 'undefined' && Array.isArray(LOCATIONS_CONFIG)) 
         ? LOCATIONS_CONFIG.reduce((map, loc) => {
             if (loc && loc.id) {
@@ -51,47 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }, {})
         : {};
 
-    const getLocationName = (locationId) => {
-        return locationMap[locationId] || locationId || '--';
-    };
-
-    const decodePlateNumber = (plate) => {
-        if (!plate || typeof plate !== 'string' || typeof PLATE_DATA === 'undefined') return 'Chưa có thông tin';
-        const cleanedPlate = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        for (const series in PLATE_DATA.specialSeries) {
-            if (cleanedPlate.includes(series)) {
-                if (series === 'NG') {
-                    const diplomaticCode = parseInt(cleanedPlate.replace('NG', '').substring(0, 3), 10);
-                    if (!isNaN(diplomaticCode)) {
-                        for (const range in PLATE_DATA.diplomaticSeries) {
-                            if (range.includes('-')) {
-                                const [start, end] = range.split('-').map(Number);
-                                if (diplomaticCode >= start && diplomaticCode <= end) return PLATE_DATA.diplomaticSeries[range];
-                            } else if (diplomaticCode === parseInt(range, 10)) return PLATE_DATA.diplomaticSeries[range];
-                        }
-                    }
-                    return "Xe của cơ quan đại diện ngoại giao";
-                }
-                return PLATE_DATA.specialSeries[series];
-            }
-        }
-        let provinceCode = '', vehicleType = 'Chưa xác định';
-        if (cleanedPlate.length === 9 && /^[0-9]{2}/.test(cleanedPlate)) {
-            provinceCode = cleanedPlate.substring(0, 2); vehicleType = 'Xe máy';
-        } else if (cleanedPlate.length === 8 && /^[0-9]{2}/.test(cleanedPlate)) {
-            provinceCode = cleanedPlate.substring(0, 2); vehicleType = 'Ô tô';
-        }
-        if (!provinceCode) return 'Biển số không xác định';
-        const provinceInfo = PLATE_DATA.provinces.find(p => p.codes.includes(provinceCode));
-        const provinceName = provinceInfo ? provinceInfo.name : 'Tỉnh không xác định';
-        return `${provinceName} - ${vehicleType}`;
-    };
-
-    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval, currentVehicleContext = null;
-    
+    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData, currentSecretKey, autoRefreshInterval;
     let currentPage = 1;
     const rowsPerPage = 15;
     let activeSecurityAlerts = {};
+
+    // =================================================================
+    // KHU VỰC 2: CÁC HÀM TIỆN ÍCH (UTILITY FUNCTIONS)
+    // =================================================================
+
+    const getLocationName = (locationId) => {
+        return locationMap[locationId] || locationId || '--';
+    };
 
     const formatCurrency = (value) => {
         const numValue = Number(value);
@@ -110,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => toast.remove(), 500);
         }, 4000);
     };
+
+    // =================================================================
+    // KHU VỰC 3: CÁC HÀM XỬ LÝ DỮ LIỆU VÀ GIAO DIỆN
+    // =================================================================
 
     const filterDataByLocation = (locationId) => {
         if (!fullAdminData) return;
@@ -185,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
             link.classList.add('active');
             elements.pages.forEach(page => page.classList.toggle('active', page.id === targetId));
             if (targetId === 'page-map' && map) setTimeout(() => map.invalidateSize(), 10);
-            // Không cần tải lại dữ liệu ở đây vì đã tải từ đầu
         });
     };
 
@@ -206,9 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const statusClass = tx.Status === 'Đang gửi' ? 'parking' : 'departed';
             const feeDisplay = tx.Fee ? `${formatCurrency(tx.Fee)}đ` : '--';
             const exitTimeDisplay = tx['Exit Time'] ? new Date(tx['Exit Time']).toLocaleString('vi-VN') : '--';
-            const decodedPlateInfo = decodePlateNumber(tx.Plate);
             row.innerHTML = `
-                <td class="plate" title="${decodedPlateInfo}">${tx.Plate || '--'}</td>
+                <td class="plate">${tx.Plate || '--'}</td>
                 <td>${new Date(tx['Entry Time']).toLocaleString('vi-VN')}</td>
                 <td>${exitTimeDisplay}</td>
                 <td class="fee">${feeDisplay}</td>
@@ -259,10 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         alertPlates.forEach(plate => {
             const alertInfo = activeSecurityAlerts[plate];
-            // NÂNG CẤP: Tạo HTML cho phần phản hồi nếu có
             let feedbackHtml = '';
             if (alertInfo.feedback) {
-                // Tách phản hồi chính và ghi chú để hiển thị đẹp hơn
                 const feedbackParts = alertInfo.feedback.split('(Ghi chú:');
                 const mainFeedback = feedbackParts[0].trim();
                 const note = feedbackParts[1] ? feedbackParts[1].replace(')', '').trim() : '';
@@ -286,106 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             elements.activeAlertsList.appendChild(alertItem);
         });
-    };
-
-    const fetchActiveAlerts = async (isSilent = false) => {
-        try {
-            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getActiveAlerts&v=${new Date().getTime()}`);
-            if (!response.ok) throw new Error(`Lỗi mạng: ${response.statusText}`);
-            const result = await response.json();
-            if (result.status !== 'success') throw new Error(result.message);
-            activeSecurityAlerts = result.data || {};
-            renderActiveAlertsDashboard();
-        } catch (error) {
-            console.error('Lỗi tải danh sách cảnh báo:', error);
-            if (!isSilent) {
-                showToast(`Không thể tải danh sách cảnh báo: ${error.message}`, 'error');
-            }
-        }
-    };
-
-    const sendSecurityAlert = () => {
-        const plate = elements.securityAlertPlateInput.value.trim().toUpperCase();
-        const reason = elements.securityAlertReasonInput.value.trim();
-        const level = document.querySelector('input[name="alert-level"]:checked')?.value || 'warning';
-        if (!plate) {
-            showToast('Vui lòng nhập biển số xe cần cảnh báo.', 'error');
-            return;
-        }
-        fetch(APP_CONFIG.googleScriptUrl, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'addOrUpdateAlert', plate, reason, level })
-        }).catch(error => showToast(`Lỗi đồng bộ cảnh báo lên server: ${error.message}`, 'error'));
-        const payload = { type: 'SECURITY_ALERT', plate, reason, level, sender: 'Admin', timestamp: new Date().toISOString() };
-        securityChannel.postMessage(payload);
-        showToast(`Đã gửi cảnh báo cho biển số ${plate} đến tất cả các điểm.`, 'success');
-        elements.securityAlertPlateInput.value = '';
-        elements.securityAlertReasonInput.value = '';
-    };
-
-    const removeSecurityAlert = (plateToRemove) => {
-        const plate = plateToRemove || elements.securityAlertPlateInput.value.trim().toUpperCase();
-        if (!plate) {
-            showToast('Vui lòng nhập biển số xe cần gỡ cảnh báo.', 'error');
-            return;
-        }
-        fetch(APP_CONFIG.googleScriptUrl, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'removeAlert', plate })
-        }).catch(error => showToast(`Lỗi đồng bộ gỡ cảnh báo lên server: ${error.message}`, 'error'));
-        const payload = { type: 'REMOVE_SECURITY_ALERT', plate, sender: 'Admin', timestamp: new Date().toISOString() };
-        securityChannel.postMessage(payload);
-        showToast(`Đã gửi yêu cầu gỡ cảnh báo cho biển số ${plate}.`, 'info');
-    };
-
-    const saveTransactionChanges = async (event) => {
-        event.preventDefault();
-        elements.saveEditBtn.disabled = true;
-        elements.saveEditBtn.textContent = 'Đang lưu...';
-        const payload = {
-            action: 'editTransaction',
-            uniqueID: elements.editUniqueID.value,
-            plate: elements.editPlate.value,
-            entryTime: elements.editEntryTime.value ? new Date(elements.editEntryTime.value).toISOString() : null,
-            exitTime: elements.editExitTime.value ? new Date(elements.editExitTime.value).toISOString() : null,
-            fee: elements.editFee.value,
-            paymentMethod: elements.editPaymentMethod.value,
-            status: elements.editStatus.value,
-            secret: currentSecretKey
-        };
-        try {
-            const response = await fetch(APP_CONFIG.googleScriptUrl, { method: 'POST', body: JSON.stringify(payload) });
-            const result = await response.json();
-            if (result.status !== 'success') throw new Error(result.message);
-            showToast('Cập nhật thành công!', 'success');
-            closeEditModal();
-            // Tải lại cả hai loại dữ liệu để đảm bảo đồng bộ
-            await fetchAllAdminData(currentSecretKey, elements.adminDatePicker.value, true);
-        } catch (error) {
-            showToast(`Lỗi khi lưu: ${error.message}`, 'error');
-        } finally {
-            elements.saveEditBtn.disabled = false;
-            elements.saveEditBtn.textContent = 'Lưu thay đổi';
-        }
-    };
-
-    const handleSecurityChannelMessage = (event) => {
-        const { type, plate, reason, level, feedback, feedbackBy } = event.data;
-        const cleanedPlate = plate ? plate.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
-        if (!cleanedPlate) return;
-        if (type === 'SECURITY_ALERT') {
-            activeSecurityAlerts[cleanedPlate] = { reason, level };
-        } else if (type === 'REMOVE_SECURITY_ALERT') {
-            showToast(`Đã gỡ cảnh báo cho xe ${cleanedPlate}.`, 'info');
-            if (activeSecurityAlerts[cleanedPlate]) delete activeSecurityAlerts[cleanedPlate];
-        } else if (type === 'ALERT_FEEDBACK') { // NÂNG CẤP: Xử lý tin nhắn phản hồi
-            if (activeSecurityAlerts[cleanedPlate]) {
-                activeSecurityAlerts[cleanedPlate].feedback = feedback;
-                activeSecurityAlerts[cleanedPlate].feedbackBy = feedbackBy;
-                showToast(`Nhận được phản hồi cho xe ${plate} từ ${feedbackBy}.`, 'info');
-            }
-        }
-        renderActiveAlertsDashboard();
     };
 
     const updateDashboardUI = (data) => {
@@ -451,6 +323,66 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elements.adminDatePicker) elements.adminDatePicker.value = '';
     };
 
+    // =================================================================
+    // KHU VỰC 4: CÁC HÀM GỬI/NHẬN DỮ LIỆU TỪ SERVER
+    // =================================================================
+
+    const fetchActiveAlerts = async (isSilent = false) => {
+        try {
+            const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getActiveAlerts&v=${new Date().getTime()}`);
+            if (!response.ok) throw new Error(`Lỗi mạng: ${response.statusText}`);
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+            activeSecurityAlerts = result.data || {};
+            renderActiveAlertsDashboard();
+        } catch (error) {
+            console.error('Lỗi tải danh sách cảnh báo:', error);
+            if (!isSilent) {
+                showToast(`Không thể tải danh sách cảnh báo: ${error.message}`, 'error');
+            }
+        }
+    };
+
+    const sendSecurityAlert = async () => {
+        const plate = elements.securityAlertPlateInput.value.trim().toUpperCase();
+        const reason = elements.securityAlertReasonInput.value.trim();
+        const level = document.querySelector('input[name="alert-level"]:checked')?.value || 'warning';
+        if (!plate) {
+            showToast('Vui lòng nhập biển số xe cần cảnh báo.', 'error');
+            return;
+        }
+        try {
+            await fetch(APP_CONFIG.googleScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'addOrUpdateAlert', plate, reason, level })
+            });
+            showToast(`Đã gửi cảnh báo cho biển số ${plate}.`, 'success');
+            elements.securityAlertPlateInput.value = '';
+            elements.securityAlertReasonInput.value = '';
+            await fetchActiveAlerts(true); // Tải lại danh sách ngay lập tức
+        } catch (error) {
+            showToast(`Lỗi gửi cảnh báo: ${error.message}`, 'error');
+        }
+    };
+
+    const removeSecurityAlert = async (plateToRemove) => {
+        const plate = plateToRemove || elements.securityAlertPlateInput.value.trim().toUpperCase();
+        if (!plate) {
+            showToast('Vui lòng nhập biển số xe cần gỡ cảnh báo.', 'error');
+            return;
+        }
+        try {
+            await fetch(APP_CONFIG.googleScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'removeAlert', plate })
+            });
+            showToast(`Đã gửi yêu cầu gỡ cảnh báo cho biển số ${plate}.`, 'info');
+            await fetchActiveAlerts(true); // Tải lại danh sách ngay lập tức
+        } catch (error) {
+            showToast(`Lỗi gỡ cảnh báo: ${error.message}`, 'error');
+        }
+    };
+    
     const fetchAllAdminData = async (secretKey, date = null, isSilent = false) => {
         if (!isSilent) {
             elements.loader.style.display = 'flex';
@@ -493,6 +425,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const saveTransactionChanges = async (event) => {
+        event.preventDefault();
+        elements.saveEditBtn.disabled = true;
+        elements.saveEditBtn.textContent = 'Đang lưu...';
+        const payload = {
+            action: 'editTransaction',
+            uniqueID: elements.editUniqueID.value,
+            plate: elements.editPlate.value,
+            entryTime: elements.editEntryTime.value ? new Date(elements.editEntryTime.value).toISOString() : null,
+            exitTime: elements.editExitTime.value ? new Date(elements.editExitTime.value).toISOString() : null,
+            fee: elements.editFee.value,
+            paymentMethod: elements.editPaymentMethod.value,
+            status: elements.editStatus.value,
+            secret: currentSecretKey
+        };
+        try {
+            const response = await fetch(APP_CONFIG.googleScriptUrl, { method: 'POST', body: JSON.stringify(payload) });
+            const result = await response.json();
+            if (result.status !== 'success') throw new Error(result.message);
+            showToast('Cập nhật thành công!', 'success');
+            closeEditModal();
+            await fetchAllAdminData(currentSecretKey, elements.adminDatePicker.value, true);
+        } catch (error) {
+            showToast(`Lỗi khi lưu: ${error.message}`, 'error');
+        } finally {
+            elements.saveEditBtn.disabled = false;
+            elements.saveEditBtn.textContent = 'Lưu thay đổi';
+        }
+    };
+
+    // =================================================================
+    // KHU VỰC 5: KHỞI TẠO VÀ GẮN SỰ KIỆN
+    // =================================================================
+
     const startAdminSession = async () => {
         try {
             if (elements.loader) {
@@ -512,16 +478,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (success) {
                 elements.loader.style.display = 'none';
+                // Tải cảnh báo lần đầu
+                await fetchActiveAlerts(false); 
+                
                 if (autoRefreshInterval) clearInterval(autoRefreshInterval);
                 autoRefreshInterval = setInterval(() => {
                     const currentDate = elements.adminDatePicker.value;
-                    fetchAllAdminData(secretKey, currentDate, true);
-                }, APP_CONFIG.autoRefreshInterval || 30000);
-
-                // Tải cảnh báo lần đầu
-                fetchActiveAlerts(false); 
-                // NÂNG CẤP: Tự động làm mới danh sách cảnh báo mỗi 5 giây trong âm thầm
-                setInterval(() => fetchActiveAlerts(true), 5000);
+                    // SỬA LỖI KIẾN TRÚC: Tải lại cả dữ liệu giao dịch và cảnh báo
+                    fetchAllAdminData(secretKey, currentDate, true); 
+                    fetchActiveAlerts(true);
+                }, APP_CONFIG.autoRefreshInterval || 10000); // Giảm thời gian làm mới để phản hồi nhanh hơn
             }
         } catch (error) {
             console.error("Lỗi nghiêm trọng khi bắt đầu phiên quản trị:", error);
@@ -593,7 +559,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (e.target.classList.contains('default-reason-btn')) elements.securityAlertReasonInput.value = e.target.textContent;
                 });
             }
-            securityChannel.addEventListener('message', handleSecurityChannelMessage);
             if (elements.activeAlertsList) {
                 elements.activeAlertsList.addEventListener('click', (e) => {
                     if (e.target.classList.contains('remove-alert-inline-btn')) removeSecurityAlert(e.target.dataset.plate);
