@@ -34,6 +34,31 @@
             --border-radius-lg: 0;
             --border-radius-md: 0;
         }
+        /* --- MỚI: Menu điều hướng chính --- */
+        .main-navigation {
+            background-color: var(--primary-accent); /* Nền xanh đậm trang trọng */
+            border-bottom: 1px solid #0b3a85; /* Viền dưới đậm hơn một chút */
+        }
+        .main-navigation .container {
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .main-navigation ul {
+            list-style: none;
+            display: flex;
+            gap: 5px; /* Giảm khoảng cách giữa các mục */
+        }
+        .main-navigation ul li a {
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #e0e0e0; /* Chữ màu xám nhạt */
+            font-weight: 600;
+            font-size: 0.95rem; /* Giảm kích thước chữ một chút */
+            transition: background-color 0.2s ease;
+        }
+        .main-navigation ul li a:hover { background-color: var(--primary-accent-light); color: white; }
+        .main-navigation ul li a.active { background-color: var(--primary-accent-light); color: white; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
         body {
@@ -692,6 +717,19 @@
             </div>
         </div>
     </header>
+
+    <!-- ================== MỚI: MENU ĐIỀU HƯỚNG CHÍNH ================== -->
+    <nav class="main-navigation">
+        <div class="container">
+            <ul>
+                <li><a href="index.html" class="active" title="Trang hiện tại">Bảng điều hành</a></li>
+                <li><a href="lookup.html" target="_blank" rel="noopener noreferrer">Tra cứu Lịch sử</a></li>
+                <li><a href="admin.html" target="_blank" rel="noopener noreferrer">Quản trị Hệ thống</a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- ================================================================= -->
+
     <div class="container">
 
         <main class="main-grid">
