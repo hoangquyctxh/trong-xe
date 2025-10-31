@@ -28,6 +28,8 @@ function getActiveAlerts() {
     const plateIndex = headers.indexOf('Plate');
     const reasonIndex = headers.indexOf('Reason');
     const levelIndex = headers.indexOf('Level');
+    const feedbackIndex = headers.indexOf('Feedback'); // NÂNG CẤP
+    const feedbackByIndex = headers.indexOf('FeedbackBy'); // NÂNG CẤP
 
     if (plateIndex === -1) throw new Error("Sheet 'SecurityAlerts' phải có cột 'Plate'.");
 
@@ -36,7 +38,9 @@ function getActiveAlerts() {
       if (plate) {
         obj[plate.toString().toUpperCase()] = {
           reason: row[reasonIndex] || '',
-          level: row[levelIndex] || 'warning'
+          level: row[levelIndex] || 'warning',
+          feedback: row[feedbackIndex] || '', // NÂNG CẤP
+          feedbackBy: row[feedbackByIndex] || '' // NÂNG CẤP
         };
       }
       return obj;
@@ -94,5 +98,34 @@ function removeAlert(payload) {
     return createJsonResponse({ status: 'success', message: 'Đã xóa cảnh báo.' });
   } else {
     return createJsonResponse({ status: 'not_found', message: 'Không tìm thấy cảnh báo để xóa.' });
+  }
+}
+
+/**
+ * NÂNG CẤP: Ghi nhận phản hồi từ điểm trực cho một cảnh báo.
+ * @param {object} payload - Dữ liệu phản hồi { plate, feedback, feedbackBy }.
+ * @returns {ContentService} - Phản hồi JSON về kết quả thực thi.
+ */
+function addAlertFeedback(payload) {
+  const { plate, feedback, feedbackBy } = payload;
+  if (!plate || !feedback) {
+    throw new Error("Thiếu thông tin 'plate' hoặc 'feedback'.");
+  }
+
+  const sheet = getSheetByName(CONFIG.SHEET_NAMES.SECURITY_ALERTS);
+  if (!sheet) return createJsonResponse({ status: 'not_found', message: 'Sheet cảnh báo không tồn tại.' });
+
+  const data = sheet.getDataRange().getValues();
+  const plateIndex = data[0].indexOf('Plate');
+  const feedbackIndex = data[0].indexOf('Feedback');
+  const feedbackByIndex = data[0].indexOf('FeedbackBy');
+  const rowIndex = data.findIndex(row => row[plateIndex] && row[plateIndex].toString().toUpperCase() === plate.toUpperCase());
+
+  if (rowIndex > 0) {
+    if (feedbackIndex > -1) sheet.getRange(rowIndex + 1, feedbackIndex + 1).setValue(feedback);
+    if (feedbackByIndex > -1) sheet.getRange(rowIndex + 1, feedbackByIndex + 1).setValue(feedbackBy);
+    return createJsonResponse({ status: 'success', message: 'Đã ghi nhận phản hồi.' });
+  } else {
+    return createJsonResponse({ status: 'not_found', message: 'Không tìm thấy cảnh báo để cập nhật phản hồi.' });
   }
 }

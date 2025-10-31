@@ -189,6 +189,16 @@
         /* --- Icon VIP trong danh sách (cổ điển) --- */
         .vehicle-item.is-vip .icon { background-color: #fcf8e3; color: var(--secondary-accent); }
         .vehicle-item.is-vip { border-left: 4px solid var(--secondary-accent); }
+        /* MỚI: Highlight xe bị cảnh báo */
+        .vehicle-item.alert-warning {
+            border-left: 4px solid var(--warning-color);
+            background-color: #fffbe6; /* Nền vàng nhạt */
+        }
+        .vehicle-item.alert-block {
+            border-left: 4px solid var(--danger-color);
+            background-color: #fcebeb; /* Nền đỏ nhạt */
+            animation: pulse-red 1.5s infinite; /* Thêm hiệu ứng nhấp nháy cho xe bị chặn */
+        }
 
         /* --- Icon camera trên danh sách --- */
 
@@ -775,6 +785,18 @@
                                 CẢNH BÁO AN NINH
                             </h3>
                             <p id="selected-vehicle-alert-reason" style="margin: 0; line-height: 1.5;"></p>
+                            <!-- NÂNG CẤP: Thêm khu vực phản hồi vào dải băng cảnh báo -->
+                            <div id="selected-vehicle-feedback-section" style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.5);">
+                                <div id="selected-vehicle-feedback-buttons" style="display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 8px;">
+                                    <textarea id="feedback-note-inline" placeholder="Thêm ghi chú riêng..." rows="1" style="width: 100%; padding: 5px; font-size: 0.85rem; border-radius: 3px; border: 1px solid #ccc; margin-bottom: 8px; background: #fff; color: #333;"></textarea>
+                                    <button class="action-button feedback-btn-inline" data-feedback="Không có vấn đề" style="background: var(--success-color); width: auto; padding: 5px 12px; font-size: 0.85rem;">✅ Không vấn đề</button>
+                                    <button class="action-button feedback-btn-inline" data-feedback="Ghi chú riêng" style="background: #6c757d; width: auto; padding: 5px 12px; font-size: 0.85rem;">Gửi Ghi chú</button>
+                                    <button class="action-button feedback-btn-inline" data-feedback="Báo động giả" style="background: var(--warning-color); color: var(--text-primary); width: auto; padding: 5px 12px; font-size: 0.85rem;">⚠️ Báo động giả</button>
+                                </div>
+                                <div id="selected-vehicle-feedback-sent" style="display: none; font-weight: bold;">
+                                    Đã gửi phản hồi!
+                                </div>
+                            </div>
                         </div>
 
                         <h3 style="color:var(--text-primary); margin-top: 20px; font-size: 1.1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">Thông tin chi tiết</h3>
@@ -1062,8 +1084,8 @@
 
     <!-- ================== MỚI: MODAL CẢNH BÁO AN NINH ================== -->
     <div id="security-alert-modal" class="modal" aria-hidden="true" style="z-index: 10001;">
-        <div class="modal-content" style="max-width: 480px; border: 3px solid var(--danger-color); overflow: hidden;">
-            <div class="receipt-header" style="background-color: var(--danger-color);">
+        <div class="modal-content" style="max-width: 480px; border: 3px solid var(--danger-color); overflow: hidden;"> <!-- Border sẽ được JS thay đổi -->
+            <div class="receipt-header" style="background-color: var(--danger-color);"> <!-- Background sẽ được JS thay đổi -->
                 <h2 style="display: flex; align-items: center; gap: 10px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     CẢNH BÁO AN NINH KHẨN
@@ -1073,7 +1095,7 @@
                 <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 15px;">
                     Yêu cầu chú ý đặc biệt tới xe có biển số:
                 </p>
-                <div id="security-alert-plate-display" style="font-family: monospace; font-size: 2.5rem; font-weight: bold; color: var(--danger-color); padding: 15px; background: #f2dede; border: 1px solid #ebccd1; margin-bottom: 20px;">
+                <div id="security-alert-plate-display" style="font-family: monospace; font-size: 2.5rem; font-weight: bold; padding: 15px; background: #f2dede; border: 1px solid #ebccd1; margin-bottom: 20px;"> <!-- Màu sắc sẽ được JS thay đổi -->
                     --
                 </div>
                 <p id="security-alert-status" style="font-weight: bold; font-size: 1.1rem;">
@@ -1082,6 +1104,20 @@
                 <!-- MỚI: Hiển thị lý do cảnh báo -->
                 <div id="security-alert-reason-display" style="margin-top: 15px; padding: 10px; background: #fff9e6; border: 1px solid #ffecb3; border-radius: var(--border-radius-md); font-size: 0.95rem; color: #6f4f12; display: none;">
                     <!-- Lý do sẽ được chèn vào đây -->
+                </div>
+                <!-- NÂNG CẤP: Khu vực gửi phản hồi về cho quản trị -->
+                <div id="alert-feedback-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">Gửi phản hồi nhanh về cho quản trị viên:</p>
+                    <textarea id="feedback-note-modal" placeholder="Thêm ghi chú riêng (nếu cần)..." rows="2" style="width: 100%; padding: 8px; font-size: 0.95rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-color); margin-bottom: 10px;"></textarea>
+                    <div id="feedback-buttons-container" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+                        <button class="action-button feedback-btn" data-feedback="Không có vấn đề" style="background: var(--success-color); width: auto; padding: 8px 15px;">✅ Không vấn đề</button>
+                        <button class="action-button feedback-btn" data-feedback="Ghi chú riêng" style="background: #6c757d; width: auto; padding: 8px 15px;">Gửi Ghi chú</button>
+                        <button class="action-button feedback-btn" data-feedback="Báo động giả" style="background: var(--warning-color); color: var(--text-primary); width: auto; padding: 8px 15px;">⚠️ Báo động giả</button>
+                        <button class="action-button feedback-btn" data-feedback="Cần kiểm tra thêm" style="background: var(--primary-accent); width: auto; padding: 8px 15px;">🔎 Cần kiểm tra thêm</button>
+                    </div>
+                    <div id="feedback-sent-message" style="display: none; margin-top: 15px; color: var(--success-color); font-weight: bold;">
+                        Đã gửi phản hồi thành công!
+                    </div>
                 </div>
             </div>
             <div class="modal-footer" style="justify-content: center;">

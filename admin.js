@@ -259,6 +259,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         alertPlates.forEach(plate => {
             const alertInfo = activeSecurityAlerts[plate];
+            // NÂNG CẤP: Tạo HTML cho phần phản hồi nếu có
+            let feedbackHtml = '';
+            if (alertInfo.feedback) {
+                // Tách phản hồi chính và ghi chú để hiển thị đẹp hơn
+                const feedbackParts = alertInfo.feedback.split('(Ghi chú:');
+                const mainFeedback = feedbackParts[0].trim();
+                const note = feedbackParts[1] ? feedbackParts[1].replace(')', '').trim() : '';
+                feedbackHtml = `
+                    <div class="alert-feedback">
+                        Phản hồi từ <strong>${alertInfo.feedbackBy || 'Điểm trực'}</strong>: "${mainFeedback}"
+                        ${note ? `<br><span style="color: #555; font-style: normal;">Ghi chú riêng: <em>${note}</em></span>` : ''}
+                    </div>
+                `;
+            }
             const alertItem = document.createElement('div');
             alertItem.className = 'alert-item';
             alertItem.innerHTML = `
@@ -266,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="alert-plate">${plate}</span>
                     <span class="alert-level ${alertInfo.level}">${alertInfo.level === 'block' ? 'CHẶN' : 'CẢNH BÁO'}</span>
                     <p class="alert-reason">Lý do: ${alertInfo.reason || 'Không có ghi chú'}</p>
+                    ${feedbackHtml}
                 </div>
                 <button class="action-button btn-secondary remove-alert-inline-btn" data-plate="${plate}" style="padding: 5px 15px; width: auto;">Gỡ</button>
             `;
@@ -355,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleSecurityChannelMessage = (event) => {
-        const { type, plate, reason, level } = event.data;
+        const { type, plate, reason, level, feedback, feedbackBy } = event.data;
         const cleanedPlate = plate ? plate.toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
         if (!cleanedPlate) return;
         if (type === 'SECURITY_ALERT') {
@@ -363,6 +378,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'REMOVE_SECURITY_ALERT') {
             showToast(`Đã gỡ cảnh báo cho xe ${cleanedPlate}.`, 'info');
             if (activeSecurityAlerts[cleanedPlate]) delete activeSecurityAlerts[cleanedPlate];
+        } else if (type === 'ALERT_FEEDBACK') { // NÂNG CẤP: Xử lý tin nhắn phản hồi
+            if (activeSecurityAlerts[cleanedPlate]) {
+                activeSecurityAlerts[cleanedPlate].feedback = feedback;
+                activeSecurityAlerts[cleanedPlate].feedbackBy = feedbackBy;
+                showToast(`Nhận được phản hồi cho xe ${plate} từ ${feedbackBy}.`, 'info');
+            }
         }
         renderActiveAlertsDashboard();
     };

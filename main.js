@@ -73,25 +73,22 @@ document.addEventListener('DOMContentLoaded', () => {
         selectCashBtn: document.getElementById('select-cash-btn'),
         infoPlateType: document.getElementById('info-plate-type'),
         plateInfoItem: document.getElementById('plate-info-item'),
-        // MỚI: Các phần tử cho modal cảnh báo an ninh
+        // Các phần tử cho modal cảnh báo an ninh
         securityAlertModal: document.getElementById('security-alert-modal'),
         securityAlertPlateDisplay: document.getElementById('security-alert-plate-display'),
         securityAlertStatus: document.getElementById('security-alert-status'),
         securityAlertReasonDisplay: document.getElementById('security-alert-reason-display'),
         acknowledgeAlertBtn: document.getElementById('acknowledge-alert-btn'),
         selectedVehicleAlert: document.getElementById('selected-vehicle-alert'),
-        globalAlertStrip: document.getElementById('global-alert-strip'), // MỚI
+        globalAlertStrip: document.getElementById('global-alert-strip'),
     };
 
     let vehiclesOnSelectedDate = [], isLoading = false, durationIntervals = [], cameraStream = null;
     let currentVehicleContext = null, scanAnimation = null, paymentChannel = null, confirmationWindow = null;
     let autoRefreshInterval = null, currentLocation = null, currentCapacity = 0;
-    // MỚI: Khởi tạo BroadcastChannel để nhận cảnh báo
     const securityChannel = new BroadcastChannel('security_alert_channel');
-    // MỚI: Biến cho hiệu ứng nhấp nháy tiêu đề
     let titleAlertInterval = null;
     const originalTitle = document.title;
-    // MỚI: Lưu trữ các cảnh báo đang hoạt động
     let activeSecurityAlerts = {};
 
     // =================================================================
@@ -200,32 +197,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${provinceName} - ${vehicleType}`;
     };
 
-    /**
-     * TÍCH HỢP: Tính toán chi tiết phí theo giờ ngày/đêm.
-     * Logic này được đồng bộ từ file lookup.js để đảm bảo tính nhất quán.
-     * @param {Date} startTime - Thời gian bắt đầu.
-     * @param {Date} endTime - Thời gian kết thúc.
-     * @param {boolean} isVIP - Xe có phải là VIP hay không.
-     * @returns {object} - { dayHours, nightHours }
-     */
     const calculateFeeWithBreakdown = (startTime, endTime, isVIP) => {
         if (isVIP || !startTime) return { dayHours: 0, nightHours: 0 };
-
         const config = APP_CONFIG.fee;
         const start = new Date(startTime);
         const end = endTime ? new Date(endTime) : new Date();
         const diffMinutes = Math.floor((end - start) / (1000 * 60));
-
-        if (diffMinutes <= config.freeMinutes) {
-            return { dayHours: 0, nightHours: 0 };
-        }
-
-        let dayHours = 0;
-        let nightHours = 0;
+        if (diffMinutes <= config.freeMinutes) return { dayHours: 0, nightHours: 0 };
+        let dayHours = 0, nightHours = 0;
         let chargeableStartTime = new Date(start.getTime() + config.freeMinutes * 60 * 1000);
-        const chargeableMinutes = diffMinutes - config.freeMinutes;
-        const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
-
+        const totalChargeableHours = Math.ceil((diffMinutes - config.freeMinutes) / 60);
         for (let i = 0; i < totalChargeableHours; i++) {
             let currentBlockStartHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
             const isNight = currentBlockStartHour >= config.nightStartHour || currentBlockStartHour < config.nightEndHour;
@@ -234,20 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return { dayHours, nightHours };
     };
 
-    /**
-     * TÍCH HỢP: Chuyển đổi số thành chữ tiếng Việt.
-     * @param {number} num - Số cần chuyển đổi.
-     * @returns {string} - Chuỗi chữ tiếng Việt.
-     */
     const numberToWords = (num) => {
         const units = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
         const teens = ["mười", "mười một", "mười hai", "mười ba", "mười bốn", "mười lăm", "mười sáu", "mười bảy", "mười tám", "mười chín"];
         const tens = ["", "mười", "hai mươi", "ba mươi", "bốn mươi", "năm mươi", "sáu mươi", "bảy mươi", "tám mươi", "chín mươi"];
         const thousands = ["", "nghìn", "triệu", "tỷ"];
-
         if (num === 0) return 'Không';
         if (num < 0) return "Âm " + numberToWords(Math.abs(num));
-
         let word = '', i = 0;
         while (num > 0) {
             let chunk = num % 1000;
@@ -270,17 +244,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return finalWord.charAt(0).toUpperCase() + finalWord.slice(1);
     };
 
-    // MỚI: Hàm tải danh sách cảnh báo từ Google Sheets
     const fetchActiveAlerts = async () => {
         try {
             const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getActiveAlerts&v=${new Date().getTime()}`);
             if (!response.ok) throw new Error(`Lỗi mạng: ${response.statusText}`);
             const result = await response.json();
             if (result.status !== 'success') throw new Error(result.message);
-            
             activeSecurityAlerts = result.data || {};
-            updateGlobalAlertStrip(); // Cập nhật dải băng cảnh báo
-            // Cập nhật lại UI nếu xe đang hiển thị có trong danh sách cảnh báo
+            updateGlobalAlertStrip();
             if (currentVehicleContext && currentVehicleContext.plate) {
                 updateUIFromCache(cleanPlateNumber(currentVehicleContext.plate));
             }
@@ -329,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchVehicleHistory = (plate) => {
-        fetch(`${APP_CONFIG.googleScriptUrl}?plate=${plate}&v=${new Date().getTime()}`)
+        fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicleHistoryByPlate&plate=${plate}&v=${new Date().getTime()}`)
             .then(response => response.json()).then(result => {
                 if (result.status === 'success') populateHistoryList(result.data);
                 else throw new Error(result.message);
@@ -356,16 +327,23 @@ document.addEventListener('DOMContentLoaded', () => {
         list.sort((a, b) => new Date(b['Entry Time']) - new Date(a['Entry Time']));
         list.forEach(vehicle => {
             const vehicleItem = document.createElement('div');
-            const isVehicleVIP = vehicle.VIP === 'Có';
-            vehicleItem.className = isVehicleVIP ? 'vehicle-item is-vip' : 'vehicle-item';
+            let itemClasses = ['vehicle-item'];
+            if (vehicle.VIP === 'Có') itemClasses.push('is-vip');
+            const cleanedPlate = cleanPlateNumber(vehicle.Plate);
+            const alertInfo = activeSecurityAlerts[cleanedPlate];
+            if (alertInfo) {
+                itemClasses.push(`alert-${alertInfo.level}`);
+            }
+            vehicleItem.className = itemClasses.join(' ');
             vehicleItem.dataset.plate = vehicle.Plate; vehicleItem.dataset.uniqueid = vehicle.UniqueID;
             const phoneInfo = vehicle.Phone ? `<span>📞 ${formatPhoneNumberForDisplay(vehicle.Phone)}</span>` : '';
             const statusClass = vehicle.Status === 'Đang gửi' ? 'parking' : 'departed';
             const statusBadge = `<span class="status-badge ${statusClass}">${vehicle.Status}</span>`;
             const carIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.94,10.25a2.5,2.5,0,0,0-4.88,0H4.06a2.5,2.5,0,0,0-4.88,0H0v10H24V10.25ZM6,14.75a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,6,14.75Zm12,0a1.5,1.5,0,1,1,1.5,1.5A1.5,1.5,0,0,1,18,14.75Z"/></svg>`;
+            const isVehicleVIP = vehicle.VIP === 'Có';
             const vipIcon = isVehicleVIP ? '⭐' : '';
             vehicleItem.innerHTML = `<div class="icon">${carIcon}</div><div class="info" style="flex-grow:1;"><div class="plate">${vipIcon} ${vehicle.Plate} ${statusBadge}</div><div class="details">${phoneInfo}<span>🕒 ${formatDateTimeForDisplay(vehicle['Entry Time'])}</span></div></div>`;
-            allElements.vehicleListContainer.appendChild(vehicleItem);
+            allElements.vehicleListContainer.prepend(vehicleItem);
         });
     };
 
@@ -425,16 +403,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const vehicleDeparted = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === plate && v.Status !== 'Đang gửi');
         allElements.vehicleInfoPanel.style.display = 'none';
 
-        // NÂNG CẤP: Hiển thị cảnh báo ngay trên panel thông tin xe và ô tìm kiếm
         const alertInfo = activeSecurityAlerts[plate];
         if (alertInfo) {
             allElements.selectedVehicleAlert.style.display = 'block';
+            // SỬA LỖI: Reset lại trạng thái của khu vực phản hồi
+            const feedbackSection = document.getElementById('selected-vehicle-feedback-section');
+            if (feedbackSection) {
+                feedbackSection.querySelector('#selected-vehicle-feedback-buttons').style.display = 'flex';
+                feedbackSection.querySelector('#selected-vehicle-feedback-sent').style.display = 'none';
+            }
+
             let reasonText = alertInfo.reason || 'Không có ghi chú cụ thể.';
             if (alertInfo.level === 'block') {
                 reasonText += ' <strong>(MỨC ĐỘ: CHẶN LẤY XE)</strong>';
             }
             document.getElementById('selected-vehicle-alert-reason').innerHTML = reasonText;
-            allElements.searchTermInput.classList.add('alerted'); // Làm nhấp nháy ô tìm kiếm
+            // NÂNG CẤP: Thay đổi màu sắc của dải băng cảnh báo theo mức độ
+            allElements.selectedVehicleAlert.style.backgroundColor = alertInfo.level === 'block' ? 'var(--danger-color)' : '#c85a19'; // Màu cam đậm cho warning
+
+            allElements.searchTermInput.classList.add('alerted');
         } else {
             allElements.selectedVehicleAlert.style.display = 'none';
             allElements.searchTermInput.classList.remove('alerted');
@@ -463,11 +450,10 @@ document.addEventListener('DOMContentLoaded', () => {
             allElements.reprintReceiptBtn.classList.add('hidden');
             allElements.checkOutBtn.classList.remove('hidden');
             allElements.checkOutBtn.disabled = false;
-            allElements.checkOutBtn.style.backgroundImage = ''; // Reset style
-            // NÂNG CẤP: Vô hiệu hóa nút checkout nếu xe bị chặn
+            allElements.checkOutBtn.style.backgroundImage = '';
             if (alertInfo && alertInfo.level === 'block') {
                 allElements.checkOutBtn.disabled = true;
-                allElements.checkOutBtn.title = `XE BỊ CHẶN: ${alertInfo.reason || 'Không thể lấy xe.'}`; // Sửa lỗi chính tả
+                allElements.checkOutBtn.title = `XE BỊ CHẶN: ${alertInfo.reason || 'Không thể lấy xe.'}`;
                 allElements.checkOutBtn.style.backgroundImage = 'linear-gradient(to bottom, #777, #555)';
             }
             allElements.checkInBtn.classList.add('hidden');
@@ -487,46 +473,31 @@ document.addEventListener('DOMContentLoaded', () => {
             allElements.checkInBtn.classList.add('hidden');
             allElements.checkOutBtn.classList.add('hidden');
             allElements.vehicleInfoPanel.style.display = 'block';
-            // TÍCH HỢP: Khi nhấn nút "In lại biên lai", mở thẳng trang receipt_viewer.html
             allElements.reprintReceiptBtn.onclick = () => {
                 const fee = vehicleDeparted.Fee || 0;
                 const exitTime = new Date(vehicleDeparted['Exit Time']);
                 const entryTime = new Date(vehicleDeparted['Entry Time']);
                 const feeDetails = calculateFeeWithBreakdown(entryTime, exitTime, vehicleDeparted.VIP === 'Có');
-
-                // SỬA LỖI: Xác định chính xác paymentMethod để hiển thị phụ chú
                 let actualPaymentMethod = vehicleDeparted['Payment Method'] || 'N/A';
                 const isVehicleVIP = vehicleDeparted.VIP === 'Có';
                 const calculatedFee = calculateFee(vehicleDeparted['Entry Time'], vehicleDeparted['Exit Time'], isVehicleVIP);
-
-                if (isVehicleVIP) {
-                    actualPaymentMethod = 'VIP';
-                } else if (calculatedFee === 0) {
-                    actualPaymentMethod = 'Miễn phí';
-                }
-                
+                if (isVehicleVIP) actualPaymentMethod = 'VIP';
+                else if (calculatedFee === 0) actualPaymentMethod = 'Miễn phí';
                 const params = new URLSearchParams({
                     orgName: currentLocation?.name || 'ĐOÀN TNCS HỒ CHÍ MINH PHƯỜNG BA ĐÌNH',
                     orgAddress: currentLocation?.address || 'Đang cập nhật',
                     taxId: '0123456789',
                     orgHotline: currentLocation?.hotline || 'Đang cập nhật',
-                    exitDate: exitTime.getDate(),
-                    exitMonth: exitTime.getMonth() + 1,
-                    exitYear: exitTime.getFullYear(),
-                    uniqueID: vehicleDeparted.UniqueID,
-                    plate: vehicleDeparted.Plate,
-                    vehicleType: decodePlateNumber(vehicleDeparted.Plate),
+                    exitDate: exitTime.getDate(), exitMonth: exitTime.getMonth() + 1, exitYear: exitTime.getFullYear(),
+                    uniqueID: vehicleDeparted.UniqueID, plate: vehicleDeparted.Plate, vehicleType: decodePlateNumber(vehicleDeparted.Plate),
                     entryTimeDisplay: formatDateTimeForDisplay(vehicleDeparted['Entry Time']),
                     exitTimeDisplay: formatDateTimeForDisplay(vehicleDeparted['Exit Time']),
                     duration: calculateDurationBetween(vehicleDeparted['Entry Time'], vehicleDeparted['Exit Time']),
-                    feeDisplay: fee.toLocaleString('vi-VN'),
-                    feeInWords: numberToWords(fee),
-                    dayHours: feeDetails.dayHours, // SỬA LỖI: Đảm bảo truyền đúng feeDetails.dayHours
-                    nightHours: feeDetails.nightHours,
+                    feeDisplay: fee.toLocaleString('vi-VN'), feeInWords: numberToWords(fee),
+                    dayHours: feeDetails.dayHours, nightHours: feeDetails.nightHours,
                     dayRateFormatted: APP_CONFIG.fee.dayRate.toLocaleString('vi-VN') + 'đ',
                     nightRateFormatted: APP_CONFIG.fee.nightRate.toLocaleString('vi-VN') + 'đ',
-                    paymentMethod: actualPaymentMethod, // Sử dụng phương thức đã xác định
-                    freeMinutes: APP_CONFIG.fee.freeMinutes, // THÊM: Truyền số phút miễn phí
+                    paymentMethod: actualPaymentMethod, freeMinutes: APP_CONFIG.fee.freeMinutes,
                 });
                 window.open(`receipt_viewer.html?${params.toString()}`, '_blank');
             };
@@ -586,19 +557,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allElements.plateInfoItem) allElements.plateInfoItem.style.display = 'none';
     };
     
-    // MỚI: Hàm cập nhật dải băng cảnh báo toàn cục
     const updateGlobalAlertStrip = () => {
         const hasActiveAlerts = Object.keys(activeSecurityAlerts).length > 0;
         allElements.globalAlertStrip.style.display = hasActiveAlerts ? 'block' : 'none';
     };
 
     const processCheckOut = async (checkoutData) => {
-        // ================== SỬA LỖI BẢO MẬT QUAN TRỌNG ==================
-        // Luôn kiểm tra cảnh báo chặn ngay tại hàm checkout cốt lõi.
-        if (!checkAlertBeforeCheckout(checkoutData.plate)) {
-            return false; // Ngăn chặn hành vi ngay lập tức
-        }
-        // ===============================================================
+        if (!checkAlertBeforeCheckout(checkoutData.plate)) return false;
         if (isLoading) return;
         setIsLoading(true);
         const payload = { action: 'checkOut', ...checkoutData };
@@ -608,8 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error(result.message);
             } else {
-                const offlineAction = { ...payload, timestamp: new Date().toISOString() };
-                addToOfflineQueue(offlineAction);
+                addToOfflineQueue({ ...payload, timestamp: new Date().toISOString() });
             }
             return true; 
         } catch (error) {
@@ -638,16 +602,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (navigator.onLine) {
                     const response = await fetch(APP_CONFIG.googleScriptUrl, { method: 'POST', body: JSON.stringify(payload) });
                     const result = await response.json();
-                    if (result.status !== 'success') { console.error('Lỗi đồng bộ nền:', result.message); } 
-                    else { console.log(`Đồng bộ check-in cho ${payload.plate} thành công.`); }
+                    if (result.status !== 'success') console.error('Lỗi đồng bộ nền:', result.message);
+                    else console.log(`Đồng bộ check-in cho ${payload.plate} thành công.`);
                 } else {
-                    const offlineAction = { ...payload, timestamp: new Date().toISOString() };
-                    addToOfflineQueue(offlineAction);
+                    addToOfflineQueue({ ...payload, timestamp: new Date().toISOString() });
                 }
             } catch (error) {
                 console.error(`Lỗi đồng bộ nền: ${error.message}`);
-                const offlineAction = { ...payload, timestamp: new Date().toISOString() };
-                addToOfflineQueue(offlineAction);
+                addToOfflineQueue({ ...payload, timestamp: new Date().toISOString() });
             }
         })();
     };
@@ -789,12 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const processFreeCheckoutFromKiosk = async (vehicle) => {
-        // ================== SỬA LỖI BẢO MẬT QUAN TRỌNG ==================
-        // Thêm bước kiểm tra cảnh báo trước khi tự động cho xe ra từ Kiosk.
-        if (!checkAlertBeforeCheckout(vehicle.Plate)) {
-            return; // Dừng lại nếu xe bị chặn
-        }
-        // ===============================================================
+        if (!checkAlertBeforeCheckout(vehicle.Plate)) return;
         const isVehicleVIP = vehicle.VIP === 'Có';
         const paymentMethod = isVehicleVIP ? 'VIP' : 'Miễn phí';
         const finalReceiptData = {
@@ -810,84 +767,118 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // =================================================================
-    // MỚI: KHU VỰC LOGIC CẢNH BÁO AN NINH
+    // KHU VỰC 6: LOGIC CẢNH BÁO AN NINH VÀ QUÉT MÃ QR
     // =================================================================
     const handleSecurityAlert = (event) => {
         const { type, plate, reason, level } = event.data;
-
         if (type === 'REMOVE_SECURITY_ALERT' && plate) {
             const cleanedPlate = cleanPlateNumber(plate);
             if (activeSecurityAlerts[cleanedPlate]) {
                 delete activeSecurityAlerts[cleanedPlate];
                 showToast(`Đã gỡ cảnh báo cho xe ${plate}.`, 'success');
-                // Nếu xe đang được hiển thị, cập nhật lại UI
                 if (currentVehicleContext && cleanPlateNumber(currentVehicleContext.plate) === cleanedPlate) {
                     updateUIFromCache(cleanedPlate);
                 }
-                updateGlobalAlertStrip(); // Cập nhật dải băng
+                updateGlobalAlertStrip();
+                filterVehicleList(); // Cập nhật lại danh sách để xóa highlight
             }
             return;
         }
-
         if (type !== 'SECURITY_ALERT' || !plate) return;
         const cleanedPlate = cleanPlateNumber(plate);
-
-        // NÂNG CẤP: Lưu lại cảnh báo
         activeSecurityAlerts[cleanedPlate] = { reason, level };
-
-        // NÂNG CẤP: Hiệu ứng nhấp nháy tiêu đề tab
         if (titleAlertInterval) clearInterval(titleAlertInterval);
         let isTitleAlerted = false;
         titleAlertInterval = setInterval(() => {
-            document.title = isTitleAlerted ? originalTitle : `🚨 CẢNH BÁO: ${plate}`; // Giữ lại icon 🚨
+            document.title = isTitleAlerted ? originalTitle : `🚨 CẢNH BÁO: ${plate}`;
             isTitleAlerted = !isTitleAlerted;
         }, 1000);
-
-        // NÂNG CẤP: Âm thanh cảnh báo theo mức độ
+        const modalHeader = allElements.securityAlertModal.querySelector('.receipt-header');
+        if (level === 'block') {
+            allElements.securityAlertModal.style.borderColor = 'var(--danger-color)';
+            modalHeader.style.backgroundColor = 'var(--danger-color)';
+        } else {
+            allElements.securityAlertModal.style.borderColor = 'var(--warning-color)';
+            modalHeader.style.backgroundColor = 'var(--warning-color)';
+        }
         const alertSoundUrl = level === 'block' ? 'https://cdn.jsdelivr.net/gh/haitrieu/cdn/emergency-alarm.mp3' : 'https://cdn.jsdelivr.net/gh/haitrieu/cdn/ting.mp3';
         const alertSound = new Audio(alertSoundUrl);
         alertSound.play().catch(e => console.warn("Không thể phát âm thanh cảnh báo:", e));
-
-        // NÂNG CẤP: Hiển thị lý do cảnh báo
         if (reason && allElements.securityAlertReasonDisplay) {
             allElements.securityAlertReasonDisplay.textContent = `Lý do: ${reason}`;
             allElements.securityAlertReasonDisplay.style.display = 'block';
         } else {
-            if (allElements.securityAlertReasonDisplay) {
-                allElements.securityAlertReasonDisplay.style.display = 'none';
-            }
+            if (allElements.securityAlertReasonDisplay) allElements.securityAlertReasonDisplay.style.display = 'none';
         }
-
-        // Hiển thị thông tin trên modal
         allElements.securityAlertPlateDisplay.textContent = plate;
-
-        // Kiểm tra trạng thái xe trong danh sách hiện tại
+        allElements.securityAlertPlateDisplay.style.color = level === 'block' ? 'var(--danger-color)' : 'var(--warning-color)';
+        allElements.securityAlertPlateDisplay.style.borderColor = level === 'block' ? 'var(--danger-color)' : 'var(--warning-color)';
+        allElements.securityAlertPlateDisplay.style.backgroundColor = level === 'block' ? '#f2dede' : '#fffbe6';
         const vehicleInLot = vehiclesOnSelectedDate.find(v => v.Plate && cleanPlateNumber(v.Plate) === cleanedPlate && v.Status === 'Đang gửi');
-
         if (vehicleInLot) {
             allElements.securityAlertStatus.textContent = "⚠️ CẢNH BÁO: Xe này ĐANG CÓ TRONG BÃI!";
             allElements.securityAlertStatus.style.color = 'var(--danger-color)';
-            // Tự động điền và tìm kiếm xe
             allElements.searchTermInput.value = plate;
-            allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-            // Cuộn tới xe trong danh sách
+            updateUIFromCache(cleanedPlate); // Cập nhật UI cho xe bị cảnh báo
             const vehicleItem = allElements.vehicleListContainer.querySelector(`[data-plate="${vehicleInLot.Plate}"]`);
-            if (vehicleItem) {
-                vehicleItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                vehicleItem.style.backgroundColor = '#f2dede'; // Highlight màu đỏ nhạt
-            }
+            if (vehicleItem) vehicleItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
             allElements.securityAlertStatus.textContent = "Thông báo: Xe này hiện không có trong bãi.";
             allElements.securityAlertStatus.style.color = 'var(--text-primary)';
         }
 
-        // Hiển thị modal
+        // SỬA LỖI: Reset lại trạng thái của khu vực phản hồi mỗi khi có cảnh báo mới.
+        const feedbackSection = document.getElementById('alert-feedback-section');
+        if (feedbackSection) {
+            const buttonsContainer = feedbackSection.querySelector('#feedback-buttons-container');
+            const sentMessage = feedbackSection.querySelector('#feedback-sent-message');
+            if (buttonsContainer) buttonsContainer.style.display = 'flex';
+            if (sentMessage) sentMessage.style.display = 'none';
+        }
         allElements.securityAlertModal.style.display = 'flex';
+        updateGlobalAlertStrip();
+        filterVehicleList(); // Cập nhật danh sách để thêm highlight
     };
 
-    // =================================================================
-    // KHU VỰC 6: LOGIC QUÉT MÃ QR
-    // =================================================================
+    // NÂNG CẤP: Hàm gửi phản hồi cảnh báo
+    const sendAlertFeedback = (plate, feedback, note = '') => {
+        const feedbackBy = currentLocation?.name || 'Điểm trực không xác định';
+        const trimmedNote = note.trim();
+        let fullFeedback = '';
+
+        // Logic mới để định dạng phản hồi
+        if (feedback === 'Ghi chú riêng') {
+            // Nếu chỉ gửi ghi chú
+            fullFeedback = trimmedNote || 'Ghi chú trống.';
+        } else {
+            // Nếu gửi phản hồi nhanh (có thể kèm ghi chú)
+            fullFeedback = feedback;
+            if (trimmedNote) {
+                fullFeedback += ` (Ghi chú: ${trimmedNote})`;
+            }
+        }
+
+        // Gửi lên Google Sheet
+        fetch(APP_CONFIG.googleScriptUrl, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'addAlertFeedback', plate, feedback: fullFeedback, feedbackBy })
+        }).catch(error => console.error('Lỗi gửi phản hồi lên server:', error));
+
+        // Gửi qua BroadcastChannel cho admin
+        const payload = { type: 'ALERT_FEEDBACK', plate, feedback: fullFeedback, feedbackBy, timestamp: new Date().toISOString() };
+        securityChannel.postMessage(payload);
+
+        // Cập nhật UI
+        const feedbackSection = document.getElementById('alert-feedback-section');
+        if (feedbackSection) {
+            feedbackSection.querySelector('#feedback-buttons-container').style.display = 'none';
+            feedbackSection.querySelector('#feedback-sent-message').style.display = 'block';
+            const noteTextarea = feedbackSection.querySelector('#feedback-note-modal');
+            if (noteTextarea) noteTextarea.value = ''; // Xóa ghi chú đã gửi
+        }
+    };
+
+
     const openQrScanner = async () => {
         if (isLoading) return;
         if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) { showToast('Trình duyệt không hỗ trợ camera.', 'error'); return; }
@@ -925,10 +916,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const fee = calculateFee(vehicle['Entry Time'], null, isVehicleVIP);
                         if (fee > 0) {
                             currentVehicleContext = { plate: vehicle.Plate, status: 'parking', uniqueID: vehicle.UniqueID, isVIP: isVehicleVIP };
-                                // SỬA LỖI: Kiểm tra cảnh báo trước khi hiển thị modal thanh toán
-                                if (checkAlertBeforeCheckout(vehicle.Plate)) {
-                                    showPaymentModal();
-                                }
+                            if (checkAlertBeforeCheckout(vehicle.Plate)) showPaymentModal();
                         } else {
                             processCheckOut({ uniqueID: uniqueID, plate: vehicle.Plate, fee: 0, paymentMethod: isVehicleVIP ? 'VIP' : 'Miễn phí' });
                             showToast(`Xe ${vehicle.Plate} ra thành công (miễn phí).`, 'success');
@@ -953,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let transcript = e.results[0][0].transcript;
             transcript = transcript.replace(/ /g, '').replace(/\./g, '').toUpperCase();
             allElements.searchTermInput.value = transcript;
-            allElements.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+            updateUIFromCache(cleanPlateNumber(transcript));
         };
         r.onerror = () => { showToast('Lỗi nhận dạng giọng nói.', 'error'); };
         r.onend = () => { allElements.micBtn.classList.remove('active'); };
@@ -983,7 +971,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else { allElements.offlineIndicator.style.display = 'flex'; }
     };
 
-    // NÂNG CẤP: Kiểm tra cảnh báo trước khi checkout
     const checkAlertBeforeCheckout = (plate) => {
         const cleanedPlate = cleanPlateNumber(plate);
         const alertInfo = activeSecurityAlerts[cleanedPlate];
@@ -991,13 +978,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = `Lý do: ${alertInfo.reason || 'Không có ghi chú'}.`;
             if (alertInfo.level === 'block') {
                 showToast(`KHÔNG THỂ LẤY XE! Xe ${plate} đang trong diện cảnh báo chặn. ${message}`, 'error');
-                return false; // Chặn hành vi
+                return false;
             }
         }
-        return true; // Cho phép hành vi
+        return true;
     };
 
-    // MỚI: Hàm dừng hiệu ứng cảnh báo
     const stopTitleAlert = () => {
         if (titleAlertInterval) clearInterval(titleAlertInterval);
         titleAlertInterval = null;
@@ -1067,13 +1053,8 @@ document.addEventListener('DOMContentLoaded', () => {
             paymentChannel = new BroadcastChannel('parking_payment_channel');
             if (paymentChannel) paymentChannel.addEventListener('message', handlePaymentChannelMessage);
         } catch (e) { console.error("Trình duyệt không hỗ trợ BroadcastChannel.", e); }
-
-        // MỚI: Lắng nghe các tin nhắn cảnh báo an ninh
         securityChannel.addEventListener('message', handleSecurityAlert);
-
-        // NÂNG CẤP: Tải danh sách cảnh báo từ Google Sheets khi khởi tạo
         fetchActiveAlerts();
-
         if (LOCATIONS_CONFIG.length > 0) {
             currentLocation = LOCATIONS_CONFIG[0]; currentCapacity = currentLocation.capacity || 0;
             allElements.locationSubtitle.textContent = `Bãi đỗ xe: ${currentLocation.name}`;
@@ -1120,11 +1101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = e.target;
         try {
             if (!currentVehicleContext || currentVehicleContext.status !== 'parking') { showToast('Vui lòng chọn một xe đang gửi để xử lý.', 'error'); return; }
-            // NÂNG CẤP: Kiểm tra cảnh báo trước khi thực hiện
-            if (!checkAlertBeforeCheckout(currentVehicleContext.plate)) {
-                return; // Dừng lại nếu xe bị chặn
-            }
-
+            if (!checkAlertBeforeCheckout(currentVehicleContext.plate)) return;
             const vehicle = vehiclesOnSelectedDate.find(v => v.UniqueID === currentVehicleContext.uniqueID);
             if (!vehicle) { showToast('Không tìm thấy thông tin xe để xử lý.', 'error'); return; }
             const isVehicleVIP = vehicle.VIP === 'Có';
@@ -1172,7 +1149,6 @@ document.addEventListener('DOMContentLoaded', () => {
         allElements.paymentQrcodeImage.onload = () => {
             allElements.qrSpinner.style.display = 'none';
             allElements.paymentQrcodeImage.style.display = 'block';
-            // SỬA LỖI: Gửi URL của mã QR đến màn hình phụ
             if (paymentChannel) paymentChannel.postMessage({ type: 'QR_CODE_GENERATED', payload: { qrImageUrl: qrImageUrl } });
         };
         allElements.paymentQrcodeImage.onerror = () => {
@@ -1213,22 +1189,73 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     if (allElements.printReceiptBtn) allElements.printReceiptBtn.addEventListener('click', () => window.print());
-    if (allElements.searchTermInput) allElements.searchTermInput.addEventListener('input', () => {
-        const plate = cleanPlateNumber(allElements.searchTermInput.value);
-        if (plate.length >= 6) { updateUIFromCache(plate); } else { resetMainForm(); }
-    });
+    
+    // SỬA LỖI MẤT DANH SÁCH: Tách biệt chức năng tìm kiếm và lọc
+    if (allElements.searchTermInput) {
+        // Chỉ reset form khi ô tìm kiếm trống, không làm gì khác
+        allElements.searchTermInput.addEventListener('input', () => {
+            const plate = cleanPlateNumber(allElements.searchTermInput.value);
+            if (plate.length < 6) {
+                resetMainForm();
+            }
+        });
+        // Chỉ thực hiện tìm kiếm khi nhấn Enter
+        allElements.searchTermInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Ngăn form submit (nếu có)
+                const plate = cleanPlateNumber(allElements.searchTermInput.value);
+                if (plate.length >= 6) {
+                    updateUIFromCache(plate);
+                }
+            }
+        });
+    }
+
     if (allElements.cancelConfirmationBtn) allElements.cancelConfirmationBtn.addEventListener('click', () => { allElements.confirmationModal.style.display = 'none'; });
     if (allElements.filterInput) allElements.filterInput.addEventListener('input', filterVehicleList);
     if (allElements.micBtn) allElements.micBtn.addEventListener('click', startVoiceRecognition);
     if (allElements.scanQrBtn) allElements.scanQrBtn.addEventListener('click', openQrScanner);
     if (allElements.closeQrcodeBtn) allElements.closeQrcodeBtn.addEventListener('click', closeQrCode);
     if (allElements.closeScannerBtn) allElements.closeScannerBtn.addEventListener('click', closeQrScanner);
-    // MỚI: Gắn sự kiện cho nút "Đã rõ" trên modal cảnh báo
     if (allElements.acknowledgeAlertBtn) allElements.acknowledgeAlertBtn.addEventListener('click', () => { 
         allElements.securityAlertModal.style.display = 'none'; 
-        stopTitleAlert(); // Dừng hiệu ứng nhấp nháy tiêu đề
+        stopTitleAlert();
     });
 
+    // NÂNG CẤP: Gắn sự kiện cho các nút phản hồi trên dải băng cảnh báo
+    const selectedVehicleAlertSection = document.getElementById('selected-vehicle-alert');
+    if (selectedVehicleAlertSection) {
+        selectedVehicleAlertSection.addEventListener('click', (e) => {
+            const button = e.target.closest('.feedback-btn-inline');
+            if (button && currentVehicleContext && currentVehicleContext.plate) {
+                const noteTextarea = document.getElementById('feedback-note-inline');
+                const note = noteTextarea ? noteTextarea.value.trim() : '';
+                const feedback = button.dataset.feedback;
+                // Nếu chỉ gửi ghi chú mà ghi chú trống thì không làm gì
+                if (feedback === 'Ghi chú riêng' && !note) { showToast('Vui lòng nhập nội dung ghi chú.', 'error'); return; }
+                sendAlertFeedback(currentVehicleContext.plate, feedback, note);
+                // Cập nhật UI ngay lập tức cho dải băng này
+                button.parentElement.style.display = 'none';
+                document.getElementById('selected-vehicle-feedback-sent').style.display = 'block';
+            }
+        });
+    }
+    // NÂNG CẤP: Gắn sự kiện cho các nút phản hồi
+    const feedbackButtonsContainer = document.getElementById('feedback-buttons-container');
+    if (feedbackButtonsContainer) {
+        feedbackButtonsContainer.addEventListener('click', (e) => {
+            const button = e.target.closest('.feedback-btn');
+            if (button) {
+                const noteTextarea = document.getElementById('feedback-note-modal');
+                const note = noteTextarea ? noteTextarea.value.trim() : '';
+                const plate = allElements.securityAlertPlateDisplay.textContent;
+                const feedback = button.dataset.feedback;
+                // Nếu chỉ gửi ghi chú mà ghi chú trống thì không làm gì
+                if (feedback === 'Ghi chú riêng' && !note) { showToast('Vui lòng nhập nội dung ghi chú.', 'error'); return; }
+                sendAlertFeedback(plate, feedback, note);
+            }
+        });
+    }
     
     if (allElements.vehicleListContainer) {
         allElements.vehicleListContainer.addEventListener('click', (e) => {
