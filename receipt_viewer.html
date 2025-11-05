@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biên lai thanh toán</title>
+    <title>Biên lai Dịch vụ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; color: #333; font-size: 12px; display: flex; flex-direction: column; align-items: center; background-color: #e9ebee; }
-      .container { width: 100%; max-width: 700px; border: 1px solid #ccc; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); background-color: white; }
+      body { font-family: 'Be Vietnam Pro', sans-serif; margin: 0; padding: 20px; color: #333; font-size: 12px; display: flex; flex-direction: column; align-items: center; background-color: #e9ebee; }
+      .container { width: 100%; max-width: 800px; border: 1px solid #ccc; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1); background-color: white; }
       .header { text-align: center; margin-bottom: 20px; }
       .header img { width: 60px; height: auto; margin-bottom: 10px; }
       .header h1 { margin: 0; font-size: 18px; color: #0d47a1; text-transform: uppercase; }
@@ -14,16 +17,16 @@
       .title { text-align: center; font-size: 22px; font-weight: bold; margin: 20px 0; color: #0d47a1; }
       .invoice-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
       .invoice-info div { width: 48%; }
-      .invoice-info p { margin: 2px 0; }
+      .invoice-info p { margin: 4px 0; font-size: 13px; }
       .section-title { font-weight: bold; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
       table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-      table th, table td { border: 1px solid #eee; padding: 8px; text-align: left; }
+      table th, table td { border: 1px solid #eee; padding: 10px; text-align: left; font-size: 13px; }
       table th { background-color: #f5f5f5; font-weight: bold; }
       .total-row td { font-weight: bold; background-color: #f5f5f5; }
       .footer { margin-top: 30px; display: flex; justify-content: space-around; text-align: center; }
       .footer div { width: 45%; }
       .footer p { margin: 5px 0; }
-      .text-right { text-align: right; }
+      .text-right { text-align: right; font-weight: bold; }
       .text-center { text-align: center; }
       .actions { text-align: center; padding: 20px; background-color: white; border: 1px solid #ccc; border-top: none; max-width: 700px; width: 100%; }
       .btn-action { background-image: linear-gradient(to bottom, #1565c0, #0d47a1); color: white; border: none; padding: 12px 25px; font-size: 1rem; font-weight: bold; cursor: pointer; }
@@ -31,7 +34,7 @@
       @media print {
           body { background-color: white; padding: 0; }
           .actions { display: none; }
-          .container { box-shadow: none; border: none; }
+          .container { box-shadow: none; border: none; max-width: 100%; }
       }
     </style>
 </head>
@@ -43,7 +46,7 @@
         <p id="orgAddress"></p>
         <p><span id="taxId"></span> | <span id="orgHotline"></span></p>
       </div>
-      <h2 class="title">BIÊN LAI THU TIỀN DỊCH VỤ</h2>
+      <h2 class="title">BIÊN LAI DỊCH VỤ</h2>
       <p class="text-center" id="receiptDate"></p>
       <div class="invoice-info">
         <div>
@@ -59,10 +62,10 @@
       </div>
       <div class="section-title">Chi tiết dịch vụ</div>
       <table>
-        <thead><tr><th>STT</th><th>Nội dung</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+        <thead><tr><th>STT</th><th>Nội dung</th><th class="text-center">Đơn vị</th><th class="text-center">Số lượng</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Phí trông giữ xe</td><td>Lượt</td><td>1</td><td class="feeDisplay"></td><td class="feeDisplay"></td></tr>
-          <tr class="total-row"><td colspan="5" class="text-right">Tổng cộng:</td><td class="feeDisplay"></td></tr>
+          <tr><td>1</td><td>Phí trông giữ xe</td><td class="text-center">Lượt</td><td class="text-center">1</td><td class="text-right feeDisplay"></td><td class="text-right feeDisplay"></td></tr>
+          <tr class="total-row"><td colspan="5" class="text-right">Tổng cộng:</td><td class="text-right feeDisplay"></td></tr>
         </tbody>
       </table>
       <div id="fee-breakdown-container"></div>
@@ -76,7 +79,7 @@
     </div>
 
     <div class="actions">
-        <button id="download-pdf-btn" class="btn-action">Tải biên lai PDF</button>
+        <button id="download-pdf-btn" class="btn-action">Tải PDF & In</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -102,7 +105,7 @@
             document.getElementById('exitTimeDisplay').textContent = data.exitTimeDisplay || '--';
             document.getElementById('duration').textContent = data.duration || '--';
             document.querySelectorAll('.feeDisplay').forEach(el => el.textContent = data.feeDisplay || '0');
-            document.getElementById('feeInWords').textContent = (data.feeInWords || 'Không');
+            document.getElementById('feeInWords').textContent = (data.feeInWords || 'Không') + (data.feeInWords ? '' : ' đồng');
             
             // NÂNG CẤP: Thêm phụ chú chi tiết, rõ ràng cho từng trường hợp miễn phí.
             // Điều này giúp khách hàng hiểu rõ lý do và không cần hỏi lại nhân viên.
@@ -122,11 +125,11 @@
             if (data.dayHours > 0 || data.nightHours > 0) {
                 const breakdownHtml = `
                     <div class="section-title">Diễn giải cách tính phí</div>
-                    <table>
+                    <table style="max-width: 400px;">
                         <thead><tr><th>Loại giờ</th><th>Số giờ</th><th>Đơn giá (/giờ)</th></tr></thead>
                         <tbody>
-                            <tr><td>Giờ ban ngày</td><td>${data.dayHours || 0}</td><td>${data.dayRateFormatted || '0đ'}</td></tr>
-                            <tr><td>Giờ ban đêm</td><td>${data.nightHours || 0}</td><td>${data.nightRateFormatted || '0đ'}</td></tr>
+                            <tr><td>Giờ ban ngày</td><td class="text-center">${data.dayHours || 0}</td><td class="text-right">${data.dayRateFormatted || '0đ'}</td></tr>
+                            <tr><td>Giờ ban đêm</td><td class="text-center">${data.nightHours || 0}</td><td class="text-right">${data.nightRateFormatted || '0đ'}</td></tr>
                         </tbody>
                     </table>`;
                 document.getElementById('fee-breakdown-container').innerHTML = breakdownHtml;
@@ -140,13 +143,14 @@
                 const element = document.getElementById('receipt-container');
                 document.querySelector('.actions').style.display = 'none'; // Ẩn nút bấm
 
-                html2pdf().set({
-                    margin: [0.2, 0.2, 0.2, 0.2], // Lề trên, phải, dưới, trái (inch)
+                const opt = {
+                    margin: [0.3, 0.2, 0.3, 0.2], // Lề trên, phải, dưới, trái (inch)
                     filename: `BienLai_${data.plate || 'xe'}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' } // Sửa thành khổ letter, hướng ngang
-                }).from(element).save().then(() => {
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().from(element).set(opt).save().then(() => {
                     document.querySelector('.actions').style.display = 'block'; // Hiện lại nút
                     downloadBtn.disabled = false;
                     downloadBtn.textContent = 'Tải biên lai PDF';

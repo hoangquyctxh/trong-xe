@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tra cứu Lịch sử Gửi xe</title>
+    <!-- THÊM MỚI: Thư viện Supabase -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="config.js"></script>
     <script src="locations.js"></script> <!-- THÊM: Tải cấu hình các điểm đỗ xe -->
@@ -27,7 +34,7 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             background-color: var(--bg-main);
             color: var(--text-primary);
             margin: 0;
@@ -225,6 +232,7 @@
         <div class="modal-content">
             <h3 style="margin-bottom: 15px;">Quét mã QR trên vé xe</h3>
             <video id="camera-feed" playsinline></video>
+
             <button id="close-scanner-btn" style="width: 100%; margin-top: 15px; background: #6c757d; border-color: #6c757d;" class="btn-scan-qr">Đóng</button>
         </div>
     </div>

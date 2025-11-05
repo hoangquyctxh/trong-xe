@@ -8,13 +8,13 @@
 // =================================================================================
 
 const APP_CONFIG = {
-    // Cập nhật URL mới nhất từ Google Apps Script
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbxhy3u8AEtmTzJiZybZS82M7Svth1JCjQOwpAOmwz09Pg0ttghTqp_-uKtz83-ooxSRrg/exec",
+    // Tên đơn vị chủ quản để đóng dấu lên ảnh
+    organizationName: "ĐOÀN TNCS HỒ CHÍ MINH P.BA ĐÌNH",
 
     // Cấu hình thanh toán QR bằng cách tạo ảnh từ API của VietQR
     payment: {
         // URL gốc để tạo ảnh QR. Các tham số `amount` và `addInfo` sẽ được thêm vào sau.
-        imageUrlBase: "https://img.vietqr.io/image/970415-2FIN0837290703-UVAd7f2.jpg?accountName=VNPTFINTECH%20NGUYEN%20CAO%20HOANG%20QUY"
+        imageUrlBase: "https://img.vietqr.io/image/MSB-2229072003-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
     },
 
     // Cấu hình API thời tiết (MỚI)
