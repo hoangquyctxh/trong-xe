@@ -77,6 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
         sendSecurityAlertBtn: document.getElementById('send-security-alert-btn'),
         removeAlertBtn: document.getElementById('remove-alert-btn'),
         activeAlertsList: document.getElementById('active-alerts-list'),
+
+        // NÂNG CẤP: Các phần tử trang Cài đặt
+        paymentQrUrlInput: document.getElementById('payment-qr-url'),
+        saveSettingsBtn: document.getElementById('save-settings-btn'),
+
+        // NÂNG CẤP: Các phần tử cho menu di động
+        menuToggleBtn: document.getElementById('menu-toggle-btn'),
+        sidebarOverlay: document.querySelector('.sidebar-overlay'),
     };
 
     // =================================================================
@@ -950,6 +958,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // NÂNG CẤP: Các hàm cho trang Cài đặt
+    const fetchSettings = async () => {
+        try {
+            const { data, error } = await db.from('app_settings').select('*');
+            if (error) throw error;
+
+            const settings = data.reduce((acc, setting) => {
+                acc[setting.setting_key] = setting.setting_value;
+                return acc;
+            }, {});
+
+            // Điền dữ liệu vào form
+            if (elements.paymentQrUrlInput) {
+                elements.paymentQrUrlInput.value = settings.payment_qr_base_url || '';
+            }
+
+        } catch (error) {
+            showToast(`Lỗi tải cài đặt: ${error.message}`, 'error');
+        }
+    };
+
+    const saveSettings = async () => {
+        const qrUrl = elements.paymentQrUrlInput.value.trim();
+        if (!qrUrl) {
+            showToast('URL mã QR không được để trống.', 'error');
+            return;
+        }
+
+        const { error } = await db.from('app_settings').upsert({ setting_key: 'payment_qr_base_url', setting_value: qrUrl });
+        if (error) showToast(`Lỗi lưu cài đặt: ${error.message}`, 'error');
+        else showToast('Đã lưu cài đặt thanh toán thành công!', 'success');
+    };
+
+    // NÂNG CẤP: Hàm xử lý cho menu di động
+    const toggleMobileMenu = () => {
+        elements.sidebar.classList.toggle('open');
+        elements.sidebarOverlay.classList.toggle('active');
+    };
+
+    const closeMobileMenu = () => {
+        elements.sidebar.classList.remove('open');
+        elements.sidebarOverlay.classList.remove('active');
+    };
+
+    const handleSidebarLinkClick = () => {
+        if (window.innerWidth <= 992) closeMobileMenu();
+    };
+
     const debouncedFetchTransactions = debounce((page, term) => {
         fetchTransactions(page, term);
     }, 500);
@@ -964,6 +1020,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     elements.loginScreen.style.display = 'none';
                     elements.mainAdminContent.style.display = 'flex';
                     startAdminSession();
+                } else {
+                    // Nếu không có session, vẫn có thể cần fetch một số cài đặt công khai nếu có
+                    fetchSettings();
                 }
             });
 
@@ -1034,6 +1093,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // NÂNG CẤP: Gắn sự kiện cho dropdown chính sách phí
             if (elements.locationFeePolicyTypeSelect) elements.locationFeePolicyTypeSelect.addEventListener('change', toggleCustomFeeInputs);
+
+            // NÂNG CẤP: Gắn sự kiện cho menu di động
+            if (elements.menuToggleBtn) elements.menuToggleBtn.addEventListener('click', toggleMobileMenu);
+            if (elements.sidebarOverlay) elements.sidebarOverlay.addEventListener('click', closeMobileMenu);
+            // Đóng menu khi nhấn vào một link trong sidebar
+            document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', handleSidebarLinkClick));
+
+            // NÂNG CẤP: Gắn sự kiện cho trang Cài đặt
+            if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', saveSettings);
 
             if (elements.loginForm) elements.loginForm.addEventListener('submit', handleLogin);
             if (elements.logoutBtn) elements.logoutBtn.addEventListener('click', handleLogout);
