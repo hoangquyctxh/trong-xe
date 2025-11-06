@@ -65,6 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
         locationCapacityInput: document.getElementById('location-capacity'),
         locationHotlineInput: document.getElementById('location-hotline'),
         locationOperatingHoursInput: document.getElementById('location-operating-hours'),
+        locationEventNameInput: document.getElementById('location-event-name'), // NÂNG CẤP
+        locationFeePolicyTypeSelect: document.getElementById('location-fee-policy-type'), // NÂNG CẤP: Dropdown loại hình thu phí
+        // NÂNG CẤP: Các ô nhập phí tùy chỉnh
+        locationFeeCollectionPolicySelect: document.getElementById('location-fee-collection-policy'), // NÂNG CẤP
+        feeHourlyDayInput: document.getElementById('location-fee-hourly-day'),
+        feeHourlyNightInput: document.getElementById('location-fee-hourly-night'),
+        feePerEntryInput: document.getElementById('location-fee-per-entry'),
+        feeDailyInput: document.getElementById('location-fee-daily'),
         defaultReasonsContainer: document.getElementById('default-reasons-container'),
         sendSecurityAlertBtn: document.getElementById('send-security-alert-btn'),
         removeAlertBtn: document.getElementById('remove-alert-btn'),
@@ -364,6 +372,15 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.locationCapacityInput.value = locationData.capacity || '';
             elements.locationHotlineInput.value = locationData.hotline || '';
             elements.locationOperatingHoursInput.value = locationData.operating_hours || '';
+            elements.locationEventNameInput.value = locationData.event_name || ''; // NÂNG CẤP
+            elements.locationFeePolicyTypeSelect.value = locationData.fee_policy_type || 'hourly'; // NÂNG CẤP
+            elements.locationFeeCollectionPolicySelect.value = locationData.fee_collection_policy || 'post_paid'; // NÂNG CẤP
+            // NÂNG CẤP: Điền giá trị phí tùy chỉnh
+            elements.feeHourlyDayInput.value = locationData.fee_hourly_day || '';
+            elements.feeHourlyNightInput.value = locationData.fee_hourly_night || '';
+            elements.feePerEntryInput.value = locationData.fee_per_entry || '';
+            elements.feeDailyInput.value = locationData.fee_daily || '';
+            toggleCustomFeeInputs(); // Hiển thị các ô phí phù hợp
             elements.deleteLocationBtn.style.display = 'block';
             elements.deleteLocationBtn.dataset.id = locationData.id;
         } else {
@@ -371,6 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.locationIdInput.disabled = false;
             elements.deleteLocationBtn.style.display = 'none';
         }
+        toggleCustomFeeInputs();
         // SỬA LỖI: Sử dụng class 'active' để hiển thị modal đúng cách
         elements.locationModal.classList.add('active');
     };
@@ -787,6 +805,14 @@ document.addEventListener('DOMContentLoaded', () => {
             capacity: parseInt(elements.locationCapacityInput.value) || null,
             hotline: elements.locationHotlineInput.value.trim() || null,
             operating_hours: elements.locationOperatingHoursInput.value.trim() || null,
+            fee_policy_type: elements.locationFeePolicyTypeSelect.value, // NÂNG CẤP
+            event_name: elements.locationEventNameInput.value.trim() || null, // NÂNG CẤP
+            fee_collection_policy: elements.locationFeeCollectionPolicySelect.value, // NÂNG CẤP
+            // NÂNG CẤP: Lấy giá trị từ các ô phí tùy chỉnh
+            fee_hourly_day: parseInt(elements.feeHourlyDayInput.value) || null,
+            fee_hourly_night: parseInt(elements.feeHourlyNightInput.value) || null,
+            fee_per_entry: parseInt(elements.feePerEntryInput.value) || null,
+            fee_daily: parseInt(elements.feeDailyInput.value) || null,
         };
 
         if (!locationData.id || !locationData.name || isNaN(locationData.lat) || isNaN(locationData.lng)) {
@@ -912,6 +938,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // NÂNG CẤP: Hàm hiển thị/ẩn các ô nhập phí tùy chỉnh
+    const toggleCustomFeeInputs = () => {
+        const customFeeInputsWrapper = document.getElementById('custom-fee-inputs-wrapper');
+        const selectedPolicy = elements.locationFeePolicyTypeSelect.value;
+        const allFeeGroups = customFeeInputsWrapper.querySelectorAll('.fee-input-group');
+        
+        allFeeGroups.forEach(group => {
+            // Hiển thị group nếu data-policy của nó trùng với policy được chọn
+            group.style.display = group.dataset.policy === selectedPolicy ? 'grid' : 'none';
+        });
+    };
+
     const debouncedFetchTransactions = debounce((page, term) => {
         fetchTransactions(page, term);
     }, 500);
@@ -993,6 +1031,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     deleteLocation(e.target.dataset.id);
                 }
             });
+
+            // NÂNG CẤP: Gắn sự kiện cho dropdown chính sách phí
+            if (elements.locationFeePolicyTypeSelect) elements.locationFeePolicyTypeSelect.addEventListener('change', toggleCustomFeeInputs);
 
             if (elements.loginForm) elements.loginForm.addEventListener('submit', handleLogin);
             if (elements.logoutBtn) elements.logoutBtn.addEventListener('click', handleLogout);

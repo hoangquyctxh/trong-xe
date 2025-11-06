@@ -243,6 +243,55 @@
                         <label for="location-operating-hours">Giờ hoạt động</label>
                         <input type="text" id="location-operating-hours" placeholder="Ví dụ: 08:00 – 22:00">
                     </div>
+                    <!-- NÂNG CẤP: Tên sự kiện -->
+                    <div class="form-group" style="margin-top: 1.25rem;">
+                        <label for="location-event-name">Tên sự kiện (nếu có)</label>
+                        <input type="text" id="location-event-name" placeholder="Ví dụ: Lễ hội Áo dài 2025">
+                    </div>
+                    <!-- NÂNG CẤP TOÀN DIỆN: Lựa chọn loại hình thu phí -->
+                    <div class="form-group" style="grid-column: 1 / -1; margin-top: 1.25rem;">
+                        <label for="location-fee-policy-type">Loại hình thu phí</label>
+                        <select id="location-fee-policy-type">
+                            <option value="free">Miễn phí</option>
+                            <option value="hourly">Thu phí theo giờ</option>
+                            <option value="per_entry">Thu phí theo lượt</option>
+                            <option value="daily">Thu phí theo ngày</option>
+                        </select>
+                    </div>
+                    <!-- NÂNG CẤP: Thêm tùy chọn thời điểm thu phí -->
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="location-fee-collection-policy">Thời điểm thu phí</label>
+                        <select id="location-fee-collection-policy">
+                            <option value="post_paid">Thu phí khi xe ra (Mặc định)</option>
+                            <option value="pre_paid">Thu phí ngay khi xe vào</option>
+                        </select>
+                        <small style="margin-top: 5px; color: var(--text-secondary);">Lưu ý: "Thu phí khi vào" chỉ áp dụng cho loại hình "Theo lượt" hoặc "Theo ngày".</small>
+                    </div>
+                    <!-- NÂNG CẤP TOÀN DIỆN: Các ô nhập phí tùy chỉnh (sẽ được ẩn/hiện bằng JS) -->
+                    <div id="custom-fee-inputs-wrapper" class="custom-fee-inputs-wrapper" style="grid-column: 1 / -1; margin-top: 1.25rem; border-top: 1px solid var(--border-color-light); padding-top: 1.25rem;">
+                        <div class="fee-input-group" data-policy="hourly" style="display: none;">
+                            <div class="form-group">
+                            <label for="location-fee-hourly-day">Phí giờ ban ngày (đ/h)</label>
+                            <input type="number" id="location-fee-hourly-day" placeholder="Mặc định: 5,000">
+                            </div>
+                            <div class="form-group">
+                            <label for="location-fee-hourly-night">Phí giờ ban đêm (đ/h)</label>
+                            <input type="number" id="location-fee-hourly-night" placeholder="Mặc định: 8,000">
+                            </div>
+                        </div>
+                        <div class="fee-input-group" data-policy="per_entry" style="display: none;">
+                            <div class="form-group">
+                                <label for="location-fee-per-entry">Phí mỗi lượt</label>
+                                <input type="number" id="location-fee-per-entry" placeholder="Mặc định: 10,000">
+                            </div>
+                        </div>
+                        <div class="fee-input-group" data-policy="daily" style="display: none;">
+                            <div class="form-group">
+                                <label for="location-fee-daily">Phí mỗi ngày</label>
+                                <input type="number" id="location-fee-daily" placeholder="Mặc định: 30,000">
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">

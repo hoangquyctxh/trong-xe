@@ -134,17 +134,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return data;
         },
 
-        async checkIn(plate, phone, isVIP) {
-            // GIẢI PHÁP CUỐI CÙNG: Hàm này giờ sẽ nhận một mảng các URL/ID ảnh đã được xử lý xong
-            // và insert một bản ghi hoàn chỉnh duy nhất.
-            const uniqueID = '_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+        // SỬA LỖI: Hàm checkIn giờ sẽ nhận uniqueID được tạo sẵn cho trường hợp thu phí trước
+        async checkIn(plate, phone, isVIP, prePayment = null, providedUniqueID = null) {
+            const uniqueID = providedUniqueID || ('_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
             const entryTime = new Date();
             const transactionData = {
                 plate, phone, is_vip: isVIP,
                 unique_id: uniqueID,
                 location_id: state.currentLocation.id,
                 entry_time: entryTime.toISOString(),
-                status: 'Đang gửi'
+                status: 'Đang gửi',
+                // NÂNG CẤP: Ghi nhận thông tin thanh toán trước nếu có
+                fee: prePayment ? prePayment.fee : null,
+                payment_method: prePayment ? prePayment.method : null,
             };
             const { error } = await db.from('transactions').insert([transactionData]);
             if (error) throw new Error(`Lỗi check-in: ${error.message}. Xe [${plate}] có thể đã tồn tại trong bãi.`);
@@ -156,8 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 exit_time: new Date().toISOString(),
                 status: 'Đã rời bãi',
                 fee, payment_method: paymentMethod
-            }).eq('unique_id', uniqueID).eq('status', 'Đang gửi');
-            if (error) throw new Error(`Lỗi check-out: ${error.message}`);
+            }).eq('unique_id', uniqueID); // SỬA LỖI: Bỏ .eq('status', 'Đang gửi') để đảm bảo luôn checkout được
+            if (error) throw new Error(`Lỗi check-out: ${error.message}. Giao dịch có thể đã được xử lý.`);
             return true;
         },
     };
@@ -186,7 +188,27 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         renderHeader() {
-            dom.locationSubtitle.firstChild.textContent = `${state.currentLocation?.name || 'Chưa xác định'} `;
+            // NÂNG CẤP TOÀN DIỆN: Hiển thị tên sự kiện và trạng thái thu phí
+            let headerText = state.currentLocation?.name || 'Chưa xác định';
+            
+            if (state.currentLocation?.event_name) {
+                headerText += ` - <strong style="color: var(--primary-accent);">${state.currentLocation.event_name}</strong>`;
+            }
+
+            // Hiển thị loại hình thu phí
+            if (state.currentLocation) {
+                const policyMap = {
+                    'free': { text: 'Miễn phí', class: 'free' },
+                    'hourly': { text: 'Theo giờ', class: 'paid' },
+                    'per_entry': { text: 'Theo lượt', class: 'paid' },
+                    'daily': { text: 'Theo ngày', class: 'paid' },
+                };
+                const policy = policyMap[state.currentLocation.fee_policy_type] || policyMap.free;
+                headerText += ` <span class="fee-status-badge ${policy.class}">${policy.text}</span>`;
+            }
+
+            dom.locationSubtitle.innerHTML = `${headerText} `; // Sử dụng innerHTML để render các thẻ HTML
+
             dom.datePicker.value = state.currentDate.toISOString().slice(0, 10);
             dom.listTitle.textContent = `Danh sách xe ngày ${state.currentDate.toLocaleDateString('vi-VN')}`;
             dom.changeLocationBtn.hidden = !state.currentLocation;
@@ -431,10 +453,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalHtml = Templates.receiptModal(data);
                     break;
                 case 'checkInReceipt':
+                    // NÂNG CẤP TOÀN DIỆN: Giao diện vé điện tử "Premium" mới
                     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.unique_id)}`;
-                    const content = `<div class="checkin-receipt-wrapper" id="printable-checkin-receipt"><div class="checkin-receipt-header"><img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo"><div class="org-name">ĐOÀN TNCS HỒ CHÍ MINH</div><div class="location-name">${state.currentLocation?.name || ''}</div></div><h2 class="checkin-receipt-title">Vé gửi xe điện tử</h2><div class="qr-wrapper"><img src="${qrApiUrl}" alt="Mã QR lấy xe"></div><div class="checkin-receipt-plate">${data.plate}</div><div class="checkin-receipt-time"><strong>Giờ vào:</strong> ${Utils.formatDateTime(data.entry_time)}</div><p style="font-size: 0.9rem; color: var(--text-secondary);">Vui lòng giữ lại màn hình này hoặc ảnh chụp mã QR để lấy xe.</p></div>`;
+                    const content = `
+                        <div class="eticket-wrapper" id="printable-checkin-receipt">
+                            <div class="eticket-header">
+                                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn Thanh niên">
+                                <h3>${APP_CONFIG.organizationName || 'ĐOÀN TNCS HỒ CHÍ MINH'}</h3>
+                            </div>
+                            <div class="eticket-body">
+                                <div class="eticket-main">
+                                    <div class="eticket-qr">
+                                        <img src="${qrApiUrl}" alt="Mã QR để lấy xe">
+                                    </div>
+                                    <div class="eticket-plate">${data.plate}</div>
+                                    <p class="eticket-instruction">Quét mã QR này tại cổng ra để lấy xe</p>
+                                </div>
+                                <div class="eticket-stub">
+                                    <div class="eticket-stub-item"><span>Bãi đỗ</span><strong>${state.currentLocation?.name || 'N/A'}</strong></div>
+                                    <div class="eticket-stub-item"><span>Giờ vào</span><strong>${Utils.formatDateTime(data.entry_time)}</strong></div>
+                                    <div class="eticket-stub-item"><span>Mã vé</span><strong>${data.unique_id}</strong></div>
+                                </div>
+                            </div>
+                        </div>`;
                     const footer = `<button class="action-button btn--secondary" data-action="close-modal">Đóng</button><button class="action-button btn--reprint" data-action="print-checkin-receipt"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"/></svg><span>In vé</span></button>`;
-                    modalHtml = Templates.modal('Gửi xe thành công', content, footer, '450px');
+                    modalHtml = Templates.modal('Gửi xe thành công', content, footer, '420px');
                     break;
                 // NÂNG CẤP: Thêm case cho modal cảnh báo toàn cục
                 case 'global-alert':
@@ -532,7 +575,9 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyState: (text) => `<div class="empty-state">${text}</div>`,
         
         modal(title, content, footer, maxWidth = '500px') {
-            return `<div class="modal-overlay"><div class="modal-content" style="max-width: ${maxWidth};"><div class="modal-header"><h2>${title}</h2><button class="modal-close-btn" data-action="close-modal">&times;</button></div><div class="modal-body">${content}</div><div class="modal-footer">${footer}</div></div></div>`;
+            // NÂNG CẤP: Chỉ áp dụng max-width trên màn hình lớn hơn 600px để tránh tràn trên di động
+            const style = window.innerWidth > 600 ? `style="max-width: ${maxWidth};"` : '';
+            return `<div class="modal-overlay"><div class="modal-content" ${style}><div class="modal-header"><h2>${title}</h2><button class="modal-close-btn" data-action="close-modal">&times;</button></div><div class="modal-body">${content}</div><div class="modal-footer">${footer}</div></div></div>`;
         },
 
         locationModal(locations) {
@@ -607,18 +652,60 @@ document.addEventListener('DOMContentLoaded', () => {
             return [d > 0 ? `${d}d` : '', h > 0 ? `${h}h` : '', `${m}m`].filter(Boolean).join(' ') || '0m';
         },
         calculateFee: (startTime, endTime, isVIP) => {
-            if (isVIP || !startTime) return 0;
+            // NÂNG CẤP TOÀN DIỆN: Tính phí dựa trên chính sách của từng bãi đỗ
+            const policyType = state.currentLocation?.fee_policy_type || 'free';
             const config = APP_CONFIG.fee;
+            const locationConfig = state.currentLocation || {}; // Phí tùy chỉnh của bãi đỗ
+
+            // Trường hợp miễn phí
+            if (!config.enabled || isVIP || !startTime || policyType === 'free') {
+                return 0;
+            }
+
+            // SỬA LỖI LOGIC NGHIÊM TRỌNG: Xử lý đúng cho cả thu phí trước và cập nhật động
+            if (endTime === null) {
+                const collectionPolicy = state.currentLocation?.fee_collection_policy || 'post_paid';
+                // Chỉ trả về phí cố định nếu là chính sách THU PHÍ TRƯỚC
+                if (collectionPolicy === 'pre_paid') {
+                    if (policyType === 'per_entry') {
+                        return locationConfig.fee_per_entry ?? config.entryFee ?? 0;
+                    }
+                    if (policyType === 'daily') {
+                        return locationConfig.fee_daily ?? config.dailyFee ?? 0;
+                    }
+                    // Với loại hình "Theo giờ", không thể tính phí trước, trả về 0
+                    return 0;
+                }
+                // Nếu không phải thu phí trước (tức là đang cập nhật động), thì coi endTime là hiện tại và tiếp tục tính toán bên dưới
+            }
+
             const diffMinutes = Math.floor((new Date(endTime || new Date()) - new Date(startTime)) / (1000 * 60));
             if (diffMinutes <= config.freeMinutes) return 0;
-            let totalFee = 0;
-            const chargeableStartTime = new Date(new Date(startTime).getTime() + config.freeMinutes * 60 * 1000);
-            const totalChargeableHours = Math.ceil((diffMinutes - config.freeMinutes) / 60);
-            for (let i = 0; i < totalChargeableHours; i++) {
-                const currentHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
-                totalFee += (currentHour >= config.nightStartHour || currentHour < config.nightEndHour) ? config.nightRate : config.dayRate;
+
+            switch (policyType) {
+                case 'per_entry':
+                    return locationConfig.fee_per_entry ?? config.entryFee ?? 0;
+
+                case 'daily':
+                    const totalDays = Math.ceil((diffMinutes - config.freeMinutes) / (60 * 24));
+                    const dailyFee = locationConfig.fee_daily ?? config.dailyFee ?? 0;
+                    return dailyFee * Math.max(1, totalDays);
+
+                case 'hourly':
+                    let totalFee = 0;
+                    const chargeableStartTime = new Date(new Date(startTime).getTime() + config.freeMinutes * 60 * 1000);
+                    const totalChargeableHours = Math.ceil((diffMinutes - config.freeMinutes) / 60);
+                    const dayRate = locationConfig.fee_hourly_day ?? config.dayRate;
+                    const nightRate = locationConfig.fee_hourly_night ?? config.nightRate;
+                    for (let i = 0; i < totalChargeableHours; i++) {
+                        const currentHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
+                        totalFee += (currentHour >= config.nightStartHour || currentHour < config.nightEndHour) ? nightRate : dayRate;
+                    }
+                    return totalFee;
+
+                default:
+                    return 0;
             }
-            return totalFee;
         },
         decodePlate: (plate) => {
             if (!plate || typeof PLATE_DATA === 'undefined') return 'Chưa có thông tin';
@@ -828,19 +915,75 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         async processCheckIn() {
-            // KIẾN TRÚC MỚI: Xử lý ảnh trước, ghi vào DB sau.
             const plate = state.selectedPlate;
             if (!plate) throw new Error('Biển số không hợp lệ.');
 
             const phone = dom.phoneNumberInput.value.trim();
             const isVIP = dom.isVipCheckbox.checked;
 
-            const newTransaction = await Api.checkIn(plate, phone, isVIP);
+            const feeCollectionPolicy = state.currentLocation?.fee_collection_policy || 'post_paid';
+            const feePolicyType = state.currentLocation?.fee_policy_type || 'free';
 
-            UI.showModal('checkInReceipt', newTransaction);
-            dom.searchTermInput.value = '';
-            dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+            let newTransaction; // Biến để lưu giao dịch mới tạo
 
+            // Kịch bản 1: Bãi đỗ có chính sách "Miễn phí" (feePolicyType === 'free')
+            if (feePolicyType === 'free') {
+                const reason = isVIP ? 'Khách VIP' : 'Miễn phí';
+                newTransaction = await Api.checkIn(plate, phone, isVIP, { fee: 0, method: reason });
+                UI.showToast(`Xe ${plate} đã được gửi miễn phí.`, 'success');
+                UI.showModal('checkInReceipt', newTransaction); // Hiển thị vé điện tử
+            }
+            // Kịch bản 2: Bãi đỗ yêu cầu "Thu phí trước" (pre_paid)
+            else if (feeCollectionPolicy === 'pre_paid') {
+                const calculatedFee = Utils.calculateFee(new Date(), null, isVIP);
+
+                // Kịch bản 2a: Phí > 0, cần thanh toán qua modal
+                if (calculatedFee > 0) {
+                    // SỬA LỖI: Tạo uniqueID trước khi hiển thị modal thanh toán
+                    const uniqueID = '_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+
+                    const paymentResult = await new Promise((resolve) => {
+                        const vehicleDataForPayment = { plate, entry_time: new Date().toISOString(), unique_id: uniqueID };
+                        UI.showModal('payment', { fee: calculatedFee, vehicle: vehicleDataForPayment });
+                        const modalClickHandler = (e) => {
+                            const action = e.target.closest('[data-action]')?.dataset.action;
+                            if (action === 'complete-payment') {
+                                const method = e.target.closest('[data-method]')?.dataset.method;
+                                dom.modalContainer.removeEventListener('click', modalClickHandler);
+                                resolve({ fee: calculatedFee, method });
+                            } else if (action === 'close-modal' || e.target.classList.contains('modal-overlay')) {
+                                dom.modalContainer.removeEventListener('click', modalClickHandler);
+                                resolve(null); // Người dùng hủy thanh toán
+                            }
+                        };
+                        dom.modalContainer.addEventListener('click', modalClickHandler);
+                    });
+
+                    if (!paymentResult) throw new Error('Đã hủy thao tác gửi xe.'); // Nếu người dùng hủy, dừng quá trình
+                    
+                    // SỬA LỖI: Truyền uniqueID đã tạo vào hàm checkIn
+                    // Lưu ý: Hàm checkIn cần được điều chỉnh để nhận và sử dụng uniqueID này
+                    newTransaction = await Api.checkIn(plate, phone, isVIP, paymentResult, uniqueID);
+                    UI.showToast(`Đã thu phí trước ${Utils.formatCurrency(paymentResult.fee)}đ cho xe ${plate}.`, 'success');
+                    UI.showModal('checkInReceipt', newTransaction); // Hiển thị vé điện tử
+                }
+                // Kịch bản 2b: Phí = 0 (do VIP, hoặc miễn phí theo chính sách bãi đỗ)
+                else {
+                    const reason = isVIP ? 'Khách VIP' : 'Miễn phí';
+                    newTransaction = await Api.checkIn(plate, phone, isVIP, { fee: 0, method: reason });
+                    UI.showToast(`Xe ${plate} đã được gửi miễn phí (thu phí trước).`, 'success');
+                    UI.showModal('checkInReceipt', newTransaction); // Hiển thị vé điện tử
+                }
+            }
+            // Kịch bản 3: Bãi đỗ yêu cầu "Thu phí sau" (post_paid - mặc định)
+            else { // feeCollectionPolicy === 'post_paid'
+                newTransaction = await Api.checkIn(plate, phone, isVIP);
+                UI.showModal('checkInReceipt', newTransaction); // Hiển thị vé điện tử
+            }
+
+            // Reset form và tải lại dữ liệu sau khi hoàn tất
+            dom.searchTermInput.value = ''; 
+            dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true })); 
             await App.fetchData(true);
         },
 
@@ -853,6 +996,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`XE BỊ CHẶN: ${alert.reason}`);
             }
 
+            // NÂNG CẤP: Kiểm tra xem xe đã thanh toán trước chưa (fee không phải là null)
+            if (vehicle.fee !== null && vehicle.payment_method) { // Kiểm tra fee !== null để bao gồm cả trường hợp phí 0đ đã được ghi nhận
+                // SỬA LỖI TRIỆT ĐỂ: Chỉ hiển thị modal xác nhận, KHÔNG checkout ngay.
+                // Việc checkout sẽ được xử lý bởi processConfirmation() khi người dùng nhấn nút trong modal.
+                UI.showModal('confirmation', { title: 'Xác nhận cho xe ra', plate: vehicle.plate, reason: 'Đã thanh toán trước', type: 'free' });
+                
+                return; // Kết thúc sớm quy trình
+            }
+
             const isVIP = vehicle.is_vip;
             const fee = Utils.calculateFee(vehicle.entry_time, null, isVIP);
 
@@ -862,22 +1014,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const reason = isVIP ? 'Khách VIP' : 'Miễn phí';
                 const type = isVIP ? 'vip' : 'free';
                 try {
-                    await new Promise((resolve, reject) => {
-                        UI.showModal('confirmation', { title: 'Xác nhận Miễn phí', plate: vehicle.plate, reason, type });
-                        dom.modalContainer.onclick = (e) => {
-                            const action = e.target.closest('[data-action]')?.dataset.action;
-                            if (action === 'confirm-yes') resolve();
-                            if (action === 'confirm-no' || action === 'close-modal') reject(new Error('User cancelled'));
-                        };
-                    });
+                    // SỬA LỖI TRIỆT ĐỂ: Chỉ hiển thị modal. Việc xử lý sẽ được thực hiện
+                    // bởi handleModalClick khi người dùng nhấn nút trong modal.
+                    UI.showModal('confirmation', { title: 'Xác nhận Miễn phí', plate: vehicle.plate, reason, type });
                     
-                    await Api.checkOut(vehicle.unique_id, 0, reason);
-                    UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
-                    UI.closeModal();
-                    dom.searchTermInput.value = '';
-                    dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    await App.fetchData(true);
-
                 } catch (error) {
                     if (error.message !== 'User cancelled') UI.showToast(error.message, 'error');
                     state.isProcessing = false;
@@ -927,26 +1067,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (location) App.selectLocation(location);
             }
 
+            // SỬA LỖI TRIỆT ĐỂ: Xử lý trực tiếp hành động xác nhận từ modal
+            if (action === 'confirm-yes') {
+                this.processConfirmation();
+            }
+
+            // SỬA LỖI: Xử lý nút "Hủy bỏ" trên modal xác nhận
+            if (action === 'confirm-no') {
+                UI.closeModal();
+                return; // Dừng xử lý để không bị xung đột với các sự kiện khác
+            }
+
             if (action === 'complete-payment') {
-                const paymentMethod = target.closest('[data-method]')?.dataset.method;
-                this.processPayment(paymentMethod);
+                // Logic này giờ được xử lý cục bộ trong processCheckIn và processCheckOut
+                // để tránh xung đột. Sự kiện click vẫn được lắng nghe nhưng hàm xử lý
+                // sẽ được định nghĩa tại nơi gọi modal.
+                return;
             }
 
             if (action === 'print-receipt') {
                 const button = target.closest('[data-action="print-receipt"]');
                 if (!button || !button.dataset.plate) return;
                 const data = button.dataset;
+                const locationConfig = state.currentLocation || {};
+                const config = APP_CONFIG.fee;
                 const fee = parseFloat(data.fee) || 0;
                 const exitTime = new Date(data.exitTime);
                 const entryTime = new Date(data.entryTime);
                 const isVip = data.isVip === 'true';
                 const feeDetails = AdvancedUtils.calculateFeeWithBreakdown(entryTime, exitTime, isVip);
+                const dayRate = locationConfig.fee_hourly_day ?? config.dayRate;
+                const nightRate = locationConfig.fee_hourly_night ?? config.nightRate;
 
                 const params = new URLSearchParams({
                     orgName: 'ĐOÀN TNCS HỒ CHÍ MINH PHƯỜNG BA ĐÌNH',
                     orgAddress: '68 Nguyễn Thái Học, Phường Ba Đình, Thành phố Hà Nội',
                     taxId: '0123456789',
-                    orgHotline: state.currentLocation?.hotline || 'Đang cập nhật',
+                    orgHotline: locationConfig.hotline || 'Đang cập nhật',
                     exitDate: exitTime.getDate(), exitMonth: exitTime.getMonth() + 1, exitYear: exitTime.getFullYear(),
                     uniqueID: data.uniqueId, plate: data.plate, vehicleType: Utils.decodePlate(data.plate),
                     entryTimeDisplay: Utils.formatDateTime(entryTime),
@@ -954,7 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     duration: Utils.calculateDuration(entryTime, exitTime),
                     feeDisplay: Utils.formatCurrency(fee), feeInWords: AdvancedUtils.numberToWords(fee),
                     dayHours: feeDetails.dayHours, nightHours: feeDetails.nightHours,
-                    dayRateFormatted: Utils.formatCurrency(APP_CONFIG.fee.dayRate) + 'đ', nightRateFormatted: Utils.formatCurrency(APP_CONFIG.fee.nightRate) + 'đ',
+                    dayRateFormatted: Utils.formatCurrency(dayRate) + 'đ', nightRateFormatted: Utils.formatCurrency(nightRate) + 'đ',
                     paymentMethod: data.paymentMethod, freeMinutes: APP_CONFIG.fee.freeMinutes,
                 });
                 window.open(`receipt_viewer.html?${params.toString()}`, '_blank');
@@ -965,27 +1122,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(checkinReceiptContent) Utils.printElement(checkinReceiptContent, `VeGuiXe_${state.selectedPlate}`);
             }
         },
-        
+
+        // HÀM MỚI: Xử lý logic sau khi người dùng xác nhận cho xe ra (miễn phí/VIP)
+        async processConfirmation() {
+            const vehicle = state.selectedVehicle?.data;
+            if (!vehicle) return;
+
+            const reason = vehicle.is_vip ? 'Khách VIP' : 'Miễn phí';
+            try {
+                await Api.checkOut(vehicle.unique_id, 0, reason);
+                UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
+            } catch (error) {
+                UI.showToast(`Lỗi checkout: ${error.message}`, 'error');
+            } finally {
+                UI.closeModal();
+                dom.searchTermInput.value = '';
+                dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await App.fetchData(true);
+            }
+        },
+
         async processPayment(paymentMethod) {
             const vehicle = state.selectedVehicle?.data;
             const fee = Utils.calculateFee(vehicle.entry_time, null, vehicle.is_vip);
-            if (!paymentMethod) return UI.showToast('Lỗi: Không xác định được phương thức thanh toán.', 'error');
-
+            if (!paymentMethod) {
+                UI.showToast('Lỗi: Không xác định được phương thức thanh toán.', 'error');
+                return;
+            }
+        
             try {
                 await Api.checkOut(vehicle.unique_id, fee, paymentMethod);
                 UI.showPaymentConfirmation('success', 'Thanh toán thành công!');
                 setTimeout(() => {
                     UI.closeModal();
                     setTimeout(() => {
-                        UI.showModal('receipt', { vehicle, fee, paymentMethod });
+                        // Cần tạo một đối tượng vehicle tạm thời vì checkout đã xảy ra
+                        const tempVehicleData = { ...vehicle, exit_time: new Date().toISOString() };
+                        UI.showModal('receipt', { vehicle: tempVehicleData, fee, paymentMethod });
                     }, 350);
                 }, 1500);
             } catch (error) {
                 UI.showToast(`Lỗi checkout: ${error.message}`, 'error');
+            } finally {
+                dom.searchTermInput.value = '';
+                dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+                await App.fetchData(true);
             }
-            dom.searchTermInput.value = '';
-            dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-            await App.fetchData(true);
         },
 
         handleThemeChange() {
@@ -1061,7 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.applySavedTheme();
             this.updateClock();
             setInterval(this.updateClock, 1000);
-            setInterval(this.updateLiveDurations, 30000);
+            setInterval(this.updateLiveDurationsAndFees, 30000); // NÂNG CẤP: Gọi hàm cập nhật phí và thời gian
             
             // NÂNG CẤP: Tải danh sách bãi đỗ trước khi xác định vị trí
             Api.fetchLocations().then(() => {
@@ -1258,10 +1440,12 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.clockWidget.textContent = new Date().toLocaleTimeString('vi-VN');
         },
 
-        updateLiveDurations() {
+        // NÂNG CẤP: Hàm này giờ sẽ cập nhật cả thời gian và phí gửi xe
+        updateLiveDurationsAndFees() {
             document.querySelectorAll('.live-duration').forEach(el => {
                 el.textContent = Utils.calculateDuration(el.dataset.starttime);
             });
+            // NÂNG CẤP: Thêm logic cập nhật phí
             document.querySelectorAll('.live-fee').forEach(el => {
                 const isVIP = el.dataset.isvip === 'true';
                 el.textContent = Utils.formatCurrency(Utils.calculateFee(el.dataset.starttime, null, isVIP)) + 'đ';

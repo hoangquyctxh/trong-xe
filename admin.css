@@ -370,6 +370,15 @@ tbody tr.editing-row {
     padding-top: 0;
     padding-bottom: 0;
 }
+
+/* NÂNG CẤP: Vùng chứa các ô nhập phí tùy chỉnh */
+.fee-input-group {
+    display: none; /* Mặc định ẩn tất cả */
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
 body[data-theme="dark"] .edit-inline-form-container {
     background-color: #1a2436;
 }

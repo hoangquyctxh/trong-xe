@@ -14,7 +14,7 @@ const APP_CONFIG = {
     // Cấu hình thanh toán QR bằng cách tạo ảnh từ API của VietQR
     payment: {
         // URL gốc để tạo ảnh QR. Các tham số `amount` và `addInfo` sẽ được thêm vào sau.
-        imageUrlBase: "https://img.vietqr.io/image/MSB-2229072003-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
+        imageUrlBase: "https://img.vietqr.io/image/VCB-QRGD000101538248501-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
     },
 
     // Cấu hình API thời tiết (MỚI)
@@ -24,7 +24,10 @@ const APP_CONFIG = {
 
     // Cấu hình tính phí gửi xe
     fee: {
+        enabled: true,         // BẬT/TẮT THU PHÍ: true = có thu phí, false = miễn phí toàn bộ.
         freeMinutes: 15,       // Số phút gửi xe miễn phí
+        entryFee: 10000,       // NÂNG CẤP: Phí cố định cho mỗi lượt gửi (chính sách "Theo lượt")
+        dailyFee: 30000,       // NÂNG CẤP: Phí cố định cho mỗi ngày gửi (chính sách "Theo ngày")
         dayRate: 5000,         // Phí mỗi giờ ban ngày (từ 6h sáng đến 18h tối)
         nightRate: 8000,       // Phí mỗi giờ ban đêm
         nightStartHour: 18,    // Giờ bắt đầu tính phí đêm (6 PM)
