@@ -924,6 +924,61 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 /* ==========================================================================
+   5.2.3. NÂNG CẤP TOÀN DIỆN: MODAL VÉ GỬI XE ĐIỆN TỬ "PREMIUM"
+   ========================================================================== */
+.eticket-wrapper {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: floatUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes floatUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.eticket-header {
+    background-color: var(--bg-main);
+    padding: 1rem 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+.eticket-header img { height: 36px; width: auto; margin-bottom: 0.5rem; }
+.eticket-header h3 { font-size: 1rem; font-weight: 600; margin: 0; color: var(--text-secondary); }
+
+.eticket-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.eticket-main {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border-bottom: 2px dashed var(--border-color);
+}
+.eticket-qr { margin-bottom: 1.5rem; }
+.eticket-qr img { max-width: 220px; width: 100%; border-radius: var(--radius-md); }
+.eticket-plate { font-family: monospace; font-size: 2.75rem; font-weight: 800; color: var(--primary-accent); letter-spacing: 2px; }
+.eticket-instruction { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem; }
+
+.eticket-stub { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.eticket-stub-item { display: flex; justify-content: space-between; align-items: baseline; }
+.eticket-stub-item span { font-size: 0.9rem; color: var(--text-secondary); }
+.eticket-stub-item strong { font-size: 1rem; font-weight: 600; text-align: right; }
+
+
+/* ==========================================================================
    5.2.3. NÂNG CẤP: MODAL VÉ GỬI XE ĐIỆN TỬ
    ========================================================================== */
 .checkin-receipt-wrapper {

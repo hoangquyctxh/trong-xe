@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         qrScannerModal() {
-            const content = `<div class="qr-scanner-body"><video id="camera-feed" playsinline></video><div class="scanner-overlay"><div class="scanner-viewfinder"><div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div></div></div><div class="scanner-feedback-overlay"><div class="feedback-icon"><svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg></div><div class="feedback-plate"></div><div class="feedback-reason"></div></div></div><p style="text-align: center; color: var(--text-secondary); margin-top: 1rem;">Di chuyển mã QR vào trong khung để lấy xe.</p>`;
+            const content = `<div class="qr-scanner-body"><video id="camera-feed" playsinline></video><div class="scanner-overlay"><div class="scanner-viewfinder"><div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div></div></div><div class="scanner-feedback-overlay"><div class="feedback-icon"><svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg></div><div class="feedback-plate"></div></div></div><p style="text-align: center; color: var(--text-secondary); margin-top: 1rem;">Di chuyển mã QR vào trong khung để lấy xe.</p>`;
             const footer = `<button class="action-button btn--secondary" data-action="close-modal">Hủy bỏ</button>`;
             return this.modal('Quét mã QR để lấy xe', content, footer, '480px');
         },
@@ -1220,14 +1220,90 @@ document.addEventListener('DOMContentLoaded', () => {
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
                 
-                if (code) {
-                    dom.searchTermInput.value = code.data;
-                    dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    UI.closeModal();
-                    return;
+                // NÂNG CẤP TOÀN DIỆN: Quét liên tục và hiển thị phản hồi trực tiếp
+                if (code && code.data && !state.isProcessing) { // SỬA LỖI: Đảm bảo isProcessing được kiểm tra
+                    cancelAnimationFrame(state.scanAnimation); // Dừng quét ngay khi có kết quả
+                    
+                    // Xử lý checkout và hiển thị phản hồi
+                    Handlers.processQrCheckout(code.data).then(vehiclePlate => { // SỬA LỖI: Gọi đúng hàm Handlers.processQrCheckout
+                        if (vehiclePlate) {
+                            // Hiển thị phản hồi thành công ngay trên màn hình quét
+                            const feedbackOverlay = document.querySelector('.scanner-feedback-overlay');
+                            const feedbackPlate = document.querySelector('.feedback-plate');
+                            if (feedbackOverlay && feedbackPlate) {
+                                feedbackPlate.textContent = vehiclePlate;
+                                feedbackOverlay.classList.add('active');
+                            }
+                        }
+                        // Sau 2 giây, ẩn phản hồi và tiếp tục quét
+                        setTimeout(() => {
+                            const feedbackOverlay = document.querySelector('.scanner-feedback-overlay');
+                            if (feedbackOverlay) feedbackOverlay.classList.remove('active');
+                            state.scanAnimation = requestAnimationFrame(() => this.tickQrScanner());
+                        }, 2000);
+                    });
+
+                    return; // Thoát khỏi vòng lặp
                 }
             }
             state.scanAnimation = requestAnimationFrame(() => this.tickQrScanner());
+        },
+
+        // HÀM MỚI: Xử lý checkout tự động khi quét QR
+        processQrCheckout: async function(uniqueID) {
+            if (state.isProcessing) return null;
+            state.isProcessing = true;
+            
+            const vehicle = state.vehicles.find(v => v.unique_id === uniqueID && v.status === 'Đang gửi');
+            if (!vehicle) {
+                state.isProcessing = false;
+                UI.showToast('Mã QR không hợp lệ hoặc xe đã rời bãi.', 'error');
+                return null;
+            }
+    
+            const alert = state.alerts[vehicle.plate];
+            if (alert?.level === 'block') {
+                state.isProcessing = false;
+                UI.showToast(`XE BỊ CHẶN: ${alert.reason}`, 'error');
+                return null;
+            }
+    
+            const fee = Utils.calculateFee(vehicle.entry_time, null, vehicle.is_vip);
+    
+            if (fee > 0) {
+                const paymentResult = await new Promise((resolve) => {
+                    UI.showModal('payment', { fee, vehicle });
+                    const modalClickHandler = (e) => {
+                        const action = e.target.closest('[data-action]')?.dataset.action;
+                        if (action === 'complete-payment') {
+                            const method = e.target.closest('[data-method]')?.dataset.method;
+                            dom.modalContainer.removeEventListener('click', modalClickHandler);
+                            resolve({ fee, method });
+                        } else if (action === 'close-modal' || e.target.classList.contains('modal-overlay')) {
+                            dom.modalContainer.removeEventListener('click', modalClickHandler);
+                            resolve(null);
+                        }
+                    };
+                    dom.modalContainer.addEventListener('click', modalClickHandler);
+                });
+    
+                if (!paymentResult) {
+                    UI.showToast('Đã hủy thao tác thanh toán.', 'error');
+                } else {
+                    // SỬA LỖI: Tự xử lý checkout tại đây thay vì gọi hàm chung
+                    await Api.checkOut(vehicle.unique_id, paymentResult.fee, paymentResult.method);
+                    UI.showToast(`Thanh toán thành công cho xe ${vehicle.plate}.`, 'success');
+                    await App.fetchData(true);
+                }
+                UI.closeModal(); // Đóng modal thanh toán sau khi hoàn tất
+            } else {
+                const reason = vehicle.is_vip ? 'Khách VIP' : 'Miễn phí';
+                await Api.checkOut(vehicle.unique_id, 0, reason);
+                UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
+                await App.fetchData(true);
+            }
+            state.isProcessing = false;
+            return vehicle.plate;
         },
     };
 
