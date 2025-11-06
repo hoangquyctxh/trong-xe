@@ -1,4 +1,4 @@
-// admin.js
+// admin.js - PHIÊN BẢN HOÀN CHỈNH ĐÃ SỬA LỖI MENU DI ĐỘNG
 document.addEventListener('DOMContentLoaded', () => {
     // =================================================================
     // KHU VỰC 0: THIẾT LẬP SUPABASE
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paymentQrUrlInput: document.getElementById('payment-qr-url'),
         saveSettingsBtn: document.getElementById('save-settings-btn'),
 
-        // NÂNG CẤP: Các phần tử cho menu di động
+        // SỬA LỖI: Khai báo chính xác các phần tử cho menu di động
         menuToggleBtn: document.getElementById('menu-toggle-btn'),
         sidebarOverlay: document.querySelector('.sidebar-overlay'),
     };
@@ -991,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else showToast('Đã lưu cài đặt thanh toán thành công!', 'success');
     };
 
-    // NÂNG CẤP: Hàm xử lý cho menu di động
+    // SỬA LỖI: Hàm xử lý cho menu di động
     const toggleMobileMenu = () => {
         elements.sidebar.classList.toggle('open');
         elements.sidebarOverlay.classList.toggle('active');
@@ -1094,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // NÂNG CẤP: Gắn sự kiện cho dropdown chính sách phí
             if (elements.locationFeePolicyTypeSelect) elements.locationFeePolicyTypeSelect.addEventListener('change', toggleCustomFeeInputs);
 
-            // NÂNG CẤP: Gắn sự kiện cho menu di động
+            // SỬA LỖI: Gắn sự kiện cho menu di động
             if (elements.menuToggleBtn) elements.menuToggleBtn.addEventListener('click', toggleMobileMenu);
             if (elements.sidebarOverlay) elements.sidebarOverlay.addEventListener('click', closeMobileMenu);
             // Đóng menu khi nhấn vào một link trong sidebar
