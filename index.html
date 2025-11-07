@@ -18,6 +18,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- MỚI: Thư viện Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <!-- NÂNG CẤP: Thư viện hỗ trợ Sinh trắc học (WebAuthn) -->
+    <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
 
     <!-- Cấu hình -->
     <script src="config.js"></script>
@@ -27,8 +29,47 @@
 
     <!-- Thanh thông báo toàn cục -->
     <div id="global-alert-strip" class="global-alert-strip"></div>
-    <div id="toast-container" class="toast-container"></div>
-    <div id="offline-indicator" class="offline-indicator"></div>
+    <div id="toast-container"></div>
+    <div id="offline-indicator"></div>
+
+    <!-- ================================================================= -->
+    <!-- MÀN HÌNH ĐĂNG NHẬP CHO NHÂN VIÊN (THIẾT KẾ LẠI) -->
+    <!-- ================================================================= -->
+    <div id="staff-login-screen" class="login-container">
+        <div class="login-branding-panel">
+            <div class="branding-content">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn Thanh niên" class="branding-logo">
+                <h1>Hệ thống Quản lý Bãi xe Thông minh</h1>
+                <p>Dành cho Cán bộ, Đoàn viên, Tình nguyện viên</p>
+            </div>
+        </div>
+        <div class="login-form-panel">
+            <div class="login-form-wrapper">
+                <h2>Đăng nhập</h2>
+                <p class="form-subtitle">Sử dụng tài khoản được cấp để truy cập hệ thống.</p>
+                <form id="staff-login-form">
+                    <div class="form-group">
+                        <label for="staff-username">Tên đăng nhập</label>
+                        <div class="input-with-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <input type="text" id="staff-username" required autocomplete="username">
+                        </div>
+                    </div>
+                    <div id="staff-info-display" class="staff-info-display"></div>
+                    <div class="form-group">
+                        <label for="staff-pin">Mã PIN</label>
+                        <div class="input-with-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <input type="password" id="staff-pin" inputmode="numeric" required autocomplete="current-password">
+                        </div>
+                    </div>
+                    <p id="staff-login-error-message" class="form-error-message"></p>
+                    <button type="submit" class="action-button btn--check-in" style="width: 100%; margin-top: 1.5rem;">Đăng nhập</button>
+                    <button type="button" id="biometric-login-btn" class="action-button btn--secondary" style="width: 100%; margin-top: 0.75rem; display: none;">Đăng nhập bằng Vân tay/Khuôn mặt</button>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Header chính -->
     <header class="app-header">
@@ -63,6 +104,8 @@
                 <li><a href="admin.html" target="_blank">Quản trị Hệ thống</a></li>
             </ul>
             <div class="nav-extra">
+                <!-- Khu vực hiển thị thông tin nhân viên đăng nhập -->
+                <div id="user-profile-widget" class="user-profile-widget"></div>
                 <div id="clock-widget" class="clock-widget"></div>
                 <div id="weather-widget" class="weather-widget"></div>
             </div>
@@ -77,16 +120,16 @@
             <article class="card">
                 <h2 class="card__header">Xử lý Gửi/Lấy xe</h2>
                 <div class="card__body">
-                    <div class="input-group">
-                        <div class="input-wrapper">
-                            <input type="text" id="search-term" placeholder="Nhập Biển số xe...">
+                    <form id="form-new-vehicle">
+                        <div class="input-group">
+                            <div class="input-wrapper">
+                                <input type="text" id="search-term" placeholder="Nhập Biển số xe..." autocomplete="off">
+                            </div>
+                            <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói"></button>
+                            <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để lấy xe"></button>
                         </div>
-                        <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói"></button>
-                        <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để lấy xe"></button>
-                    </div>
-                    <!-- MỚI: Vùng chứa gợi ý biển số xe -->
-                    <div id="plate-suggestions" class="plate-suggestions"></div>
-                    <div id="form-new-vehicle">
+                        <!-- Vùng chứa gợi ý biển số xe -->
+                        <div id="plate-suggestions" class="plate-suggestions"></div>
                         <div class="input-wrapper">
                             <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
                         </div>
@@ -94,8 +137,8 @@
                             <input type="checkbox" id="is-vip-checkbox">
                             <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
                         </div>
-                    </div>
-                    <div id="action-buttons-container" class="action-buttons-container"></div>
+                        <div id="action-buttons-container" class="action-buttons-container"></div>
+                    </form>
                 </div>
             </article>
 
@@ -117,7 +160,7 @@
             <article class="card">
                 <h2 class="card__header">Bảng tin nhanh</h2>
                 <div class="card__body">
-                    <div id="dashboard-grid" class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+                    <div id="dashboard-grid" class="dashboard-grid">
                         <!-- Các thẻ thống kê và biểu đồ sẽ được render vào đây bằng JavaScript -->
                     </div>
                 </div>
@@ -133,7 +176,7 @@
                 </div>
                 <div class="card__body">
                     <div id="vehicle-list-container" class="vehicle-list-container"></div>
-                    <!-- MỚI: Vùng chứa các nút phân trang -->
+                    <!-- Vùng chứa các nút phân trang -->
                     <div id="pagination-controls" class="pagination-controls"></div>
                 </div>
             </article>
@@ -153,7 +196,7 @@
         <!-- Các modal sẽ được render vào đây bằng JavaScript -->
     </div>
 
-    <!-- MỚI: Màn hình chờ/Quảng cáo -->
+    <!-- Màn hình chờ/Quảng cáo -->
     <div id="idle-screen" class="idle-screen">
         <video id="ad-video-player" class="ad-video-player" autoplay muted loop playsinline></video>
         <div class="idle-overlay-content">
@@ -161,7 +204,7 @@
         </div>
     </div>
 
-    <!-- Tệp JavaScript logic mới hoàn toàn -->
+    <!-- Tệp JavaScript logic chính -->
     <script src="main.js"></script>
 </body>
 </html>

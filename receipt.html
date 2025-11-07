@@ -3,182 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biên lai thanh toán</title>
+    <title>Biên lai Dịch vụ</title>
     <script src="config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-main: #e9ebee;
-            --bg-card: #ffffff;
-            --border-color: #d1d5db;
-            --primary-accent: #0d47a1;
-            --text-primary: #333333;
-            --text-secondary: #777777;
-            --border-radius-md: 0;
-        }
-        body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 2em;
-        }
-        .receipt-container {
-            max-width: 700px;
-            margin: auto;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 2.5em;
-        }
-        .receipt-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding-bottom: 1.5em;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 2em;
-        }
-        .receipt-header img { width: 50px; }
-        .receipt-header .org-details .org-name { font-weight: 700; font-size: 1.1rem; }
-        .receipt-header .org-details .org-location { font-size: 0.9rem; color: var(--text-secondary); }
-        .receipt-title {
-            font-size: 1.8rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 1.5em;
-            color: var(--primary-accent);
-        }
-        .receipt-details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5em 2em;
-            margin-bottom: 2em;
-        }
-        .detail-item .label {
-            color: var(--text-secondary);
-            margin-bottom: 0.25em;
-            display: block;
-            font-size: 0.9rem;
-        }
-        .detail-item .value {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-        .detail-item.total {
-            grid-column: 1 / -1;
-            text-align: right;
-            margin-top: 1em;
-            padding-top: 1em;
-            border-top: 1px dashed var(--border-color);
-        }
-        .detail-item.total .value {
-            font-size: 2rem;
-            color: #c62828;
-        }
-        .receipt-footer {
-            text-align: center;
-            padding-top: 2em;
-            border-top: 1px solid var(--border-color);
-        }
-        .btn-print {
-            background-image: linear-gradient(to bottom, #1565c0, #0d47a1);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-print:disabled { background: #ccc; cursor: not-allowed; }
+      body { font-family: 'Be Vietnam Pro', sans-serif; margin: 0; padding: 20px; color: #333; font-size: 12px; display: flex; flex-direction: column; align-items: center; background-color: #e9ebee; }
+      .container { width: 100%; max-width: 700px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); background-color: white; }
+      .actions { text-align: center; padding: 20px; background-color: white; border: 1px solid #ccc; border-top: none; max-width: 700px; width: 100%; }
+      .btn-action { background-image: linear-gradient(to bottom, #1565c0, #0d47a1); color: white; border: none; padding: 12px 25px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+      .btn-action:disabled { background: #ccc; cursor: not-allowed; }
         @media print {
-            body { padding: 0; background-color: white; }
-            .receipt-container { margin: 0; max-width: 100%; border: none; box-shadow: none; }
-            .receipt-footer { display: none; }
+          body { background-color: white; padding: 0; }
+          .actions { display: none; }
+          .container { box-shadow: none; border: none; max-width: 100%; padding: 0; }
         }
     </style>
 </head>
 <body>
-    <div class="receipt-container">
-        <div class="receipt-header">
-            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
-            <div class="org-details">
-                <span class="org-name">ĐOÀN TNCS HỒ CHÍ MINH</span>
-                <span class="org-location">PHƯỜNG BA ĐÌNH</span>
-            </div>
-        </div>
-        <h1 class="receipt-title">BIÊN LAI THANH TOÁN</h1>
-        <div class="receipt-details-grid">
-            <div class="detail-item" style="grid-column: 1 / -1;">
-                <span class="label">Biển số xe</span>
-                <span class="value" id="receipt-plate" style="font-family: monospace; font-size: 1.5rem;">--</span>
-            </div>
-            <div class="detail-item"><span class="label">Giờ vào</span><span class="value" id="receipt-entry-time">--</span></div>
-            <div class="detail-item"><span class="label">Giờ ra</span><span class="value" id="receipt-exit-time">--</span></div>
-            <div class="detail-item"><span class="label">Tổng thời gian</span><span class="value" id="receipt-duration">--</span></div>
-            <div class="detail-item"><span class="label">Phương thức</span><span class="value" id="receipt-payment-method">--</span></div>
-            <div class="detail-item total">
-                <span class="label" style="text-align: right;">TỔNG CỘNG</span>
-                <span class="value" id="receipt-fee">0đ</span>
-            </div>
-        </div>
-        <div class="receipt-footer">
-            <button id="download-pdf-btn" class="btn-print">Tải biên lai PDF</button>
-        </div>
+    <div class="container" id="receipt-container"></div>
+
+    <div class="actions">
+        <button id="download-pdf-btn" class="btn-action">Tải PDF & In</button>
     </div>
 
-    <!-- 1. Tích hợp thư viện html2pdf.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
-            const uniqueID = params.get('uniqueID');
-            
-            document.getElementById('receipt-plate').textContent = params.get('plate') || '--';
-            document.getElementById('receipt-entry-time').textContent = params.get('entryTime') || '--';
-            document.getElementById('receipt-exit-time').textContent = params.get('exitTime') || '--';
-            document.getElementById('receipt-duration').textContent = params.get('duration') || '--';
-            document.getElementById('receipt-fee').textContent = (params.get('fee') || '0') + 'đ';
-            document.getElementById('receipt-payment-method').textContent = params.get('paymentMethod') || 'N/A';
 
-            const downloadBtn = document.getElementById('download-pdf-btn');
+            // 1. Lấy mẫu biên lai từ file
+            let templateHtml = '';
+            try {
+                const response = await fetch('receipt_template.html');
+                if (!response.ok) throw new Error('Không thể tải mẫu biên lai.');
+                templateHtml = await response.text();
+            } catch (error) {
+                document.body.innerHTML = `<p style="color: red; text-align: center;">${error.message}</p>`;
+                return;
+            }
 
-            // 2. Viết lại hoàn toàn hàm tải PDF
-            const downloadAsPdf = () => {
-                downloadBtn.disabled = true;
-                downloadBtn.textContent = 'Đang xử lý...';
-
-                // Lấy phần tử chứa toàn bộ giao diện biên lai
-                const element = document.querySelector('.receipt-container');
-                const footerToHide = document.querySelector('.receipt-footer');
-
-                // Tạm thời ẩn nút bấm để nó không xuất hiện trong file PDF
-                footerToHide.style.display = 'none';
-
-                const opt = {
-                  margin:       0.5, // Lề file PDF (inch)
-                  filename:     `BienLai_${uniqueID || params.get('plate')}.pdf`,
-                  image:        { type: 'jpeg', quality: 0.98 },
-                  html2canvas:  { scale: 2, useCORS: true }, // QUAN TRỌNG: Cho phép tải ảnh từ domain khác
-                  jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-                };
-
-                // Gọi thư viện để tạo và tải file PDF
-                html2pdf().from(element).set(opt).save().then(() => {
-                    // Sau khi tải xong, hiện lại nút bấm
-                    footerToHide.style.display = 'block';
-                    downloadBtn.disabled = false;
-                    downloadBtn.textContent = 'Tải biên lai PDF';
-                });
+            // 2. Chuẩn bị dữ liệu để điền vào mẫu
+            const formatDateTime = (d) => d ? new Date(d).toLocaleString('vi-VN') : '--';
+            const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
+            const calculateDuration = (start, end) => {
+                if (!start || !end) return '--';
+                let diff = Math.floor((new Date(end) - new Date(start)) / 1000);
+                if (diff < 0) return '0m';
+                const d = Math.floor(diff / 86400); diff %= 86400;
+                const h = Math.floor(diff / 3600); diff %= 3600;
+                const m = Math.floor(diff / 60);
+                return [d > 0 ? `${d}d` : '', h > 0 ? `${h}h` : '', `${m}m`].filter(Boolean).join(' ') || '0m';
             };
 
-            if (downloadBtn) {
-                // 3. Gắn hàm mới vào sự kiện click của nút
-                downloadBtn.addEventListener('click', downloadAsPdf);
+            const exitTimeParam = params.get('exitTime');
+            const exitDate = exitTimeParam ? new Date(exitTimeParam) : new Date();
+
+            const data = {
+                orgName: APP_CONFIG.organizationName || 'ĐOÀN THANH NIÊN',
+                orgAddress: 'Đang cập nhật',
+                taxId: 'Đang cập nhật',
+                orgHotline: 'Đang cập nhật',
+                exitDate: exitDate.getDate(),
+                exitMonth: exitDate.getMonth() + 1,
+                exitYear: exitDate.getFullYear(),
+                uniqueID: params.get('uniqueID'),
+                plate: params.get('plate'),
+                vehicleType: 'Xe máy',
+                entryTimeDisplay: formatDateTime(params.get('entryTime')),
+                exitTimeDisplay: formatDateTime(params.get('exitTime')),
+                duration: calculateDuration(params.get('entryTime'), params.get('exitTime')),
+                feeDisplay: formatCurrency(params.get('fee')),
+                paymentMethod: params.get('paymentMethod'),
+                isVip: params.get('isVip') === 'true',
+                freeMinutes: APP_CONFIG.fee.freeMinutes,
+                dayHours: 0,
+                nightHours: 0,
+                dayRateFormatted: formatCurrency(APP_CONFIG.fee.dayRate),
+                nightRateFormatted: formatCurrency(APP_CONFIG.fee.nightRate),
+                feeInWords: 'Không'
+            };
+
+            // 3. Điền dữ liệu vào mẫu
+            let finalHtml = templateHtml;
+            for (const key in data) {
+                const regex = new RegExp(`<?= ${key} ?>`, 'g');
+                finalHtml = finalHtml.replace(regex, data[key]);
             }
+
+            // 4. Xử lý logic điều kiện cho phương thức thanh toán
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = finalHtml;
+            const paymentDisplay = tempDiv.querySelector('#payment-method-display');
+            if (paymentDisplay) {
+                if (data.paymentMethod === 'VIP' || data.isVip) {
+                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-vip').innerHTML;
+                } else if (data.paymentMethod === 'Miễn phí') {
+                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-free').innerHTML;
+                } else {
+                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-normal').innerHTML;
+                }
+            }
+            finalHtml = tempDiv.innerHTML;
+
+            // 5. Hiển thị biên lai đã hoàn chỉnh
+            document.getElementById('receipt-container').innerHTML = finalHtml;
+
+            // 6. Gắn sự kiện cho nút tải PDF
+            const downloadBtn = document.getElementById('download-pdf-btn');
+            downloadBtn.addEventListener('click', () => {
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = 'Đang xử lý...';
+                const element = document.getElementById('receipt-container');
+                document.querySelector('.actions').style.display = 'none';
+
+                const opt = {
+                    margin: [0.3, 0.2, 0.3, 0.2],
+                    filename: `BienLai_${params.get('plate') || 'xe'}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().from(element).set(opt).save().then(() => {
+                    document.querySelector('.actions').style.display = 'block';
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = 'Tải PDF & In';
+                });
+            });
         });
     </script>
 </body>

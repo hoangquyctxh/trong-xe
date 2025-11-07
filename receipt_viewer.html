@@ -7,76 +7,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- NÂNG CẤP: Sử dụng file config.js để lấy các thông tin chung -->
+    <script src="config.js"></script>
     <style>
       body { font-family: 'Be Vietnam Pro', sans-serif; margin: 0; padding: 20px; color: #333; font-size: 12px; display: flex; flex-direction: column; align-items: center; background-color: #e9ebee; }
-      .container { width: 100%; max-width: 800px; border: 1px solid #ccc; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1); background-color: white; }
-      .header { text-align: center; margin-bottom: 20px; }
-      .header img { width: 60px; height: auto; margin-bottom: 10px; }
-      .header h1 { margin: 0; font-size: 18px; color: #0d47a1; text-transform: uppercase; }
-      .header p { margin: 2px 0; font-size: 10px; }
-      .title { text-align: center; font-size: 22px; font-weight: bold; margin: 20px 0; color: #0d47a1; }
-      .invoice-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
-      .invoice-info div { width: 48%; }
-      .invoice-info p { margin: 4px 0; font-size: 13px; }
-      .section-title { font-weight: bold; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-      table th, table td { border: 1px solid #eee; padding: 10px; text-align: left; font-size: 13px; }
-      table th { background-color: #f5f5f5; font-weight: bold; }
-      .total-row td { font-weight: bold; background-color: #f5f5f5; }
-      .footer { margin-top: 30px; display: flex; justify-content: space-around; text-align: center; }
-      .footer div { width: 45%; }
-      .footer p { margin: 5px 0; }
-      .text-right { text-align: right; font-weight: bold; }
-      .text-center { text-align: center; }
+      .container { width: 100%; max-width: 700px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); background-color: white; }
       .actions { text-align: center; padding: 20px; background-color: white; border: 1px solid #ccc; border-top: none; max-width: 700px; width: 100%; }
       .btn-action { background-image: linear-gradient(to bottom, #1565c0, #0d47a1); color: white; border: none; padding: 12px 25px; font-size: 1rem; font-weight: bold; cursor: pointer; }
       .btn-action:disabled { background: #ccc; cursor: not-allowed; }
       @media print {
           body { background-color: white; padding: 0; }
           .actions { display: none; }
-          .container { box-shadow: none; border: none; max-width: 100%; }
+          .container { box-shadow: none; border: none; max-width: 100%; padding: 0; }
       }
     </style>
 </head>
 <body>
-    <div class="container" id="receipt-container">
-      <div class="header">
-        <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
-        <h1 id="orgName"></h1>
-        <p id="orgAddress"></p>
-        <p><span id="taxId"></span> | <span id="orgHotline"></span></p>
-      </div>
-      <h2 class="title">BIÊN LAI DỊCH VỤ</h2>
-      <p class="text-center" id="receiptDate"></p>
-      <div class="invoice-info">
-        <div>
-          <p><strong>Số biên lai:</strong> <span id="uniqueID"></span></p>
-          <p><strong>Biển số xe:</strong> <span id="plate"></span></p>
-          <p><strong>Loại xe:</strong> <span id="vehicleType"></span></p>
-        </div>
-        <div class="text-right">
-          <p><strong>Giờ vào:</strong> <span id="entryTimeDisplay"></span></p>
-          <p><strong>Giờ ra:</strong> <span id="exitTimeDisplay"></span></p>
-          <p><strong>Tổng thời gian:</strong> <span id="duration"></span></p>
-        </div>
-      </div>
-      <div class="section-title">Chi tiết dịch vụ</div>
-      <table>
-        <thead><tr><th>STT</th><th>Nội dung</th><th class="text-center">Đơn vị</th><th class="text-center">Số lượng</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>Phí trông giữ xe</td><td class="text-center">Lượt</td><td class="text-center">1</td><td class="text-right feeDisplay"></td><td class="text-right feeDisplay"></td></tr>
-          <tr class="total-row"><td colspan="5" class="text-right">Tổng cộng:</td><td class="text-right feeDisplay"></td></tr>
-        </tbody>
-      </table>
-      <div id="fee-breakdown-container"></div>
-      <p><strong>Số tiền bằng chữ:</strong> <span id="feeInWords"></span> đồng.</p>
-      <p><strong>Phương thức thanh toán:</strong> <span id="paymentMethod"></span></p>
-      <div class="footer">
-        <div><p><strong>Người nộp tiền</strong></p><p>(Ký, ghi rõ họ tên)</p></div>
-        <div><p><strong>Người thu tiền</strong></p><p>(Ký, ghi rõ họ tên)</p><p style="margin-top: 50px;" id="footerOrgName"></p></div>
-      </div>
-      <p class="text-center" style="margin-top: 20px; font-size: 10px;">Cảm ơn Quý khách đã sử dụng dịch vụ!</p>
-    </div>
+    <!-- NÂNG CẤP: Container này sẽ được điền nội dung từ receipt_template.html -->
+    <div class="container" id="receipt-container"></div>
 
     <div class="actions">
         <button id="download-pdf-btn" class="btn-action">Tải PDF & In</button>
@@ -84,58 +32,89 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
-            const data = {};
-            for (const [key, value] of params.entries()) {
-                data[key] = decodeURIComponent(value);
-            }
-
-            // Điền dữ liệu vào các thẻ span/div
-            document.getElementById('orgName').textContent = data.orgName || 'ĐOÀN TNCS HỒ CHÍ MINH PHƯỜNG BA ĐÌNH';
-            document.getElementById('footerOrgName').textContent = data.orgName || 'ĐOÀN TNCS HỒ CHÍ MINH PHƯỜNG BA ĐÌNH';
-            document.getElementById('orgAddress').textContent = data.orgAddress || '68 Nguyễn Thái Học, Phường Ba Đình, Thành phố Hà Nội';
-            document.getElementById('taxId').textContent = 'Mã số thuế: ' + (data.taxId || '0123456789');
-            document.getElementById('orgHotline').textContent = 'Hotline: ' + (data.orgHotline || 'Đang cập nhật');
-            document.getElementById('receiptDate').textContent = `Ngày ${data.exitDate} tháng ${data.exitMonth} năm ${data.exitYear}`;
-            document.getElementById('uniqueID').textContent = data.uniqueID || '--';
-            document.getElementById('plate').textContent = data.plate || '--';
-            document.getElementById('vehicleType').textContent = data.vehicleType || '--';
-            document.getElementById('entryTimeDisplay').textContent = data.entryTimeDisplay || '--';
-            document.getElementById('exitTimeDisplay').textContent = data.exitTimeDisplay || '--';
-            document.getElementById('duration').textContent = data.duration || '--';
-            document.querySelectorAll('.feeDisplay').forEach(el => el.textContent = data.feeDisplay || '0');
-            document.getElementById('feeInWords').textContent = (data.feeInWords || 'Không') + (data.feeInWords ? '' : ' đồng');
             
-            // NÂNG CẤP: Thêm phụ chú chi tiết, rõ ràng cho từng trường hợp miễn phí.
-            // Điều này giúp khách hàng hiểu rõ lý do và không cần hỏi lại nhân viên.
-            const paymentMethodSpan = document.getElementById('paymentMethod');
-            const paymentMethod = data.paymentMethod || '--';
-            if (paymentMethod === 'VIP') {
-                paymentMethodSpan.innerHTML = `${paymentMethod} <em style="font-size: 0.9em; color: #555;">(Miễn phí theo chính sách dành cho khách mời/xe ưu tiên)</em>`;
-            } else if (paymentMethod === 'Miễn phí') {
-                // SỬA LỖI: Lấy số phút miễn phí từ tham số URL
-                const freeMinutes = data.freeMinutes || 15; // Mặc định 15 nếu không có
-                paymentMethodSpan.innerHTML = `${paymentMethod} <em style="font-size: 0.9em; color: #555;">(Miễn phí do thời gian gửi xe dưới ${freeMinutes} phút)</em>`;
-            } else {
-                paymentMethodSpan.textContent = paymentMethod;
+            // 1. Lấy mẫu biên lai từ file
+            let templateHtml = '';
+            try {
+                const response = await fetch('receipt_template.html');
+                if (!response.ok) throw new Error('Không thể tải mẫu biên lai.');
+                templateHtml = await response.text();
+            } catch (error) {
+                document.body.innerHTML = `<p style="color: red; text-align: center;">${error.message}</p>`;
+                return;
             }
 
-            // Hiển thị bảng diễn giải nếu có dữ liệu
-            if (data.dayHours > 0 || data.nightHours > 0) {
-                const breakdownHtml = `
-                    <div class="section-title">Diễn giải cách tính phí</div>
-                    <table style="max-width: 400px;">
-                        <thead><tr><th>Loại giờ</th><th>Số giờ</th><th>Đơn giá (/giờ)</th></tr></thead>
-                        <tbody>
-                            <tr><td>Giờ ban ngày</td><td class="text-center">${data.dayHours || 0}</td><td class="text-right">${data.dayRateFormatted || '0đ'}</td></tr>
-                            <tr><td>Giờ ban đêm</td><td class="text-center">${data.nightHours || 0}</td><td class="text-right">${data.nightRateFormatted || '0đ'}</td></tr>
-                        </tbody>
-                    </table>`;
-                document.getElementById('fee-breakdown-container').innerHTML = breakdownHtml;
+            // 2. Chuẩn bị dữ liệu để điền vào mẫu
+            const formatDateTime = (d) => d ? new Date(d).toLocaleString('vi-VN') : '--';
+            const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
+            const calculateDuration = (start, end) => {
+                if (!start || !end) return '--';
+                let diff = Math.floor((new Date(end) - new Date(start)) / 1000);
+                if (diff < 0) return '0m';
+                const d = Math.floor(diff / 86400); diff %= 86400;
+                const h = Math.floor(diff / 3600); diff %= 3600;
+                const m = Math.floor(diff / 60);
+                return [d > 0 ? `${d}d` : '', h > 0 ? `${h}h` : '', `${m}m`].filter(Boolean).join(' ') || '0m';
+            };
+
+            // SỬA LỖI: Xử lý an toàn trường hợp exitTime có thể là null
+            const exitTimeParam = params.get('exitTime');
+            const exitDate = exitTimeParam ? new Date(exitTimeParam) : new Date(); // Nếu không có, dùng ngày hiện tại
+
+            const data = {
+                orgName: APP_CONFIG.organizationName || 'ĐOÀN THANH NIÊN',
+                orgAddress: 'Đang cập nhật',
+                taxId: 'Đang cập nhật',
+                orgHotline: 'Đang cập nhật',
+                exitDate: exitDate.getDate(),
+                exitMonth: exitDate.getMonth() + 1,
+                exitYear: exitDate.getFullYear(),
+                uniqueID: params.get('uniqueID'),
+                plate: params.get('plate'),
+                vehicleType: 'Xe máy',
+                entryTimeDisplay: formatDateTime(params.get('entryTime')),
+                exitTimeDisplay: formatDateTime(params.get('exitTime')),
+                duration: calculateDuration(params.get('entryTime'), params.get('exitTime')),
+                feeDisplay: formatCurrency(params.get('fee')),
+                paymentMethod: params.get('paymentMethod'),
+                isVip: params.get('isVip') === 'true',
+                freeMinutes: APP_CONFIG.fee.freeMinutes,
+                // Các trường này hiện chưa có trong logic tính toán chi tiết, sẽ bổ sung sau
+                dayHours: 0,
+                nightHours: 0,
+                dayRateFormatted: formatCurrency(APP_CONFIG.fee.dayRate),
+                nightRateFormatted: formatCurrency(APP_CONFIG.fee.nightRate),
+                feeInWords: 'Không' // Cần một hàm chuyển số thành chữ phức tạp hơn
+            };
+
+            // 3. Điền dữ liệu vào mẫu
+            let finalHtml = templateHtml;
+            for (const key in data) {
+                const regex = new RegExp(`<?= ${key} ?>`, 'g');
+                finalHtml = finalHtml.replace(regex, data[key]);
             }
 
-            // Logic tải PDF
+            // 4. Xử lý logic điều kiện cho phương thức thanh toán (sau khi đã điền các giá trị cơ bản)
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = finalHtml;
+            const paymentDisplay = tempDiv.querySelector('#payment-method-display');
+            if (paymentDisplay) {
+                if (data.paymentMethod === 'VIP' || data.isVip) {
+                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-vip').innerHTML;
+                } else if (data.paymentMethod === 'Miễn phí') {
+                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-free').innerHTML;
+                } else {
+                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-normal').innerHTML;
+                }
+            }
+            finalHtml = tempDiv.innerHTML;
+
+            // 4. Hiển thị biên lai đã hoàn chỉnh
+            document.getElementById('receipt-container').innerHTML = finalHtml;
+
+            // 5. Gắn sự kiện cho nút tải PDF
             const downloadBtn = document.getElementById('download-pdf-btn');
             downloadBtn.addEventListener('click', () => {
                 downloadBtn.disabled = true;
@@ -145,7 +124,7 @@
 
                 const opt = {
                     margin: [0.3, 0.2, 0.3, 0.2], // Lề trên, phải, dưới, trái (inch)
-                    filename: `BienLai_${data.plate || 'xe'}.pdf`,
+                    filename: `BienLai_${params.get('plate') || 'xe'}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true },
                     jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }

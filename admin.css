@@ -208,6 +208,12 @@ body {
     border-color: var(--primary-accent);
     box-shadow: 0 0 0 3px var(--primary-accent-light);
 }
+.form-error-message {
+    color: var(--danger-color);
+    margin-top: 1rem;
+    font-weight: 500;
+    min-height: 1.2em; /* Giữ khoảng trống để giao diện không bị giật */
+}
 .form-group textarea { resize: vertical; }
 
 /* --- Thanh tìm kiếm --- */

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài đặt Tài khoản - Quản trị</title>
+    
+    <!-- Fonts & Libraries -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- NÂNG CẤP: Thư viện hỗ trợ Sinh trắc học (WebAuthn) -->
+    <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+
+    <!-- Config & Styles -->
+    <link rel="stylesheet" href="admin.css"> <!-- Dùng chung CSS với trang admin -->
+    <script src="config.js"></script>
+</head>
+<body>
+    <div id="main-admin-content" style="display: none; width: 100%; height: 100vh;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
+                <h2>Cài đặt</h2>
+            </div>
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="index.html" title="Quay về trang điều hành chính"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span>Bảng điều hành</span></a></li>
+                    <li><a href="settings.html" class="nav-link active" data-target="page-account-settings"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span>Tài khoản</span></a></li>
+                    <!-- Thêm các mục cài đặt khác ở đây trong tương lai -->
+                </ul>
+            </nav>
+        </div>
+        <div class="sidebar-overlay"></div>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="page-header">
+                    <button id="menu-toggle-btn" class="menu-toggle-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <h1 id="page-title">Cài đặt Tài khoản</h1>
+                    <p id="page-description">Quản lý thông tin đăng nhập và bảo mật của bạn.</p>
+                </div>
+                <div class="top-bar-actions">
+                    <div id="user-profile-widget" class="user-profile-widget">
+                        <!-- Thông tin người dùng sẽ được JS chèn vào đây -->
+                    </div>
+                </div>
+            </header>
+
+            <!-- Nội dung trang cài đặt -->
+            <div id="page-account-settings" class="page-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Đăng nhập Sinh trắc học (Vân tay/Khuôn mặt)</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="page-description" style="margin-bottom: 1.5rem;">
+                            Thiết lập đăng nhập không cần mật khẩu bằng cách sử dụng cảm biến vân tay hoặc nhận dạng khuôn mặt trên thiết bị của bạn.
+                            Tính năng này an toàn hơn và chỉ hoạt động trên thiết bị bạn đã đăng ký.
+                        </p>
+                        <div id="biometric-status" class="biometric-status">
+                            <!-- Trạng thái sẽ được JS chèn vào đây -->
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <button id="register-biometric-btn" class="action-button btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                <span>Thiết lập Đăng nhập Sinh trắc học</span>
+                            </button>
+                             <button id="remove-biometric-btn" class="action-button btn-danger" style="display: none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                <span>Hủy đăng ký trên thiết bị này</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NÂNG CẤP: Card Đổi Mã PIN -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Đổi Mã PIN</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="change-pin-form">
+                            <div class="form-group">
+                                <label for="current-pin">Mã PIN hiện tại</label>
+                                <input type="password" id="current-pin" required autocomplete="current-password">
+                            </div>
+                            <div class="form-grid" style="margin-top: 1.25rem;">
+                                <div class="form-group">
+                                    <label for="new-pin">Mã PIN mới (4-6 chữ số)</label>
+                                    <input type="password" id="new-pin" required autocomplete="new-password" pattern="\d{4,6}" title="Mã PIN phải là 4 đến 6 chữ số.">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-new-pin">Xác nhận mã PIN mới</label>
+                                    <input type="password" id="confirm-new-pin" required autocomplete="new-password">
+                                </div>
+                            </div>
+                            <p id="change-pin-error-message" class="form-error-message"></p>
+                            <button type="submit" id="save-pin-btn" class="action-button btn-primary" style="margin-top: 1.5rem;">Lưu Mã PIN mới</button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Thêm các card cài đặt khác ở đây -->
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- Tệp JS riêng cho trang cài đặt -->
+    <script src="settings.js"></script>
+</body>
+</html>

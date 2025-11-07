@@ -58,19 +58,18 @@
                     <li><a href="#" class="nav-link" data-target="page-transactions"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/><path d="m15 5 3 3"/></svg><span>Giao dịch</span></a></li>
                     <li><a href="#" class="nav-link" data-target="page-locations"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Quản lý Vị trí</span></a></li>
                     <li><a href="#" class="nav-link" data-target="page-security"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>An ninh</span></a></li>
+                    <li><a href="#" class="nav-link" data-target="page-staff"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Nhân sự</span></a></li>
                 </ul>
             </nav>
         </div>
-        <!-- NÂNG CẤP: Lớp phủ để đóng menu trên di động -->
+        <!-- Lớp phủ để đóng menu trên di động -->
         <div class="sidebar-overlay"></div>
 
         <main class="main-content">
-            <!-- ================================================================= -->
-            <!-- THANH ĐIỀU HƯỚNG TRÊN (TOP BAR) - THIẾT KẾ MỚI -->
-            <!-- ================================================================= -->
+            <!-- THANH ĐIỀU HƯỚNG TRÊN (TOP BAR) -->
             <header class="top-bar">
                 <div class="page-header">
-                    <!-- NÂNG CẤP: Nút Hamburger Menu cho di động -->
+                    <!-- Nút Hamburger Menu cho di động -->
                     <button id="menu-toggle-btn" class="menu-toggle-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                     </button>
@@ -137,8 +136,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3>Tất cả Giao dịch</h3>
-                        <!-- NÂNG CẤP V3: Thanh tìm kiếm Glassmorphism -->
-                        <div id="transaction-search-wrapper" class="search-input-wrapper"> <!-- Đổi tên class thành id để JS tham chiếu chính xác -->
+                        <div id="transaction-search-wrapper" class="search-input-wrapper">
                             <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                             <input type="text" id="transaction-search-input" placeholder="Tìm theo Biển số, ID, SĐT...">
                             <div class="scanner-line"></div>
@@ -157,10 +155,9 @@
                 </div>
             </div>
 
-            <!-- PAGE: QUẢN LÝ VỊ TRÍ (GỘP BẢN ĐỒ & BÃI ĐỖ XE) -->
+            <!-- PAGE: QUẢN LÝ VỊ TRÍ -->
             <div id="page-locations" class="page-content">
                 <div class="locations-grid-layout">
-                    <!-- Cột trái: Bản đồ -->
                     <div class="card" style="height: calc(100vh - 12rem);">
                         <div class="card-header">
                             <h3>Bản đồ các điểm trông giữ xe</h3>
@@ -168,7 +165,6 @@
                         </div>
                         <div class="card-body" style="height: calc(100% - 60px);"><div id="map-container" style="width: 100%; height: 100%; border-radius: var(--border-radius-md);"></div></div>
                     </div>
-                    <!-- Cột phải: Danh sách và quản lý -->
                     <div class="card" style="height: calc(100vh - 12rem); display: flex; flex-direction: column;">
                         <div class="card-header">
                             <h3>Danh sách Bãi đỗ xe</h3>
@@ -188,7 +184,7 @@
 
             <!-- PAGE: AN NINH -->
             <div id="page-security" class="page-content">
-                <div class="security-layout-grid" style="align-items: start;"> <!-- Bố cục lưới cho trang an ninh -->
+                <div class="security-layout-grid" style="align-items: start;">
                     <div class="card">
                         <div class="card-header"><h3>Gửi Cảnh báo An ninh</h3></div>
                         <div class="card-body">
@@ -223,6 +219,32 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PAGE: QUẢN LÝ NHÂN SỰ -->
+            <div id="page-staff" class="page-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Quản lý Nhân sự Tạm thời</h3>
+                        <button id="add-staff-btn" class="action-button btn-primary">Thêm Nhân viên</button>
+                    </div>
+                    <div class="card-body">
+                        <p class="page-description" style="margin-bottom: 1.5rem;">Tạo và quản lý tài khoản đăng nhập cho nhân viên tạm thời (Tình nguyện viên). Các tài khoản này chỉ có thể truy cập Bảng điều hành chính.</p>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Tên đăng nhập</th>
+                                        <th>Họ và Tên</th>
+                                        <th>Bãi đỗ được phân công</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staff-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -249,12 +271,10 @@
                         <label for="location-operating-hours">Giờ hoạt động</label>
                         <input type="text" id="location-operating-hours" placeholder="Ví dụ: 08:00 – 22:00">
                     </div>
-                    <!-- NÂNG CẤP: Tên sự kiện -->
                     <div class="form-group" style="margin-top: 1.25rem;">
                         <label for="location-event-name">Tên sự kiện (nếu có)</label>
                         <input type="text" id="location-event-name" placeholder="Ví dụ: Lễ hội Áo dài 2025">
                     </div>
-                    <!-- NÂNG CẤP TOÀN DIỆN: Lựa chọn loại hình thu phí -->
                     <div class="form-group" style="grid-column: 1 / -1; margin-top: 1.25rem;">
                         <label for="location-fee-policy-type">Loại hình thu phí</label>
                         <select id="location-fee-policy-type">
@@ -264,7 +284,6 @@
                             <option value="daily">Thu phí theo ngày</option>
                         </select>
                     </div>
-                    <!-- NÂNG CẤP: Thêm tùy chọn thời điểm thu phí -->
                     <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="location-fee-collection-policy">Thời điểm thu phí</label>
                         <select id="location-fee-collection-policy">
@@ -273,7 +292,6 @@
                         </select>
                         <small style="margin-top: 5px; color: var(--text-secondary);">Lưu ý: "Thu phí khi vào" chỉ áp dụng cho loại hình "Theo lượt" hoặc "Theo ngày".</small>
                     </div>
-                    <!-- NÂNG CẤP TOÀN DIỆN: Các ô nhập phí tùy chỉnh (sẽ được ẩn/hiện bằng JS) -->
                     <div id="custom-fee-inputs-wrapper" class="custom-fee-inputs-wrapper" style="grid-column: 1 / -1; margin-top: 1.25rem; border-top: 1px solid var(--border-color-light); padding-top: 1.25rem;">
                         <div class="fee-input-group" data-policy="hourly" style="display: none;">
                             <div class="form-group">
@@ -308,44 +326,43 @@
         </div>
     </div>
 
+    <!-- MODAL: THÊM/SỬA NHÂN VIÊN -->
+    <div id="staff-modal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 id="staff-modal-title">Thêm Nhân viên mới</h2>
+                <button id="close-staff-modal-btn" class="close-btn" title="Đóng">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="staff-form">
+                    <input type="hidden" id="staff-id">
+                    <div class="form-group" style="margin-bottom: 1.25rem;"><label for="staff-username">Tên đăng nhập (không dấu, không cách)</label><input type="text" id="staff-username" required></div>
+                    <div class="form-group" style="margin-bottom: 1.25rem;"><label for="staff-pin">Mã PIN (4-6 chữ số)</label><input type="password" id="staff-pin" required pattern="\d{4,6}" title="Mã PIN phải là 4 đến 6 chữ số."></div>
+                    <div class="form-group" style="margin-bottom: 1.25rem;"><label for="staff-fullname">Họ và Tên</label><input type="text" id="staff-fullname" required></div>
+                    <div class="form-group"><label for="staff-location-assignment">Phân công cho Bãi đỗ</label><select id="staff-location-assignment" required></select></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="delete-staff-btn" class="action-button btn-danger" style="margin-right: auto; display: none;">Xóa</button>
+                <button type="button" id="cancel-staff-btn" class="action-button btn-secondary">Hủy</button>
+                <button type="button" id="save-staff-btn" class="action-button btn-primary">Lưu</button>
+            </div>
+        </div>
+    </div>
+
     <div id="admin-qr-scanner-modal" class="modal">
         <div class="modal-content" style="max-width: 480px;">
             <div class="modal-header"><h2>Quét mã QR</h2><button id="close-admin-scanner-btn" class="close-btn" title="Đóng">&times;</button></div>
             <div class="modal-body">
                 <video id="admin-camera-feed"></video>
-                <!-- NÂNG CẤP: Giao diện quét mới -->
                 <div class="scanner-overlay">
                     <div class="scanner-viewfinder">
                         <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
                     </div>
                 </div>
-                <!-- NÂNG CẤP: Lớp phủ hiệu ứng quét thành công -->
-                <div id="admin-scan-feedback"> <!-- SỬA LỖI: Bỏ class không cần thiết, chỉ giữ lại ID -->
+                <div id="admin-scan-feedback">
                     <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
                 </div> 
-            </div>
-        </div>
-    </div>
-
-    <div id="edit-transaction-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><h2>Chỉnh sửa giao dịch</h2><button id="close-edit-modal-btn" class="close-btn" title="Đóng">&times;</button></div>
-            <div class="modal-body">
-                <form id="edit-transaction-form">
-                    <input type="hidden" id="edit-unique-id">
-                    <div class="form-grid">
-                        <div class="form-group"><label for="edit-plate">Biển số xe</label><input type="text" id="edit-plate" required></div>
-                        <div class="form-group"><label for="edit-fee">Phí (VNĐ)</label><input type="number" id="edit-fee"></div>
-                        <div class="form-group"><label for="edit-entry-time">Giờ vào</label><input type="datetime-local" id="edit-entry-time"></div>
-                        <div class="form-group"><label for="edit-exit-time">Giờ ra</label><input type="datetime-local" id="edit-exit-time"></div>
-                        <div class="form-group"><label for="edit-payment-method">Phương thức thanh toán</label><select id="edit-payment-method"><option value="">Chưa chọn</option><option value="Tiền mặt">Tiền mặt</option><option value="Chuyển khoản QR">Chuyển khoản QR</option><option value="Miễn phí">Miễn phí</option><option value="VIP">VIP</option></select></div>
-                        <div class="form-group"><label for="edit-status">Trạng thái</label><select id="edit-status"><option value="Đang gửi">Đang gửi</option><option value="Đã rời bãi">Đã rời bãi</option></select></div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="cancel-edit-btn" class="action-button btn-secondary">Hủy</button>
-                <button type="submit" form="edit-transaction-form" id="save-edit-btn" class="action-button btn-primary">Lưu thay đổi</button>
             </div>
         </div>
     </div>
