@@ -20,6 +20,9 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <!-- NÂNG CẤP: Thư viện hỗ trợ Sinh trắc học (WebAuthn) -->
     <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+    <!-- NÂNG CẤP OCR: Thêm thư viện Tesseract.js phiên bản 5. Đây là tất cả những gì cần thiết để "cài đặt" OCR. -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+
 
     <!-- Cấu hình -->
     <script src="config.js"></script>
@@ -127,6 +130,7 @@
                             </div>
                             <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói"></button>
                             <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để lấy xe"></button>
+                            <button type="button" id="scan-plate-btn" class="icon-btn" title="Quét nhận diện biển số xe"></button>
                         </div>
                         <!-- Vùng chứa gợi ý biển số xe -->
                         <div id="plate-suggestions" class="plate-suggestions"></div>

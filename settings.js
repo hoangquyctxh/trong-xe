@@ -70,6 +70,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateBiometricStatus = async () => {
         try {
+            // NÂNG CẤP: Kiểm tra xem trình duyệt có hỗ trợ sinh trắc học của thiết bị không
+            const isBiometricSupported = await SimpleWebAuthnBrowser.platformAuthenticatorIsAvailable();
+            if (!isBiometricSupported) {
+                elements.biometricStatus.innerHTML = `
+                    <span class="status-unregistered">Không được hỗ trợ</span>
+                    <p>Thiết bị hoặc trình duyệt này không hỗ trợ đăng nhập bằng sinh trắc học (vân tay/khuôn mặt).</p>
+                `;
+                elements.registerBtn.style.display = 'none';
+                elements.removeBtn.style.display = 'none';
+                // Dừng hàm tại đây vì không cần kiểm tra thêm
+                return;
+            }
+
             const { data, error } = await db.from('staff_accounts')
                 .select('webauthn_credential_id')
                 .eq('username', currentUser.username)
@@ -124,9 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Bước 2: Bắt đầu quá trình đăng ký trên trình duyệt
             const credential = await SimpleWebAuthnBrowser.startRegistration(options);
 
-            // Bước 3: Chuyển đổi dữ liệu để lưu vào DB
+            // Bước 3: Chuyển đổi dữ liệu để lưu vào DB - SỬA LỖI TRIỆT ĐỂ
+            // Lỗi trước đây là dùng credential.response.publicKey thay vì getPublicKey()
+            // và không lấy getAuthenticatorData() và getClientDataJSON().
             const credentialID_base64 = SimpleWebAuthnBrowser.base64url.encode(credential.rawId);
-            const publicKey_base64 = SimpleWebAuthnBrowser.base64url.encode(credential.response.publicKey);
+            const publicKey_base64 = SimpleWebAuthnBrowser.base64url.encode(credential.response.getPublicKey());
 
             // Bước 4: Cập nhật thông tin vào Supabase
             const { error } = await db.from('staff_accounts')
@@ -143,8 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
             updateBiometricStatus();
 
         } catch (err) {
-            showToast(`Đăng ký thất bại: ${err.message || err}`, 'error');
-            console.error(err);
+            // SỬA LỖI TRIỆT ĐỂ: Xử lý tất cả các loại lỗi từ thư viện WebAuthn.
+            // Chuyển đổi đối tượng lỗi thành một chuỗi thông báo có ý nghĩa.
+            let errorMessage = 'Đã xảy ra lỗi không xác định.';
+            if (err.name === 'NotAllowedError') {
+                errorMessage = 'Thao tác đã bị hủy bởi người dùng.';
+                showToast(errorMessage, 'info');
+            } else {
+                errorMessage = err.message || JSON.stringify(err);
+                showToast(`Đăng ký thất bại: ${errorMessage}`, 'error');
+                console.error('Lỗi đăng ký sinh trắc học:', err);
+            }
         } finally {
             elements.registerBtn.disabled = false;
             elements.registerBtn.querySelector('span').textContent = 'Thiết lập Đăng nhập Sinh trắc học';

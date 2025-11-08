@@ -129,12 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!elements.toastContainer) return;
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        
-        // SỬA LỖI TRIỆT ĐỂ: Đảm bảo `message` luôn là một chuỗi trước khi hiển thị.
-        // Chuyển đổi đối tượng lỗi thành chuỗi một cách an toàn.
-        const messageText = (typeof message === 'object' && message.message) ? message.message : String(message);
 
-        const titles = { success: 'Thành công!', error: 'Lỗi!', info: 'Thông báo' }; // Sửa lỗi cú pháp
+        // SỬA LỖI TRIỆT ĐỂ: Đảm bảo `message` luôn là một chuỗi.
+        // Lỗi "e.replace is not a function" xảy ra ở đây khi `message` là một object.
+        const messageText = (typeof message === 'object' && message !== null) ? (message.message || JSON.stringify(message)) : String(message);
+
+        const titles = { success: 'Thành công!', error: 'Lỗi!', info: 'Thông báo' };
         const icons = { success: '✅', error: '❌', info: 'ℹ️' };
         toast.innerHTML = `${icons[type] || ''} <strong>${titles[type] || ''}</strong> <span>${messageText}</span>`;
 

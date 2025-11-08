@@ -3,68 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cổng Tra cứu Thông tin Gửi xe</title>
-    
-    <!-- Font -->
+    <title>Tra cứu Lịch sử Gửi xe</title>
+    <!-- THÊM MỚI: Thư viện Supabase -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- CSS & Libraries -->
-    <link rel="stylesheet" href="style.css"> <!-- SỬ DỤNG CHUNG GIAO DIỆN VỚI TRANG CHÍNH -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
-    <!-- Config -->
     <script src="config.js"></script>
+    <style>
+        /* --- ĐỒNG BỘ GIAO DIỆN VỚI TRANG CHÍNH --- */
+        :root {
+            --bg-main: #e9ebee;
+            --bg-card: #ffffff;
+            --border-color: #d1d5db;
+            --primary-accent: #0d47a1;
+            --primary-accent-light: #1565c0;
+            --text-primary: #333333;
+            --text-secondary: #777777;
+            --success-color: #2e7d32;
+            --border-radius-md: 0; /* Vuông vức */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            margin: 0;
+            line-height: 1.6;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 25px;
+        }
+        /* --- HEADER MỚI --- */
+        header {
+            background: var(--bg-card); padding: 15px 25px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+        .header-title { display: flex; align-items: center; gap: 15px; }
+        .header-title .logo img { width: 50px; height: auto; }
+        .title-group { display: flex; flex-direction: column; }
+        .header-title .subtitle { font-size: 1rem; color: var(--text-secondary); font-weight: 500; line-height: 1; margin: 0; }
+        .header-title h1 { font-size: 1.8rem; color: var(--text-primary); font-weight: 700; line-height: 1.2; margin: 0; }
+
+        /* --- NÂNG CẤP: KHU VỰC TÌM KIẾM --- */
+        #search-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            box-shadow: var(--shadow-md);
+        }
+        .search-form { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-form input {
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        .search-form button, .btn-scan-qr {
+            box-shadow: var(--shadow-sm);
+            padding: 10px 20px;
+            border: 1px solid var(--primary-accent);
+            background-image: linear-gradient(to bottom, var(--primary-accent-light), var(--primary-accent));
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .or-divider { text-align: center; color: var(--text-secondary); margin: 20px 0; font-weight: bold; position: relative; }
+        .or-divider::before, .or-divider::after {
+            content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border-color);
+        }
+        .or-divider::before { left: 0; }
+        .or-divider::after { right: 0; }
+        .btn-scan-qr { width: 100%; }
+
+        /* --- KHUNG BIỂN SỐ --- */
+        .plate-display-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .plate-display-wrapper .label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        .plate-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: var(--primary-accent);
+        }
+
+        /* --- DANH SÁCH LỊCH SỬ --- */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .history-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            border-radius: var(--border-radius-md);
+            overflow: hidden; /* Để header có nền */
+        }
+        .history-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .history-card-header .date {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .history-card-body { padding: 0; }
+        .history-card .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .history-card .detail-item:last-child { border-bottom: none; }
+        .history-card .label {
+            color: var(--text-secondary);
+        }
+        .history-card .value {
+            font-weight: 600;
+        }
+        .history-card .status-badge {
+            font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white;
+        }
+        .history-card .status-badge.parking { background-color: var(--success-color); }
+        .history-card .status-badge.departed { background-color: var(--text-secondary); }
+        
+        /* --- NÚT HÀNH ĐỘNG --- */
+        .receipt-action {
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-top: 1px solid var(--border-color);
+            text-align: right;
+        }
+        .btn-print {
+            background: var(--primary-accent); color: white; border: none; padding: 10px 15px;
+            border-radius: var(--border-radius-md); cursor: pointer; font-weight: bold; text-decoration: none;
+            display: inline-block;
+            white-space: nowrap; /* Ngăn nút bị xuống dòng */
+        }
+        .message-box {
+            text-align: center; padding: 3em; background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md);
+        }
+
+        /* --- MODAL QUÉT QR --- */
+        .modal { 
+            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none; align-items: center; justify-content: center; 
+        }
+        .modal-content {
+            background: var(--bg-card); padding: 20px; max-width: 500px; width: 90%; box-shadow: var(--shadow-lg);
+        }
+        #camera-feed { width: 100%; height: auto; border: 1px solid var(--border-color); }
+    </style>
 </head>
 <body>
-    <!-- Header được thiết kế lại, đồng bộ với trang chính -->
-    <header class="app-header">
-        <div class="container header-container">
-            <div class="header-title">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo" class="logo">
-                <div class="title-group">
-                    <p class="subtitle">Cổng tra cứu thông tin khách hàng</p>
-                    <h1>Lịch sử Gửi xe</h1>
-                </div>
+    <header>
+        <div class="header-title">
+            <div class="logo">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
             </div>
+            <div class="title-group">
+                <p class="subtitle">Cổng tra cứu thông tin khách hàng</p>
+                <h1>Lịch sử Gửi xe</h1>
+            </div> 
         </div>
     </header>
 
     <div class="container">
-        <!-- Khu vực tìm kiếm được thiết kế lại với class 'card' -->
-        <div id="search-section" class="card" style="margin-top: 2rem;">
-            <div class="card__body">
-                <form id="plate-search-form" class="input-group">
-                    <div class="input-wrapper">
-                        <input type="text" id="plate-input" placeholder="Nhập Biển số, SĐT hoặc Mã vé..." required autocomplete="off">
-                    </div>
-                    <button type="submit" class="icon-btn" title="Tìm kiếm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    </button>
-                    <button id="scan-qr-btn" type="button" class="icon-btn" title="Quét mã QR từ vé xe">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg>
-                    </button>
-                </form>
+        <!-- NÂNG CẤP: Khu vực tìm kiếm -->
+        <div id="search-section">
+            <form id="plate-search-form" class="search-form">
+                <input type="text" id="plate-input" placeholder="Nhập biển số xe của bạn..." required>
+                <button type="submit">Tìm kiếm</button>
+            </form>
+            <div class="or-divider">HOẶC</div>
+            <button id="scan-qr-btn" class="btn-scan-qr" type="button">Quét mã QR từ vé xe</button>
+        </div>
+
+        <div id="results-section" style="display: none;">
+            <div id="plate-display-wrapper" class="plate-display-wrapper">
+                <div class="label">Biển số xe tra cứu</div>
+                <div id="plate-display" class="plate-display"></div>
+                <button id="download-all-btn" class="btn-print" style="width: auto; margin-top: 15px; display: none; background: var(--success-color); border-color: #256628; display: none;">Xem & In tất cả biên lai</button>
+            </div>
+            <div id="history-container" class="history-list">
+                <!-- Lịch sử sẽ được chèn vào đây -->
             </div>
         </div>
 
-        <!-- Khu vực hiển thị kết quả -->
-        <div id="results-section" style="display: none; margin-top: 2rem;">
-            <!-- Thông tin chung và nút tải -->
-            <div id="result-summary-card" class="card"></div>
-            <!-- Dòng thời gian lịch sử -->
-            <div id="history-timeline" class="history-timeline"></div>
+        <div id="message-box" class="message-box" style="display: none;">
+            <!-- Thông báo lỗi hoặc đang tải -->
         </div>
-
-        <!-- Thông báo lỗi hoặc đang tải -->
-        <div id="message-box" class="card" style="display: none; margin-top: 2rem; text-align: center;"></div>
     </div>
 
-    <!-- Modal sẽ được JS chèn vào đây -->
-    <div id="modal-container"></div>
+    <!-- NÂNG CẤP: Modal quét QR -->
+    <div id="qr-scanner-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px;">Quét mã QR trên vé xe</h3>
+            <video id="camera-feed" playsinline></video>
+
+            <button id="close-scanner-btn" style="width: 100%; margin-top: 15px; background: #6c757d; border-color: #6c757d;" class="btn-scan-qr">Đóng</button>
+        </div>
+    </div>
 
     <script src="lookup.js"></script>
 </body>

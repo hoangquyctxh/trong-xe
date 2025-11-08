@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchTermInput: document.getElementById('search-term'),
         micBtn: document.getElementById('mic-btn'),
         scanQrBtn: document.getElementById('scan-qr-btn'),
+        scanPlateBtn: document.getElementById('scan-plate-btn'), // NÂNG CẤP: Nút quét biển số
         formNewVehicle: document.getElementById('form-new-vehicle'),
         phoneNumberInput: document.getElementById('phone-number'),
         plateSuggestions: document.getElementById('plate-suggestions'),
@@ -94,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
         isIdle: false,
         isOnline: navigator.onLine,
         syncQueue: [],
+        ocrScanAnimation: null, // NÂNG CẤP: Biến cho animation quét OCR
+        ocrWorker: null, // NÂNG CẤP OCR: Worker để xử lý nhận dạng
     };
 
     // =========================================================================
@@ -580,6 +583,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'qr-scanner':
                     modalHtml = Templates.qrScannerModal();
                     break;
+                case 'plate-scanner': // NÂNG CẤP: Modal quét biển số
+                    modalHtml = Templates.plateScannerModal();
+                    break;
                 case 'payment':
                     modalHtml = Templates.paymentModal(data);
                     break;
@@ -642,6 +648,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (state.scanAnimation) {
                         cancelAnimationFrame(state.scanAnimation);
                         state.scanAnimation = null;
+                    }
+                    // NÂNG CẤP: Dừng quét OCR khi đóng modal
+                    if (state.ocrScanAnimation) {
+                        cancelAnimationFrame(state.ocrScanAnimation);
+                        state.ocrScanAnimation = null;
                     }
                     if (state.isProcessing) {
                         state.isProcessing = false;
@@ -734,6 +745,37 @@ document.addEventListener('DOMContentLoaded', () => {
             return this.modal('Quét mã QR để lấy xe', content, footer, '480px');
         },
 
+        // NÂNG CẤP: Template cho modal quét biển số
+        plateScannerModal() {
+            const content = `
+                <div class="qr-scanner-body">
+                    <video id="camera-feed" playsinline></video>
+                    <div class="scanner-overlay"><div class="scanner-viewfinder plate-viewfinder"></div></div>
+                    <!-- NÂNG CẤP: Thay thế div bằng input để cho phép chỉnh sửa -->
+                    <input type="text" id="ocr-result-input" class="ocr-result-overlay" placeholder="Kết quả sẽ hiện ở đây..." readonly>
+                    <!-- NÂNG CẤP: Thêm spinner vào đây -->
+                    <div id="ocr-spinner" class="ocr-spinner"></div>
+                </div>
+                <p style="text-align: center; color: var(--text-secondary); margin-top: 1rem;">Đưa biển số xe vào trong khung để nhận diện.</p>`;
+            const footer = `
+                <button class="action-button btn--secondary" data-action="close-modal">Hủy bỏ</button>
+                <button id="capture-plate-btn" class="action-button btn--check-in" data-action="capture-plate">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <span>Chụp & Nhận diện</span>
+                </button>
+                <!-- NÂNG CẤP: Nút chấp nhận kết quả, ẩn mặc định -->
+                <button id="accept-ocr-btn" class="action-button btn--check-in" data-action="accept-ocr" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span>Chấp nhận</span>
+                </button>
+                <!-- NÂNG CẤP: Nút Chụp lại, ẩn mặc định -->
+                <button id="retake-ocr-btn" class="action-button btn--secondary" data-action="retake-ocr" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    <span>Chụp lại</span>
+                </button>`;
+            return this.modal('Quét Biển số xe', content, footer, '640px');
+        },
+
         paymentModal({ fee, vehicle }) {
             const memo = `TTGX ${vehicle.plate} ${vehicle.unique_id}`;
             const qrUrl = `${APP_CONFIG.payment.imageUrlBase}&amount=${fee}&addInfo=${encodeURIComponent(memo)}`;
@@ -760,7 +802,37 @@ document.addEventListener('DOMContentLoaded', () => {
         formatDateTime: (d) => d ? new Date(d).toLocaleString('vi-VN') : '--',
         formatCurrency: (n) => new Intl.NumberFormat('vi-VN').format(n || 0),
         formatPhone: (p) => p || 'Chưa có',
-        cleanPlate: (p) => p ? p.toUpperCase().replace(/[^A-Z0-9]/g, '') : '',
+        
+        /**
+         * NÂNG CẤP TOÀN DIỆN: Hàm "huấn luyện" logic cho OCR.
+         * Chuyển đổi kết quả thô từ Tesseract thành biển số hợp lệ.
+         * @param {string} rawText - Chuỗi ký tự Tesseract trả về.
+         * @returns {string} Biển số đã được làm sạch và chuẩn hóa.
+         */
+        cleanPlate: (rawText) => {
+            if (!rawText || typeof rawText !== 'string') return '';
+
+            // Bước 1: NÂNG CẤP - Xử lý biển 2 dòng.
+            // Thay thế dấu xuống dòng (\n) bằng rỗng để nối 2 dòng lại.
+            let text = rawText.toUpperCase().replace(/\n/g, '');
+
+            // Bước 2: Loại bỏ các ký tự không hợp lệ.
+            // Giữ lại chữ, số, dấu chấm và gạch ngang để xử lý ở bước sau.
+            text = text.replace(/[^A-Z0-9\.\-]/g, '');
+
+            // Bước 3: Sửa các lỗi nhận dạng phổ biến (O -> 0, S -> 5, etc.)
+            // Đây là bước "huấn luyện" dựa trên kinh nghiệm thực tế.
+            text = text.replace(/O/g, '0')
+                       .replace(/S/g, '5')
+                       .replace(/B/g, '8')
+                       .replace(/G/g, '6')
+                       .replace(/Z/g, '2')
+                       .replace(/I/g, '1'); // Thêm: I hay bị nhầm với 1
+
+            // Bước 4: Loại bỏ dấu chấm và gạch ngang để có chuỗi cuối cùng.
+            return text.replace(/[\.\-]/g, '');
+        },
+
         calculateDuration: (start, end = new Date()) => {
             if (!start) return '--';
             let diff = Math.floor((new Date(end) - new Date(start)) / 1000);
@@ -986,7 +1058,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 App.loginSuccess(staffData);
 
             } catch (error) {
-                dom.staffLoginError.textContent = `Lỗi sinh trắc học: ${error.message}`;
+                // SỬA LỖI TRIỆT ĐỂ: Xử lý tất cả các loại lỗi từ thư viện WebAuthn.
+                let errorMessage = 'Đã xảy ra lỗi không xác định.';
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Thao tác xác thực đã bị hủy.';
+                } else {
+                    errorMessage = error.message || JSON.stringify(error);
+                }
+                dom.staffLoginError.textContent = `Lỗi sinh trắc học: ${errorMessage}`;
+                console.error('Lỗi đăng nhập sinh trắc học:', error);
             } finally {
                 dom.biometricLoginBtn.disabled = false;
                 dom.biometricLoginBtn.textContent = 'Đăng nhập bằng Vân tay/Khuôn mặt';
@@ -1127,8 +1207,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 newTransaction = await Api.checkIn(plate, phone, isVIP);
             }
 
-            UI.showModal('checkInReceipt', newTransaction);
-            await App.resetFormAndFetchData();
+            UI.showToast(`Đã gửi xe ${plate} thành công!`, 'success');
+            await App.resetFormAndFetchData(); // Thay thế modal biên lai bằng toast
         },
         
         async getPaymentResult(fee, vehicleData) {
@@ -1190,16 +1270,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!vehicle || state.selectedVehicle.status !== 'departed') {
                 throw new Error('Chức năng này chỉ dành cho xe đã rời bãi.');
             }
-            const params = new URLSearchParams({
-                uniqueID: vehicle.unique_id,
-                plate: vehicle.plate,
-                entryTime: vehicle.entry_time,
-                exitTime: vehicle.exit_time,
-                fee: vehicle.fee,
-                paymentMethod: vehicle.payment_method,
-                isVip: vehicle.is_vip,
-            });
-            window.open(`receipt.html?${params.toString()}`, '_blank');
+            // Vô hiệu hóa chức năng in lại biên lai
+            UI.showToast('Chức năng xem lại biên lai đã được tắt.', 'info');
             state.isProcessing = false;
             UI.renderActionButtons();
         },
@@ -1213,13 +1285,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const locationId = target.closest('.location-card').dataset.locationId;
                 const location = state.locations.find(l => l.id === locationId);
                 if (location) App.selectLocation(location);
-            } else if (action === 'confirm-yes') {
-                this.processConfirmation();
-            } else if (action === 'confirm-no') {
-                UI.closeModal();
-                state.isProcessing = false;
-            } else if (action === 'logout') {
-                this.handleLogout();
+                return;
+            }
+
+            // TÁI CẤU TRÚC: Sử dụng switch-case để quản lý các action trong modal tốt hơn
+            switch (action) {
+                case 'confirm-yes':
+                    this.processConfirmation();
+                    break;
+                case 'confirm-no':
+                    UI.closeModal();
+                    state.isProcessing = false;
+                    break;
+                case 'capture-plate':
+                    this.processCapturedPlate();
+                    break;
+                case 'accept-ocr':
+                    this.handleAcceptOcr();
+                    break;
+                case 'retake-ocr':
+                    this.handleRetakeOcr();
+                    break;
             }
         },
 
@@ -1230,8 +1316,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await Api.checkOut(vehicle.unique_id, 0, reason); // Sửa lỗi cú pháp
                 UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
-                // SỬA LỖI: Hiển thị biên lai cho cả trường hợp miễn phí
-                this.showReceipt(vehicle, 0, reason);
+                // Bỏ hiển thị biên lai
+                App.resetFormAndFetchData();
             } catch (error) {
                 UI.showToast(`Lỗi checkout: ${error.message}`, 'error');
             } finally {
@@ -1246,9 +1332,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 await Api.checkOut(vehicle.unique_id, fee, paymentMethod);
                 UI.showPaymentConfirmation('success', 'Thanh toán thành công!');
                 setTimeout(() => {
-                    UI.closeModal();
-                    // SỬA LỖI: Hiển thị biên lai đúng quy trình
-                    this.showReceipt(vehicle, fee, paymentMethod);
+                    UI.closeModal(); // Đóng modal thanh toán
+                    App.resetFormAndFetchData(); // Reset form thay vì hiển thị biên lai
                 }, 1500);
             } catch (error) {
                 UI.showToast(`Lỗi checkout: ${error.message}`, 'error');
@@ -1258,23 +1343,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         // NÂNG CẤP: Hàm hiển thị biên lai chuyên dụng, nhất quán
-        showReceipt(vehicle, fee, paymentMethod) {
-            const exitTime = new Date().toISOString();
-            const params = new URLSearchParams({
-                uniqueID: vehicle.unique_id,
-                plate: vehicle.plate,
-                entryTime: vehicle.entry_time,
-                exitTime: exitTime,
-                fee: fee,
-                paymentMethod: paymentMethod,
-                isVip: vehicle.is_vip,
-            });
-            
-            // Mở biên lai trong tab mới
-            window.open(`receipt.html?${params.toString()}`, '_blank');
-
-            // Reset form và tải lại dữ liệu sau khi đã mở biên lai
-            App.resetFormAndFetchData();
+        showReceipt(vehicle, fee, paymentMethod) { // Vô hiệu hóa hàm này
+            console.log("Chức năng hiển thị biên lai đã được tắt.");
+            App.resetFormAndFetchData(); // Chỉ reset form
         },
 
         handleThemeChange() {
@@ -1386,6 +1457,234 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.isProcessing = false;
             }
         },
+
+        // NÂNG CẤP: Mở modal quét biển số
+        async openPlateScanner() {
+            if (!('mediaDevices' in navigator)) return UI.showToast('Trình duyệt không hỗ trợ camera.', 'error');
+            UI.showModal('plate-scanner');
+            try {
+                state.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                const video = document.getElementById('camera-feed');
+                if (!video) return;
+
+                video.srcObject = state.cameraStream;
+                await video.play();
+
+                // NÂNG CẤP OCR: Chỉ khởi tạo Tesseract worker nếu nó chưa tồn tại
+                if (typeof Tesseract === 'undefined') {
+                    UI.showToast('Lỗi: Thư viện Tesseract.js chưa được tải.', 'error');
+                    UI.closeModal();
+                    return;
+                }
+
+                if (!state.ocrWorker) {
+                    UI.showToast('Đang tải bộ nhận dạng tiếng Việt (lần đầu)...', 'info');
+                    state.ocrWorker = await Tesseract.createWorker('vie', 1, {
+                        logger: m => console.log(m)
+                    });
+                    await state.ocrWorker.setParameters({
+                        tessedit_char_whitelist: 'ABCDEFGHIKLMNPSTUVXYZ0123456789-',
+                        // NÂNG CẤP: Chuyển sang chế độ nhận dạng một khối văn bản.
+                        // Điều này cho phép Tesseract đọc cả biển 1 dòng và 2 dòng.
+                        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+                    });
+                }
+
+                UI.showToast('Sẵn sàng quét biển số!', 'success');
+                // BỎ VÒNG LẶP: Không quét liên tục nữa.
+                // state.ocrScanAnimation = requestAnimationFrame(() => this.tickPlateScanner());
+
+            } catch (err) {
+                UI.showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error');
+                UI.closeModal();
+            }
+        },
+
+        /**
+         * NÂNG CẤP: Xử lý ảnh sau khi người dùng nhấn nút "Chụp".
+         * Bỏ vòng lặp quét liên tục, thay bằng xử lý một lần.
+         */
+        async processCapturedPlate() {
+            const video = document.getElementById('camera-feed');
+            const spinner = document.getElementById('ocr-spinner');
+            const captureBtn = document.getElementById('capture-plate-btn');
+
+            if (!video || !state.ocrWorker || state.isProcessing) return;
+
+            try {
+                state.isProcessing = true;
+                if (spinner) spinner.classList.add('active');
+                if (captureBtn) captureBtn.disabled = true;
+
+                // Chụp ảnh từ video và tiền xử lý
+                const canvas = document.createElement('canvas');
+                const viewfinder = document.querySelector('.scanner-viewfinder.plate-viewfinder');
+                const videoRect = video.getBoundingClientRect();
+                const viewfinderRect = viewfinder.getBoundingClientRect();
+
+                const scaleX = video.videoWidth / videoRect.width;
+                const scaleY = video.videoHeight / videoRect.height;
+                const cropX = (viewfinderRect.left - videoRect.left) * scaleX;
+                const cropY = (viewfinderRect.top - videoRect.top) * scaleY;
+                const cropWidth = viewfinderRect.width * scaleX;
+                const cropHeight = viewfinderRect.height * scaleY;
+                canvas.width = cropWidth;
+                canvas.height = cropHeight;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+                ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                const grayscaleData = new Uint8ClampedArray(data.length / 4);
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] * 0.299) + (data[i + 1] * 0.587) + (data[i + 2] * 0.114);
+                    grayscaleData[i / 4] = avg;
+                }
+
+                const histogram = Handlers.createGrayscaleHistogram(grayscaleData);
+                const optimalThreshold = Handlers.getOtsuThreshold(histogram, grayscaleData.length);
+
+                for (let i = 0; i < grayscaleData.length; i++) {
+                    const color = grayscaleData[i] > optimalThreshold ? 255 : 0;
+                    data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = color;
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                // Gửi ảnh đã xử lý cho Tesseract
+                const { data: { text, confidence } } = await state.ocrWorker.recognize(canvas);
+                const cleanedText = Utils.cleanPlate(text);
+                const resultInput = document.getElementById('ocr-result-input');
+
+                if (resultInput) {
+                    resultInput.value = cleanedText; // Điền kết quả vào ô input
+                    resultInput.classList.add('visible');
+                }
+
+                // NÂNG CẤP: Luôn hiển thị nút "Chấp nhận" nếu có bất kỳ kết quả nào
+                if (cleanedText && cleanedText.length > 0) {
+                    console.log(`Found: ${cleanedText} (Confidence: ${confidence})`);
+                    
+                    // Cho phép người dùng chỉnh sửa kết quả
+                    resultInput.readOnly = false;
+
+                    // Hiển thị nút Chấp nhận và ẩn nút Chụp
+                    const acceptBtn = document.getElementById('accept-ocr-btn');
+                    const retakeBtn = document.getElementById('retake-ocr-btn'); // NÂNG CẤP
+                    if (retakeBtn) retakeBtn.style.display = 'flex'; // SỬA LỖI: Hiển thị nút Chụp lại
+                    if (acceptBtn) acceptBtn.style.display = 'flex';
+                    if (captureBtn) captureBtn.style.display = 'none';
+                } else {
+                    // Nếu không có kết quả, báo lỗi và cho phép chụp lại
+                    UI.showToast('Không nhận dạng được. Vui lòng thử chụp lại!', 'error');
+                }
+
+            } catch (error) {
+                console.error("Lỗi OCR:", error);
+                UI.showToast('Đã xảy ra lỗi trong quá trình nhận dạng.', 'error');
+            } finally {
+                // Luôn kích hoạt lại nút chụp và ẩn spinner sau khi xử lý xong
+                state.isProcessing = false;
+                if (spinner) spinner.classList.remove('active');
+                if (captureBtn) captureBtn.disabled = false;
+            }
+        },
+
+        /**
+         * NÂNG CẤP: Xử lý khi người dùng nhấn nút "Chấp nhận".
+         */
+        handleAcceptOcr() {
+            const resultInput = document.getElementById('ocr-result-input');
+            // Lấy giá trị đã được người dùng sửa (nếu có)
+            const acceptedPlate = resultInput ? resultInput.value.trim().toUpperCase() : '';
+
+            if (!acceptedPlate) {
+                UI.showToast('Không có kết quả để chấp nhận.', 'error');
+                return;
+            }
+
+            dom.searchTermInput.value = acceptedPlate;
+            dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
+            UI.closeModal();
+        },
+
+        /**
+         * NÂNG CẤP: Xử lý khi người dùng nhấn nút "Chụp lại".
+         */
+        handleRetakeOcr() {
+            const resultInput = document.getElementById('ocr-result-input');
+            const captureBtn = document.getElementById('capture-plate-btn');
+            const acceptBtn = document.getElementById('accept-ocr-btn');
+            const retakeBtn = document.getElementById('retake-ocr-btn');
+
+            // Ẩn kết quả và các nút chức năng
+            if (resultInput) {
+                resultInput.classList.remove('visible');
+                resultInput.readOnly = true;
+            }
+            if (acceptBtn) acceptBtn.style.display = 'none';
+            if (retakeBtn) retakeBtn.style.display = 'none';
+            
+            // Hiển thị lại nút Chụp ban đầu
+            if (captureBtn) captureBtn.style.display = 'flex';
+        },
+    };
+    // =========================================================================
+    // NÂNG CẤP TOÀN DIỆN: BỘ XỬ LÝ OCR THÔNG MINH
+    // =========================================================================
+    
+    /**
+     * Tạo biểu đồ độ sáng (histogram) cho ảnh xám.
+     * @param {Uint8ClampedArray} grayscaleData - Dữ liệu pixel của ảnh xám.
+     * @returns {Int32Array} Mảng 256 phần tử chứa tần suất của mỗi mức độ xám.
+     */
+    Handlers.createGrayscaleHistogram = function(grayscaleData) {
+        const histogram = new Int32Array(256).fill(0);
+        for (let i = 0; i < grayscaleData.length; i++) {
+            histogram[grayscaleData[i]]++;
+        }
+        return histogram;
+    };
+
+    /**
+     * Tìm ngưỡng nhị phân hóa tối ưu bằng thuật toán Otsu.
+     * @param {Int32Array} histogram - Biểu đồ độ sáng của ảnh.
+     * @param {number} totalPixels - Tổng số pixel trong ảnh.
+     * @returns {number} Ngưỡng tối ưu (0-255).
+     */
+    Handlers.getOtsuThreshold = function(histogram, totalPixels) {
+        let sum = 0;
+        for (let i = 0; i < 256; i++) {
+            sum += i * histogram[i];
+        }
+
+        let sumB = 0;
+        let wB = 0; // weight background
+        let wF = 0; // weight foreground
+        let maxVariance = 0;
+        let threshold = 0;
+
+        for (let i = 0; i < 256; i++) {
+            wB += histogram[i];
+            if (wB === 0) continue;
+
+            wF = totalPixels - wB;
+            if (wF === 0) break;
+
+            sumB += i * histogram[i];
+
+            const meanB = sumB / wB;
+            const meanF = (sum - sumB) / wF;
+
+            // Tính phương sai giữa các lớp (between-class variance)
+            const varianceBetween = wB * wF * (meanB - meanF) ** 2;
+
+            if (varianceBetween > maxVariance) {
+                maxVariance = varianceBetween;
+                threshold = i;
+            }
+        }
+        return threshold;
     };
 
     // =========================================================================
@@ -1395,6 +1694,7 @@ document.addEventListener('DOMContentLoaded', () => {
         init() {
             dom.micBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
             dom.scanQrBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`;
+            dom.scanPlateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>`; // NÂNG CẤP: Icon cho nút quét biển số
 
             this.setupEventListeners();
             this.applySavedTheme();
@@ -1423,6 +1723,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.themeCheckbox.addEventListener('change', Handlers.handleThemeChange);
             dom.micBtn.addEventListener('click', Handlers.startVoiceRecognition);
             dom.scanQrBtn.addEventListener('click', () => Handlers.openQrScanner());
+            dom.scanPlateBtn.addEventListener('click', () => Handlers.openPlateScanner()); // NÂNG CẤP: Gắn sự kiện quét biển số
             dom.changeLocationBtn.addEventListener('click', () => this.determineLocation(true));
             
             dom.actionButtonsContainer.addEventListener('click', (e) => Handlers.handleActionClick(e));
