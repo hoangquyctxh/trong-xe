@@ -373,6 +373,7 @@
             let isProcessingCode = false;
             let isFlashOn = false;
             let isScanning = false;
+            let qrWorker = null; // NÂNG CẤP: Khai báo Web Worker
             let lastScannedCode = null; // NÂNG CẤP: Lưu mã cuối cùng đã quét
             let LOCATIONS_DATA = [];
 
@@ -381,62 +382,10 @@
             const alertSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/warning.mp3');
 
             // =================================================================
-            // NÂNG CẤP TOÀN DIỆN: MODULE XỬ LÝ ẢNH VỚI THUẬT TOÁN OTSU
+            // NÂNG CẤP: MODULE XỬ LÝ ẢNH ĐƯỢC CHUYỂN SANG WEB WORKER
             // =================================================================
             const ImageProcessor = {
                 offscreenCanvas: document.createElement('canvas'),
-                
-                // Tối ưu hóa: Tạo histogram để phân tích độ sáng
-                createGrayscaleHistogram(grayscaleData) {
-                    const histogram = new Int32Array(256).fill(0);
-                    for (let i = 0; i < grayscaleData.length; i++) {
-                        histogram[grayscaleData[i]]++;
-                    }
-                    return histogram;
-                },
-
-                // NÂNG CẤP: Tìm ngưỡng nhị phân hóa tối ưu bằng thuật toán Otsu
-                getOtsuThreshold(histogram, totalPixels) {
-                    let sum = 0;
-                    for (let i = 0; i < 256; i++) sum += i * histogram[i];
-
-                    let sumB = 0, wB = 0, wF = 0, maxVariance = 0, threshold = 0;
-
-                    for (let i = 0; i < 256; i++) {
-                        wB += histogram[i];
-                        if (wB === 0) continue;
-                        wF = totalPixels - wB;
-                        if (wF === 0) break;
-                        sumB += i * histogram[i];
-                        const meanB = sumB / wB;
-                        const meanF = (sum - sumB) / wF;
-                        const varianceBetween = wB * wF * (meanB - meanF) ** 2;
-                        if (varianceBetween > maxVariance) {
-                            maxVariance = varianceBetween;
-                            threshold = i;
-                        }
-                    }
-                    return threshold;
-                },
-
-                // THAY THẾ HOÀN TOÀN: Sử dụng thuật toán Otsu để có hiệu năng cao nhất trong mọi điều kiện ánh sáng.
-                process(imageData) {
-                    const width = imageData.width, height = imageData.height, data = imageData.data;
-                    const grayscale = new Uint8ClampedArray(width * height);
-                    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-                        grayscale[j] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-                    }
-                    const histogram = this.createGrayscaleHistogram(grayscale);
-                    const threshold = this.getOtsuThreshold(histogram, width * height);
-                    const binarizedRgba = new Uint8ClampedArray(width * height * 4);
-                    for (let i = 0; i < grayscale.length; i++) {
-                        const value = grayscale[i] > threshold ? 255 : 0;
-                        const i4 = i * 4;
-                        binarizedRgba[i4] = binarizedRgba[i4 + 1] = binarizedRgba[i4 + 2] = value;
-                        binarizedRgba[i4 + 3] = 255;
-                    }
-                    return new ImageData(binarizedRgba, width, height);
-                }
             };
 
             // =================================================================
@@ -553,14 +502,21 @@
                     return showMessage('Trình duyệt không hỗ trợ camera.', true);
                 }
                 try {
-                    const constraints = { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } };
+                    // NÂNG CẤP: Yêu cầu độ phân giải cao hơn (Full HD)
+                    const constraints = { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
                     cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
                     elements.cameraFeed.srcObject = cameraStream;
                     await elements.cameraFeed.play();
 
-                    const processingSize = 400;
+                    // NÂNG CẤP: Tăng kích thước canvas xử lý ảnh
+                    const processingSize = 800;
                     ImageProcessor.offscreenCanvas.width = processingSize;
                     ImageProcessor.offscreenCanvas.height = processingSize;
+
+                    // NÂNG CẤP: Khởi tạo và lắng nghe Web Worker
+                    qrWorker = new Worker('qr-worker.js');
+                    qrWorker.onmessage = (event) => handleQrCodeResult(event.data);
+
 
                     if (cameraStream.getVideoTracks().length > 0) {
                         const videoTrack = cameraStream.getVideoTracks()[0];
@@ -585,6 +541,11 @@
             };
 
             const stopScanner = () => {
+                // NÂNG CẤP: Chấm dứt Web Worker khi dừng quét
+                if (qrWorker) {
+                    qrWorker.terminate();
+                    qrWorker = null;
+                }
                 if (scanAnimation) cancelAnimationFrame(scanAnimation);
                 scanAnimation = null;
                 if (cameraStream) {
@@ -605,66 +566,61 @@
                 hideResultPanel();
             };
 
+            // NÂNG CẤP: Tách logic xử lý kết quả từ worker ra một hàm riêng
+            const handleQrCodeResult = (code) => {
+                // Chỉ xử lý nếu có mã và mã đó khác với mã đã quét lần trước
+                if (code && code.data && code.data !== lastScannedCode) {
+                    isProcessingCode = true;
+                    lastScannedCode = code.data; // Cập nhật mã đã quét
+                    navigator.vibrate(100); // Rung nhẹ khi quét được
+
+                    if (code.data.length > 500) {
+                        handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
+                    } else if (code.data.includes('|') && code.data.length > 40) {
+                        beepSound.play();
+                        elements.scannerFrame.classList.add('scanned');
+                        elements.scannerLine.classList.add('scanned');
+                        
+                        const citizenData = parseCccdData(code.data);
+                        if (citizenData) {
+                            renderResult({ type: 'cccd', ...citizenData });
+                        } else {
+                            handleInvalidCode('Không thể phân tích dữ liệu CCCD.');
+                        }
+                        setTimeout(() => {
+                            elements.scannerFrame.classList.remove('scanned');
+                            elements.scannerLine.classList.remove('scanned');
+                        }, 500);
+                    } else if (code.data.includes('_')) {
+                        const uniqueId = code.data.substring(code.data.indexOf('_'));
+                        verifyTransaction(uniqueId);
+                    } else {
+                        handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
+                    }
+
+                    // Giảm thời gian chờ và chỉ reset isProcessingCode.
+                    setTimeout(() => { 
+                        isProcessingCode = false; 
+                    }, 300); // Giảm độ trễ xuống 300ms
+                }
+            };
+
             const tickQrScanner = () => {
                 if (isProcessingCode) {
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                     return;
                 }
-                if (elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
+                // NÂNG CẤP: Chỉ gửi dữ liệu ảnh đến worker, không xử lý ở luồng chính
+                if (qrWorker && elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
                     const ctx = ImageProcessor.offscreenCanvas.getContext('2d');
                     ctx.drawImage(elements.cameraFeed, 0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
                     const imageData = ctx.getImageData(0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
-                    const processedImageData = ImageProcessor.process(imageData);
-                    const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { inversionAttempts: "dontInvert" });
-
-                    // NÂNG CẤP: Chỉ xử lý nếu có mã và mã đó khác với mã đã quét lần trước
-                    if (code && code.data && code.data !== lastScannedCode) {
-                        isProcessingCode = true;
-                        lastScannedCode = code.data; // Cập nhật mã đã quét
-                        navigator.vibrate(100); // Rung nhẹ khi quét được
-
-                        if (code.data.length > 500) {
-                            handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
-                        } else if (code.data.includes('|') && code.data.length > 40) { // SỬA LỖI: Điều kiện nhận dạng CCCD linh hoạt hơn
-                            beepSound.play();
-                            elements.scannerFrame.classList.add('scanned');
-                            elements.scannerLine.classList.add('scanned');
-                            
-                            // NÂNG CẤP: Sử dụng hàm parse chuyên dụng
-                            const citizenData = parseCccdData(code.data);
-                            if (citizenData) {
-                                renderResult({ type: 'cccd', ...citizenData });
-                            } else {
-                                handleInvalidCode('Không thể phân tích dữ liệu CCCD.');
-                            }
-                            setTimeout(() => {
-                                elements.scannerFrame.classList.remove('scanned');
-                                elements.scannerLine.classList.remove('scanned');
-                            }, 500);
-                        } else if (code.data.includes('_')) { // SỬA LỖI KHẨN CẤP: Thay thế startsWith bằng includes
-                            // Lỗi gốc: Thư viện qrcode trên trang chính tự động thêm "http://" vào chuỗi unique_id.
-                            // Ví dụ: "_abc123" trở thành "http://_abc123/".
-                            // Điều này làm cho `startsWith('_')` thất bại.
-                            // Giải pháp: Kiểm tra xem chuỗi có chứa ký tự '_' hay không.
-                            // Sau đó, trích xuất phần bắt đầu bằng '_' để đảm bảo tính toàn vẹn dữ liệu.
-                            const uniqueId = code.data.substring(code.data.indexOf('_'));
-                            verifyTransaction(uniqueId);
-                        } else {
-                            handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
-                        }
-
-                        // NÂNG CẤP: Giảm thời gian chờ và chỉ reset isProcessingCode.
-                        // lastScannedCode sẽ được giữ lại để chống quét lặp.
-                        setTimeout(() => { 
-                            isProcessingCode = false; 
-                        }, 500);
-                    }
+                    qrWorker.postMessage(imageData, [imageData.data.buffer]);
                 }
                 if (scanAnimation) {
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                 }
             };
-
             const handleInvalidCode = (message) => {
                 errorSound.play();
                 navigator.vibrate([200, 50, 200]); // Rung báo lỗi
