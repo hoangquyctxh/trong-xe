@@ -145,7 +145,7 @@
             pointer-events: all;
         }
         #scan-control-btn {
-            width: 100px; height: 100px; /* TĂNG KÍCH THƯỚC NÚT BẤM */
+            width: 120px; height: 120px; /* TĂNG KÍCH THƯỚC NÚT BẤM */
             border-radius: 50%;
             border: 3px solid var(--accent-blue);
             background: rgba(31, 41, 55, 0.7);
@@ -167,7 +167,7 @@
             bottom: 0; left: 0; right: 0;
             background: linear-gradient(to top, rgba(17, 24, 39, 1), rgba(17, 24, 39, 0.9));
             border-top: 1px solid var(--border-color);
-            padding: 2rem; /* TĂNG PADDING */
+            padding: 2.5rem; /* TĂNG PADDING */
             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -178,12 +178,12 @@
         }
         .result-grid {
             display: grid;
-            grid-template-columns: 140px 1fr; /* TĂNG KÍCH THƯỚC CỘT TRÁI */
-            gap: 2rem; /* TĂNG KHOẢNG CÁCH */
+            grid-template-columns: 150px 1fr; /* TĂNG KÍCH THƯỚC CỘT TRÁI */
+            gap: 2.5rem; /* TĂNG KHOẢNG CÁCH */
             align-items: center;
         }
         .status-indicator {
-            width: 140px; height: 140px; /* TĂNG KÍCH THƯỚC VÒNG TRÒN */
+            width: 150px; height: 150px; /* TĂNG KÍCH THƯỚC VÒNG TRÒN */
             border-radius: 50%;
             border: 5px solid var(--border-color);
             display: flex; align-items: center; justify-content: center;
@@ -198,13 +198,13 @@
 
         .result-details .plate {
             font-family: var(--font-mono);
-            font-size: clamp(3.5rem, 15vw, 5rem); /* TĂNG FONT LINH HOẠT */
+            font-size: clamp(4rem, 20vw, 6rem); /* TĂNG FONT LINH HOẠT */
             font-weight: 700;
             letter-spacing: 2px;
             line-height: 1;
         }
         .result-details .status-text {
-            font-size: clamp(1.5rem, 7vw, 2rem); /* TĂNG FONT LINH HOẠT */
+            font-size: clamp(1.8rem, 8vw, 2.5rem); /* TĂNG FONT LINH HOẠT */
             font-weight: 500;
             margin-top: 0.5rem;
         }
@@ -218,8 +218,8 @@
             margin-top: 1.75rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.5rem 1.5rem; /* TĂNG KHOẢNG CÁCH */
-            font-size: clamp(1.1rem, 5vw, 1.3rem); /* TĂNG FONT LINH HOẠT */
+            gap: 1.75rem 1.5rem; /* TĂNG KHOẢNG CÁCH */
+            font-size: clamp(1.3rem, 6vw, 1.5rem); /* TĂNG FONT LINH HOẠT */
         }
         .sub-details .label { 
             color: var(--text-secondary); font-weight: 500; 
