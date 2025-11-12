@@ -125,6 +125,11 @@
         }
         .scanner-frame.scanned { --accent-blue: var(--accent-green); }
         .scanner-frame.error { --accent-blue: var(--accent-red); animation: shake 0.5s; }
+        /* NÂNG CẤP: Thêm hiệu ứng khi đang xử lý mã */
+        .scanner-frame.processing {
+            --accent-blue: #3b82f6; /* Luôn là màu xanh dương mặc định */
+            box-shadow: 0 0 20px var(--accent-blue);
+        }
 
         .scanner-line {
             position: absolute;
@@ -299,8 +304,8 @@
                 </div>
                 <div class="hud-controls">
                     <button id="toggle-flash-btn" title="Bật/Tắt đèn flash">
-                        <!-- SỬA LỖI: Thay thế biểu tượng đèn pin -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/><path d="M3 6h1m16 0h1M3 18h1M21 18h-1M12 3v1M12 20v1M6 3l1 1M17 17l1 1M6 21l1-1M17 7l1-1"/></svg>
+                        <!-- SỬA LỖI: Thay thế bằng biểu tượng đèn pin (flashlight/torch) trực quan hơn -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.07 4.93A8 8 0 0 0 4.93 15.07"/><path d="M9 10.5a2.5 2.5 0 0 1 5 0"/><path d="m13.5 15-3 3L2 22l1.5-4.5 3-3"/><path d="M2.5 11.5a2.5 2.5 0 0 1 0-5"/><path d="M22 2 12 12"/></svg>
                     </button>
                 </div>
             </div>
@@ -576,6 +581,12 @@
                 if (code && code.data && code.data !== lastScannedCode) {
                     isProcessingCode = true;
                     lastScannedCode = code.data; // Cập nhật mã đã quét
+
+                    // NÂNG CẤP: Thêm phản hồi trực quan ngay khi mã được nhận diện
+                    elements.scannerFrame.classList.add('processing');
+                    // Xóa hiệu ứng này sau một khoảng thời gian ngắn
+                    setTimeout(() => elements.scannerFrame.classList.remove('processing'), 400);
+
                     navigator.vibrate(100); // Rung nhẹ khi quét được
 
                     if (code.data.length > 500) {
@@ -614,23 +625,29 @@
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                     return;
                 }
-                // NÂNG CẤP: Chỉ gửi frame mới nếu worker rảnh
+                // NÂNG CẤP: Chỉ gửi frame mới nếu worker rảnh và camera đã sẵn sàng
                 if (qrWorker && !isWorkerBusy && elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
                     isWorkerBusy = true; // Đánh dấu worker bận trước khi gửi
                     const ctx = ImageProcessor.offscreenCanvas.getContext('2d');
-                    ctx.drawImage(elements.cameraFeed, 0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
                     
-                    // NÂNG CẤP: Chỉ quét vùng ảnh trong khung ngắm (Region of Interest)
-                    const canvasWidth = ImageProcessor.offscreenCanvas.width;
-                    const canvasHeight = ImageProcessor.offscreenCanvas.height;
-                    const viewfinderSize = canvasWidth * 0.7; // Giả sử khung ngắm là 70% chiều rộng
-                    const sx = (canvasWidth - viewfinderSize) / 2;
-                    const sy = (canvasHeight - viewfinderSize) / 2;
+                    // TỐI ƯU HÓA: Tính toán và chỉ vẽ vùng ảnh cần thiết (ROI) lên canvas ẩn
+                    // thay vì vẽ toàn bộ khung hình rồi mới cắt.
+                    const videoWidth = elements.cameraFeed.videoWidth;
+                    const videoHeight = elements.cameraFeed.videoHeight;
+                    const canvasSize = ImageProcessor.offscreenCanvas.width; // Canvas của chúng ta là hình vuông
+                    
+                    // Xác định vùng ROI trên video gốc (hình chữ nhật)
+                    const roiRatio = 0.7; // Tương ứng 70% của khung ngắm
+                    const roiSizeOnVideo = Math.min(videoWidth, videoHeight) * roiRatio;
+                    const sx = (videoWidth - roiSizeOnVideo) / 2;
+                    const sy = (videoHeight - roiSizeOnVideo) / 2;
 
-                    // Trích xuất chỉ vùng ảnh trong khung ngắm
-                    const roiImageData = ctx.getImageData(sx, sy, viewfinderSize, viewfinderSize);
+                    // Vẽ vùng ROI từ video lên canvas ẩn (vừa vặn)
+                    ctx.drawImage(elements.cameraFeed, sx, sy, roiSizeOnVideo, roiSizeOnVideo, 0, 0, canvasSize, canvasSize);
 
-                    // Gửi vùng ảnh nhỏ hơn này đến worker
+                    // Lấy dữ liệu ảnh từ canvas (đã chứa sẵn ROI)
+                    const roiImageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
+
                     qrWorker.postMessage(roiImageData, [roiImageData.data.buffer]);
                 }
                 if (scanAnimation) {
