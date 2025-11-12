@@ -732,22 +732,29 @@
                     ImageProcessor.offscreenCanvas.height = processingSize;
 
                     // NÂNG CẤP: Kiểm tra và hiển thị nút đèn flash
-                    const videoTrack = cameraStream.getVideoTracks()[0];
-                    const capabilities = videoTrack.getCapabilities();
-                    if (capabilities.torch) {
-                        elements.toggleFlashBtn.style.display = 'flex';
-                        elements.toggleFlashBtn.onclick = () => {
-                            isFlashOn = !isFlashOn;
-                            videoTrack.applyConstraints({
-                                advanced: [{ torch: isFlashOn }]
-                            }).catch(e => console.error('Lỗi bật đèn flash:', e));
-                            elements.toggleFlashBtn.classList.toggle('active', isFlashOn);
-                        };
+                    // SỬA LỖI: Thêm bước kiểm tra để đảm bảo videoTrack tồn tại
+                    if (cameraStream.getVideoTracks().length > 0) {
+                        const videoTrack = cameraStream.getVideoTracks()[0];
+                        const capabilities = videoTrack.getCapabilities();
+                        if (capabilities && capabilities.torch) {
+                            elements.toggleFlashBtn.style.display = 'flex';
+                            elements.toggleFlashBtn.onclick = () => {
+                                isFlashOn = !isFlashOn;
+                                videoTrack.applyConstraints({
+                                    advanced: [{ torch: isFlashOn }]
+                                }).catch(e => console.error('Lỗi bật đèn flash:', e));
+                                elements.toggleFlashBtn.classList.toggle('active', isFlashOn);
+                            };
+                        }
                     }
 
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                 } catch(err) { 
-                    showMessage('Không thể truy cập camera. Vui lòng cấp quyền.', true); 
+                    // SỬA LỖI: Hiển thị thông báo lỗi thực tế thay vì thông báo chung chung
+                    let errorMessage = 'Không thể truy cập camera. Vui lòng cấp quyền và tải lại trang.';
+                    if (err.message) errorMessage = err.message;
+                    console.error("Lỗi khởi tạo camera:", err);
+                    showMessage(`Lỗi: ${errorMessage}`, true); 
                     stopQrScanner();
                 }
             };
