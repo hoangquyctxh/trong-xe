@@ -373,6 +373,7 @@
             let isProcessingCode = false;
             let isFlashOn = false;
             let isScanning = false;
+            let isWorkerBusy = false; // NÂNG CẤP: Cờ theo dõi trạng thái của worker
             let qrWorker = null; // NÂNG CẤP: Khai báo Web Worker
             let lastScannedCode = null; // NÂNG CẤP: Lưu mã cuối cùng đã quét
             let LOCATIONS_DATA = [];
@@ -515,7 +516,10 @@
 
                     // NÂNG CẤP: Khởi tạo và lắng nghe Web Worker
                     qrWorker = new Worker('qr-worker.js');
-                    qrWorker.onmessage = (event) => handleQrCodeResult(event.data);
+                    qrWorker.onmessage = (event) => {
+                        isWorkerBusy = false; // Worker đã xử lý xong, đánh dấu là rảnh
+                        handleQrCodeResult(event.data);
+                    };
 
 
                     if (cameraStream.getVideoTracks().length > 0) {
@@ -601,7 +605,7 @@
                     // Giảm thời gian chờ và chỉ reset isProcessingCode.
                     setTimeout(() => { 
                         isProcessingCode = false; 
-                    }, 300); // Giảm độ trễ xuống 300ms
+                    }, 200); // Giảm độ trễ xuống 200ms
                 }
             };
 
@@ -610,12 +614,24 @@
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                     return;
                 }
-                // NÂNG CẤP: Chỉ gửi dữ liệu ảnh đến worker, không xử lý ở luồng chính
-                if (qrWorker && elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
+                // NÂNG CẤP: Chỉ gửi frame mới nếu worker rảnh
+                if (qrWorker && !isWorkerBusy && elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
+                    isWorkerBusy = true; // Đánh dấu worker bận trước khi gửi
                     const ctx = ImageProcessor.offscreenCanvas.getContext('2d');
                     ctx.drawImage(elements.cameraFeed, 0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
-                    const imageData = ctx.getImageData(0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
-                    qrWorker.postMessage(imageData, [imageData.data.buffer]);
+                    
+                    // NÂNG CẤP: Chỉ quét vùng ảnh trong khung ngắm (Region of Interest)
+                    const canvasWidth = ImageProcessor.offscreenCanvas.width;
+                    const canvasHeight = ImageProcessor.offscreenCanvas.height;
+                    const viewfinderSize = canvasWidth * 0.7; // Giả sử khung ngắm là 70% chiều rộng
+                    const sx = (canvasWidth - viewfinderSize) / 2;
+                    const sy = (canvasHeight - viewfinderSize) / 2;
+
+                    // Trích xuất chỉ vùng ảnh trong khung ngắm
+                    const roiImageData = ctx.getImageData(sx, sy, viewfinderSize, viewfinderSize);
+
+                    // Gửi vùng ảnh nhỏ hơn này đến worker
+                    qrWorker.postMessage(roiImageData, [roiImageData.data.buffer]);
                 }
                 if (scanAnimation) {
                     scanAnimation = requestAnimationFrame(tickQrScanner);
