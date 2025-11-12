@@ -596,7 +596,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 case 'checkInReceipt':
                     // NÂNG CẤP TOÀN DIỆN V2: Giao diện xác nhận gửi xe thành công với hiệu ứng động
-                    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.unique_id)}`;
                     const vipClass = data.is_vip ? 'is-vip' : ''; // YÊU CẦU: Thêm class nếu là VIP
                     const content = `
                         <div class="checkin-success-wrapper ${vipClass}" id="printable-checkin-receipt">
@@ -612,7 +611,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <p class="checkin-success-subtitle">Vui lòng đưa mã QR này khi lấy xe.</p>
                             <div class="checkin-success-qr">
                                 ${data.is_vip ? '<div class="vip-badge">VIP</div>' : ''}
-                                <img src="${qrApiUrl}" alt="Mã QR của vé xe">
+                                <!-- SỬA LỖI TRIỆT ĐỂ: Thay thế img bằng canvas để tự tạo QR -->
+                                <canvas id="checkin-qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
                             </div>
                             <div class="checkin-success-plate">${data.plate}</div>
                             <div class="auto-close-progress-bar">
@@ -621,6 +621,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>`;
                     // Bỏ footer và title để modal trông như một màn hình xác nhận chuyên dụng
                     modalHtml = `<div class="modal-overlay"><div class="modal-content" style="max-width: 480px; padding: 0; background: transparent; box-shadow: none;">${content}</div></div>`;
+                    // SỬA LỖI TRIỆT ĐỂ: Vẽ QR code lên canvas sau khi modal được hiển thị
+                    setTimeout(() => {
+                        const qrCanvas = document.getElementById('checkin-qrcode-canvas');
+                        if (qrCanvas && data.unique_id) {
+                            QRCode.toCanvas(qrCanvas, data.unique_id, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
+                                if (error) console.error('Lỗi tạo QR code:', error);
+                            });
+                        }
+                    }, 100); // Chờ một chút để DOM được cập nhật
                     break;
                 case 'global-alert':
                     modalHtml = data.html;

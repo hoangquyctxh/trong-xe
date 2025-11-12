@@ -5,36 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiểm soát An ninh</title>
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="config.js"></script>
     <style>
-        /* --- ĐỒNG BỘ GIAO DIỆN VỚI TRANG CHÍNH --- */
+        /* ================================================================= */
+        /* GIAO DIỆN ĐIỀU KHIỂN AN NINH HUD - PHIÊN BẢN 2.0 */
+        /* ================================================================= */
         :root {
-            /* NÂNG CẤP: Bảng màu "Tech" hiện đại */
-            --bg-main: #f1f5f9; /* Nền xám xanh rất nhạt */
-            --bg-card: #ffffff; 
-            --border-color: #e2e8f0;
-            --primary-accent: #dc2626; /* Màu đỏ cho an ninh */
-            --primary-accent-light: #fee2e2;
-            --text-primary: #1e293b;
-            --text-dark: #0f172a;
-            --text-secondary: #64748b;
-            --success-color: #16a34a;
-            --info-color: #2563eb; /* NÂNG CẤP: Màu xanh dương cho thông tin CCCD */
+            --bg-main: #111827; /* Nền tối */
+            --bg-panel: #1f2937; /* Nền panel tối hơn */
+            --border-color: #374151;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #eab308;
             --border-radius-md: 0.5rem;
-            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --font-main: 'Be Vietnam Pro', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: var(--font-main);
             background-color: var(--bg-main);
-            /* NÂNG CẤP: Họa tiết nền chấm bi tinh tế */ 
-            background-image: radial-gradient(var(--border-color) 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
+            background-image: linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(to right, var(--border-color) 1px, var(--bg-main) 1px);
+            background-size: 40px 40px;
             color: var(--text-primary);
             margin: 0;
             line-height: 1.6;
@@ -42,261 +40,663 @@
             flex-direction: column;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale; 
-            overflow: hidden; /* Ngăn cuộn trang khi ở giao diện quét */
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            padding: 25px;
-        }
-        /* --- HEADER MỚI --- */
-        header { 
-            background: var(--bg-card);
-            padding: 15px 25px;
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: var(--shadow-md);
-            position: sticky;
-            top: 0;
-            z-index: 10; 
-            backdrop-filter: blur(10px);
-            background-color: rgba(255, 255, 255, 0.8);
-        }
-
-        .header-title { display: flex; align-items: center; gap: 15px; }
-        .header-title .logo img { width: 50px; height: auto; }
-        .title-group { display: flex; flex-direction: column; }
-        .header-title .subtitle { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
-        .header-title h1 { font-size: 1.8rem; color: var(--text-primary); font-weight: 800; line-height: 1.2; }
-
-        /* --- GIAO DIỆN CHÍNH --- */
-        #scan-prompt-view {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-            width: 100%; 
-            animation: fadeIn 0.5s ease;
-            text-align: center;
-        }
-        #scan-qr-btn {
-            padding: 25px 40px;
-            border: none;
-            background: var(--primary-accent);
-            color: white;
-            font-size: 1.5rem;
-            font-weight: 700;
-            cursor: pointer;
-            border-radius: var(--border-radius-md);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: var(--shadow-lg);
-            transition: all 0.2s ease;
-        }
-        #scan-qr-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.15);
-        }
-        #scan-qr-btn svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        /* ================================================================= */
-        /* NÂNG CẤP LỚN: GIAO DIỆN QUÉT LIÊN TỤC */
-        /* ================================================================= */
-        #scan-active-view {
-            display: none; /* Ẩn ban đầu */
-            flex-grow: 1;
-            width: 100%;
-            padding: 2rem;
-            gap: 2rem;
-        }
-        #scan-active-view.active {
-            display: flex; /* THAY ĐỔI: Mặc định là flex để ưu tiên mobile */
-            flex-direction: column;
-            animation: fadeIn 0.5s ease;
-        }
-        .scan-camera-panel {
-            flex-shrink: 0; /* Không cho panel camera bị co lại */
-            position: relative;
-            background: #000;
-            border-radius: var(--border-radius-md);
+            -moz-osx-font-smoothing: grayscale;
             overflow: hidden;
-            box-shadow: var(--shadow-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 45vh; /* Chiều cao cho camera trên mobile */
         }
-        /* NÂNG CẤP: Nút bật/tắt đèn Flash */
-        #toggle-flash-btn {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            z-index: 5;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: none;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            cursor: pointer;
-            display: none; /* Ẩn mặc định, chỉ hiện khi được hỗ trợ */
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s ease;
-        }
-        #toggle-flash-btn.active {
-            background-color: var(--info-color);
-        }
-        #camera-feed {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .scanner-overlay {
-            position: absolute;
+        .security-container {
+            position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
         }
-        .scanner-viewfinder {
-            width: 70%;
-            height: 0;
-            padding-bottom: 70%;
-            border: 4px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
-            transition: border-color 0.2s ease;
+        /* --- Camera View --- */
+        #camera-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
         }
-        .scanner-viewfinder.scanned {
-            border-color: var(--success-color);
+        #camera-feed {
+            width: 100%; height: 100%; object-fit: cover;
         }
-        /* NÂNG CẤP: Hiệu ứng khi quét lỗi */
-        .scanner-viewfinder.error {
-            border-color: var(--primary-accent);
-        }
-
-        .scan-result-panel {
+        /* --- HUD Overlay --- */
+        .hud-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Cho phép click xuyên qua */
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            flex-grow: 1; /* Panel kết quả sẽ chiếm phần còn lại */
+            justify-content: space-between;
+            padding: 1.5rem;
+            padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
         }
-        .result-placeholder {
-            text-align: center;
-            color: var(--text-secondary);
-        }
-        .result-placeholder svg { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.5; }
-        .result-placeholder p { font-size: 1.2rem; font-weight: 500; }
-        /* NÂNG CẤP: Style cho thông báo lỗi tại chỗ */
-        .result-placeholder.error-message {
-            color: var(--primary-accent);
-            animation: shake 0.5s;
-        }
-        .result-placeholder.error-message svg { opacity: 1; }
-
-        /* NÂNG CẤP: Ẩn tất cả các thẻ kết quả ban đầu */
-        #verification-card, #citizen-id-card {
-            display: none;
-        }
-
-        /* --- THẺ XÁC MINH --- */
-        #verification-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-lg);
-            border-radius: var(--border-radius-md);
-            padding: 0;
-            overflow: hidden;
-            width: 100%;
-            transition: all 0.3s ease;
-            /* NÂNG CẤP: Hiệu ứng xuất hiện */
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        #verification-card.visible, #citizen-id-card.visible {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-        /* NÂNG CẤP: Thanh trạng thái màu ở trên cùng */
-        #verification-card::before {
-            content: '';
-            display: block;
-            height: 8px;
-            background-color: var(--border-color); /* Màu mặc định */ 
-            transition: background-color 0.3s ease;
-        }
-
-        /* NÂNG CẤP: Thêm style cho thẻ bị cảnh báo */
-        #verification-card.alert-block {
-            border-color: var(--primary-accent);
-        }
-        #verification-card.alert-block::before { background-color: var(--primary-accent); } /* Đỏ */ 
-
-        /* NÂNG CẤP: Thêm style cho thẻ đã rời bãi */
-        #verification-card.departed-card {
-            background-color: var(--bg-main);
-            border-color: var(--border-color);
-        }
-        #verification-card.departed-card::before { background-color: var(--text-secondary); } /* Xám */ 
-        #verification-card.parking-card::before { background-color: var(--success-color); } /* Xanh */
-
-
-        .security-alert-info {
-            background-color: var(--danger-light);
-            border: 1px solid var(--danger-color);
-            color: var(--danger-color);
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            border-radius: calc(var(--border-radius-md) - 4px);
+        .hud-header {
             display: flex;
             align-items: flex-start;
-            gap: 1rem;
         }
-        .security-alert-info svg {
-            flex-shrink: 0;
-            width: 24px; height: 24px;
-        }
-        .security-alert-info .reason { font-weight: 600; }
-
-        .verification-content { padding: 1.75rem; } /* NÂNG CẤP: Bọc nội dung thẻ */
-
-        .verification-header {
+        .header-logo { display: flex; align-items: center; gap: 12px; }
+        .header-logo img { width: 40px; height: 40px; }
+        .header-logo .title-group { line-height: 1.3; }
+        .header-logo .subtitle { font-size: 0.8rem; color: var(--text-secondary); }
+        .header-logo h1 { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+        .hud-controls {
+            margin-left: auto;
             display: flex;
-            justify-content: space-between;
+            gap: 1rem;
             align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
         }
-        .verification-header .plate {
-            font-size: 2.8rem; /* THAY ĐỔI: Điều chỉnh lại cho phù hợp với nhiều kích thước */
-            font-weight: 800;
-            font-family: monospace;
-            color: var(--text-dark);
+
+        #toggle-flash-btn {
+            pointer-events: all;
+            width: 48px; height: 48px;
+            border-radius: 50%; border: 1px solid var(--border-color);
+            background: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(5px);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: none;
+            align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+        }
+        #toggle-flash-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px var(--accent-blue);
+        }
+        .hud-center {
+            position: relative;
+            width: 250px; height: 250px;
+            margin: 0 auto;
+        }
+        .scanner-frame {
+            position: absolute;
+            width: 100%; height: 100%;
+            background:
+                linear-gradient(to right, var(--accent-blue) 3px, transparent 3px) 0 0,
+                linear-gradient(to right, var(--accent-blue) 3px, transparent 3px) 0 100%,
+                linear-gradient(to left, var(--accent-blue) 3px, transparent 3px) 100% 0,
+                linear-gradient(to left, var(--accent-blue) 3px, transparent 3px) 100% 100%,
+                linear-gradient(to bottom, var(--accent-blue) 3px, transparent 3px) 0 0,
+                linear-gradient(to bottom, var(--accent-blue) 3px, transparent 3px) 100% 0,
+                linear-gradient(to top, var(--accent-blue) 3px, transparent 3px) 0 100%,
+                linear-gradient(to top, var(--accent-blue) 3px, transparent 3px) 100% 100%;
+            background-repeat: no-repeat;
+            background-size: 40px 40px;
+            transition: all 0.3s ease;
+        }
+        .scanner-frame.scanned { --accent-blue: var(--accent-green); }
+        .scanner-frame.error { --accent-blue: var(--accent-red); animation: shake 0.5s; }
+
+        .scanner-line {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--accent-blue);
+            box-shadow: 0 0 15px var(--accent-blue);
+            animation: scan 3s linear infinite;
+        }
+        .scanner-line.scanned { --accent-blue: var(--accent-green); }
+        .scanner-line.error { --accent-blue: var(--accent-red); }
+
+        /* --- Bottom Controls --- */
+        .hud-footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: all;
+        }
+        #scan-control-btn {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-blue);
+            background: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(5px);
+            color: var(--text-primary);
+            font-size: 1rem; font-weight: 700;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        #scan-control-btn.scanning {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+        /* --- Result Panel --- */
+        #result-panel {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(17, 24, 39, 1), rgba(17, 24, 39, 0.9));
+            border-top: 1px solid var(--border-color);
+            padding: 2rem;
+            padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: all;
+        }
+        #result-panel.visible {
+            transform: translateY(0);
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+        .status-indicator {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            border: 5px solid var(--border-color);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .status-indicator svg { width: 50px; height: 50px; }
+        .status-indicator.safe { border-color: var(--accent-green); box-shadow: 0 0 20px var(--accent-green); color: var(--accent-green); }
+        .status-indicator.departed { border-color: var(--accent-yellow); box-shadow: 0 0 20px var(--accent-yellow); color: var(--accent-yellow); }
+        .status-indicator.alert { border-color: var(--accent-red); box-shadow: 0 0 20px var(--accent-red); color: var(--accent-red); }
+        .status-indicator.error { border-color: var(--accent-red); box-shadow: 0 0 20px var(--accent-red); color: var(--accent-red); }
+        .status-indicator.cccd { border-color: var(--accent-blue); box-shadow: 0 0 20px var(--accent-blue); color: var(--accent-blue); }
+
+        .result-details .plate {
+            font-family: var(--font-mono);
+            font-size: 2.8rem;
+            font-weight: 700;
             letter-spacing: 2px;
+            line-height: 1;
         }
-
-        .status-badge {
-            font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: white;
+        .result-details .status-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
         }
-        .status-badge.parking { background-color: var(--success-color); }
-        .status-badge.departed { background-color: var(--text-secondary); }
+        .result-details .status-text.safe { color: var(--accent-green); }
+        .result-details .status-text.departed { color: var(--accent-yellow); }
+        .result-details .status-text.alert { color: var(--accent-red); }
+        .result-details .status-text.error { color: var(--accent-red); }
+        .result-details .status-text.cccd { color: var(--accent-blue); }
 
-        .info-grid {
+        .sub-details {
+            margin-top: 1.75rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
+            gap: 1rem 1.5rem;
+            font-size: 0.9rem;
+        }
+        .sub-details .label { 
+            color: var(--text-secondary); font-weight: 500; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .sub-details .label::after { content: ':'; } /* THÊM: Tự động thêm dấu hai chấm */
+        .sub-details .value { font-weight: 600; font-family: var(--font-mono); }
+        .alert-reason {
+            grid-column: 1 / -1;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--accent-red);
+            padding: 0.75rem;
+            border-radius: var(--border-radius-md);
+            color: #fecaca;
+        }
+        .alert-reason strong { color: var(--accent-red); }
+
+        /* Nâng cấp responsive */
+        @media (min-width: 768px) {
+            .hud-overlay {
+                padding: 2rem;
+                padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* --- Message Box --- */
+        #message-box {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            border-radius: var(--border-radius-md);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            z-index: 100;
+        }
+        #message-box.error { color: var(--accent-red); }
+    </style>
+    <!-- NÂNG CẤP: Thêm keyframes cho animation -->
+    <style>
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(247px); }
+            100% { transform: translateY(0); }
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="security-container">
+        <!-- Lớp Camera -->
+        <div id="camera-view">
+            <video id="camera-feed" playsinline></video>
+        </div>
+
+        <!-- Lớp Giao diện HUD -->
+        <div class="hud-overlay">
+            <div class="hud-header">
+                <div class="header-logo">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
+                    <div class="title-group">
+                        <p class="subtitle">Hệ thống Quản lý xe Tình nguyện</p>
+                        <h1>TRẠM KIỂM SOÁT</h1>
+                    </div>
+                </div>
+                <div class="hud-controls">
+                    <button id="toggle-flash-btn" title="Bật/Tắt đèn flash">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="hud-center">
+                <div id="scanner-frame" class="scanner-frame"></div>
+                <div id="scanner-line" class="scanner-line"></div>
+            </div>
+
+            <div class="hud-footer">
+                <button id="scan-control-btn">Bắt đầu</button>
+            </div>
+        </div>
+
+        <!-- Lớp Kết quả -->
+        <div id="result-panel">
+            <div class="result-grid">
+                <div id="status-indicator" class="status-indicator">
+                    <!-- Icon sẽ được JS chèn vào đây -->
+                </div>
+                <div class="result-details">
+                    <div id="result-plate" class="plate"></div>
+                    <div id="result-status-text" class="status-text"></div>
+                </div>
+            </div>
+            <div id="sub-details-grid" class="sub-details">
+                <!-- Các chi tiết phụ sẽ được JS chèn vào đây -->
+            </div>
+        </div>
+    </div>
+
+    <div id="message-box" style="display: none;"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // =================================================================
+            // KHU VỰC 0: THIẾT LẬP
+            // =================================================================
+            const SUPABASE_URL = 'https://mtihqbmlbtrgvamxwrkm.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10aWhxYm1sYnRyZ3ZhbXh3cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMTkwMDEsImV4cCI6MjA3NzU5NTAwMX0.hR5X8bp-XD2DfxUnvWF-yxVk4sFVW2zBunp5XXnIZ0Y';
+            const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            // =================================================================
+            // KHU VỰC 1: THAM CHIẾU DOM & BIẾN
+            // =================================================================
+            const elements = {
+                messageBox: document.getElementById('message-box'),
+                scanControlBtn: document.getElementById('scan-control-btn'),
+                cameraFeed: document.getElementById('camera-feed'),
+                toggleFlashBtn: document.getElementById('toggle-flash-btn'),
+                scannerFrame: document.getElementById('scanner-frame'),
+                scannerLine: document.getElementById('scanner-line'),
+                resultPanel: document.getElementById('result-panel'),
+                statusIndicator: document.getElementById('status-indicator'),
+                resultPlate: document.getElementById('result-plate'),
+                resultStatusText: document.getElementById('result-status-text'),
+                subDetailsGrid: document.getElementById('sub-details-grid'),
+            };
+
+            const ICONS = {
+                safe: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                departed: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>',
+                alert: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+                error: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>',
+                cccd: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+            };
+
+            let cameraStream = null;
+            let scanAnimation = null;
+            let isProcessingCode = false;
+            let isFlashOn = false;
+            let isScanning = false;
+            let LOCATIONS_DATA = [];
+
+            const beepSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/beep.mp3');
+            const errorSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/error.mp3');
+            const alertSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/warning.mp3');
+
+            // =================================================================
+            // MODULE XỬ LÝ ẢNH (GIỮ NGUYÊN TỪ PHIÊN BẢN TRƯỚC)
+            // =================================================================
+            const ImageProcessor = {
+                offscreenCanvas: document.createElement('canvas'),
+                process(imageData) {
+                    const width = imageData.width, height = imageData.height, data = imageData.data;
+                    const integralImage = new Uint32Array(width * height), grayscale = new Uint8ClampedArray(width * height);
+                    for (let y = 0; y < height; y++) {
+                        let rowSum = 0;
+                        for (let x = 0; x < width; x++) {
+                            const i = y * width + x, i4 = i * 4;
+                            const gray = data[i4] * 0.299 + data[i4 + 1] * 0.587 + data[i4 + 2] * 0.114;
+                            grayscale[i] = gray;
+                            rowSum += gray;
+                            integralImage[i] = (y > 0 ? integralImage[i - width] : 0) + rowSum;
+                        }
+                    }
+                    const s = width / 8, s2 = Math.floor(s / 2), t = 0.15;
+                    const binarizedRgba = new Uint8ClampedArray(width * height * 4);
+                    for (let y = 0; y < height; y++) {
+                        for (let x = 0; x < width; x++) {
+                            const i = y * width + x;
+                            const x1 = Math.max(0, x - s2), x2 = Math.min(width - 1, x + s2);
+                            const y1 = Math.max(0, y - s2), y2 = Math.min(height - 1, y + s2);
+                            const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+                            const sum = integralImage[y2 * width + x2] - (y1 > 0 ? integralImage[(y1 - 1) * width + x2] : 0) - (x1 > 0 ? integralImage[y2 * width + (x1 - 1)] : 0) + (y1 > 0 && x1 > 0 ? integralImage[(y1 - 1) * width + (x1 - 1)] : 0);
+                            const finalValue = (grayscale[i] * count) < (sum * (1.0 - t)) ? 0 : 255;
+                            const i4 = i * 4;
+                            binarizedRgba[i4] = binarizedRgba[i4 + 1] = binarizedRgba[i4 + 2] = finalValue;
+                            binarizedRgba[i4 + 3] = 255;
+                        }
+                    }
+                    return new ImageData(binarizedRgba, width, height);
+                }
+            };
+
+            // =================================================================
+            // KHU VỰC 2: CÁC HÀM TIỆN ÍCH VÀ GIAO DIỆN
+            // =================================================================
+            const showMessage = (message, isError = false) => {
+                elements.messageBox.style.display = 'block';
+                elements.messageBox.className = `message-box ${isError ? 'error' : ''}`;
+                elements.messageBox.innerHTML = `<p>${message}</p>`;
+                setTimeout(() => { elements.messageBox.style.display = 'none'; }, 3000);
+            };
+
+            const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
+            const getLocationName = (locationId) => (LOCATIONS_DATA.find(loc => loc.id === locationId) || { name: 'Không xác định' }).name;
+
+            const renderResult = (data) => {
+                // Reset
+                elements.statusIndicator.className = 'status-indicator';
+                elements.resultStatusText.className = 'status-text';
+                elements.subDetailsGrid.innerHTML = '';
+
+                let statusClass, statusText, plate, icon;
+
+                if (data.type === 'error') {
+                    statusClass = 'error';
+                    statusText = 'Lỗi';
+                    plate = data.message;
+                    icon = ICONS.error;
+                } else if (data.type === 'cccd') {
+                    statusClass = 'cccd';
+                    statusText = 'CCCD/CMND';
+                    plate = data.fullName;
+                    icon = ICONS.cccd;
+                    const dobRaw = data.dob;
+                    const formattedDob = `${dobRaw.substring(0, 2)}/${dobRaw.substring(2, 4)}/${dobRaw.substring(4)}`;
+                    elements.subDetailsGrid.innerHTML = `
+                        <div class="info-item"><span class="label">Ngày sinh</span><span class="value">${formattedDob}</span></div>
+                        <div class="info-item"><span class="label">Giới tính</span><span class="value">${data.gender}</span></div>
+                        <div class="info-item" style="grid-column: 1 / -1;"><span class="label">Địa chỉ</span><span class="value">${data.address}</span></div>
+                    `;
+                } else { // Vehicle transaction
+                    const tx = data.transaction;
+                    plate = tx.plate || '???';
+                    if (data.security_alert) {
+                        statusClass = 'alert';
+                        statusText = 'Cảnh Báo An Ninh';
+                        icon = ICONS.alert;
+                        elements.subDetailsGrid.innerHTML += `<div class="alert-reason"><strong>Lý do:</strong> ${data.security_alert.reason || 'Không rõ'}</div>`;
+                    } else if (tx.status === 'Đang gửi') {
+                        statusClass = 'safe';
+                        statusText = 'Xe đang gửi - An toàn';
+                        icon = ICONS.safe;
+                    } else {
+                        statusClass = 'departed';
+                        statusText = 'Xe đã rời bãi';
+                        icon = ICONS.departed;
+                    }
+                    elements.subDetailsGrid.innerHTML += `
+                        <div class="info-item"><span class="label">Giờ vào</span><span class="value">${formatDateTime(tx.entry_time)}</span></div>
+                        <div class="info-item"><span class="label">Giờ ra</span><span class="value">${formatDateTime(tx.exit_time)}</span></div>
+                        <div class="info-item"><span class="label">Bãi đỗ</span><span class="value">${getLocationName(tx.location_id)}</span></div>
+                        <div class="info-item"><span class="label">Phí</span><span class="value">${(tx.fee === null || tx.fee === undefined) ? '--' : `${tx.fee.toLocaleString('vi-VN')}đ`}</span></div>
+                    `;
+                }
+
+                elements.statusIndicator.classList.add(statusClass);
+                elements.statusIndicator.innerHTML = icon;
+                elements.resultPlate.textContent = plate;
+                elements.resultStatusText.textContent = statusText;
+                elements.resultStatusText.classList.add(statusClass);
+                elements.resultPanel.classList.add('visible');
+            };
+
+            const hideResultPanel = () => {
+                elements.resultPanel.classList.remove('visible');
+            };
+
+            // SỬA LỖI & NÂNG CẤP: Hàm phân tích dữ liệu CCCD được viết lại hoàn toàn
+            const parseCccdData = (rawData) => {
+                // SỬA LỖI: Loại bỏ các ký tự không thể in (như ký tự NUL ở đầu) và khoảng trắng
+                const cleanedData = rawData.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+
+                // SỬA LỖI TRIỆT ĐỂ: Chuẩn hóa chuỗi bằng cách thay thế "||" bằng "|" trước khi tách.
+                // Điều này xử lý đúng định dạng "Số CCCD mới||Số CCCD cũ|..."
+                const normalizedData = cleanedData.replace('||', '|');
+                const parts = normalizedData.split('|');
+
+                // Sau khi chuẩn hóa, chúng ta có thể lấy dữ liệu theo chỉ số một cách đáng tin cậy.
+                // Ví dụ: 001203012722||Nguyễn... -> ['001203012722', '', 'Nguyễn...', '29072003', ...]
+                if (parts.length < 7) return null; // Phải có ít nhất 7 phần tử
+
+                return {
+                    cccdNumber: parts[0],
+                    fullName: parts[2],
+                    dob: parts[3],
+                    gender: parts[4],
+                    address: parts[5]
+                };
+            };
+
+
+            // =================================================================
+            // KHU VỰC 3: LOGIC CHÍNH VÀ SỰ KIỆN
+            // =================================================================
+            const startScanner = async () => {
+                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
+                    return showMessage('Trình duyệt không hỗ trợ camera.', true);
+                }
+                try {
+                    const constraints = { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } };
+                    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    elements.cameraFeed.srcObject = cameraStream;
+                    await elements.cameraFeed.play();
+
+                    const processingSize = 400;
+                    ImageProcessor.offscreenCanvas.width = processingSize;
+                    ImageProcessor.offscreenCanvas.height = processingSize;
+
+                    if (cameraStream.getVideoTracks().length > 0) {
+                        const videoTrack = cameraStream.getVideoTracks()[0];
+                        const capabilities = videoTrack.getCapabilities();
+                        if (capabilities && capabilities.torch) {
+                            elements.toggleFlashBtn.style.display = 'flex';
+                            elements.toggleFlashBtn.onclick = () => {
+                                isFlashOn = !isFlashOn;
+                                videoTrack.applyConstraints({ advanced: [{ torch: isFlashOn }] }).catch(e => console.error('Lỗi bật đèn flash:', e));
+                                elements.toggleFlashBtn.classList.toggle('active', isFlashOn);
+                            };
+                        }
+                    }
+                    scanAnimation = requestAnimationFrame(tickQrScanner);
+                    isScanning = true;
+                    elements.scanControlBtn.textContent = 'Dừng';
+                    elements.scanControlBtn.classList.add('scanning');
+                } catch (err) {
+                    showMessage(`Lỗi camera: ${err.message}`, true);
+                    stopScanner();
+                }
+            };
+
+            const stopScanner = () => {
+                if (scanAnimation) cancelAnimationFrame(scanAnimation);
+                scanAnimation = null;
+                if (cameraStream) {
+                    const videoTrack = cameraStream.getVideoTracks()[0];
+                    if (videoTrack && videoTrack.getCapabilities().torch && isFlashOn) {
+                        videoTrack.applyConstraints({ advanced: [{ torch: false }] });
+                        isFlashOn = false;
+                        elements.toggleFlashBtn.classList.remove('active');
+                    }
+                    cameraStream.getTracks().forEach(track => track.stop());
+                }
+                elements.toggleFlashBtn.style.display = 'none';
+                isProcessingCode = false;
+                isScanning = false;
+                elements.scanControlBtn.textContent = 'Bắt đầu';
+                elements.scanControlBtn.classList.remove('scanning');
+                hideResultPanel();
+            };
+
+            const tickQrScanner = () => {
+                if (isProcessingCode) {
+                    scanAnimation = requestAnimationFrame(tickQrScanner);
+                    return;
+                }
+                if (elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
+                    const ctx = ImageProcessor.offscreenCanvas.getContext('2d');
+                    ctx.drawImage(elements.cameraFeed, 0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
+                    const imageData = ctx.getImageData(0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
+                    const processedImageData = ImageProcessor.process(imageData);
+                    const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { inversionAttempts: "dontInvert" });
+
+                    if (code) {
+                        isProcessingCode = true;
+                        navigator.vibrate(100); // Rung nhẹ khi quét được
+
+                        if (code.data.length > 500) {
+                            handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
+                        } else if (code.data.includes('|') && code.data.length > 40) { // SỬA LỖI: Điều kiện nhận dạng CCCD linh hoạt hơn
+                            beepSound.play();
+                            elements.scannerFrame.classList.add('scanned');
+                            elements.scannerLine.classList.add('scanned');
+                            
+                            // NÂNG CẤP: Sử dụng hàm parse chuyên dụng
+                            const citizenData = parseCccdData(code.data);
+                            if (citizenData) {
+                                renderResult({ type: 'cccd', ...citizenData });
+                            } else {
+                                handleInvalidCode('Không thể phân tích dữ liệu CCCD.');
+                            }
+
+                            setTimeout(() => {
+                                elements.scannerFrame.classList.remove('scanned');
+                                elements.scannerLine.classList.remove('scanned');
+                            }, 500);
+                        } else if (code.data.includes('_')) { // SỬA LỖI KHẨN CẤP: Thay thế startsWith bằng includes
+                            // Lỗi gốc: Thư viện qrcode trên trang chính tự động thêm "http://" vào chuỗi unique_id.
+                            // Ví dụ: "_abc123" trở thành "http://_abc123/".
+                            // Điều này làm cho `startsWith('_')` thất bại.
+                            // Giải pháp: Kiểm tra xem chuỗi có chứa ký tự '_' hay không.
+                            // Sau đó, trích xuất phần bắt đầu bằng '_' để đảm bảo tính toàn vẹn dữ liệu.
+                            const uniqueId = code.data.substring(code.data.indexOf('_'));
+                            verifyTransaction(uniqueId);
+                        } else {
+                            handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
+                        }
+
+                        setTimeout(() => { isProcessingCode = false; }, 2000); // Chờ 2 giây trước khi quét lại
+                    }
+                }
+                if (scanAnimation) {
+                    scanAnimation = requestAnimationFrame(tickQrScanner);
+                }
+            };
+
+            const handleInvalidCode = (message) => {
+                errorSound.play();
+                navigator.vibrate([200, 50, 200]); // Rung báo lỗi
+                elements.scannerFrame.classList.add('error');
+                elements.scannerLine.classList.add('error');
+                renderResult({ type: 'error', message: message });
+                setTimeout(() => {
+                    elements.scannerFrame.classList.remove('error');
+                    elements.scannerLine.classList.remove('error');
+                }, 500);
+            };
+
+            const verifyTransaction = async (uniqueId) => {
+                try {
+                    const { data, error } = await db.rpc('get_security_check_data', { p_unique_id: uniqueId.trim() });
+                    if (error) throw error;
+
+                    if (data && data.security_alert) {
+                        alertSound.play();
+                        navigator.vibrate([100, 50, 100, 50, 400]); // Rung cảnh báo
+                        elements.scannerFrame.classList.add('error');
+                        elements.scannerLine.classList.add('error');
+                    } else if (data) {
+                        beepSound.play();
+                        elements.scannerFrame.classList.add('scanned');
+                        elements.scannerLine.classList.add('scanned');
+                    } else {
+                        handleInvalidCode('Không tìm thấy giao dịch cho mã này.');
+                        return;
+                    }
+
+                    setTimeout(() => {
+                        elements.scannerFrame.classList.remove('error', 'scanned');
+                        elements.scannerLine.classList.remove('error', 'scanned');
+                    }, 500);
+
+                    const combinedData = { ...data.transaction, security_alert: data.security_alert };
+                    renderResult({ type: 'vehicle', transaction: combinedData, security_alert: data.security_alert });
+
+                } catch (error) {
+                    handleInvalidCode(`Lỗi xác minh: ${error.message}`);
+                    console.error("Lỗi xác minh:", error);
+                }
+            };
+
+            const init = async () => {
+                try {
+                    const { data, error } = await db.from('locations').select('*');
+                    if (error) throw error;
+                    LOCATIONS_DATA = data || [];
+                } catch (error) {
+                    showMessage("Không thể tải cấu hình hệ thống. Vui lòng thử lại.", true);
+                }
+                elements.scanControlBtn.addEventListener('click', () => {
+                    if (isScanning) stopScanner();
+                    else startScanner();
+                });
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
             gap: 1.25rem;
         }
         /* NÂNG CẤP: Thêm icon cho các mục thông tin */
         .info-item .label { 
             color: var(--text-secondary); 
-            display: flex;
+            display: flex; 
             align-items: center;
             gap: 8px;
             font-size: 0.9rem;
@@ -305,7 +705,7 @@
         .info-item .label svg {
             width: 16px; height: 16px;
         }
-        .info-item .value { font-weight: 600; font-size: 1.1rem; }
+        .info-item .value { font-weight: 600; font-size: 1.1rem; } 
         
         .message-box {
             text-align: center; padding: 3em; background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-md);
@@ -325,7 +725,7 @@
             box-shadow: var(--shadow-lg);
             border-radius: var(--border-radius-md);
             padding: 0;
-            overflow: hidden;
+            overflow: hidden; 
             width: 100%;
             transition: all 0.3s ease;
             opacity: 0;
@@ -334,7 +734,7 @@
         #citizen-id-card::before {
             content: '';
             display: block;
-            height: 8px;
+            height: 8px; 
             background-color: var(--info-color); /* Màu xanh dương đặc trưng */
         }
         .citizen-header {
@@ -346,7 +746,7 @@
         .citizen-header .fullname { font-size: 2rem; font-weight: 800; color: var(--text-dark); }
         .citizen-header .cccd-number { font-size: 1.2rem; font-family: monospace; color: var(--text-secondary); }
         
-    </style>
+    </style> 
     <!-- NÂNG CẤP: Thêm keyframes cho animation -->
     <style>
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -356,7 +756,7 @@
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
-
+ 
         /* ================================================================= */
         /* NÂNG CẤP LỚN: RESPONSIVE CHO MÀN HÌNH LỚN (DESKTOP/TABLET NGANG) */
         /* ================================================================= */
@@ -366,7 +766,7 @@
                 grid-template-columns: 1fr 1fr;
             }
             .scan-camera-panel {
-                height: auto; /* Để chiều cao tự động theo lưới */
+                height: auto; /* Để chiều cao tự động theo lưới */ 
             }
             .verification-header .plate {
                 font-size: 3.2rem; /* Trả lại kích thước font lớn cho màn hình desktop */
@@ -375,7 +775,7 @@
                 font-size: 2.2rem; /* Trả lại kích thước font lớn cho màn hình desktop */
             }
         }
-    </style>
+    </style> 
 </head>
 <body>
     <header>
@@ -383,13 +783,13 @@
             <div class="logo">
                 <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn"> 
             </div>
-            <div class="title-group">
+            <div class="title-group"> 
                 <p class="subtitle">Hệ thống Quản lý xe Tình nguyện</p>
                 <h1>Kiểm soát An ninh</h1>
             </div> 
         </div>
     </header>
-
+ 
     <div class="container" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: 1400px;">
         <!-- Giao diện chính, chỉ có nút quét -->
         <div id="scan-prompt-view">
@@ -398,12 +798,12 @@
                 Bắt đầu quét
             </button>
         </div>
-
+ 
         <!-- Giao diện quét liên tục -->
         <div id="scan-active-view">
             <div class="scan-camera-panel">
                 <video id="camera-feed" playsinline></video>
-                <!-- SỬA LỖI: Thêm nút bật/tắt đèn flash đã bị thiếu -->
+                <!-- SỬA LỖI: Thêm nút bật/tắt đèn flash đã bị thiếu --> 
                 <button id="toggle-flash-btn" title="Bật/Tắt đèn flash">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                 </button>
@@ -417,7 +817,7 @@
                     <p>Di chuyển mã QR vào vùng quét</p>
                 </div>
                 <!-- THẺ XÁC MINH GIAO DỊCH XE -->
-                <div id="verification-card">
+                <div id="verification-card"> 
                     <div class="verification-content">
                         <div class="verification-header">
                             <div id="verified-plate" class="plate"></div>
@@ -431,7 +831,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- NÂNG CẤP: THẺ XÁC MINH CĂN CƯỚC CÔNG DÂN -->
+                <!-- NÂNG CẤP: THẺ XÁC MINH CĂN CƯỚC CÔNG DÂN --> 
                 <div id="citizen-id-card">
                     <div class="verification-content">
                         <div class="citizen-header">
@@ -445,13 +845,13 @@
                         </div>
                     </div>
                 </div>
-                <button id="stop-scan-btn" style="width: 100%; margin-top: 20px; background: var(--text-secondary);" class="btn-scan-qr">Dừng quét</button>
+                <button id="stop-scan-btn" style="width: 100%; margin-top: 20px; background: var(--text-secondary);" class="btn-scan-qr">Dừng quét</button> 
             </div>
         </div>
-
+ 
         <div id="message-box" class="message-box" style="display: none;"></div>
     </div>
-
+ 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // =================================================================
@@ -459,7 +859,7 @@
             // =================================================================
             const SUPABASE_URL = 'https://mtihqbmlbtrgvamxwrkm.supabase.co'; // <-- THAY BẰNG URL CỦA BẠN
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10aWhxYm1sYnRyZ3ZhbXh3cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMTkwMDEsImV4cCI6MjA3NzU5NTAwMX0.hR5X8bp-XD2DfxUnvWF-yxVk4sFVW2zBunp5XXnIZ0Y'; // <-- THAY BẰNG ANON PUBLIC KEY CỦA BẠN
-            const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); 
 
             // =================================================================
             // KHU VỰC 1: THAM CHIẾU DOM & BIẾN
@@ -473,7 +873,7 @@
                 cameraFeed: document.getElementById('camera-feed'),
                 toggleFlashBtn: document.getElementById('toggle-flash-btn'), // NÂNG CẤP
                 scannerViewfinder: document.getElementById('scanner-viewfinder'),
-                // Verification card elements
+                // Verification card elements 
                 citizenIdCard: document.getElementById('citizen-id-card'), // NÂNG CẤP
                 verificationCard: document.getElementById('verification-card'),
                 verifiedPlate: document.getElementById('verified-plate'),
@@ -485,7 +885,7 @@
             };
 
             let cameraStream = null;
-            let scanAnimation = null;
+            let scanAnimation = null; 
             // NÂNG CẤP: Thay thế logic phức tạp bằng một biến cờ đơn giản
             let isProcessingCode = false;
             let isFlashOn = false; // NÂNG CẤP: Theo dõi trạng thái đèn flash
@@ -502,14 +902,14 @@
             // NÂNG CẤP LỚN: MODULE XỬ LÝ ẢNH ĐỂ TĂNG TỐC ĐỘ QUÉT
             // =================================================================
             const ImageProcessor = {
-                // NÂNG CẤP: Tạo một canvas ẩn để xử lý ảnh với kích thước nhỏ hơn
+                // NÂNG CẤP: Tạo một canvas ẩn để xử lý ảnh với kích thước nhỏ hơn 
                 offscreenCanvas: document.createElement('canvas'),
 
                 // THAY THẾ HOÀN TOÀN: Sử dụng thuật toán Ngưỡng Thích ứng (Adaptive Thresholding)
                 // kết hợp Ảnh Tích phân (Integral Image) để có hiệu năng cao nhất.
                 process(imageData) {
                     const width = imageData.width;
-                    const height = imageData.height;
+                    const height = imageData.height; 
                     const data = imageData.data;
 
                     // 1. Chuyển sang ảnh xám và tạo Ảnh Tích phân (Integral Image) cùng lúc
@@ -521,7 +921,7 @@
                         for (let x = 0; x < width; x++) {
                             const i = (y * width + x);
                             const i4 = i * 4;
-                            // Công thức độ sáng (luminance)
+                            // Công thức độ sáng (luminance) 
                             const gray = data[i4] * 0.299 + data[i4 + 1] * 0.587 + data[i4 + 2] * 0.114;
                             grayscale[i] = gray;
 
@@ -531,7 +931,7 @@
                     }
 
                     // 2. Áp dụng Ngưỡng Thích ứng
-                    const s = width / 8; // Kích thước vùng lân cận
+                    const s = width / 8; // Kích thước vùng lân cận 
                     const s2 = Math.floor(s / 2);
                     const t = 0.15; // Tỷ lệ điều chỉnh
                     const binarizedRgba = new Uint8ClampedArray(width * height * 4);
@@ -540,7 +940,7 @@
                         for (let x = 0; x < width; x++) {
                             const i = y * width + x;
 
-                            // Xác định vùng lân cận
+                            // Xác định vùng lân cận 
                             const x1 = Math.max(0, x - s2);
                             const x2 = Math.min(width - 1, x + s2);
                             const y1 = Math.max(0, y - s2);
@@ -548,7 +948,7 @@
 
                             const count = (x2 - x1 + 1) * (y2 - y1 + 1);
 
-                            // Tính tổng độ sáng của vùng lân cận bằng Ảnh Tích phân (cực nhanh)
+                            // Tính tổng độ sáng của vùng lân cận bằng Ảnh Tích phân (cực nhanh) 
                             const sum = integralImage[y2 * width + x2] -
                                         (y1 > 0 ? integralImage[(y1 - 1) * width + x2] : 0) -
                                         (x1 > 0 ? integralImage[y2 * width + (x1 - 1)] : 0) +
@@ -556,7 +956,7 @@
 
                             // Nếu độ sáng của pixel hiện tại sáng hơn (1-t)% so với trung bình vùng, nó là màu trắng
                             const finalValue = (grayscale[i] * count) < (sum * (1.0 - t)) ? 0 : 255;
-
+ 
                             const i4 = i * 4;
                             binarizedRgba[i4] = finalValue;
                             binarizedRgba[i4 + 1] = finalValue;
@@ -584,10 +984,10 @@
             const showInlineError = (message) => {
                 const placeholder = document.getElementById('result-placeholder');
                 
-                // Ẩn các thẻ kết quả khác
+                // Ẩn các thẻ kết quả khác 
                 resetResultPanel(false); // false để không reset placeholder
                 placeholder.style.display = 'block';
-
+ 
                 // Hiển thị thông báo lỗi
                 placeholder.classList.add('error-message');
                 placeholder.innerHTML = `
@@ -595,7 +995,7 @@
                     <p>${message}</p>
                 `;
 
-                // Tự động xóa lỗi sau một khoảng thời gian
+                // Tự động xóa lỗi sau một khoảng thời gian 
                 setTimeout(() => {
                     resetResultPanel();
                 }, 2000);
@@ -625,7 +1025,7 @@
                 }
 
                 document.getElementById('result-placeholder').style.display = 'none';
-                elements.messageBox.style.display = 'none';
+                elements.messageBox.style.display = 'none'; 
                 elements.citizenIdCard.classList.remove('visible'); // Ẩn thẻ CCCD
                 elements.verificationCard.classList.add('visible');
 
@@ -633,7 +1033,7 @@
                 const cardElement = elements.verificationCard;
                 const statusClass = isDeparted ? 'departed' : 'parking'; // Dùng cho badge
 
-                // Reset các lớp trạng thái của thẻ
+                // Reset các lớp trạng thái của thẻ 
                 cardElement.classList.remove('alert-block', 'departed-card', 'parking-card');
                 if (isDeparted) cardElement.classList.add('departed-card');
 
@@ -641,7 +1041,7 @@
                 elements.verifiedStatus.className = `status-badge ${statusClass}`;
                 elements.verifiedStatus.textContent = tx.status;
                 
-                // NÂNG CẤP: Thêm class cho thanh trạng thái màu
+                // NÂNG CẤP: Thêm class cho thanh trạng thái màu 
                 cardElement.classList.toggle('parking-card', !isDeparted);
 
                 elements.verifiedEntryTime.textContent = formatDateTime(tx.entry_time);
@@ -649,7 +1049,7 @@
                 elements.verifiedLocation.textContent = getLocationName(tx.location_id);
                 elements.verifiedFee.textContent = (tx.fee === null || tx.fee === undefined) ? '--' : `${tx.fee.toLocaleString('vi-VN')}đ`;
 
-                // NÂNG CẤP: Kiểm tra và hiển thị cảnh báo an ninh
+                // NÂNG CẤP: Kiểm tra và hiển thị cảnh báo an ninh 
                 const existingAlertInfo = cardElement.querySelector('.security-alert-info');
                 if (existingAlertInfo) {
                     existingAlertInfo.remove();
@@ -674,14 +1074,14 @@
                     showInlineError('Mã QR CCCD không hợp lệ.');
                     return;
                 }
-
+ 
                 document.getElementById('result-placeholder').style.display = 'none';
                 elements.messageBox.style.display = 'none';
                 elements.verificationCard.classList.remove('visible'); // Ẩn thẻ xe
                 elements.citizenIdCard.classList.add('visible');
 
                 // Định dạng lại ngày tháng năm
-                const dobRaw = citizenData.dob;
+                const dobRaw = citizenData.dob; 
                 const formattedDob = `${dobRaw.substring(0, 2)}/${dobRaw.substring(2, 4)}/${dobRaw.substring(4)}`;
 
                 // NÂNG CẤP: Che 8 số giữa của CCCD để bảo mật
@@ -689,7 +1089,7 @@
                 const maskedCccd = cccd && cccd.length === 12 
                     ? `${cccd.substring(0, 2)}********${cccd.substring(10)}`
                     : cccd;
-
+ 
                 document.getElementById('citizen-fullname').textContent = citizenData.fullName;
                 document.getElementById('citizen-cccd-number').textContent = `CCCD: ${maskedCccd}`;
                 document.getElementById('citizen-dob').textContent = formattedDob;
@@ -703,7 +1103,7 @@
                 placeholder.classList.remove('error-message');
                 placeholder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg><p>Di chuyển mã QR vào vùng quét</p>`;
                 elements.verificationCard.classList.remove('visible');
-                elements.citizenIdCard.classList.remove('visible'); 
+                elements.citizenIdCard.classList.remove('visible');  
             };
 
             // =================================================================
@@ -712,7 +1112,7 @@
             const openQrScanner = async () => {
                 elements.scanPromptView.style.display = 'none';
                 elements.scanActiveView.classList.add('active');
-
+ 
                 if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
                     showMessage('Trình duyệt không hỗ trợ camera.', true);
                     return;
@@ -727,7 +1127,7 @@
                         }
                     };
                     cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    elements.cameraFeed.srcObject = cameraStream; 
+                    elements.cameraFeed.srcObject = cameraStream;  
                     await elements.cameraFeed.play();
 
                     // NÂNG CẤP: Thiết lập kích thước cho canvas ẩn
@@ -735,7 +1135,7 @@
                     ImageProcessor.offscreenCanvas.width = processingSize;
                     ImageProcessor.offscreenCanvas.height = processingSize;
 
-                    // NÂNG CẤP: Kiểm tra và hiển thị nút đèn flash
+                    // NÂNG CẤP: Kiểm tra và hiển thị nút đèn flash 
                     // SỬA LỖI: Thêm bước kiểm tra để đảm bảo videoTrack tồn tại
                     if (cameraStream.getVideoTracks().length > 0) {
                         const videoTrack = cameraStream.getVideoTracks()[0];
@@ -751,13 +1151,13 @@
                             };
                         }
                     }
-
+ 
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                 } catch(err) { 
                     // SỬA LỖI: Hiển thị thông báo lỗi thực tế thay vì thông báo chung chung
                     let errorMessage = 'Không thể truy cập camera. Vui lòng cấp quyền và tải lại trang.';
                     if (err.message) errorMessage = err.message;
-                    console.error("Lỗi khởi tạo camera:", err);
+                    console.error("Lỗi khởi tạo camera:", err); 
                     showMessage(`Lỗi: ${errorMessage}`, true); 
                     stopQrScanner();
                 }
@@ -767,7 +1167,7 @@
                 if (scanAnimation) {
                     cancelAnimationFrame(scanAnimation);
                     scanAnimation = null;
-                }
+                } 
                 // NÂNG CẤP: Tắt đèn flash trước khi dừng camera
                 if (cameraStream) {
                     const videoTrack = cameraStream.getVideoTracks()[0];
@@ -779,7 +1179,7 @@
                     cameraStream.getTracks().forEach(track => track.stop());
                 }
 
-                // Reset cờ xử lý khi dừng
+                // Reset cờ xử lý khi dừng 
                 elements.toggleFlashBtn.style.display = 'none'; // Ẩn nút flash
                 isProcessingCode = false;
                 elements.scanActiveView.classList.remove('active');
@@ -789,7 +1189,7 @@
 
             const tickQrScanner = () => {
                 // NÂNG CẤP: Nếu đang xử lý một mã, bỏ qua các khung hình tiếp theo
-                if (isProcessingCode) {
+                if (isProcessingCode) { 
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                     return;
                 }
@@ -799,10 +1199,10 @@
                     const ctx = ImageProcessor.offscreenCanvas.getContext('2d');
                     ctx.drawImage(elements.cameraFeed, 0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
                     const imageData = ctx.getImageData(0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
-                    
+                     
                     // NÂNG CẤP: Sử dụng bộ xử lý ảnh mới, mạnh mẽ hơn
                     const processedImageData = ImageProcessor.process(imageData);
-                    const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { inversionAttempts: "dontInvert" }); 
+                    const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { inversionAttempts: "dontInvert" });  
                     // NÂNG CẤP: Logic quét đơn giản và hiệu quả hơn
                     if (code) {
                         isProcessingCode = true; // Khóa lại để tránh quét liên tục cùng 1 mã
@@ -811,7 +1211,7 @@
                         if (code.data.length > 500) {
                             handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
                         } else if ((code.data.match(/\|/g) || []).length >= 6) { // THAY ĐỔI: Kiểm tra xem có ít nhất 6 dấu '|' hay không.
-                            beepSound.play();
+                            beepSound.play(); 
                             elements.scannerViewfinder.classList.add('scanned');
                             const parts = code.data.split('|');
                             const citizenData = { 
@@ -825,16 +1225,16 @@
                             };
                             renderCitizenIdCard(citizenData);
                             setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
-                        } else if (code.data.startsWith('_')) { // Giả định mã vé xe hợp lệ bắt đầu bằng '_'
+                        } else if (code.data.startsWith('_')) { // Giả định mã vé xe hợp lệ bắt đầu bằng '_' 
                             // THAY ĐỔI: Không phát âm thanh ở đây, để hàm verifyTransaction quyết định
                             verifyTransaction(code.data);
                         } else {
-                            // Mã không xác định
+                            // Mã không xác định 
                             handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
                         }
 
                         // Sau 1.5 giây, cho phép quét lại
-                        setTimeout(() => {
+                        setTimeout(() => { 
                             isProcessingCode = false;
                         }, 1500);
                     }
@@ -845,7 +1245,7 @@
             };
 
             // NÂNG CẤP: Hàm xử lý khi mã không hợp lệ
-            const handleInvalidCode = (message) => {
+            const handleInvalidCode = (message) => { 
                 errorSound.play();
                 elements.scannerViewfinder.classList.add('error');
                 setTimeout(() => elements.scannerViewfinder.classList.remove('error'), 500);
@@ -855,14 +1255,14 @@
             const verifyTransaction = async (uniqueId) => {
                 showLoading();
                 try {
-                    // NÂNG CẤP HIỆU NĂNG: Gọi hàm RPC duy nhất thay vì 2 truy vấn
+                    // NÂNG CẤP HIỆU NĂNG: Gọi hàm RPC duy nhất thay vì 2 truy vấn 
                     const { data, error } = await db.rpc('get_security_check_data', {
                         p_unique_id: uniqueId.trim()
                     });
 
                     if (error) {
                         throw error;
-                    }
+                    } 
 
                     // NÂNG CẤP: Quyết định âm thanh và hiệu ứng dựa trên kết quả
                     if (data && data.security_alert) {
@@ -876,11 +1276,11 @@
                     }
 
                     if (!data) {
-                        renderVerificationCard(null); // Không tìm thấy giao dịch
+                        renderVerificationCard(null); // Không tìm thấy giao dịch 
                         return;
                     }
                     
-                    // Dữ liệu trả về từ RPC có cấu trúc { transaction: {...}, security_alert: {...} }
+                    // Dữ liệu trả về từ RPC có cấu trúc { transaction: {...}, security_alert: {...} } 
                     // Gộp chúng lại thành một đối tượng để hàm renderVerificationCard có thể sử dụng
                     const combinedData = { ...data.transaction, security_alert: data.security_alert };
                     renderVerificationCard(combinedData);
@@ -895,7 +1295,7 @@
             const resetToMainView = () => {
                 elements.scanActiveView.classList.remove('active');
                 elements.messageBox.style.display = 'none';
-                elements.scanPromptView.style.display = 'flex'; 
+                elements.scanPromptView.style.display = 'flex';  
             };
             
             const init = async () => {
@@ -904,7 +1304,7 @@
                     if (error) throw error;
                     LOCATIONS_DATA = data || [];
                 } catch (error) {
-                    console.error("Lỗi tải danh sách bãi đỗ:", error);
+                    console.error("Lỗi tải danh sách bãi đỗ:", error); 
                     showMessage("Không thể tải cấu hình hệ thống. Vui lòng thử lại.", true);
                 }
                 
@@ -914,9 +1314,9 @@
                 elements.stopScanBtn.addEventListener('click', stopQrScanner);
             };
             
-            init();
+            init(); 
         });
     </script>
 </body>
 </body>
-</html>
+</html> 
