@@ -514,15 +514,9 @@
                     await elements.cameraFeed.play();
 
                     // NÂNG CẤP: Tăng kích thước canvas xử lý ảnh
-                    const processingSize = 800;
+                    const processingSize = 400; // Giảm kích thước để tăng tốc
                     ImageProcessor.offscreenCanvas.width = processingSize;
                     ImageProcessor.offscreenCanvas.height = processingSize;
-
-                    // NÂNG CẤP: Khởi tạo và lắng nghe Web Worker
-                    qrWorker = new Worker('qr-worker.js');
-                    // SỬA LỖI: Chỉ nhận kết quả khi worker tìm thấy mã, không cần quản lý trạng thái "bận/rảnh"
-                    qrWorker.onmessage = (event) => handleQrCodeResult(event.data);
-
 
                     if (cameraStream.getVideoTracks().length > 0) {
                         const videoTrack = cameraStream.getVideoTracks()[0];
@@ -547,11 +541,6 @@
             };
 
             const stopScanner = () => {
-                // NÂNG CẤP: Chấm dứt Web Worker khi dừng quét
-                if (qrWorker) {
-                    qrWorker.terminate();
-                    qrWorker = null;
-                }
                 if (scanAnimation) cancelAnimationFrame(scanAnimation);
                 scanAnimation = null;
                 if (cameraStream) {
@@ -611,9 +600,11 @@
                     }
 
                     // Giảm thời gian chờ và chỉ reset isProcessingCode.
+                    // Tăng nhẹ độ trễ để tránh quét lại cùng 1 mã quá nhanh
                     setTimeout(() => { 
                         isProcessingCode = false; 
-                    }, 200); // Giảm độ trễ xuống 200ms
+                        lastScannedCode = null; // Cho phép quét lại mã cũ sau 1.5s
+                    }, 1500);
                 }
             };
 
@@ -622,28 +613,29 @@
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                     return;
                 }
-                if (qrWorker && elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
+                if (elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
                     const ctx = ImageProcessor.offscreenCanvas.getContext('2d');
                     
-                    // TỐI ƯU HÓA: Tính toán và chỉ vẽ vùng ảnh cần thiết (ROI) lên canvas ẩn
-                    // thay vì vẽ toàn bộ khung hình rồi mới cắt.
                     const videoWidth = elements.cameraFeed.videoWidth;
                     const videoHeight = elements.cameraFeed.videoHeight;
-                    const canvasSize = ImageProcessor.offscreenCanvas.width; // Canvas của chúng ta là hình vuông
+                    const canvasSize = ImageProcessor.offscreenCanvas.width;
                     
-                    // Xác định vùng ROI trên video gốc (hình chữ nhật)
-                    const roiRatio = 0.7; // Tương ứng 70% của khung ngắm
+                    const roiRatio = 0.7; 
                     const roiSizeOnVideo = Math.min(videoWidth, videoHeight) * roiRatio;
                     const sx = (videoWidth - roiSizeOnVideo) / 2;
                     const sy = (videoHeight - roiSizeOnVideo) / 2;
 
-                    // Vẽ vùng ROI từ video lên canvas ẩn (vừa vặn)
                     ctx.drawImage(elements.cameraFeed, sx, sy, roiSizeOnVideo, roiSizeOnVideo, 0, 0, canvasSize, canvasSize);
-
-                    // Lấy dữ liệu ảnh từ canvas (đã chứa sẵn ROI)
                     const roiImageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
 
-                    qrWorker.postMessage(roiImageData, [roiImageData.data.buffer]);
+                    // ** KHÔI PHỤC TỐC ĐỘ: Xử lý trực tiếp trên luồng chính **
+                    const code = jsQR(roiImageData.data, roiImageData.width, roiImageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+                    
+                    if (code) {
+                        handleQrCodeResult(code);
+                    }
                 }
                 if (scanAnimation) {
                     scanAnimation = requestAnimationFrame(tickQrScanner);
