@@ -35,8 +35,8 @@
             background-size: 40px 40px;
             color: var(--text-primary);
             margin: 0;
-            font-size: 400px; /* TĂNG MẠNH FONT CHỮ CƠ SỞ */
-            line-height: 1.65; /* Giữ nguyên line-height để thoáng */
+            font-size: 18px; /* Đặt lại font chữ cơ sở về mức hợp lý */
+            line-height: 1.6;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -168,7 +168,7 @@
             bottom: 0; left: 0; right: 0;
             background: linear-gradient(to top, rgba(17, 24, 39, 1), rgba(17, 24, 39, 0.9));
             border-top: 1px solid var(--border-color);
-            padding: 2rem; /* Tăng padding cho thoáng hơn */
+            padding: 1.5rem;
             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -180,7 +180,7 @@
         .result-grid {
             display: grid;
             grid-template-columns: 120px 1fr;
-            gap: 2rem; /* Tăng khoảng cách */
+            gap: 1.5rem;
             align-items: center;
         }
         .status-indicator {
@@ -199,13 +199,13 @@
 
         .result-details .plate {
             font-family: var(--font-mono);
-            font-size: 3rem; /* TĂNG MẠNH KÍCH THƯỚC BIỂN SỐ */
+            font-size: clamp(2.8rem, 8vw, 4rem); /* TĂNG CỠ CHỮ LINH HOẠT */
             font-weight: 700;
             letter-spacing: 2px;
             line-height: 1;
         }
         .result-details .status-text {
-            font-size: 1.5rem; /* TĂNG MẠNH KÍCH THƯỚC TRẠNG THÁI */
+            font-size: clamp(1.3rem, 4vw, 1.6rem); /* TĂNG CỠ CHỮ LINH HOẠT */
             font-weight: 500;
             margin-top: 0.5rem;
         }
@@ -219,8 +219,8 @@
             margin-top: 1.75rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.5rem 1.5rem; /* Tăng khoảng cách */
-            font-size: 1.1rem; /* TĂNG KÍCH THƯỚC CHI TIẾT PHỤ */
+            gap: 1.25rem 1.5rem;
+            font-size: clamp(1rem, 2.5vw, 1.1rem); /* TĂNG CỠ CHỮ LINH HOẠT */
         }
         .sub-details .label { 
             color: var(--text-secondary); font-weight: 500; 
