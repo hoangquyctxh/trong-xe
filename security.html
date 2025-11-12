@@ -125,6 +125,11 @@
         }
         .scanner-frame.scanned { --accent-blue: var(--accent-green); }
         .scanner-frame.error { --accent-blue: var(--accent-red); animation: shake 0.5s; }
+        /* NÂNG CẤP: Thêm hiệu ứng khi đang xử lý mã */
+        .scanner-frame.processing {
+            --accent-blue: #3b82f6; /* Luôn là màu xanh dương mặc định */
+            box-shadow: 0 0 20px var(--accent-blue);
+        }
 
         .scanner-line {
             position: absolute;
@@ -194,7 +199,6 @@
         .status-indicator.departed { border-color: var(--accent-yellow); box-shadow: 0 0 20px var(--accent-yellow); color: var(--accent-yellow); }
         .status-indicator.alert { border-color: var(--accent-red); box-shadow: 0 0 20px var(--accent-red); color: var(--accent-red); }
         .status-indicator.error { border-color: var(--accent-red); box-shadow: 0 0 20px var(--accent-red); color: var(--accent-red); }
-        .status-indicator.vip { border-color: var(--accent-yellow); box-shadow: 0 0 25px var(--accent-yellow); color: var(--accent-yellow); } /* NÂNG CẤP: Style cho VIP */
         .status-indicator.cccd { border-color: var(--accent-blue); box-shadow: 0 0 20px var(--accent-blue); color: var(--accent-blue); }
 
         .result-details .plate {
@@ -213,7 +217,6 @@
         .result-details .status-text.departed { color: var(--accent-yellow); }
         .result-details .status-text.alert { color: var(--accent-red); }
         .result-details .status-text.error { color: var(--accent-red); }
-        .result-details .status-text.vip { color: var(--accent-yellow); } /* NÂNG CẤP: Style cho VIP */
         .result-details .status-text.cccd { color: var(--accent-blue); }
 
         .sub-details {
@@ -238,16 +241,6 @@
             color: #fecaca;
         }
         .alert-reason strong { color: var(--accent-red); }
-        /* NÂNG CẤP: Style cho hướng dẫn ưu tiên */
-        .priority-instruction {
-            grid-column: 1 / -1;
-            background: rgba(234, 179, 8, 0.1);
-            border: 1px solid var(--accent-yellow);
-            padding: 0.75rem;
-            border-radius: var(--border-radius-md);
-            color: #fef9c3;
-            font-weight: 500;
-        }
 
         /* Nâng cấp responsive */
         @media (min-width: 768px) {
@@ -378,7 +371,6 @@
                 alert: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
                 error: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>',
                 cccd: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-                vip: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>', // NÂNG CẤP: Icon ngôi sao cho VIP
             };
 
             let cameraStream = null;
@@ -394,7 +386,6 @@
             const beepSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/beep.mp3');
             const errorSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/error.mp3');
             const alertSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/warning.mp3');
-            const vipSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/confirmation.mp3'); // NÂNG CẤP: Âm thanh cho VIP
 
             // =================================================================
             // NÂNG CẤP: MODULE XỬ LÝ ẢNH ĐƯỢC CHUYỂN SANG WEB WORKER
@@ -456,11 +447,6 @@
                         statusText = 'Cảnh Báo An Ninh';
                         icon = ICONS.alert;
                         elements.subDetailsGrid.innerHTML += `<div class="alert-reason"><strong>Lý do:</strong> ${data.security_alert.reason || 'Không rõ'}</div>`;
-                    } else if (tx.is_vip) { // NÂNG CẤP: Kiểm tra trạng thái VIP
-                        statusClass = 'vip';
-                        statusText = 'KHÁCH MỜI / VIP';
-                        icon = ICONS.vip;
-                        elements.subDetailsGrid.innerHTML += `<div class="priority-instruction">Quy trình ưu tiên: Mời vào làn riêng, không thu phí.</div>`;
                     } else if (tx.status === 'Đang gửi') {
                         statusClass = 'safe';
                         statusText = 'Xe đang gửi - An toàn';
@@ -595,6 +581,12 @@
                 if (code && code.data && code.data !== lastScannedCode) {
                     isProcessingCode = true;
                     lastScannedCode = code.data; // Cập nhật mã đã quét
+
+                    // NÂNG CẤP: Thêm phản hồi trực quan ngay khi mã được nhận diện
+                    elements.scannerFrame.classList.add('processing');
+                    // Xóa hiệu ứng này sau một khoảng thời gian ngắn
+                    setTimeout(() => elements.scannerFrame.classList.remove('processing'), 400);
+
                     navigator.vibrate(100); // Rung nhẹ khi quét được
 
                     if (code.data.length > 500) {
@@ -624,7 +616,7 @@
                     // Giảm thời gian chờ và chỉ reset isProcessingCode.
                     setTimeout(() => { 
                         isProcessingCode = false; 
-                    }, 200); // Giảm độ trễ xuống 200ms
+                    }, 300); // Giảm độ trễ xuống 300ms
                 }
             };
 
@@ -666,10 +658,6 @@
                         navigator.vibrate([100, 50, 100, 50, 400]); // Rung cảnh báo
                         elements.scannerFrame.classList.add('error');
                         elements.scannerLine.classList.add('error');
-                    } else if (data && data.transaction.is_vip) { // NÂNG CẤP: Xử lý âm thanh cho VIP
-                        vipSound.play();
-                        elements.scannerFrame.classList.add('scanned'); // Dùng hiệu ứng thành công
-                        elements.scannerLine.classList.add('scanned');
                     } else if (data) {
                         beepSound.play();
                         elements.scannerFrame.classList.add('scanned');
