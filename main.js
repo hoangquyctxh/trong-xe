@@ -1580,6 +1580,15 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.scanQrBtn.addEventListener('click', () => Handlers.openQrScanner());
             dom.changeLocationBtn.addEventListener('click', () => this.determineLocation(true));
             
+            // NÂNG CẤP: Tự động điền ghi chú cho xe VIP
+            dom.isVipCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    dom.vehicleNotesInput.value = 'Khách VIP';
+                } else if (dom.vehicleNotesInput.value === 'Khách VIP') {
+                    dom.vehicleNotesInput.value = '';
+                }
+            });
+
             // SỬA LỖI: Di chuyển listener lên form để bắt được cả sự kiện của nút phụ "Xem lại vé"
             dom.formNewVehicle.addEventListener('click', (e) => Handlers.handleActionClick(e));
 

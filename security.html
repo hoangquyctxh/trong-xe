@@ -232,6 +232,10 @@
         }
         .sub-details .label::after { content: ':'; } /* THÊM: Tự động thêm dấu hai chấm */
         .sub-details .value { font-weight: 600; font-family: var(--font-mono); }
+        .sub-details .value.vip-note {
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
         .alert-reason {
             grid-column: 1 / -1;
             background: rgba(239, 68, 68, 0.1);
@@ -371,6 +375,7 @@
                 alert: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
                 error: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>',
                 cccd: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+                vip: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>'
             };
 
             let cameraStream = null;
@@ -441,11 +446,17 @@
                 } else { // Vehicle transaction
                     const tx = data.transaction;
                     plate = tx.plate || '???';
+                    
                     if (data.security_alert) {
                         statusClass = 'alert';
                         statusText = 'Cảnh Báo An Ninh';
                         icon = ICONS.alert;
                         elements.subDetailsGrid.innerHTML += `<div class="alert-reason"><strong>Lý do:</strong> ${data.security_alert.reason || 'Không rõ'}</div>`;
+                    } else if (tx.is_vip) {
+                        statusClass = 'cccd'; // Dùng màu xanh dương nổi bật
+                        statusText = 'XE VIP - An Toàn';
+                        icon = ICONS.vip;
+                        elements.subDetailsGrid.innerHTML += `<div class="info-item" style="grid-column: 1 / -1;"><span class="label">Phụ chú</span><span class="value vip-note">${tx.notes || 'Khách mời / Xe ưu tiên'}</span></div>`;
                     } else if (tx.status === 'Đang gửi') {
                         statusClass = 'safe';
                         statusText = 'Xe đang gửi - An toàn';
@@ -455,6 +466,7 @@
                         statusText = 'Xe đã rời bãi';
                         icon = ICONS.departed;
                     }
+
                     elements.subDetailsGrid.innerHTML += `
                         <div class="info-item"><span class="label">Giờ vào</span><span class="value">${formatDateTime(tx.entry_time)}</span></div>
                         <div class="info-item"><span class="label">Giờ ra</span><span class="value">${formatDateTime(tx.exit_time)}</span></div>
