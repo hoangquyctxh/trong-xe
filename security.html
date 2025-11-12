@@ -35,7 +35,8 @@
             background-size: 40px 40px;
             color: var(--text-primary);
             margin: 0;
-            line-height: 1.6
+            font-size: 400px; /* TĂNG MẠNH FONT CHỮ CƠ SỞ */
+            line-height: 1.65; /* Giữ nguyên line-height để thoáng */
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -166,9 +167,8 @@
             position: fixed;
             bottom: 0; left: 0; right: 0;
             background: linear-gradient(to top, rgba(17, 24, 39, 1), rgba(17, 24, 39, 0.9));
-            border-to1.5: 1px solid var(--border-color);
-            padding: 1.5rem;
-            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding: 2rem; /* Tăng padding cho thoáng hơn */
             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -178,10 +178,9 @@
             transform: translateY(0);
         }
         .result-grid {
-            displ1.5y: grid;
-            grid-1.5emplate-columns: 120px 1fr;
-            gap: 2rem;
-            gap: 1.5rem;
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 2rem; /* Tăng khoảng cách */
             align-items: center;
         }
         .status-indicator {
@@ -197,18 +196,16 @@
         .status-indicator.alert { border-color: var(--accent-red); box-shadow: 0 0 20px var(--accent-red); color: var(--accent-red); }
         .status-indicator.error { border-color: var(--accent-red); box-shadow: 0 0 20px var(--accent-red); color: var(--accent-red); }
         .status-indicator.cccd { border-color: var(--accent-blue); box-shadow: 0 0 20px var(--accent-blue); color: var(--accent-blue); }
-32 /* TĂNG KÍCH THƯỚC */
-        .result-details3.2late /* TĂNG KÍCH THƯỚC */ {
+
+        .result-details .plate {
             font-family: var(--font-mono);
-            font-size: 2.8rem;
-            font-size: 3.2rem; /* TĂNG KÍCH THƯỚC */
+            font-size: 3rem; /* TĂNG MẠNH KÍCH THƯỚC BIỂN SỐ */
             font-weight: 700;
-            letter-spacin4: 2p /* TĂNG KÍCH THƯỚC */x;
-            line-height: 4; /* TĂNG KÍCH THƯỚC */
+            letter-spacing: 2px;
+            line-height: 1;
         }
         .result-details .status-text {
-            font-size: 1.2rem;
-            font-size: 1.4rem; /* TĂNG KÍCH THƯỚC */
+            font-size: 1.5rem; /* TĂNG MẠNH KÍCH THƯỚC TRẠNG THÁI */
             font-weight: 500;
             margin-top: 0.5rem;
         }
@@ -217,15 +214,13 @@
         .result-details .status-text.alert { color: var(--accent-red); }
         .result-details .status-text.error { color: var(--accent-red); }
         .result-details .status-text.cccd { color: var(--accent-blue); }
-.25 /* TĂNG KHOẢNG CÁCH */
-        .sub-detai.25ls {1 /* TĂ /* TĂNG KHOẢNG CÁCH */NG KÍCH THƯỚC */
-            margin-top:175re /* TĂNG KÍCH THƯỚC */m;
+
+        .sub-details {
+            margin-top: 1.75rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem 1.5rem;
-            font-size: 0.9rem;
-            gap: 1.25rem 1.5rem; /* TĂNG KHOẢNG CÁCH */
-            font-size: 1rem; /* TĂNG KÍCH THƯỚC */
+            gap: 1.5rem 1.5rem; /* Tăng khoảng cách */
+            font-size: 1.1rem; /* TĂNG KÍCH THƯỚC CHI TIẾT PHỤ */
         }
         .sub-details .label { 
             color: var(--text-secondary); font-weight: 500; 
@@ -238,15 +233,7 @@
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid var(--accent-red);
             padding: 0.75rem;
-            border-radiu {
-                padding: {
-                padding: 2rem;
-                padding-bottom: calc(2rem + env(safe-area-inset-bottom));
-            }
-            #result-panel 2rem;
-                padding-bottom: calc(2rem + env(safe-area-inset-bottom));
-            }
-            #result-panels: var(--border-radius-md);
+            border-radius: var(--border-radius-md);
             color: #fecaca;
         }
         .alert-reason strong { color: var(--accent-red); }
