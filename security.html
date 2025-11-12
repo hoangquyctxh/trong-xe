@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm soát An ninh</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="config.js"></script>
+    <style>
+        /* --- ĐỒNG BỘ GIAO DIỆN VỚI TRANG CHÍNH --- */
+        :root {
+            /* NÂNG CẤP: Bảng màu "Tech" hiện đại */
+            --bg-main: #f1f5f9; /* Nền xám xanh rất nhạt */
+            --bg-card: #ffffff; 
+            --border-color: #e2e8f0;
+            --primary-accent: #dc2626; /* Màu đỏ cho an ninh */
+            --primary-accent-light: #fee2e2;
+            --text-primary: #1e293b;
+            --text-dark: #0f172a;
+            --text-secondary: #64748b;
+            --success-color: #16a34a;
+            --info-color: #2563eb; /* NÂNG CẤP: Màu xanh dương cho thông tin CCCD */
+            --border-radius-md: 0.5rem;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: var(--bg-main);
+            /* NÂNG CẤP: Họa tiết nền chấm bi tinh tế */ 
+            background-image: radial-gradient(var(--border-color) 1.5px, transparent 1.5px);
+            background-size: 20px 20px;
+            color: var(--text-primary);
+            margin: 0;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale; 
+            overflow: hidden; /* Ngăn cuộn trang khi ở giao diện quét */
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 25px;
+        }
+        /* --- HEADER MỚI --- */
+        header { 
+            background: var(--bg-card);
+            padding: 15px 25px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 10; 
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .header-title { display: flex; align-items: center; gap: 15px; }
+        .header-title .logo img { width: 50px; height: auto; }
+        .title-group { display: flex; flex-direction: column; }
+        .header-title .subtitle { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+        .header-title h1 { font-size: 1.8rem; color: var(--text-primary); font-weight: 800; line-height: 1.2; }
+
+        /* --- GIAO DIỆN CHÍNH --- */
+        #scan-prompt-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            width: 100%; 
+            animation: fadeIn 0.5s ease;
+            text-align: center;
+        }
+        #scan-qr-btn {
+            padding: 25px 40px;
+            border: none;
+            background: var(--primary-accent);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: var(--border-radius-md);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.2s ease;
+        }
+        #scan-qr-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.15);
+        }
+        #scan-qr-btn svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* ================================================================= */
+        /* NÂNG CẤP LỚN: GIAO DIỆN QUÉT LIÊN TỤC */
+        /* ================================================================= */
+        #scan-active-view {
+            display: none; /* Ẩn ban đầu */
+            flex-grow: 1;
+            width: 100%;
+            padding: 2rem;
+            gap: 2rem;
+        }
+        #scan-active-view.active {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            animation: fadeIn 0.5s ease;
+        }
+        .scan-camera-panel {
+            position: relative;
+            background: #000;
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .scanner-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .scanner-viewfinder {
+            width: 70%;
+            height: 0;
+            padding-bottom: 70%;
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
+            transition: border-color 0.2s ease;
+        }
+        .scanner-viewfinder.scanned {
+            border-color: var(--success-color);
+        }
+        /* NÂNG CẤP: Hiệu ứng khi quét lỗi */
+        .scanner-viewfinder.error {
+            border-color: var(--primary-accent);
+        }
+
+        .scan-result-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .result-placeholder {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        .result-placeholder svg { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.5; }
+        .result-placeholder p { font-size: 1.2rem; font-weight: 500; }
+        /* NÂNG CẤP: Style cho thông báo lỗi tại chỗ */
+        .result-placeholder.error-message {
+            color: var(--primary-accent);
+            animation: shake 0.5s;
+        }
+        .result-placeholder.error-message svg { opacity: 1; }
+
+        /* NÂNG CẤP: Ẩn tất cả các thẻ kết quả ban đầu */
+        #verification-card, #citizen-id-card {
+            display: none;
+        }
+
+        /* --- THẺ XÁC MINH --- */
+        #verification-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--border-radius-md);
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            transition: all 0.3s ease;
+            /* NÂNG CẤP: Hiệu ứng xuất hiện */
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #verification-card.visible, #citizen-id-card.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* NÂNG CẤP: Thanh trạng thái màu ở trên cùng */
+        #verification-card::before {
+            content: '';
+            display: block;
+            height: 8px;
+            background-color: var(--border-color); /* Màu mặc định */ 
+            transition: background-color 0.3s ease;
+        }
+
+        /* NÂNG CẤP: Thêm style cho thẻ bị cảnh báo */
+        #verification-card.alert-block {
+            border-color: var(--primary-accent);
+        }
+        #verification-card.alert-block::before { background-color: var(--primary-accent); } /* Đỏ */ 
+
+        /* NÂNG CẤP: Thêm style cho thẻ đã rời bãi */
+        #verification-card.departed-card {
+            background-color: var(--bg-main);
+            border-color: var(--border-color);
+        }
+        #verification-card.departed-card::before { background-color: var(--text-secondary); } /* Xám */ 
+        #verification-card.parking-card::before { background-color: var(--success-color); } /* Xanh */
+
+
+        .security-alert-info {
+            background-color: var(--danger-light);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: calc(var(--border-radius-md) - 4px);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .security-alert-info svg {
+            flex-shrink: 0;
+            width: 24px; height: 24px;
+        }
+        .security-alert-info .reason { font-weight: 600; }
+
+        .verification-content { padding: 1.75rem; } /* NÂNG CẤP: Bọc nội dung thẻ */
+
+        .verification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .verification-header .plate {
+            font-size: 3.2rem; /* NÂNG CẤP: Cực lớn */
+            font-weight: 800;
+            font-family: monospace;
+            color: var(--text-dark);
+            letter-spacing: 2px;
+        }
+
+        .status-badge {
+            font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: white;
+        }
+        .status-badge.parking { background-color: var(--success-color); }
+        .status-badge.departed { background-color: var(--text-secondary); }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+        /* NÂNG CẤP: Thêm icon cho các mục thông tin */
+        .info-item .label { 
+            color: var(--text-secondary); 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        .info-item .label svg {
+            width: 16px; height: 16px;
+        }
+        .info-item .value { font-weight: 600; font-size: 1.1rem; }
+        
+        .message-box {
+            text-align: center; padding: 3em; background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-md);
+        }
+        .message-box.error {
+            background-color: #fff1f2;
+            border-color: #ffdde0;
+            color: #be123c;
+        }
+
+        /* ================================================================= */
+        /* NÂNG CẤP: GIAO DIỆN THẺ CĂN CƯỚC CÔNG DÂN */
+        /* ================================================================= */
+        #citizen-id-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--border-radius-md);
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #citizen-id-card::before {
+            content: '';
+            display: block;
+            height: 8px;
+            background-color: var(--info-color); /* Màu xanh dương đặc trưng */
+        }
+        .citizen-header {
+            text-align: center;
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .citizen-header .fullname { font-size: 2.2rem; font-weight: 800; color: var(--text-dark); }
+        .citizen-header .cccd-number { font-size: 1.2rem; font-family: monospace; color: var(--text-secondary); }
+
+    </style>
+    <!-- NÂNG CẤP: Thêm keyframes cho animation -->
+    <style>
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">
+            <div class="logo">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn"> 
+            </div>
+            <div class="title-group">
+                <p class="subtitle">Hệ thống Quản lý xe Tình nguyện</p>
+                <h1>Kiểm soát An ninh</h1>
+            </div> 
+        </div>
+    </header>
+
+    <div class="container" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: 1400px;">
+        <!-- Giao diện chính, chỉ có nút quét -->
+        <div id="scan-prompt-view">
+            <button id="scan-qr-btn" type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                Bắt đầu quét
+            </button>
+        </div>
+
+        <!-- Giao diện quét liên tục -->
+        <div id="scan-active-view">
+            <div class="scan-camera-panel">
+                <video id="camera-feed" playsinline></video>
+                <div class="scanner-overlay">
+                    <div id="scanner-viewfinder" class="scanner-viewfinder"></div>
+                </div>
+            </div>
+            <div class="scan-result-panel">
+                <div id="result-placeholder" class="result-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg>
+                    <p>Di chuyển mã QR vào vùng quét</p>
+                </div>
+                <!-- THẺ XÁC MINH GIAO DỊCH XE -->
+                <div id="verification-card">
+                    <div class="verification-content">
+                        <div class="verification-header">
+                            <div id="verified-plate" class="plate"></div>
+                            <div id="verified-status" class="status-badge"></div>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>Giờ vào</span><span id="verified-entry-time" class="value"></span></div>
+                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Giờ ra</span><span id="verified-exit-time" class="value"></span></div>
+                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Bãi đỗ</span><span id="verified-location" class="value"></span></div>
+                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Phí</span><span id="verified-fee" class="value"></span></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- NÂNG CẤP: THẺ XÁC MINH CĂN CƯỚC CÔNG DÂN -->
+                <div id="citizen-id-card">
+                    <div class="verification-content">
+                        <div class="citizen-header">
+                            <div id="citizen-fullname" class="fullname"></div>
+                            <div id="citizen-cccd-number" class="cccd-number"></div>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>Ngày sinh</span><span id="citizen-dob" class="value"></span></div>
+                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Giới tính</span><span id="citizen-gender" class="value"></span></div>
+                            <div class="info-item" style="grid-column: 1 / -1;"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Địa chỉ thường trú</span><span id="citizen-address" class="value"></span></div>
+                        </div>
+                    </div>
+                </div>
+                <button id="stop-scan-btn" style="width: 100%; margin-top: 20px; background: var(--text-secondary);" class="btn-scan-qr">Dừng quét</button>
+            </div>
+        </div>
+
+        <div id="message-box" class="message-box" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // =================================================================
+            // KHU VỰC 0: THIẾT LẬP
+            // =================================================================
+            const SUPABASE_URL = 'https://mtihqbmlbtrgvamxwrkm.supabase.co'; // <-- THAY BẰNG URL CỦA BẠN
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10aWhxYm1sYnRyZ3ZhbXh3cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMTkwMDEsImV4cCI6MjA3NzU5NTAwMX0.hR5X8bp-XD2DfxUnvWF-yxVk4sFVW2zBunp5XXnIZ0Y'; // <-- THAY BẰNG ANON PUBLIC KEY CỦA BẠN
+            const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            // =================================================================
+            // KHU VỰC 1: THAM CHIẾU DOM & BIẾN
+            // =================================================================
+            const elements = {
+                scanPromptView: document.getElementById('scan-prompt-view'),
+                scanActiveView: document.getElementById('scan-active-view'),
+                messageBox: document.getElementById('message-box'),
+                scanQrBtn: document.getElementById('scan-qr-btn'),
+                stopScanBtn: document.getElementById('stop-scan-btn'),
+                cameraFeed: document.getElementById('camera-feed'),
+                scannerViewfinder: document.getElementById('scanner-viewfinder'),
+                // Verification card elements
+                citizenIdCard: document.getElementById('citizen-id-card'), // NÂNG CẤP
+                verificationCard: document.getElementById('verification-card'),
+                verifiedPlate: document.getElementById('verified-plate'),
+                verifiedStatus: document.getElementById('verified-status'),
+                verifiedEntryTime: document.getElementById('verified-entry-time'),
+                verifiedExitTime: document.getElementById('verified-exit-time'),
+                verifiedLocation: document.getElementById('verified-location'),
+                verifiedFee: document.getElementById('verified-fee'),
+            };
+
+            let cameraStream = null;
+            let scanAnimation = null;
+            // NÂNG CẤP: Thay thế logic phức tạp bằng một biến cờ đơn giản
+            let isProcessingCode = false;
+            let LOCATIONS_DATA = [];
+
+            // NÂNG CẤP: Tạo đối tượng âm thanh cho tiếng "bíp"
+            const beepSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/beep.mp3');
+            // NÂNG CẤP: Thêm âm thanh báo lỗi
+            const errorSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/error.mp3');
+
+            // =================================================================
+            // KHU VỰC 2: CÁC HÀM TIỆN ÍCH VÀ GIAO DIỆN
+            // =================================================================
+            const showMessage = (message, isError = false) => {
+                elements.scanActiveView.classList.remove('active');
+                elements.scanPromptView.style.display = 'flex';
+                elements.messageBox.style.display = 'block';
+                elements.messageBox.className = `message-box ${isError ? 'error' : ''}`;
+                elements.messageBox.innerHTML = `<p style="font-weight: bold;">${message}</p>`;
+            };
+
+            // NÂNG CẤP: Hàm hiển thị lỗi tại chỗ mà không thoát ra
+            const showInlineError = (message) => {
+                const placeholder = document.getElementById('result-placeholder');
+                
+                // Ẩn các thẻ kết quả khác
+                resetResultPanel(false); // false để không reset placeholder
+                placeholder.style.display = 'block';
+
+                // Hiển thị thông báo lỗi
+                placeholder.classList.add('error-message');
+                placeholder.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <p>${message}</p>
+                `;
+
+                // Tự động xóa lỗi sau một khoảng thời gian
+                setTimeout(() => {
+                    resetResultPanel();
+                }, 2000);
+            };
+
+            const showLoading = () => {
+                document.getElementById('result-placeholder').style.display = 'block';
+                elements.citizenIdCard.classList.remove('visible');
+                elements.verificationCard.classList.remove('visible');
+                elements.messageBox.style.display = 'block';
+                elements.messageBox.className = 'message-box';
+                elements.messageBox.innerHTML = `<p>Đang tải thông tin, vui lòng chờ...</p>`;
+            };
+
+            const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
+
+            const getLocationName = (locationId) => {
+                if (!locationId) return 'Không xác định';
+                const location = LOCATIONS_DATA.find(loc => loc.id === locationId);
+                return location ? location.name : 'Không xác định';
+            };
+
+            const renderVerificationCard = (tx) => {
+                if (!tx) {
+                    showInlineError('Không tìm thấy giao dịch cho mã này.');
+                    return;
+                }
+
+                document.getElementById('result-placeholder').style.display = 'none';
+                elements.messageBox.style.display = 'none';
+                elements.citizenIdCard.classList.remove('visible'); // Ẩn thẻ CCCD
+                elements.verificationCard.classList.add('visible');
+
+                const isDeparted = tx.status !== 'Đang gửi';
+                const cardElement = elements.verificationCard;
+                const statusClass = isDeparted ? 'departed' : 'parking'; // Dùng cho badge
+
+                // Reset các lớp trạng thái của thẻ
+                cardElement.classList.remove('alert-block', 'departed-card', 'parking-card');
+                if (isDeparted) cardElement.classList.add('departed-card');
+
+                elements.verifiedPlate.textContent = tx.plate || '???';
+                elements.verifiedStatus.className = `status-badge ${statusClass}`;
+                elements.verifiedStatus.textContent = tx.status;
+                
+                // NÂNG CẤP: Thêm class cho thanh trạng thái màu
+                cardElement.classList.toggle('parking-card', !isDeparted);
+
+                elements.verifiedEntryTime.textContent = formatDateTime(tx.entry_time);
+                elements.verifiedExitTime.textContent = formatDateTime(tx.exit_time);
+                elements.verifiedLocation.textContent = getLocationName(tx.location_id);
+                elements.verifiedFee.textContent = (tx.fee === null || tx.fee === undefined) ? '--' : `${tx.fee.toLocaleString('vi-VN')}đ`;
+
+                // NÂNG CẤP: Kiểm tra và hiển thị cảnh báo an ninh
+                const existingAlertInfo = cardElement.querySelector('.security-alert-info');
+                if (existingAlertInfo) {
+                    existingAlertInfo.remove();
+                }
+
+                if (tx.security_alert) {
+                    cardElement.classList.remove('departed-card'); // Ưu tiên màu đỏ của cảnh báo
+                    cardElement.classList.remove('parking-card');
+                    cardElement.classList.add('alert-block');
+                    const alertInfoHtml = `
+                        <div class="verification-content" style="padding-top: 0; padding-bottom: 0;"><div class="security-alert-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <div><strong>CẢNH BÁO AN NINH:</strong> <span class="reason">${tx.security_alert.reason || 'Không có lý do cụ thể.'}</span></div>
+                        </div></div>`;
+                    cardElement.querySelector('.verification-content').insertAdjacentHTML('beforebegin', alertInfoHtml);
+                }
+            };
+
+            // NÂNG CẤP: Hàm render thẻ CCCD
+            const renderCitizenIdCard = (citizenData) => {
+                if (!citizenData) {
+                    showInlineError('Mã QR CCCD không hợp lệ.');
+                    return;
+                }
+
+                document.getElementById('result-placeholder').style.display = 'none';
+                elements.messageBox.style.display = 'none';
+                elements.verificationCard.classList.remove('visible'); // Ẩn thẻ xe
+                elements.citizenIdCard.classList.add('visible');
+
+                // Định dạng lại ngày tháng năm
+                const dobRaw = citizenData.dob;
+                const formattedDob = `${dobRaw.substring(0, 2)}/${dobRaw.substring(2, 4)}/${dobRaw.substring(4)}`;
+
+                // NÂNG CẤP: Che 8 số giữa của CCCD để bảo mật
+                const cccd = citizenData.cccdNumber;
+                const maskedCccd = cccd && cccd.length === 12 
+                    ? `${cccd.substring(0, 2)}********${cccd.substring(10)}`
+                    : cccd;
+
+                document.getElementById('citizen-fullname').textContent = citizenData.fullName;
+                document.getElementById('citizen-cccd-number').textContent = `CCCD: ${maskedCccd}`;
+                document.getElementById('citizen-dob').textContent = formattedDob;
+                document.getElementById('citizen-gender').textContent = citizenData.gender;
+                document.getElementById('citizen-address').textContent = citizenData.address;
+            };
+
+            const resetResultPanel = () => {
+                const placeholder = document.getElementById('result-placeholder');
+                placeholder.style.display = 'block';
+                placeholder.classList.remove('error-message');
+                placeholder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg><p>Di chuyển mã QR vào vùng quét</p>`;
+                elements.verificationCard.classList.remove('visible');
+                elements.citizenIdCard.classList.remove('visible'); 
+            };
+
+            // =================================================================
+            // KHU VỰC 3: LOGIC CHÍNH VÀ SỰ KIỆN
+            // =================================================================
+            const openQrScanner = async () => {
+                elements.scanPromptView.style.display = 'none';
+                elements.scanActiveView.classList.add('active');
+
+                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
+                    showMessage('Trình duyệt không hỗ trợ camera.', true);
+                    return;
+                }
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    elements.cameraFeed.srcObject = cameraStream; 
+                    await elements.cameraFeed.play();
+                    scanAnimation = requestAnimationFrame(tickQrScanner);
+                } catch(err) { 
+                    showMessage('Không thể truy cập camera. Vui lòng cấp quyền.', true); 
+                    stopQrScanner();
+                }
+            };
+
+            const stopQrScanner = () => {
+                if (scanAnimation) {
+                    cancelAnimationFrame(scanAnimation);
+                    scanAnimation = null;
+                }
+                if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
+                // Reset cờ xử lý khi dừng
+                isProcessingCode = false;
+                elements.scanActiveView.classList.remove('active');
+                elements.scanPromptView.style.display = 'flex';
+                resetResultPanel();
+            };
+
+            const tickQrScanner = () => {
+                // NÂNG CẤP: Nếu đang xử lý một mã, bỏ qua các khung hình tiếp theo
+                if (isProcessingCode) {
+                    scanAnimation = requestAnimationFrame(tickQrScanner);
+                    return;
+                }
+
+                if (elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = elements.cameraFeed.videoWidth;
+                    canvas.height = elements.cameraFeed.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(elements.cameraFeed, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+                    
+                    // NÂNG CẤP: Logic quét đơn giản và hiệu quả hơn
+                    if (code) {
+                        isProcessingCode = true; // Khóa lại để tránh quét liên tục cùng 1 mã
+                        
+                        // NÂNG CẤP: Phân loại mã QR và xử lý
+                        if (code.data.includes('|')) {
+                            beepSound.play();
+                            elements.scannerViewfinder.classList.add('scanned');
+                            setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
+                            
+                            const parts = code.data.split('|');
+                            if (parts.length >= 6) {
+                                const citizenData = { cccdNumber: parts[0], oldIdNumber: parts[1], fullName: parts[2], dob: parts[3], gender: parts[4], address: parts[5], issueDate: parts[6] };
+                                renderCitizenIdCard(citizenData);
+                            } else {
+                                // Mã có dấu | nhưng không đúng định dạng CCCD
+                                handleInvalidCode();
+                            }
+                        } else if (code.data.startsWith('_')) { // Giả định mã vé xe hợp lệ bắt đầu bằng '_'
+                            beepSound.play();
+                            elements.scannerViewfinder.classList.add('scanned');
+                            setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
+                            verifyTransaction(code.data);
+                        } else {
+                            // Mã không xác định
+                            handleInvalidCode();
+                        }
+
+                        // Sau 1.5 giây, cho phép quét lại
+                        setTimeout(() => {
+                            isProcessingCode = false;
+                        }, 1500);
+                    }
+                }
+                if (scanAnimation) { // Chỉ gọi lại nếu chưa bị hủy
+                    scanAnimation = requestAnimationFrame(tickQrScanner);
+                }
+            };
+
+            // NÂNG CẤP: Hàm xử lý khi mã không hợp lệ
+            const handleInvalidCode = () => {
+                errorSound.play();
+                elements.scannerViewfinder.classList.add('error');
+                setTimeout(() => elements.scannerViewfinder.classList.remove('error'), 500);
+                showInlineError('Mã QR không được hỗ trợ.');
+            };
+
+            const verifyTransaction = async (uniqueId) => {
+                showLoading();
+                try {
+                    // NÂNG CẤP HIỆU NĂNG: Gọi hàm RPC duy nhất thay vì 2 truy vấn
+                    const { data, error } = await db.rpc('get_security_check_data', {
+                        p_unique_id: uniqueId.trim()
+                    });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    if (!data) {
+                        renderVerificationCard(null); // Không tìm thấy giao dịch
+                        return;
+                    }
+                    
+                    // Dữ liệu trả về từ RPC có cấu trúc { transaction: {...}, security_alert: {...} }
+                    // Gộp chúng lại thành một đối tượng để hàm renderVerificationCard có thể sử dụng
+                    const combinedData = { ...data.transaction, security_alert: data.security_alert };
+                    renderVerificationCard(combinedData);
+
+                } catch (error) {
+                    // THAY ĐỔI: Hiển thị lỗi tại chỗ thay vì thoát ra
+                    showInlineError(`Lỗi: ${error.message}`);
+                    console.error("Lỗi xác minh:", error);
+                }
+            };
+            
+            const resetToMainView = () => {
+                elements.scanActiveView.classList.remove('active');
+                elements.messageBox.style.display = 'none';
+                elements.scanPromptView.style.display = 'flex'; 
+            };
+            
+            const init = async () => {
+                try {
+                    const { data, error } = await db.from('locations').select('*');
+                    if (error) throw error;
+                    LOCATIONS_DATA = data || [];
+                } catch (error) {
+                    console.error("Lỗi tải danh sách bãi đỗ:", error);
+                    showMessage("Không thể tải cấu hình hệ thống. Vui lòng thử lại.", true);
+                }
+                
+                resetToMainView();
+                
+                elements.scanQrBtn.addEventListener('click', openQrScanner);
+                elements.stopScanBtn.addEventListener('click', stopQrScanner);
+            };
+            
+            init();
+        });
+    </script>
+</body>
+</body>
+</html>

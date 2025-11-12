@@ -43,6 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
         adminScanFeedback: document.getElementById('admin-scan-feedback'),
         closeAdminScannerBtn: document.getElementById('close-admin-scanner-btn'),
         
+        // NÂNG CẤP: Các phần tử cho modal chỉnh sửa giao dịch
+        transactionModal: document.getElementById('transaction-modal'),
+        closeTransactionModalBtn: document.getElementById('close-transaction-modal-btn'),
+        cancelTransactionBtn: document.getElementById('cancel-transaction-btn'),
+        saveTransactionBtn: document.getElementById('save-transaction-btn'),
+        deleteTransactionBtn: document.getElementById('delete-transaction-btn'),
+        transactionForm: document.getElementById('transaction-form'),
+        transactionUniqueIdInput: document.getElementById('transaction-unique-id'),
+
+
         paginationControls: document.getElementById('pagination-controls'),
         toastContainer: document.getElementById('toast-container'),
         
@@ -107,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let transactionCurrentPage = 1;
     let STAFF_DATA = []; // NÂNG CẤP: Lưu trữ dữ liệu nhân viên
     const transactionRowsPerPage = 10;
-    let transactionSearchTerm = '';
     let currentEditingRow = null; // NÂNG CẤP: Theo dõi dòng đang được sửa
     let activeSecurityAlerts = {};
 
@@ -151,6 +160,14 @@ document.addEventListener('DOMContentLoaded', () => {
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(this, args), delay);
         };
+    };
+
+    // HOÀN CHỈNH: Hàm kiểm tra xem một phần tử có nằm trong một phần tử cha khác không.
+    // Dùng để đóng inline editor khi click ra ngoài.
+    const isDescendant = (parent, child) => {
+        let node = child.parentNode;
+        while (node != null) { if (node == parent) return true; node = node.parentNode; }
+        return false;
     };
 
     // =================================================================
@@ -278,6 +295,12 @@ document.addEventListener('DOMContentLoaded', () => {
             row.dataset.paymentMethod = tx.payment_method || '';
             row.dataset.status = tx.status || 'Đã rời bãi';
 
+            // NÂNG CẤP: Thêm icon nếu có ghi chú
+            const noteIcon = tx.notes ? 
+                `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="Giao dịch có ghi chú" style="vertical-align: middle; margin-right: 8px; color: var(--info-color);"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"></path><polyline points="14 3 14 8 19 8"></polyline></svg>` 
+                : '';
+
+            // NÂNG CẤP: Thay thế "Nhấn đúp để sửa" bằng nút "Sửa"
             row.innerHTML = `
                 <td class="plate">${tx.plate || '--'}</td>
                 <td>${new Date(tx.entry_time).toLocaleString('vi-VN')}</td>
@@ -286,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${tx.payment_method || '--'}</td>
                 <td>${getLocationName(tx.location_id)}</td>
                 <td style="text-align: center;"><span class="status-badge ${statusClass}">${tx.status}</span></td>
-                <td style="text-align: center; font-size: 0.8rem; color: var(--text-secondary);">Nhấn đúp để sửa</td>
+                <td style="text-align: center;">${noteIcon}<button class="edit-btn edit-transaction-btn" data-id="${tx.unique_id}">Sửa</button></td>
             `;
             elements.transactionLogBody.appendChild(row);
         });
@@ -314,79 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             elements.staffTableBody.appendChild(row);
         });
-    };
-
-
-    const closeInlineEditor = () => {
-        if (currentEditingRow) {
-            const formRow = currentEditingRow.nextElementSibling;
-            const formContainer = formRow?.querySelector('.edit-inline-form-container');
-            if (formContainer) {
-                formContainer.style.maxHeight = null;
-                setTimeout(() => {
-                    formRow.remove();
-                }, 400);
-            }
-            currentEditingRow.classList.remove('editing-row');
-            currentEditingRow = null;
-        }
-    };
-
-    const openInlineEditor = (clickedRow) => {
-        closeInlineEditor();
-        currentEditingRow = clickedRow;
-        clickedRow.classList.add('editing-row');
-
-        const transaction = clickedRow.dataset;
-        const toLocalISOString = (date) => {
-            if (!date) return '';
-            const dt = new Date(date);
-            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
-            return dt.toISOString().slice(0, 16);
-        };
-
-        const formHtml = `
-            <div class="edit-inline-form-container">
-                <form class="inline-edit-form">
-                    <input type="hidden" name="unique_id" value="${transaction.uniqueid}">
-                    <div class="form-grid">
-                        <div class="form-group"><label>Biển số xe</label><input type="text" name="plate" value="${transaction.plate}" required></div>
-                        <div class="form-group"><label>Phí (VNĐ)</label><input type="number" name="fee" value="${transaction.fee}"></div>
-                        <div class="form-group"><label>Giờ vào</label><input type="datetime-local" name="entry_time" value="${toLocalISOString(transaction.entryTime)}"></div>
-                        <div class="form-group"><label>Giờ ra</label><input type="datetime-local" name="exit_time" value="${toLocalISOString(transaction.exitTime)}"></div>
-                        <div class="form-group"><label>Phương thức TT</label>
-                            <select name="payment_method">
-                                <option value="" ${transaction.paymentMethod === '' ? 'selected' : ''}>Chưa chọn</option>
-                                <option value="Tiền mặt" ${transaction.paymentMethod === 'Tiền mặt' ? 'selected' : ''}>Tiền mặt</option>
-                                <option value="Chuyển khoản QR" ${transaction.paymentMethod === 'Chuyển khoản QR' ? 'selected' : ''}>Chuyển khoản QR</option>
-                                <option value="Miễn phí" ${transaction.paymentMethod === 'Miễn phí' ? 'selected' : ''}>Miễn phí</option>
-                                <option value="VIP" ${transaction.paymentMethod === 'VIP' ? 'selected' : ''}>VIP</option>
-                            </select>
-                        </div>
-                        <div class="form-group"><label>Trạng thái</label>
-                            <select name="status">
-                                <option value="Đang gửi" ${transaction.status === 'Đang gửi' ? 'selected' : ''}>Đang gửi</option>
-                                <option value="Đã rời bãi" ${transaction.status === 'Đã rời bãi' ? 'selected' : ''}>Đã rời bãi</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="padding: 1.5rem 0 0 0; background: transparent; border: none;">
-                        <button type="button" class="action-button btn-secondary cancel-inline-edit">Hủy</button>
-                        <button type="submit" class="action-button btn-primary save-inline-edit">Lưu thay đổi</button>
-                    </div>
-                </form>
-            </div>
-        `;
-
-        const newRow = document.createElement('tr');
-        newRow.className = 'edit-inline-row';
-        newRow.innerHTML = `<td colspan="8">${formHtml}</td>`;
-        clickedRow.insertAdjacentElement('afterend', newRow);
-        
-        setTimeout(() => {
-            const formContainer = newRow.querySelector('.edit-inline-form-container');
-            if (formContainer) formContainer.style.maxHeight = formContainer.scrollHeight + "px";
-        }, 10);
     };
 
     const renderLocationsTable = () => {
@@ -449,6 +399,72 @@ document.addEventListener('DOMContentLoaded', () => {
         // SỬA LỖI: Sử dụng class 'active' để ẩn modal
         elements.locationModal.classList.remove('active');
     };
+
+    // NÂNG CẤP: Mở/Đóng modal chỉnh sửa giao dịch
+    const openTransactionModal = (transactionData) => {
+        if (!transactionData) return;
+        elements.transactionForm.reset();
+
+        const toLocalISOString = (date) => {
+            if (!date) return '';
+            const dt = new Date(date);
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+            return dt.toISOString().slice(0, 16);
+        };
+
+        // Điền dữ liệu vào form trong modal
+        elements.transactionUniqueIdInput.value = transactionData.unique_id;
+        document.getElementById('transaction-plate').value = transactionData.plate || '';
+        document.getElementById('transaction-fee').value = transactionData.fee ?? '';
+        document.getElementById('transaction-entry-time').value = toLocalISOString(transactionData.entry_time);
+        document.getElementById('transaction-exit-time').value = toLocalISOString(transactionData.exit_time);
+        document.getElementById('transaction-payment-method').value = transactionData.payment_method || '';
+        document.getElementById('transaction-status').value = transactionData.status || 'Đã rời bãi';
+        document.getElementById('transaction-notes').value = transactionData.notes || ''; // NÂNG CẤP: Điền ghi chú
+
+        // Gán ID cho nút xóa
+        elements.deleteTransactionBtn.dataset.id = transactionData.unique_id;
+
+        elements.transactionModal.classList.add('active');
+    };
+
+    const closeTransactionModal = () => {
+        elements.transactionModal.classList.remove('active');
+    };
+
+    // NÂNG CẤP: Logic tự động hóa cho form giao dịch
+    const handleTransactionStatusChange = () => {
+        const statusSelect = document.getElementById('transaction-status');
+        const exitTimeInput = document.getElementById('transaction-exit-time');
+        const feeInput = document.getElementById('transaction-fee');
+        const paymentMethodSelect = document.getElementById('transaction-payment-method');
+
+        if (statusSelect.value === 'Đang gửi') {
+            // Vô hiệu hóa và xóa các trường không cần thiết
+            exitTimeInput.value = '';
+            exitTimeInput.disabled = true;
+            feeInput.value = '';
+            feeInput.disabled = true;
+            paymentMethodSelect.value = '';
+            paymentMethodSelect.disabled = true;
+        } else { // Đã rời bãi
+            // Kích hoạt lại các trường
+            exitTimeInput.disabled = false;
+            feeInput.disabled = false;
+            paymentMethodSelect.disabled = false;
+
+            // Tự động điền giờ ra nếu đang trống
+            if (!exitTimeInput.value) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                exitTimeInput.value = now.toISOString().slice(0, 16);
+            }
+        }
+    };
+
+
+
+
 
     // NÂNG CẤP: Mở/Đóng modal nhân viên
     const openStaffModal = (staffData = null) => {
@@ -775,10 +791,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchTransactions = async (page = 1, searchTerm = '') => {
+        const transactionSearchTerm = searchTerm.trim();
         transactionCurrentPage = page;
-        transactionSearchTerm = searchTerm.trim();
         const startIndex = (page - 1) * transactionRowsPerPage;
         const endIndex = startIndex + transactionRowsPerPage - 1;
+
 
         try {
             let query = db.from('transactions').select('*', { count: 'exact' });
@@ -859,35 +876,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const saveTransactionChanges = async (event) => {
-        event.preventDefault();
-        const form = event.target;
-        const saveBtn = form.querySelector('.save-inline-edit');
-        if (!saveBtn) return;
-
+    const saveTransactionChanges = async () => {
+        const saveBtn = elements.saveTransactionBtn;
         saveBtn.disabled = true;
         saveBtn.textContent = 'Đang lưu...';
 
-        const formData = new FormData(form);
-        const dataToUpdate = Object.fromEntries(formData.entries());
-        const uniqueId = dataToUpdate.unique_id;
-        delete dataToUpdate.unique_id;
+        const uniqueId = elements.transactionUniqueIdInput.value;
+        const entryTime = document.getElementById('transaction-entry-time').value;
+        const exitTime = document.getElementById('transaction-exit-time').value;
 
-        if (dataToUpdate.entry_time) dataToUpdate.entry_time = new Date(dataToUpdate.entry_time).toISOString();
-        if (dataToUpdate.exit_time) dataToUpdate.exit_time = new Date(dataToUpdate.exit_time).toISOString();
+        const dataToUpdate = {
+            plate: document.getElementById('transaction-plate').value.trim().toUpperCase(),
+            fee: document.getElementById('transaction-fee').value || null,
+            payment_method: document.getElementById('transaction-payment-method').value,
+            status: document.getElementById('transaction-status').value,
+            entry_time: entryTime ? new Date(entryTime).toISOString() : null,
+            exit_time: exitTime ? new Date(exitTime).toISOString() : null,
+            notes: document.getElementById('transaction-notes').value.trim() || null, // NÂNG CẤP: Lấy ghi chú
+        };
+
+        // SỬA LỖI: Chuyển đổi giá trị ngày giờ thành ISO string nếu có, ngược lại gán là null.
+        // Điều này ngăn việc gửi một chuỗi rỗng ("") đến cột timestamp của Supabase.
 
         try {
             const { error } = await db.from('transactions').update(dataToUpdate).eq('unique_id', uniqueId);
             if (error) throw error;
 
             showToast('Cập nhật thành công!', 'success');
-            closeInlineEditor();
-            await fetchTransactions(transactionCurrentPage, transactionSearchTerm);
+            closeTransactionModal();
+            // Tải lại trang giao dịch hiện tại
+            await fetchTransactions(transactionCurrentPage, elements.transactionSearchInput.value);
         } catch (error) {
             showToast(`Lỗi khi lưu: ${error.message}`, 'error');
         } finally {
             saveBtn.disabled = false;
             saveBtn.textContent = 'Lưu thay đổi';
+        }
+    };
+
+    const deleteTransaction = async (uniqueId) => {
+        if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này? Hành động này không thể hoàn tác.`)) return;
+
+        const { error } = await db.from('transactions').delete().eq('unique_id', uniqueId);
+        if (error) showToast(`Lỗi xóa giao dịch: ${error.message}`, 'error');
+        else {
+            showToast('Đã xóa giao dịch thành công.', 'success');
+            closeTransactionModal();
         }
     };
 
@@ -1055,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
         prevButton.textContent = '« Trước';
         prevButton.className = 'action-button btn-secondary';
         prevButton.disabled = currentPage === 1;
-        prevButton.addEventListener('click', () => fetchTransactions(currentPage - 1, transactionSearchTerm));
+        prevButton.addEventListener('click', () => fetchTransactions(currentPage - 1, elements.transactionSearchInput.value));
         elements.paginationControls.appendChild(prevButton);
 
         const pageInfo = document.createElement('span');
@@ -1069,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextButton.textContent = 'Sau »';
         nextButton.className = 'action-button btn-secondary';
         nextButton.disabled = currentPage === pageCount;
-        nextButton.addEventListener('click', () => fetchTransactions(currentPage + 1, transactionSearchTerm));
+        nextButton.addEventListener('click', () => fetchTransactions(currentPage + 1, elements.transactionSearchInput.value));
         elements.paginationControls.appendChild(nextButton);
 
         elements.paginationControls.querySelectorAll('button').forEach(btn => {
@@ -1156,6 +1190,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // Nếu không có session, vẫn có thể cần fetch một số cài đặt công khai nếu có
                     if(typeof fetchSettings === 'function') fetchSettings();
+                    // SỬA LỖI: Vô hiệu hóa việc tải cài đặt khi chưa đăng nhập.
+                    // Bảng 'app_settings' có thể không tồn tại, gây ra lỗi trên màn hình đăng nhập.
+                    // if(typeof fetchSettings === 'function') fetchSettings();
                 }
             });
 
@@ -1170,23 +1207,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.closeAdminScannerBtn) elements.closeAdminScannerBtn.addEventListener('click', closeAdminQrScanner);
             
             if (elements.transactionLogBody) {
-                elements.transactionLogBody.addEventListener('dblclick', (e) => {
-                    const clickedRow = e.target.closest('tr');
-                    if (!clickedRow || !clickedRow.dataset.uniqueid) return;
-
-                    if (currentEditingRow === clickedRow) {
-                        closeInlineEditor();
-                    } else {
-                        openInlineEditor(clickedRow);
+                // NÂNG CẤP: Bắt sự kiện click trên nút "Sửa" thay vì dblclick
+                elements.transactionLogBody.addEventListener('click', async (e) => {
+                    if (e.target.classList.contains('edit-transaction-btn')) {
+                        const uniqueId = e.target.dataset.id;
+                        const { data, error } = await db.from('transactions').select('*').eq('unique_id', uniqueId).single();
+                        if (error) {
+                            showToast(`Không tìm thấy giao dịch: ${error.message}`, 'error');
+                        } else if (data) {
+                            openTransactionModal(data);
+                        }
                     }
                 });
-                elements.transactionLogBody.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('cancel-inline-edit')) closeInlineEditor();
-                });
-                elements.transactionLogBody.addEventListener('submit', (e) => {
-                    if (e.target.classList.contains('inline-edit-form')) saveTransactionChanges(e);
-                });
             }
+
+            // NÂNG CẤP: Gắn sự kiện cho modal giao dịch
+            if (elements.closeTransactionModalBtn) elements.closeTransactionModalBtn.addEventListener('click', closeTransactionModal);
+            if (elements.cancelTransactionBtn) elements.cancelTransactionBtn.addEventListener('click', closeTransactionModal);
+            if (elements.saveTransactionBtn) elements.saveTransactionBtn.addEventListener('click', saveTransactionChanges);
+            if (elements.deleteTransactionBtn) elements.deleteTransactionBtn.addEventListener('click', (e) => deleteTransaction(e.target.dataset.id));
+            // NÂNG CẤP: Gắn sự kiện cho dropdown trạng thái
+            const statusSelect = document.getElementById('transaction-status');
+            if (statusSelect) statusSelect.addEventListener('change', handleTransactionStatusChange);
 
             if (elements.sendSecurityAlertBtn) elements.sendSecurityAlertBtn.addEventListener('click', sendSecurityAlert);
             if (elements.removeAlertBtn) elements.removeAlertBtn.addEventListener('click', () => removeSecurityAlert());
@@ -1229,6 +1271,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.sidebarOverlay) elements.sidebarOverlay.addEventListener('click', closeMobileMenu);
 
             if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', saveSettings);
+            // SỬA LỖI: Vô hiệu hóa các chức năng liên quan đến 'app_settings'
+            // if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', saveSettings);
 
             if (elements.addStaffBtn) elements.addStaffBtn.addEventListener('click', () => openStaffModal());
             if (elements.closeStaffModalBtn) elements.closeStaffModalBtn.addEventListener('click', closeStaffModal);

@@ -158,13 +158,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateBiometricStatus();
 
         } catch (err) {
-            // SỬA LỖI TRIỆT ĐỂ: Xử lý tất cả các loại lỗi từ thư viện WebAuthn.
+            // HOÀN CHỈNH: Xử lý tất cả các loại lỗi từ thư viện WebAuthn.
             // Chuyển đổi đối tượng lỗi thành một chuỗi thông báo có ý nghĩa.
             let errorMessage = 'Đã xảy ra lỗi không xác định.';
             if (err.name === 'NotAllowedError') {
                 errorMessage = 'Thao tác đã bị hủy bởi người dùng.';
                 showToast(errorMessage, 'info');
             } else {
+                // Lấy message từ lỗi hoặc chuyển cả object lỗi thành chuỗi để debug
                 errorMessage = err.message || JSON.stringify(err);
                 showToast(`Đăng ký thất bại: ${errorMessage}`, 'error');
                 console.error('Lỗi đăng ký sinh trắc học:', err);
@@ -176,8 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleRemove = async () => {
-        if (!confirm('Bạn có chắc chắn muốn hủy đăng ký sinh trắc học trên tất cả các thiết bị?')) {
-            // SỬA LỖI: Đảm bảo nút không bị kẹt ở trạng thái loading nếu người dùng hủy.
+        if (!confirm('Bạn có chắc chắn muốn hủy đăng ký sinh trắc học trên thiết bị này?')) {
             return;
         }
 
@@ -195,9 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (error) throw error;
 
-            showToast('Đã hủy đăng ký sinh trắc học.', 'info');
+            showToast('Đã hủy đăng ký sinh trắc học thành công.', 'info');
             updateBiometricStatus();
         } catch (err) {
+            // HOÀN CHỈNH: Cung cấp thông báo lỗi cụ thể hơn.
             showToast(`Hủy thất bại: ${err.message}`, 'error');
         } finally {
             elements.removeBtn.disabled = false;
@@ -229,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.savePinBtn.textContent = 'Đang xử lý...';
 
         try {
+            // HOÀN CHỈNH: Tăng cường bảo mật bằng cách xác thực PIN cũ trên server-side (thông qua Supabase).
             // 2. Xác thực mã PIN hiện tại
             const { data: staff, error: verifyError } = await db.from('staff_accounts')
                 .select('id')
@@ -253,7 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.changePinForm.reset();
 
         } catch (err) {
-            elements.changePinErrorMsg.textContent = err.message;
+            // HOÀN CHỈNH: Hiển thị thông báo lỗi thân thiện hơn.
+            elements.changePinErrorMsg.textContent = `Lỗi: ${err.message}`;
         } finally {
             elements.savePinBtn.disabled = false;
             elements.savePinBtn.textContent = 'Lưu Mã PIN mới';

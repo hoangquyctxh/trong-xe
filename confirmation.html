@@ -100,7 +100,7 @@
         .success-checkmark__check {
             transform-origin: 50% 50%;
             stroke-dasharray: 48;
-            stroke-dashoffset: 48;
+            stroke-dashoffset: 48; stroke-width: 3; /* SỬA LỖI: Giảm độ dày dấu tích */
             animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
         } 
         @keyframes stroke {
@@ -1268,9 +1268,9 @@
                     this.elements.selectQrBtn.classList.remove('active');
                     this.elements.selectCashBtn.classList.remove('active');
                     this.renderRightPanel('placeholder');
-
                     document.getElementById('payment-total-amount').textContent = payload.totalAmount.replace(/đ/g, '');
                     document.getElementById('payment-plate').textContent = payload.licensePlate;
+                    // HOÀN CHỈNH: Đảm bảo các trường luôn được cập nhật
                     document.getElementById('payment-time-in').textContent = payload.timeIn;
                     document.getElementById('payment-duration').textContent = payload.duration; // NÂNG CẤP
                     if (payload.locationName) this.setLocationName(payload.locationName);
@@ -1280,6 +1280,7 @@
                     document.getElementById('checkin-success-plate').textContent = payload.licensePlate;
                     document.getElementById('checkin-success-time-in').textContent = payload.timeIn;
                     const qrCanvas = document.getElementById('checkin-qrcode-canvas');
+                    // HOÀN CHỈNH: Tạo QR Code cho vé gửi xe
                     if (qrCanvas && payload.uniqueID) {
                         QRCode.toCanvas(qrCanvas, payload.uniqueID, { width: 220, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
                             if (error) console.error('Lỗi tạo QR cho màn hình phụ:', error);
@@ -1288,6 +1289,7 @@
                 },
 
                 updateCheckoutSuccessView(payload) {
+                    // HOÀN CHỈNH: Cập nhật đầy đủ thông tin trên biên lai
                     document.getElementById('success-plate').textContent = payload.licensePlate;
                     document.getElementById('success-time-in').textContent = payload.timeIn;
                     document.getElementById('success-time-out').textContent = payload.timeOut;
@@ -1301,12 +1303,9 @@
                 renderRightPanel(state) {
                     let content = '';
                     switch (state) {
-                        case 'qr': // GIẢI PHÁP MỚI: Chỉ tạo container, không tạo thẻ img ban đầu
-                            content = `<div id="qr-code-container" class="qr-code-display" style="animation: fadeInUp 0.5s ease; position: relative; min-height: 280px; display: flex; align-items: center; justify-content: center;">
-                                           <div class="spinner" style="display: none;"></div>
-                                           <p style="position: absolute; bottom: 15px; left: 15px; right: 15px; margin:0;">Nội dung: <strong id="qr-memo">--</strong></p></div>`;
-                            break; 
-                        case 'cash':
+                        case 'qr': /"animation: fadeInUp 0.5s ease; position: relative; min-height: 280px; display: flex; align-items: center; justify-content: center;">
+                                           <div class="spinner"></div>
+                                           <p style="position: absolute; bottom: 15px; left: 15px; right: 15px; margin:0;">Nội dung: <strong id="qr-memo">Đang tạo...</strong></p></div>`;
                             content = `<div style="text-align: center; animation: fadeInUp 0.5s ease;"><div class="cash-payment-animation"><div class="coin"></div><div class="coin"></div><div class="coin"></div><div class="coin"></div><svg class="wallet-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><h3 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5em; font-weight: 700;">Thanh toán bằng Tiền mặt</h3><p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p></div>`; 
                             break;
                         default:
@@ -1316,6 +1315,7 @@
                 },
 
                 resetKiosk() {
+                    // HOÀN CHỈNH: Đảm bảo Kiosk được reset hoàn toàn về trạng thái ban đầu
                     const clearButton = document.querySelector('.kb-btn[data-key="clear"]');
                     if (clearButton) clearButton.click();
                     if (this.elements.kioskOverlay) this.elements.kioskOverlay.classList.add('hidden');
@@ -1449,23 +1449,23 @@
                                 const qrMemo = document.getElementById('qr-memo');
                                 const qrContainer = document.getElementById('qr-code-container');
                                 const spinner = UI.elements.rightPanel.querySelector('.spinner');
+                                
                                 if (qrContainer && spinner && lastMessage) {
-                                    spinner.style.display = 'block'; // Hiện spinner
-
                                     const fee = lastMessage.totalAmount.replace(/\D/g, '');
                                     const encodedMemo = encodeURIComponent(lastMessage.paymentMemo);
                                     const qrImageUrl = `${APP_CONFIG.payment.imageUrlBase}&amount=${fee}&addInfo=${encodedMemo}`;
                                     
-                                    if(qrMemo) qrMemo.textContent = lastMessage.paymentMemo;
-
-                                    // GIẢI PHÁP MỚI: Tải ảnh trong bộ nhớ trước
+                                    // HOÀN CHỈNH: Tải ảnh QR trong bộ nhớ trước khi hiển thị để tránh giật lag
                                     const tempImage = new Image();
                                     tempImage.src = qrImageUrl;
                                     tempImage.onload = () => {
                                         spinner.style.display = 'none';
                                         tempImage.style.cssText = 'width: 100%; height: auto; display: block;';
-                                        qrContainer.prepend(tempImage); // Chèn ảnh vào đầu container
-                                    };
+                                      ot
+                                    tempImage.onerror = () => {
+                                        spinner.style.display = 'none';
+                                        if(qrMemo) qrMemo.textContent = 'Lỗi tạo mã QR.';
+                                    }
                                 }
 
                             } else if (method === 'cash') {
@@ -1516,34 +1516,33 @@
                             const key = btn.dataset.key;
                             const input = UI.elements.kioskInput;
  
-                            clearTimeout(this.t9Timer);
+                            clearTimeout(this.t9Timer); // Reset timer mỗi khi bấm phím
  
                             if (key === 'backspace') {
                                 input.value = input.value.slice(0, -1);
                                 this.resetT9State();
                             } else if (key === 'clear') {
                                 input.value = '';
-                                this.resetT9State();
-                            } else if (key === this.lastKey) {
+                                this.resetT9State(); Key && t9Map[key].length > 1) { // Chỉ xử lý T9 cho phím có nhiều ký tự
                                 this.keyPressCount++;
                                 const chars = t9Map[key];
                                 const newChar = chars[this.keyPressCount % chars.length];
                                 input.value = input.value.slice(0, -1) + newChar;
                             } else {
-                                this.keyPressCount = 0;
-                                this.lastKey = key;
+                                // Nếu bấm phím mới hoặc phím chỉ có 1 ký tự
+                                this.keyPressCount =
                                 const chars = t9Map[key];
                                 input.value += chars[0];
                             }
- 
+                            
+                            // Đặt lại timer để chốt ký tự
                             this.t9Timer = setTimeout(() => this.resetT9State(), T9_TIMEOUT);
  
                             this.handleKioskInput();
                         });
                     }
 
-                    UI.elements.kioskActionBtn.addEventListener('click', () => {
-                        const btn = UI.elements.kioskActionBtn;
+                    UI.elemen                       const btn = UI.elements.kioskActionBtn;
                         const plate = UI.elements.kioskInput.value.toUpperCase();
                         if (!plate || btn.disabled) return;
 

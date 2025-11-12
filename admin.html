@@ -251,6 +251,50 @@
     <!-- ================================================================= -->
     <!-- MODALS -->
     <!-- ================================================================= -->
+    <!-- MODAL: CHỈNH SỬA GIAO DỊCH (THIẾT KẾ LẠI) -->
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 id="transaction-modal-title">Chỉnh sửa Giao dịch</h2>
+                <button id="close-transaction-modal-btn" class="close-btn" title="Đóng">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="transaction-form">
+                    <input type="hidden" id="transaction-unique-id">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="transaction-plate">Biển số xe</label><input type="text" id="transaction-plate" required></div>
+                        <div class="form-group"><label for="transaction-fee">Phí (VNĐ)</label><input type="number" id="transaction-fee"></div>
+                        <div class="form-group"><label for="transaction-entry-time">Giờ vào</label><input type="datetime-local" id="transaction-entry-time"></div>
+                        <div class="form-group"><label for="transaction-exit-time">Giờ ra</label><input type="datetime-local" id="transaction-exit-time"></div>
+                        <div class="form-group"><label for="transaction-payment-method">Phương thức TT</label>
+                            <select id="transaction-payment-method">
+                                <option value="">Chưa chọn</option>
+                                <option value="Tiền mặt">Tiền mặt</option>
+                                <option value="Chuyển khoản QR">Chuyển khoản QR</option>
+                                <option value="Miễn phí">Miễn phí</option>
+                                <option value="VIP">VIP</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="transaction-status">Trạng thái</label>
+                            <select id="transaction-status">
+                                <option value="Đang gửi">Đang gửi</option>
+                                <option value="Đã rời bãi">Đã rời bãi</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="transaction-notes">Ghi chú</label><textarea id="transaction-notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="delete-transaction-btn" class="action-button btn-danger" style="margin-right: auto;">Xóa Giao dịch</button>
+                <button type="button" id="cancel-transaction-btn" class="action-button btn-secondary">Hủy</button>
+                <button type="button" id="save-transaction-btn" class="action-button btn-primary">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+
     <div id="location-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2 id="location-modal-title">Thêm Bãi đỗ xe mới</h2><button id="close-location-modal-btn" class="close-btn" title="Đóng">&times;</button></div>

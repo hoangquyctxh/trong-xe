@@ -354,39 +354,12 @@ td.fee { font-weight: 600; color: var(--danger-color); }
 /* --- Phân trang --- */
 #pagination-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
 
-/* NÂNG CẤP: Giao diện chỉnh sửa nội tuyến (Inline Editing) */
-tbody tr.editing-row {
-    background-color: var(--primary-accent-light) !important;
-    box-shadow: inset 3px 0 0 0 var(--primary-accent);
-}
-/* SỬA LỖI: Loại bỏ padding của <td> bên trong để hiệu ứng trượt hoạt động */
-.edit-inline-row td {
-    padding: 0;
-}
-
-/* SỬA LỖI & NÂNG CẤP: Áp dụng hiệu ứng trực tiếp cho div chứa form */
-.edit-inline-form-container {
-    background-color: #fdfdff; /* Màu nền hơi khác để phân biệt */
-    padding: 1.5rem 2rem;
-    border-bottom: 2px solid var(--primary-accent);
-    /* Mặc định ẩn và có hiệu ứng */
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), padding 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
 /* NÂNG CẤP: Vùng chứa các ô nhập phí tùy chỉnh */
 .fee-input-group {
     display: none; /* Mặc định ẩn tất cả */
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
     animation: fadeIn 0.3s ease-out;
-}
-
-body[data-theme="dark"] .edit-inline-form-container {
-    background-color: #1a2436;
 }
 
 /* --- Trang Bản đồ --- */

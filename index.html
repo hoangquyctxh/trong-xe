@@ -18,10 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- MỚI: Thư viện Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- NÂNG CẤP: Thư viện hỗ trợ Sinh trắc học (WebAuthn) -->
     <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-    <!-- NÂNG CẤP OCR: Thêm thư viện Tesseract.js phiên bản 5. Đây là tất cả những gì cần thiết để "cài đặt" OCR. -->
-    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 
 
     <!-- Cấu hình -->
@@ -130,18 +127,22 @@
                             </div>
                             <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói"></button>
                             <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để lấy xe"></button>
-                            <button type="button" id="scan-plate-btn" class="icon-btn" title="Quét nhận diện biển số xe"></button>
                         </div>
                         <!-- Vùng chứa gợi ý biển số xe -->
                         <div id="plate-suggestions" class="plate-suggestions"></div>
                         <div class="input-wrapper">
                             <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
                         </div>
+                        <div class="input-wrapper" style="margin-top: 1rem;">
+                            <textarea id="vehicle-notes" placeholder="Thêm ghi chú (ví dụ: xe không biển số,...)" rows="2"></textarea>
+                        </div>
                         <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
                             <input type="checkbox" id="is-vip-checkbox">
                             <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
                         </div>
-                        <div id="action-buttons-container" class="action-buttons-container"></div>
+                        <div id="action-buttons-container" class="action-buttons-container">
+                            <!-- Nút bấm và cảnh báo sẽ được JS render vào đây -->
+                        </div>
                     </form>
                 </div>
             </article>

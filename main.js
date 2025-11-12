@@ -41,12 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
         searchTermInput: document.getElementById('search-term'),
         micBtn: document.getElementById('mic-btn'),
         scanQrBtn: document.getElementById('scan-qr-btn'),
-        scanPlateBtn: document.getElementById('scan-plate-btn'), // NÂNG CẤP: Nút quét biển số
         formNewVehicle: document.getElementById('form-new-vehicle'),
         phoneNumberInput: document.getElementById('phone-number'),
+        vehicleNotesInput: document.getElementById('vehicle-notes'), // NÂNG CẤP: Ô nhập ghi chú
         plateSuggestions: document.getElementById('plate-suggestions'),
         isVipCheckbox: document.getElementById('is-vip-checkbox'),
         actionButtonsContainer: document.getElementById('action-buttons-container'),
+
 
         // Info Panel
         vehicleInfoPanel: document.getElementById('vehicle-info-panel'),
@@ -95,8 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         isIdle: false,
         isOnline: navigator.onLine,
         syncQueue: [],
-        ocrScanAnimation: null, // NÂNG CẤP: Biến cho animation quét OCR
-        ocrWorker: null, // NÂNG CẤP OCR: Worker để xử lý nhận dạng
     };
 
     // =========================================================================
@@ -191,15 +190,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return data;
         },
 
-        async checkIn(plate, phone, isVIP, prePayment = null, providedUniqueID = null) {
+        async checkIn(plate, phone, isVIP, notes, prePayment = null, providedUniqueID = null) {
             if (!state.isOnline) {
-                return this.addToSyncQueue('checkIn', { plate, phone, isVIP, prePayment, providedUniqueID });
+                return this.addToSyncQueue('checkIn', { plate, phone, isVIP, notes, prePayment, providedUniqueID });
             }
 
             const uniqueID = providedUniqueID || ('_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
             const entryTime = new Date();
             const transactionData = {
-                plate, phone, is_vip: isVIP,
+                plate, phone, is_vip: isVIP, notes,
                 unique_id: uniqueID,
                 location_id: state.currentLocation.id,
                 entry_time: entryTime.toISOString(),
@@ -233,10 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
             App.saveStateToLocalStorage();
 
             if (action === 'checkIn') {
-                const { plate, phone, isVIP, prePayment, providedUniqueID } = payload;
+                const { plate, phone, isVIP, notes, prePayment, providedUniqueID } = payload;
                 const uniqueID = providedUniqueID || ('_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
                 const newVehicle = {
-                    plate, phone, is_vip: isVIP,
+                    plate, phone, is_vip: isVIP, notes,
                     unique_id: uniqueID,
                     location_id: state.currentLocation.id,
                     entry_time: timestamp,
@@ -387,21 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderActionButtons() {
             let buttonsHtml = '';
+            let alertHtml = '';
+
             if (state.selectedVehicle) {
                 const alert = state.alerts[state.selectedPlate];
-                let alertHtml = '';
                 let isDisabled = false;
 
                 if (alert && (state.selectedVehicle.status === 'parking' || state.selectedVehicle.status === 'new')) {
-                    alertHtml = `
-                        <div class="action-alert-box alert-${alert.level}">
-                            <div class="action-alert-header">
-                                <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                                Cảnh báo với xe ${state.selectedPlate}
-                            </div>
-                            <div class="action-alert-reason">${alert.reason || 'Không có lý do cụ thể.'}</div>
-                        </div>
-                    `;
+                    alertHtml = Templates.actionAlertBox(alert.level, state.selectedPlate, alert.reason);
                     if (alert.level === 'block') {
                         isDisabled = true;
                     }
@@ -409,20 +401,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 switch (state.selectedVehicle.status) {
                     case 'new':
-                        buttonsHtml = alertHtml + Templates.checkInButton();
+                        buttonsHtml = Templates.actionButton('check-in', 'Xác nhận Gửi xe');
                         break;
                     case 'parking':
-                        buttonsHtml = alertHtml + Templates.checkOutButton(isDisabled);
+                        // YÊU CẦU: Thêm nút xem lại vé cho xe đang gửi
+                        buttonsHtml = Templates.actionButton('check-out', isDisabled ? 'XE ĐANG BỊ CHẶN' : 'Xác nhận Lấy xe', isDisabled);
+                        buttonsHtml += Templates.secondaryActionButton('view-ticket', 'Xem lại vé điện tử');
                         break;
                     case 'departed':
-                        buttonsHtml = Templates.reprintButton();
+                        // YÊU CẦU: Khôi phục nút "In lại biên lai" cho xe đã rời bãi
+                        buttonsHtml = Templates.actionButton('reprint-receipt', 'In lại biên lai', false, 'reprint');
                         break;
                     case 'parking_remote':
-                        buttonsHtml = '';
+                        buttonsHtml = ''; // Không hiển thị nút nào
                         break;
                 }
+            } else {
+                buttonsHtml = Templates.actionButton('check-in', 'Xác nhận Gửi xe');
             }
-            dom.actionButtonsContainer.innerHTML = buttonsHtml;
+            dom.actionButtonsContainer.innerHTML = alertHtml + buttonsHtml;
         },
 
         renderVehicleInfoPanel() {
@@ -453,6 +450,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${Templates.infoItem('Phí tạm tính', `<span class="live-fee" data-starttime="${data.entry_time}" data-isvip="${isVIP}">${Utils.formatCurrency(fee)}đ</span>`)}
                     ${Templates.infoItem('SĐT', Utils.formatPhone(data.phone))}
                 `;
+                // NÂNG CẤP: Hiển thị ghi chú nếu có
+                if (data.notes) {
+                    detailsHtml += Templates.infoItem('Ghi chú', `<strong style="color: var(--primary-accent);">${data.notes}</strong>`);
+                }
             } else if (status === 'departed') {
                 detailsHtml = `
                     ${Templates.infoItem('Trạng thái', '<span class="status-badge departed">Đã rời bãi</span>')}
@@ -462,6 +463,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${Templates.infoItem('Phí đã trả', `<strong>${Utils.formatCurrency(data.fee)}đ</strong>`)}
                     ${Templates.infoItem('SĐT', Utils.formatPhone(data.phone))}
                 `;
+                // NÂNG CẤP: Hiển thị ghi chú nếu có
+                if (data.notes) {
+                    detailsHtml += Templates.infoItem('Ghi chú', `<strong style="color: var(--primary-accent);">${data.notes}</strong>`);
+                }
             }
             detailsHtml += Templates.infoItem('Nhận dạng', Utils.decodePlate(state.selectedPlate));
             dom.infoDetailsGrid.innerHTML = detailsHtml;
@@ -583,9 +588,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'qr-scanner':
                     modalHtml = Templates.qrScannerModal();
                     break;
-                case 'plate-scanner': // NÂNG CẤP: Modal quét biển số
-                    modalHtml = Templates.plateScannerModal();
-                    break;
                 case 'payment':
                     modalHtml = Templates.paymentModal(data);
                     break;
@@ -593,30 +595,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalHtml = Templates.confirmationModal(data);
                     break;
                 case 'checkInReceipt':
+                    // NÂNG CẤP TOÀN DIỆN V2: Giao diện xác nhận gửi xe thành công với hiệu ứng động
                     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.unique_id)}`;
+                    const vipClass = data.is_vip ? 'is-vip' : ''; // YÊU CẦU: Thêm class nếu là VIP
                     const content = `
-                        <div class="eticket-wrapper" id="printable-checkin-receipt">
-                            <div class="eticket-header">
-                                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn Thanh niên">
-                                <h3>${APP_CONFIG.organizationName || 'ĐOÀN TNCS HỒ CHÍ MINH'}</h3>
+                        <div class="checkin-success-wrapper ${vipClass}" id="printable-checkin-receipt">
+                            <button class="modal-close-btn success-close-btn" data-action="close-modal" title="Đóng">&times;</button>
+                            <div id="checkin-confetti-container"></div>
+                            <div class="checkin-success-icon">
+                                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                    <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                                    <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                </svg>
                             </div>
-                            <div class="eticket-body">
-                                <div class="eticket-main">
-                                    <div class="eticket-qr">
-                                        <img src="${qrApiUrl}" alt="Mã QR để lấy xe">
-                                    </div>
-                                    <div class="eticket-plate">${data.plate}</div>
-                                    <p class="eticket-instruction">Quét mã QR này tại cổng ra để lấy xe</p>
-                                </div>
-                                <div class="eticket-stub">
-                                    <div class="eticket-stub-item"><span>Bãi đỗ</span><strong>${state.currentLocation?.name || 'N/A'}</strong></div>
-                                    <div class="eticket-stub-item"><span>Giờ vào</span><strong>${Utils.formatDateTime(data.entry_time)}</strong></div>
-                                    <div class="eticket-stub-item"><span>Mã vé</span><strong>${data.unique_id}</strong></div>
-                                </div>
+                            <h2 class="checkin-success-title">GỬI XE THÀNH CÔNG</h2>
+                            <p class="checkin-success-subtitle">Vui lòng đưa mã QR này khi lấy xe.</p>
+                            <div class="checkin-success-qr">
+                                ${data.is_vip ? '<div class="vip-badge">VIP</div>' : ''}
+                                <img src="${qrApiUrl}" alt="Mã QR của vé xe">
+                            </div>
+                            <div class="checkin-success-plate">${data.plate}</div>
+                            <div class="auto-close-progress-bar">
+                                <div class="progress"></div>
                             </div>
                         </div>`;
-                    const footer = `<button class="action-button btn--secondary" data-action="close-modal">Đóng</button><button class="action-button btn--reprint" data-action="print-checkin-receipt"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"/></svg><span>In vé</span></button>`;
-                    modalHtml = Templates.modal('Gửi xe thành công', content, footer, '420px');
+                    // Bỏ footer và title để modal trông như một màn hình xác nhận chuyên dụng
+                    modalHtml = `<div class="modal-overlay"><div class="modal-content" style="max-width: 480px; padding: 0; background: transparent; box-shadow: none;">${content}</div></div>`;
                     break;
                 case 'global-alert':
                     modalHtml = data.html;
@@ -649,11 +653,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         cancelAnimationFrame(state.scanAnimation);
                         state.scanAnimation = null;
                     }
-                    // NÂNG CẤP: Dừng quét OCR khi đóng modal
-                    if (state.ocrScanAnimation) {
-                        cancelAnimationFrame(state.ocrScanAnimation);
-                        state.ocrScanAnimation = null;
-                    }
                     if (state.isProcessing) {
                         state.isProcessing = false;
                         this.renderActionButtons();
@@ -680,16 +679,55 @@ document.addEventListener('DOMContentLoaded', () => {
             const modalHtml = Templates.globalAlertModal(title, alert.plate, alert.reason, alert.level);
             this.showModal('global-alert', { html: modalHtml });
         },
+
+        // NÂNG CẤP & SỬA LỖI: Chuyển hàm confetti vào UI để dùng chung
+        startConfetti(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Logic bắn pháo giấy (confetti)
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                container.appendChild(confetti);
+            }
+        },
     };
 
     // =========================================================================
     // MODULE 4: TEMPLATES - CÁC MẪU HTML
     // =========================================================================
     const Templates = {
-        checkInButton: () => `<button type="button" class="action-button btn--check-in" data-action="check-in"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg><span>Xác nhận Gửi xe</span></button>`,
-        checkOutButton: (disabled = false) => `<button type="button" class="action-button btn--check-out" data-action="check-out" ${disabled ? 'disabled' : ''}><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>${disabled ? 'XE ĐANG BỊ CHẶN' : 'Xác nhận Lấy xe'}</span></button>`,
-        reprintButton: () => `<button type="button" class="action-button btn--reprint" data-action="reprint"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg><span>Xem & In lại Biên lai</span></button>`,
-
+        // NÂNG CẤP: Template cho nút bấm "biến đổi"
+        actionButton: (action, text, disabled = false) => `
+            <button type="button" class="action-button btn--${action}" data-action="${action}" ${disabled ? 'disabled' : ''}>
+                <span class="btn-icon-wrapper">
+                    <svg class="btn-icon icon--check-in" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                    <svg class="btn-icon icon--check-out" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <svg class="btn-icon icon--reprint" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    <svg class="btn-icon icon--view-ticket" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                </span>
+                <span class="btn-text">${text}</span>
+            </button>
+        `,
+        // YÊU CẦU: Template cho nút hành động phụ
+        secondaryActionButton: (action, text) => `
+            <div class="secondary-action-wrapper">
+                <button type="button" class="secondary-action-btn" data-action="${action}">${text}</button>
+            </div>
+        `,
+        actionAlertBox: (level, plate, reason) => `
+            <div class="action-alert-box alert-${level}">
+                <div class="action-alert-header">
+                    <svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Cảnh báo với xe ${plate}
+                </div>
+                <div class="action-alert-reason">${reason || 'Không có lý do cụ thể.'}</div>
+            </div>
+        `,
         infoItem: (label, value) => `<div class="info-item"><span class="label">${label}</span><span class="value">${value}</span></div>`,
         
         historyItem: (entry) => {
@@ -745,37 +783,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return this.modal('Quét mã QR để lấy xe', content, footer, '480px');
         },
 
-        // NÂNG CẤP: Template cho modal quét biển số
-        plateScannerModal() {
-            const content = `
-                <div class="qr-scanner-body">
-                    <video id="camera-feed" playsinline></video>
-                    <div class="scanner-overlay"><div class="scanner-viewfinder plate-viewfinder"></div></div>
-                    <!-- NÂNG CẤP: Thay thế div bằng input để cho phép chỉnh sửa -->
-                    <input type="text" id="ocr-result-input" class="ocr-result-overlay" placeholder="Kết quả sẽ hiện ở đây..." readonly>
-                    <!-- NÂNG CẤP: Thêm spinner vào đây -->
-                    <div id="ocr-spinner" class="ocr-spinner"></div>
-                </div>
-                <p style="text-align: center; color: var(--text-secondary); margin-top: 1rem;">Đưa biển số xe vào trong khung để nhận diện.</p>`;
-            const footer = `
-                <button class="action-button btn--secondary" data-action="close-modal">Hủy bỏ</button>
-                <button id="capture-plate-btn" class="action-button btn--check-in" data-action="capture-plate">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                    <span>Chụp & Nhận diện</span>
-                </button>
-                <!-- NÂNG CẤP: Nút chấp nhận kết quả, ẩn mặc định -->
-                <button id="accept-ocr-btn" class="action-button btn--check-in" data-action="accept-ocr" style="display: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span>Chấp nhận</span>
-                </button>
-                <!-- NÂNG CẤP: Nút Chụp lại, ẩn mặc định -->
-                <button id="retake-ocr-btn" class="action-button btn--secondary" data-action="retake-ocr" style="display: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                    <span>Chụp lại</span>
-                </button>`;
-            return this.modal('Quét Biển số xe', content, footer, '640px');
-        },
-
         paymentModal({ fee, vehicle }) {
             const memo = `TTGX ${vehicle.plate} ${vehicle.unique_id}`;
             const qrUrl = `${APP_CONFIG.payment.imageUrlBase}&amount=${fee}&addInfo=${encodeURIComponent(memo)}`;
@@ -784,13 +791,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return this.modal('Xác nhận Thanh toán', content, footer, '800px', true);
         },
 
+        // NÂNG CẤP TOÀN DIỆN: Thiết kế lại modal xác nhận miễn phí/VIP
         confirmationModal({ title, plate, reason, type }) {
-            const isVip = type === 'vip';
-            const icon = isVip ? `<svg class="priority-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>` : `<svg class="priority-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m14 9-4 4h4v4"/></svg>`;
-            const passTitle = isVip ? 'XE ƯU TIÊN' : 'MIỄN PHÍ QUA CỔNG';
-            const content = `<div class="priority-pass-wrapper ${isVip ? 'vip' : 'free'}"><div class="priority-pass-icon-area">${icon}</div><div class="priority-pass-details"><h3 class="priority-pass-title">${passTitle}</h3><div class="priority-pass-plate">${plate}</div><p class="priority-pass-reason">Lý do: <strong>${reason}</strong></p><p class="priority-pass-confirm-text">Xác nhận cho xe ra khỏi bãi?</p></div></div>`;
-            const footer = `<button class="action-button btn--secondary" data-action="confirm-no">Hủy bỏ</button><button class="action-button ${isVip ? 'btn--reprint' : 'btn--check-in'}" data-action="confirm-yes"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Xác nhận</span></button>`;
-            return this.modal(title, content, footer, '400px');
+            const isVip = type === 'vip'; // 'vip' hoặc 'free'
+            const passTitle = isVip ? 'XE ƯU TIÊN' : 'MIỄN PHÍ GỬI XE';
+            const icon = isVip 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
+
+            const content = `
+                <div class="priority-pass-new ${isVip ? 'vip' : 'free'}">
+                    <div class="priority-pass-new__icon">${icon}</div>
+                    <h3 class="priority-pass-new__title">${passTitle}</h3>
+                    <div class="priority-pass-new__plate">${plate}</div>
+                    <p class="priority-pass-new__reason">Lý do: <strong>${reason}</strong></p>
+                    <div id="confetti-container"></div>
+                    <div class="priority-pass-new__success-overlay">
+                        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
+                        <p>ĐÃ XÁC NHẬN</p>
+                    </div>
+                </div>`;
+            const footer = `<button class="action-button btn--secondary" data-action="confirm-no">Hủy bỏ</button><button class="action-button ${isVip ? 'btn--reprint' : 'btn--check-in'}" data-action="confirm-yes"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Xác nhận cho xe ra</span></button>`;
+            return this.modal(title, content, footer, '450px');
         },
 
     };
@@ -803,36 +825,6 @@ document.addEventListener('DOMContentLoaded', () => {
         formatCurrency: (n) => new Intl.NumberFormat('vi-VN').format(n || 0),
         formatPhone: (p) => p || 'Chưa có',
         
-        /**
-         * NÂNG CẤP TOÀN DIỆN: Hàm "huấn luyện" logic cho OCR.
-         * Chuyển đổi kết quả thô từ Tesseract thành biển số hợp lệ.
-         * @param {string} rawText - Chuỗi ký tự Tesseract trả về.
-         * @returns {string} Biển số đã được làm sạch và chuẩn hóa.
-         */
-        cleanPlate: (rawText) => {
-            if (!rawText || typeof rawText !== 'string') return '';
-
-            // Bước 1: NÂNG CẤP - Xử lý biển 2 dòng.
-            // Thay thế dấu xuống dòng (\n) bằng rỗng để nối 2 dòng lại.
-            let text = rawText.toUpperCase().replace(/\n/g, '');
-
-            // Bước 2: Loại bỏ các ký tự không hợp lệ.
-            // Giữ lại chữ, số, dấu chấm và gạch ngang để xử lý ở bước sau.
-            text = text.replace(/[^A-Z0-9\.\-]/g, '');
-
-            // Bước 3: Sửa các lỗi nhận dạng phổ biến (O -> 0, S -> 5, etc.)
-            // Đây là bước "huấn luyện" dựa trên kinh nghiệm thực tế.
-            text = text.replace(/O/g, '0')
-                       .replace(/S/g, '5')
-                       .replace(/B/g, '8')
-                       .replace(/G/g, '6')
-                       .replace(/Z/g, '2')
-                       .replace(/I/g, '1'); // Thêm: I hay bị nhầm với 1
-
-            // Bước 4: Loại bỏ dấu chấm và gạch ngang để có chuỗi cuối cùng.
-            return text.replace(/[\.\-]/g, '');
-        },
-
         calculateDuration: (start, end = new Date()) => {
             if (!start) return '--';
             let diff = Math.floor((new Date(end) - new Date(start)) / 1000);
@@ -886,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         decodePlate: (plate) => {
             if (!plate || typeof PLATE_DATA === 'undefined') return 'Chưa có thông tin';
-            const cleaned = Utils.cleanPlate(plate);
+            const cleaned = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
             const province = PLATE_DATA.provinces.find(p => p.codes.includes(cleaned.substring(0, 2)));
             return province ? province.name : 'Không xác định';
         },
@@ -1091,29 +1083,34 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         async handleSearchTermChange(e) {
-            const plate = Utils.cleanPlate(e.target.value);
-            state.selectedPlate = plate;
+            const searchTerm = e.target.value.trim();
+            const cleanedPlate = searchTerm.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            state.selectedPlate = cleanedPlate;
 
-            if (plate.length < 4) {
+            if (searchTerm.length < 4) {
                 state.selectedVehicle = null;
                 UI.renderActionButtons();
                 UI.renderVehicleInfoPanel();
                 UI.renderSuggestions('');
                 return;
             }
+            
+            // NÂNG CẤP: Tìm kiếm đồng thời bằng biển số xe HOẶC số điện thoại.
+            const foundParking = state.vehicles.find(v => 
+                v.status === 'Đang gửi' && (v.plate === cleanedPlate || (v.phone && v.phone === searchTerm))
+            );
 
-            const foundParking = state.vehicles.find(v => v.plate === plate && v.status === 'Đang gửi');
             if (foundParking) {
-                state.selectedVehicle = { data: foundParking, status: 'parking' };
-                const alert = state.alerts[plate];
+                state.selectedVehicle = { data: foundParking, status: 'parking' }; // Cập nhật trạng thái xe tìm thấy
+                const alert = state.alerts[foundParking.plate]; // Lấy cảnh báo theo biển số của xe tìm được
                 if (alert) UI.showGlobalAlertModal(alert);
             } else {
-                const foundDeparted = state.vehicles.find(v => v.plate === plate && v.status === 'Đã rời bãi');
+                const foundDeparted = state.vehicles.find(v => v.plate === cleanedPlate && v.status === 'Đã rời bãi');
                 if (foundDeparted) {
                     state.selectedVehicle = { data: foundDeparted, status: 'departed' };
                 } else {
                     try {
-                        const globalVehicle = await Api.findVehicleGlobally(plate);
+                        const globalVehicle = await Api.findVehicleGlobally(cleanedPlate);
                         state.selectedVehicle = globalVehicle ? { data: globalVehicle, status: 'parking_remote' } : { data: null, status: 'new' };
                     } catch (error) {
                         UI.showToast(error.message, 'error');
@@ -1125,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             UI.renderActionButtons();
             UI.renderVehicleInfoPanel();
             if (state.selectedVehicle?.status === 'new' || state.selectedVehicle?.status === 'parking_remote') {
-                UI.renderSuggestions(plate);
+                UI.renderSuggestions(cleanedPlate);
             }
         },
 
@@ -1149,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!button) return;
 
             const action = button.dataset.action;
-            if (!['check-in', 'check-out', 'reprint'].includes(action)) return;
+            if (!['check-in', 'check-out', 'view-ticket', 'reprint-receipt'].includes(action)) return;
 
             if (state.isProcessing) return;
             
@@ -1161,15 +1158,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 switch (action) {
                     case 'check-in': await this.processCheckIn(); break;
                     case 'check-out': await this.processCheckOut(); break;
-                    case 'reprint': this.processReprint(); break;
+                    case 'view-ticket': // YÊU CẦU: Xử lý xem lại vé
+                        this.processViewTicket();
+                        break;
+                    case 'reprint-receipt':
+                        this.processReprintReceipt();
+                        break;
                 }
             } catch (error) {
                 UI.showToast(error.message, 'error');
             } finally {
-                if (action !== 'check-out' && action !== 'check-in') {
-                    state.isProcessing = false;
-                    UI.renderActionButtons();
-                }
+                // SỬA LỖI: Luôn reset trạng thái xử lý và vẽ lại nút bấm sau mỗi thao tác,
+                // bất kể thành công hay thất bại, để tránh nút bị kẹt ở trạng thái "Đang xử lý...".
+                state.isProcessing = false;
+                UI.renderActionButtons();
             }
         },
 
@@ -1186,8 +1188,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const plate = state.selectedPlate;
             if (!plate) throw new Error('Biển số không hợp lệ.');
 
+            // NÂNG CẤP: Kiểm tra xem xe đã tồn tại trong bãi chưa TRƯỚC KHI gửi đi.
+            const isAlreadyParking = state.vehicles.some(v => v.plate === plate && v.status === 'Đang gửi');
+            if (isAlreadyParking) {
+                // Nếu xe đã tồn tại, hiển thị cảnh báo rõ ràng và dừng lại.
+                throw new Error(`Xe ${plate} đã có trong bãi. Vui lòng kiểm tra lại.`);
+            }
+
             const phone = dom.phoneNumberInput.value.trim();
             const isVIP = dom.isVipCheckbox.checked;
+            const notes = dom.vehicleNotesInput.value.trim(); // NÂNG CẤP: Lấy ghi chú
 
             const feeCollectionPolicy = state.currentLocation?.fee_collection_policy || 'post_paid';
             const feePolicyType = state.currentLocation?.fee_policy_type || 'free';
@@ -1196,19 +1206,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (feePolicyType === 'free' || (feeCollectionPolicy === 'pre_paid' && Utils.calculateFee(new Date(), null, isVIP) === 0)) {
                 const reason = isVIP ? 'Khách VIP' : 'Miễn phí';
-                newTransaction = await Api.checkIn(plate, phone, isVIP, { fee: 0, method: reason });
+                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { fee: 0, method: reason });
             } else if (feeCollectionPolicy === 'pre_paid') {
                 const calculatedFee = Utils.calculateFee(new Date(), null, isVIP);
                 const uniqueID = '_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
                 const paymentResult = await this.getPaymentResult(calculatedFee, { plate, entry_time: new Date().toISOString(), unique_id: uniqueID });
                 if (!paymentResult) throw new Error('Đã hủy thao tác gửi xe.');
-                newTransaction = await Api.checkIn(plate, phone, isVIP, paymentResult, uniqueID);
+                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, paymentResult, uniqueID);
             } else { // post_paid
-                newTransaction = await Api.checkIn(plate, phone, isVIP);
+                newTransaction = await Api.checkIn(plate, phone, isVIP, notes);
             }
 
-            UI.showToast(`Đã gửi xe ${plate} thành công!`, 'success');
-            await App.resetFormAndFetchData(); // Thay thế modal biên lai bằng toast
+            // SỬA LỖI: Hiển thị modal vé xe điện tử thay vì chỉ hiện toast.
+            UI.showModal('checkInReceipt', newTransaction); // Hiển thị modal mới
+            UI.startConfetti('checkin-confetti-container'); // Bắn pháo giấy
+            await App.resetFormAndFetchData(); // Reset form ngay lập tức
         },
         
         async getPaymentResult(fee, vehicleData) {
@@ -1265,15 +1277,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        processReprint() {
+        // YÊU CẦU: Hàm xử lý xem lại vé
+        processViewTicket() {
             const vehicle = state.selectedVehicle?.data;
-            if (!vehicle || state.selectedVehicle.status !== 'departed') {
+            if (!vehicle) {
+                throw new Error('Không có thông tin xe để xem vé.');
+            }
+            UI.showModal('checkInReceipt', vehicle);
+        },
+
+        // YÊU CẦU: Hàm xử lý in lại biên lai
+        processReprintReceipt() {
+            const vehicle = state.selectedVehicle?.data;
+            if (!vehicle || vehicle.status !== 'Đã rời bãi') {
                 throw new Error('Chức năng này chỉ dành cho xe đã rời bãi.');
             }
-            // Vô hiệu hóa chức năng in lại biên lai
-            UI.showToast('Chức năng xem lại biên lai đã được tắt.', 'info');
-            state.isProcessing = false;
-            UI.renderActionButtons();
+            // YÊU CẦU: Điều hướng sang trang tra cứu công khai (lookup.html) với biển số xe
+            const url = `lookup.html?plate=${encodeURIComponent(vehicle.plate)}`;
+            window.open(url, '_blank');
+            state.isProcessing = false; // Cho phép thao tác tiếp
         },
 
         handleModalClick(e) {
@@ -1297,32 +1319,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     UI.closeModal();
                     state.isProcessing = false;
                     break;
-                case 'capture-plate':
-                    this.processCapturedPlate();
-                    break;
-                case 'accept-ocr':
-                    this.handleAcceptOcr();
-                    break;
-                case 'retake-ocr':
-                    this.handleRetakeOcr();
-                    break;
             }
+        },
+
+        // NÂNG CẤP: Hàm hiển thị hiệu ứng thành công và bắn pháo giấy
+        showConfirmationSuccess() {
+            const successOverlay = document.querySelector('.priority-pass-new__success-overlay');
+            if (!successOverlay) return;
+
+            successOverlay.classList.add('active');
+            UI.startConfetti('confetti-container'); // Gọi hàm đã chuyển vào UI
         },
 
         async processConfirmation() {
             const vehicle = state.selectedVehicle?.data;
             if (!vehicle) return;
             const reason = vehicle.is_vip ? 'Khách VIP' : 'Miễn phí';
-            try {
-                await Api.checkOut(vehicle.unique_id, 0, reason); // Sửa lỗi cú pháp
-                UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
-                // Bỏ hiển thị biên lai
-                App.resetFormAndFetchData();
-            } catch (error) {
-                UI.showToast(`Lỗi checkout: ${error.message}`, 'error');
-            } finally {
+            this.showConfirmationSuccess(); // Hiển thị hiệu ứng
+            await Api.checkOut(vehicle.unique_id, 0, reason);
+            setTimeout(() => {
                 UI.closeModal();
-            }
+                App.resetFormAndFetchData();
+            }, 2000); // Đợi 2 giây rồi mới đóng modal và reset
         },
 
         async processPayment(paymentMethod) {
@@ -1457,177 +1475,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.isProcessing = false;
             }
         },
-
-        // NÂNG CẤP: Mở modal quét biển số
-        async openPlateScanner() {
-            if (!('mediaDevices' in navigator)) return UI.showToast('Trình duyệt không hỗ trợ camera.', 'error');
-            UI.showModal('plate-scanner');
-            try {
-                state.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                const video = document.getElementById('camera-feed');
-                if (!video) return;
-
-                video.srcObject = state.cameraStream;
-                await video.play();
-
-                // NÂNG CẤP OCR: Chỉ khởi tạo Tesseract worker nếu nó chưa tồn tại
-                if (typeof Tesseract === 'undefined') {
-                    UI.showToast('Lỗi: Thư viện Tesseract.js chưa được tải.', 'error');
-                    UI.closeModal();
-                    return;
-                }
-
-                if (!state.ocrWorker) {
-                    UI.showToast('Đang tải bộ nhận dạng tiếng Việt (lần đầu)...', 'info');
-                    state.ocrWorker = await Tesseract.createWorker('vie', 1, {
-                        logger: m => console.log(m)
-                    });
-                    await state.ocrWorker.setParameters({
-                        tessedit_char_whitelist: 'ABCDEFGHIKLMNPSTUVXYZ0123456789-',
-                        // NÂNG CẤP: Chuyển sang chế độ nhận dạng một khối văn bản.
-                        // Điều này cho phép Tesseract đọc cả biển 1 dòng và 2 dòng.
-                        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
-                    });
-                }
-
-                UI.showToast('Sẵn sàng quét biển số!', 'success');
-                // BỎ VÒNG LẶP: Không quét liên tục nữa.
-                // state.ocrScanAnimation = requestAnimationFrame(() => this.tickPlateScanner());
-
-            } catch (err) {
-                UI.showToast('Không thể truy cập camera. Vui lòng cấp quyền.', 'error');
-                UI.closeModal();
-            }
-        },
-
-        /**
-         * NÂNG CẤP: Xử lý ảnh sau khi người dùng nhấn nút "Chụp".
-         * Bỏ vòng lặp quét liên tục, thay bằng xử lý một lần.
-         */
-        async processCapturedPlate() {
-            const video = document.getElementById('camera-feed');
-            const spinner = document.getElementById('ocr-spinner');
-            const captureBtn = document.getElementById('capture-plate-btn');
-
-            if (!video || !state.ocrWorker || state.isProcessing) return;
-
-            try {
-                state.isProcessing = true;
-                if (spinner) spinner.classList.add('active');
-                if (captureBtn) captureBtn.disabled = true;
-
-                // Chụp ảnh từ video và tiền xử lý
-                const canvas = document.createElement('canvas');
-                const viewfinder = document.querySelector('.scanner-viewfinder.plate-viewfinder');
-                const videoRect = video.getBoundingClientRect();
-                const viewfinderRect = viewfinder.getBoundingClientRect();
-
-                const scaleX = video.videoWidth / videoRect.width;
-                const scaleY = video.videoHeight / videoRect.height;
-                const cropX = (viewfinderRect.left - videoRect.left) * scaleX;
-                const cropY = (viewfinderRect.top - videoRect.top) * scaleY;
-                const cropWidth = viewfinderRect.width * scaleX;
-                const cropHeight = viewfinderRect.height * scaleY;
-                canvas.width = cropWidth;
-                canvas.height = cropHeight;
-                const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-                ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
-                const grayscaleData = new Uint8ClampedArray(data.length / 4);
-
-                for (let i = 0; i < data.length; i += 4) {
-                    const avg = (data[i] * 0.299) + (data[i + 1] * 0.587) + (data[i + 2] * 0.114);
-                    grayscaleData[i / 4] = avg;
-                }
-
-                const histogram = Handlers.createGrayscaleHistogram(grayscaleData);
-                const optimalThreshold = Handlers.getOtsuThreshold(histogram, grayscaleData.length);
-
-                for (let i = 0; i < grayscaleData.length; i++) {
-                    const color = grayscaleData[i] > optimalThreshold ? 255 : 0;
-                    data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = color;
-                }
-                ctx.putImageData(imageData, 0, 0);
-
-                // Gửi ảnh đã xử lý cho Tesseract
-                const { data: { text, confidence } } = await state.ocrWorker.recognize(canvas);
-                const cleanedText = Utils.cleanPlate(text);
-                const resultInput = document.getElementById('ocr-result-input');
-
-                if (resultInput) {
-                    resultInput.value = cleanedText; // Điền kết quả vào ô input
-                    resultInput.classList.add('visible');
-                }
-
-                // NÂNG CẤP: Luôn hiển thị nút "Chấp nhận" nếu có bất kỳ kết quả nào
-                if (cleanedText && cleanedText.length > 0) {
-                    console.log(`Found: ${cleanedText} (Confidence: ${confidence})`);
-                    
-                    // Cho phép người dùng chỉnh sửa kết quả
-                    resultInput.readOnly = false;
-
-                    // Hiển thị nút Chấp nhận và ẩn nút Chụp
-                    const acceptBtn = document.getElementById('accept-ocr-btn');
-                    const retakeBtn = document.getElementById('retake-ocr-btn'); // NÂNG CẤP
-                    if (retakeBtn) retakeBtn.style.display = 'flex'; // SỬA LỖI: Hiển thị nút Chụp lại
-                    if (acceptBtn) acceptBtn.style.display = 'flex';
-                    if (captureBtn) captureBtn.style.display = 'none';
-                } else {
-                    // Nếu không có kết quả, báo lỗi và cho phép chụp lại
-                    UI.showToast('Không nhận dạng được. Vui lòng thử chụp lại!', 'error');
-                }
-
-            } catch (error) {
-                console.error("Lỗi OCR:", error);
-                UI.showToast('Đã xảy ra lỗi trong quá trình nhận dạng.', 'error');
-            } finally {
-                // Luôn kích hoạt lại nút chụp và ẩn spinner sau khi xử lý xong
-                state.isProcessing = false;
-                if (spinner) spinner.classList.remove('active');
-                if (captureBtn) captureBtn.disabled = false;
-            }
-        },
-
-        /**
-         * NÂNG CẤP: Xử lý khi người dùng nhấn nút "Chấp nhận".
-         */
-        handleAcceptOcr() {
-            const resultInput = document.getElementById('ocr-result-input');
-            // Lấy giá trị đã được người dùng sửa (nếu có)
-            const acceptedPlate = resultInput ? resultInput.value.trim().toUpperCase() : '';
-
-            if (!acceptedPlate) {
-                UI.showToast('Không có kết quả để chấp nhận.', 'error');
-                return;
-            }
-
-            dom.searchTermInput.value = acceptedPlate;
-            dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
-            UI.closeModal();
-        },
-
-        /**
-         * NÂNG CẤP: Xử lý khi người dùng nhấn nút "Chụp lại".
-         */
-        handleRetakeOcr() {
-            const resultInput = document.getElementById('ocr-result-input');
-            const captureBtn = document.getElementById('capture-plate-btn');
-            const acceptBtn = document.getElementById('accept-ocr-btn');
-            const retakeBtn = document.getElementById('retake-ocr-btn');
-
-            // Ẩn kết quả và các nút chức năng
-            if (resultInput) {
-                resultInput.classList.remove('visible');
-                resultInput.readOnly = true;
-            }
-            if (acceptBtn) acceptBtn.style.display = 'none';
-            if (retakeBtn) retakeBtn.style.display = 'none';
-            
-            // Hiển thị lại nút Chụp ban đầu
-            if (captureBtn) captureBtn.style.display = 'flex';
-        },
     };
     // =========================================================================
     // NÂNG CẤP TOÀN DIỆN: BỘ XỬ LÝ OCR THÔNG MINH
@@ -1694,7 +1541,6 @@ document.addEventListener('DOMContentLoaded', () => {
         init() {
             dom.micBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`;
             dom.scanQrBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`;
-            dom.scanPlateBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>`; // NÂNG CẤP: Icon cho nút quét biển số
 
             this.setupEventListeners();
             this.applySavedTheme();
@@ -1723,10 +1569,11 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.themeCheckbox.addEventListener('change', Handlers.handleThemeChange);
             dom.micBtn.addEventListener('click', Handlers.startVoiceRecognition);
             dom.scanQrBtn.addEventListener('click', () => Handlers.openQrScanner());
-            dom.scanPlateBtn.addEventListener('click', () => Handlers.openPlateScanner()); // NÂNG CẤP: Gắn sự kiện quét biển số
             dom.changeLocationBtn.addEventListener('click', () => this.determineLocation(true));
             
-            dom.actionButtonsContainer.addEventListener('click', (e) => Handlers.handleActionClick(e));
+            // SỬA LỖI: Di chuyển listener lên form để bắt được cả sự kiện của nút phụ "Xem lại vé"
+            dom.formNewVehicle.addEventListener('click', (e) => Handlers.handleActionClick(e));
+
             dom.vehicleListContainer.addEventListener('click', (e) => {
                 const item = e.target.closest('.vehicle-item');
                 if (item) Handlers.handleVehicleItemClick(item);
