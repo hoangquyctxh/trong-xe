@@ -35,7 +35,8 @@
             background-size: 40px 40px;
             color: var(--text-primary);
             margin: 0;
-            line-height: 1.6; /* XÓA BỎ FONT-SIZE CỨNG, ĐỂ TRÌNH DUYỆT TỰ QUYẾT ĐỊNH */
+            font-size: 19px; /* TĂNG FONT CHỮ CƠ SỞ */
+            line-height: 1.65;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -167,7 +168,7 @@
             bottom: 0; left: 0; right: 0;
             background: linear-gradient(to top, rgba(17, 24, 39, 1), rgba(17, 24, 39, 0.9));
             border-top: 1px solid var(--border-color);
-            padding: 2rem; /* Tăng padding cho thoáng hơn */
+            padding: 1.75rem;
             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -179,7 +180,7 @@
         .result-grid {
             display: grid;
             grid-template-columns: 120px 1fr;
-            gap: 1.75rem; /* Tăng khoảng cách */
+            gap: 1.5rem;
             align-items: center;
         }
         .status-indicator {
@@ -198,13 +199,13 @@
 
         .result-details .plate {
             font-family: var(--font-mono);
-            font-size: clamp(3rem, 10vw, 4.5rem); /* TĂNG CỠ CHỮ LINH HOẠT (RẤT LỚN TRÊN DI ĐỘNG) */
+            font-size: 3rem; /* TĂNG KÍCH THƯỚC */
             font-weight: 700;
             letter-spacing: 2px;
             line-height: 1;
         }
         .result-details .status-text {
-            font-size: clamp(1.4rem, 5vw, 1.8rem); /* TĂNG CỠ CHỮ LINH HOẠT */
+            font-size: 1.4rem; /* TĂNG KÍCH THƯỚC */
             font-weight: 500;
             margin-top: 0.5rem;
         }
@@ -218,8 +219,8 @@
             margin-top: 1.75rem;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.5rem 1.5rem;
-            font-size: clamp(1.1rem, 4vw, 1.2rem); /* TĂNG CỠ CHỮ LINH HOẠT */
+            gap: 1.25rem 1.5rem;
+            font-size: 1.05rem; /* TĂNG KÍCH THƯỚC */
         }
         .sub-details .label { 
             color: var(--text-secondary); font-weight: 500; 
