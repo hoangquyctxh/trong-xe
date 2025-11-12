@@ -35,7 +35,8 @@
             background-size: 40px 40px;
             color: var(--text-primary);
             margin: 0;
-            line-height: 1.6;
+            font-size: 17px; /* TĂNG KÍCH THƯỚC: Tăng font chữ cơ sở cho toàn trang */
+            line-height: 1.65; /* TĂNG KÍCH THƯỚC: Điều chỉnh khoảng cách dòng cho phù hợp */
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -444,9 +445,16 @@
                     icon = ICONS.cccd;
                     const dobRaw = data.dob;
                     const formattedDob = `${dobRaw.substring(0, 2)}/${dobRaw.substring(2, 4)}/${dobRaw.substring(4)}`;
+                    // NÂNG CẤP: Che số CCCD để bảo mật
+                    const cccd = data.cccdNumber || '';
+                    const maskedCccd = cccd.length > 4 
+                        ? `${cccd.substring(0, 2)}********${cccd.substring(cccd.length - 2)}`
+                        : cccd;
+
                     elements.subDetailsGrid.innerHTML = `
                         <div class="info-item"><span class="label">Ngày sinh</span><span class="value">${formattedDob}</span></div>
                         <div class="info-item"><span class="label">Giới tính</span><span class="value">${data.gender}</span></div>
+                        <div class="info-item"><span class="label">Số CCCD</span><span class="value">${maskedCccd}</span></div>
                         <div class="info-item" style="grid-column: 1 / -1;"><span class="label">Địa chỉ</span><span class="value">${data.address}</span></div>
                     `;
                 } else { // Vehicle transaction
