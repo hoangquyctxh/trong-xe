@@ -115,11 +115,12 @@
             gap: 2rem;
         }
         #scan-active-view.active {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            display: flex; /* THAY ĐỔI: Mặc định là flex để ưu tiên mobile */
+            flex-direction: column;
             animation: fadeIn 0.5s ease;
         }
         .scan-camera-panel {
+            flex-shrink: 0; /* Không cho panel camera bị co lại */
             position: relative;
             background: #000;
             border-radius: var(--border-radius-md);
@@ -128,6 +129,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            height: 45vh; /* Chiều cao cho camera trên mobile */
         }
         #camera-feed {
             width: 100%;
@@ -161,6 +163,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            flex-grow: 1; /* Panel kết quả sẽ chiếm phần còn lại */
         }
         .result-placeholder {
             text-align: center;
@@ -251,7 +254,7 @@
             border-bottom: 1px solid var(--border-color);
         }
         .verification-header .plate {
-            font-size: 3.2rem; /* NÂNG CẤP: Cực lớn */
+            font-size: 2.8rem; /* THAY ĐỔI: Điều chỉnh lại cho phù hợp với nhiều kích thước */
             font-weight: 800;
             font-family: monospace;
             color: var(--text-dark);
@@ -319,9 +322,9 @@
             margin-bottom: 1.5rem;
             border-bottom: 1px solid var(--border-color);
         }
-        .citizen-header .fullname { font-size: 2.2rem; font-weight: 800; color: var(--text-dark); }
+        .citizen-header .fullname { font-size: 2rem; font-weight: 800; color: var(--text-dark); }
         .citizen-header .cccd-number { font-size: 1.2rem; font-family: monospace; color: var(--text-secondary); }
-
+        
     </style>
     <!-- NÂNG CẤP: Thêm keyframes cho animation -->
     <style>
@@ -331,6 +334,25 @@
             20%, 80% { transform: translate3d(2px, 0, 0); }
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* ================================================================= */
+        /* NÂNG CẤP LỚN: RESPONSIVE CHO MÀN HÌNH LỚN (DESKTOP/TABLET NGANG) */
+        /* ================================================================= */
+        @media (min-width: 992px) {
+            #scan-active-view.active {
+                display: grid; /* Chuyển sang layout lưới 2 cột */
+                grid-template-columns: 1fr 1fr;
+            }
+            .scan-camera-panel {
+                height: auto; /* Để chiều cao tự động theo lưới */
+            }
+            .verification-header .plate {
+                font-size: 3.2rem; /* Trả lại kích thước font lớn cho màn hình desktop */
+            }
+            .citizen-header .fullname {
+                font-size: 2.2rem; /* Trả lại kích thước font lớn cho màn hình desktop */
+            }
         }
     </style>
 </head>
@@ -446,6 +468,68 @@
             const beepSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/beep.mp3');
             // NÂNG CẤP: Thêm âm thanh báo lỗi
             const errorSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/error.mp3');
+            // NÂNG CẤP: Thêm âm thanh cảnh báo an ninh
+            const alertSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/warning.mp3');
+
+            // =================================================================
+            // NÂNG CẤP LỚN: MODULE XỬ LÝ ẢNH ĐỂ TĂNG TỐC ĐỘ QUÉT
+            // =================================================================
+            const ImageProcessor = {
+                /**
+                 * Chuyển đổi dữ liệu ảnh RGBA sang ảnh xám.
+                 * @param {ImageData} imageData - Dữ liệu ảnh từ canvas.
+                 * @returns {Uint8ClampedArray} Mảng dữ liệu ảnh xám.
+                 */
+                toGrayscale(imageData) {
+                    const grayscale = new Uint8ClampedArray(imageData.width * imageData.height);
+                    for (let i = 0; i < imageData.data.length; i += 4) {
+                        const r = imageData.data[i];
+                        const g = imageData.data[i + 1];
+                        const b = imageData.data[i + 2];
+                        // Công thức tính độ sáng (luminance) chuẩn
+                        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                        grayscale[i / 4] = gray;
+                    }
+                    return grayscale;
+                },
+
+                /**
+                 * Tăng cường độ tương phản và nhị phân hóa ảnh xám.
+                 * @param {Uint8ClampedArray} grayscaleData - Dữ liệu ảnh xám.
+                 * @param {number} width - Chiều rộng ảnh.
+                 * @param {number} height - Chiều cao ảnh.
+                 * @returns {ImageData} Dữ liệu ảnh đã được xử lý, sẵn sàng cho jsQR.
+                 */
+                binarize(grayscaleData, width, height) {
+                    // Tìm giá trị sáng nhất và tối nhất để tăng tương phản
+                    let min = 255, max = 0;
+                    for (let i = 0; i < grayscaleData.length; i++) {
+                        const value = grayscaleData[i];
+                        if (value < min) min = value;
+                        if (value > max) max = value;
+                    }
+
+                    const range = max - min;
+                    if (range === 0) range = 1; // Tránh chia cho 0
+
+                    // Tính ngưỡng trung bình sau khi tăng tương phản
+                    const threshold = min + range / 2;
+
+                    const binarizedRgba = new Uint8ClampedArray(width * height * 4);
+                    for (let i = 0; i < grayscaleData.length; i++) {
+                        // Tăng tương phản và so sánh với ngưỡng
+                        const stretchedValue = 255 * (grayscaleData[i] - min) / range;
+                        const finalValue = stretchedValue < threshold ? 0 : 255;
+
+                        binarizedRgba[i * 4] = finalValue;
+                        binarizedRgba[i * 4 + 1] = finalValue;
+                        binarizedRgba[i * 4 + 2] = finalValue;
+                        binarizedRgba[i * 4 + 3] = 255; // Alpha
+                    }
+
+                    return new ImageData(binarizedRgba, width, height);
+                }
+            };
 
             // =================================================================
             // KHU VỰC 2: CÁC HÀM TIỆN ÍCH VÀ GIAO DIỆN
@@ -633,34 +717,40 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(elements.cameraFeed, 0, 0, canvas.width, canvas.height);
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
                     
+                    // NÂNG CẤP: Áp dụng bộ lọc xử lý ảnh trước khi quét
+                    const grayscale = ImageProcessor.toGrayscale(imageData);
+                    const processedImageData = ImageProcessor.binarize(grayscale, canvas.width, canvas.height);
+                    const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { inversionAttempts: "dontInvert" });
+
                     // NÂNG CẤP: Logic quét đơn giản và hiệu quả hơn
                     if (code) {
                         isProcessingCode = true; // Khóa lại để tránh quét liên tục cùng 1 mã
                         
-                        // NÂNG CẤP: Phân loại mã QR và xử lý
-                        if (code.data.includes('|')) {
+                        // NÂNG CẤP: Chống tấn công DoS và kiểm tra định dạng chặt chẽ
+                        if (code.data.length > 500) {
+                            handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
+                        } else if ((code.data.match(/\|/g) || []).length >= 6) { // THAY ĐỔI: Kiểm tra xem có ít nhất 6 dấu '|' hay không.
                             beepSound.play();
                             elements.scannerViewfinder.classList.add('scanned');
-                            setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
-                            
                             const parts = code.data.split('|');
-                            if (parts.length >= 6) {
-                                const citizenData = { cccdNumber: parts[0], oldIdNumber: parts[1], fullName: parts[2], dob: parts[3], gender: parts[4], address: parts[5], issueDate: parts[6] };
-                                renderCitizenIdCard(citizenData);
-                            } else {
-                                // Mã có dấu | nhưng không đúng định dạng CCCD
-                                handleInvalidCode();
-                            }
-                        } else if (code.data.startsWith('_')) { // Giả định mã vé xe hợp lệ bắt đầu bằng '_'
-                            beepSound.play();
-                            elements.scannerViewfinder.classList.add('scanned');
+                            const citizenData = { 
+                                cccdNumber: parts[0], 
+                                oldIdNumber: parts[1], 
+                                fullName: parts[2], 
+                                dob: parts[3], 
+                                gender: parts[4], 
+                                address: parts[5], 
+                                issueDate: parts[6] 
+                            };
+                            renderCitizenIdCard(citizenData);
                             setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
+                        } else if (code.data.startsWith('_')) { // Giả định mã vé xe hợp lệ bắt đầu bằng '_'
+                            // THAY ĐỔI: Không phát âm thanh ở đây, để hàm verifyTransaction quyết định
                             verifyTransaction(code.data);
                         } else {
                             // Mã không xác định
-                            handleInvalidCode();
+                            handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
                         }
 
                         // Sau 1.5 giây, cho phép quét lại
@@ -675,11 +765,11 @@
             };
 
             // NÂNG CẤP: Hàm xử lý khi mã không hợp lệ
-            const handleInvalidCode = () => {
+            const handleInvalidCode = (message) => {
                 errorSound.play();
                 elements.scannerViewfinder.classList.add('error');
                 setTimeout(() => elements.scannerViewfinder.classList.remove('error'), 500);
-                showInlineError('Mã QR không được hỗ trợ.');
+                showInlineError(message);
             };
 
             const verifyTransaction = async (uniqueId) => {
@@ -692,6 +782,17 @@
 
                     if (error) {
                         throw error;
+                    }
+
+                    // NÂNG CẤP: Quyết định âm thanh và hiệu ứng dựa trên kết quả
+                    if (data && data.security_alert) {
+                        alertSound.play();
+                        elements.scannerViewfinder.classList.add('error'); // Dùng màu đỏ của lỗi cho cảnh báo
+                        setTimeout(() => elements.scannerViewfinder.classList.remove('error'), 500);
+                    } else if (data) {
+                        beepSound.play();
+                        elements.scannerViewfinder.classList.add('scanned');
+                        setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
                     }
 
                     if (!data) {
