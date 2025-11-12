@@ -77,10 +77,3 @@ self.onmessage = (event) => {
     const imageData = event.data;
     const processedImageData = processImageData(imageData);
     const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { 
-        inversionAttempts: "dontInvert" 
-    });
-    
-    // Gửi kết quả (dù là null hay có dữ liệu) trở lại luồng chính.
-    // Luồng chính sẽ nhận được tin nhắn này và đánh dấu worker là "rảnh".
-    self.postMessage(code);
-};
