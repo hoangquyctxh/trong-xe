@@ -131,6 +131,27 @@
             justify-content: center;
             height: 45vh; /* Chiều cao cho camera trên mobile */
         }
+        /* NÂNG CẤP: Nút bật/tắt đèn Flash */
+        #toggle-flash-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 5;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            cursor: pointer;
+            display: none; /* Ẩn mặc định, chỉ hiện khi được hỗ trợ */
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+        #toggle-flash-btn.active {
+            background-color: var(--info-color);
+        }
         #camera-feed {
             width: 100%;
             height: 100%;
@@ -446,6 +467,7 @@
                 scanQrBtn: document.getElementById('scan-qr-btn'),
                 stopScanBtn: document.getElementById('stop-scan-btn'),
                 cameraFeed: document.getElementById('camera-feed'),
+                toggleFlashBtn: document.getElementById('toggle-flash-btn'), // NÂNG CẤP
                 scannerViewfinder: document.getElementById('scanner-viewfinder'),
                 // Verification card elements
                 citizenIdCard: document.getElementById('citizen-id-card'), // NÂNG CẤP
@@ -462,6 +484,7 @@
             let scanAnimation = null;
             // NÂNG CẤP: Thay thế logic phức tạp bằng một biến cờ đơn giản
             let isProcessingCode = false;
+            let isFlashOn = false; // NÂNG CẤP: Theo dõi trạng thái đèn flash
             let LOCATIONS_DATA = [];
 
             // NÂNG CẤP: Tạo đối tượng âm thanh cho tiếng "bíp"
@@ -475,56 +498,67 @@
             // NÂNG CẤP LỚN: MODULE XỬ LÝ ẢNH ĐỂ TĂNG TỐC ĐỘ QUÉT
             // =================================================================
             const ImageProcessor = {
-                /**
-                 * Chuyển đổi dữ liệu ảnh RGBA sang ảnh xám.
-                 * @param {ImageData} imageData - Dữ liệu ảnh từ canvas.
-                 * @returns {Uint8ClampedArray} Mảng dữ liệu ảnh xám.
-                 */
-                toGrayscale(imageData) {
-                    const grayscale = new Uint8ClampedArray(imageData.width * imageData.height);
-                    for (let i = 0; i < imageData.data.length; i += 4) {
-                        const r = imageData.data[i];
-                        const g = imageData.data[i + 1];
-                        const b = imageData.data[i + 2];
-                        // Công thức tính độ sáng (luminance) chuẩn
-                        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                        grayscale[i / 4] = gray;
-                    }
-                    return grayscale;
-                },
+                // NÂNG CẤP: Tạo một canvas ẩn để xử lý ảnh với kích thước nhỏ hơn
+                offscreenCanvas: document.createElement('canvas'),
 
-                /**
-                 * Tăng cường độ tương phản và nhị phân hóa ảnh xám.
-                 * @param {Uint8ClampedArray} grayscaleData - Dữ liệu ảnh xám.
-                 * @param {number} width - Chiều rộng ảnh.
-                 * @param {number} height - Chiều cao ảnh.
-                 * @returns {ImageData} Dữ liệu ảnh đã được xử lý, sẵn sàng cho jsQR.
-                 */
-                binarize(grayscaleData, width, height) {
-                    // Tìm giá trị sáng nhất và tối nhất để tăng tương phản
-                    let min = 255, max = 0;
-                    for (let i = 0; i < grayscaleData.length; i++) {
-                        const value = grayscaleData[i];
-                        if (value < min) min = value;
-                        if (value > max) max = value;
+                // THAY THẾ HOÀN TOÀN: Sử dụng thuật toán Ngưỡng Thích ứng (Adaptive Thresholding)
+                // kết hợp Ảnh Tích phân (Integral Image) để có hiệu năng cao nhất.
+                process(imageData) {
+                    const width = imageData.width;
+                    const height = imageData.height;
+                    const data = imageData.data;
+
+                    // 1. Chuyển sang ảnh xám và tạo Ảnh Tích phân (Integral Image) cùng lúc
+                    const integralImage = new Uint32Array(width * height);
+                    const grayscale = new Uint8ClampedArray(width * height);
+
+                    for (let y = 0; y < height; y++) {
+                        let rowSum = 0;
+                        for (let x = 0; x < width; x++) {
+                            const i = (y * width + x);
+                            const i4 = i * 4;
+                            // Công thức độ sáng (luminance)
+                            const gray = data[i4] * 0.299 + data[i4 + 1] * 0.587 + data[i4 + 2] * 0.114;
+                            grayscale[i] = gray;
+
+                            rowSum += gray;
+                            integralImage[i] = (y > 0 ? integralImage[i - width] : 0) + rowSum;
+                        }
                     }
 
-                    const range = max - min;
-                    if (range === 0) range = 1; // Tránh chia cho 0
-
-                    // Tính ngưỡng trung bình sau khi tăng tương phản
-                    const threshold = min + range / 2;
-
+                    // 2. Áp dụng Ngưỡng Thích ứng
+                    const s = width / 8; // Kích thước vùng lân cận
+                    const s2 = Math.floor(s / 2);
+                    const t = 0.15; // Tỷ lệ điều chỉnh
                     const binarizedRgba = new Uint8ClampedArray(width * height * 4);
-                    for (let i = 0; i < grayscaleData.length; i++) {
-                        // Tăng tương phản và so sánh với ngưỡng
-                        const stretchedValue = 255 * (grayscaleData[i] - min) / range;
-                        const finalValue = stretchedValue < threshold ? 0 : 255;
 
-                        binarizedRgba[i * 4] = finalValue;
-                        binarizedRgba[i * 4 + 1] = finalValue;
-                        binarizedRgba[i * 4 + 2] = finalValue;
-                        binarizedRgba[i * 4 + 3] = 255; // Alpha
+                    for (let y = 0; y < height; y++) {
+                        for (let x = 0; x < width; x++) {
+                            const i = y * width + x;
+
+                            // Xác định vùng lân cận
+                            const x1 = Math.max(0, x - s2);
+                            const x2 = Math.min(width - 1, x + s2);
+                            const y1 = Math.max(0, y - s2);
+                            const y2 = Math.min(height - 1, y + s2);
+
+                            const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+                            // Tính tổng độ sáng của vùng lân cận bằng Ảnh Tích phân (cực nhanh)
+                            const sum = integralImage[y2 * width + x2] -
+                                        (y1 > 0 ? integralImage[(y1 - 1) * width + x2] : 0) -
+                                        (x1 > 0 ? integralImage[y2 * width + (x1 - 1)] : 0) +
+                                        (y1 > 0 && x1 > 0 ? integralImage[(y1 - 1) * width + (x1 - 1)] : 0);
+
+                            // Nếu độ sáng của pixel hiện tại sáng hơn (1-t)% so với trung bình vùng, nó là màu trắng
+                            const finalValue = (grayscale[i] * count) < (sum * (1.0 - t)) ? 0 : 255;
+
+                            const i4 = i * 4;
+                            binarizedRgba[i4] = finalValue;
+                            binarizedRgba[i4 + 1] = finalValue;
+                            binarizedRgba[i4 + 2] = finalValue;
+                            binarizedRgba[i4 + 3] = 255;
+                        }
                     }
 
                     return new ImageData(binarizedRgba, width, height);
@@ -680,9 +714,37 @@
                     return;
                 }
                 try {
-                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    // NÂNG CẤP: Yêu cầu độ phân giải hợp lý để tối ưu hiệu năng
+                    const constraints = {
+                        video: {
+                            facingMode: 'environment',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    };
+                    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
                     elements.cameraFeed.srcObject = cameraStream; 
                     await elements.cameraFeed.play();
+
+                    // NÂNG CẤP: Thiết lập kích thước cho canvas ẩn
+                    const processingSize = 400; // Xử lý ảnh ở kích thước 400x400
+                    ImageProcessor.offscreenCanvas.width = processingSize;
+                    ImageProcessor.offscreenCanvas.height = processingSize;
+
+                    // NÂNG CẤP: Kiểm tra và hiển thị nút đèn flash
+                    const videoTrack = cameraStream.getVideoTracks()[0];
+                    const capabilities = videoTrack.getCapabilities();
+                    if (capabilities.torch) {
+                        elements.toggleFlashBtn.style.display = 'flex';
+                        elements.toggleFlashBtn.onclick = () => {
+                            isFlashOn = !isFlashOn;
+                            videoTrack.applyConstraints({
+                                advanced: [{ torch: isFlashOn }]
+                            }).catch(e => console.error('Lỗi bật đèn flash:', e));
+                            elements.toggleFlashBtn.classList.toggle('active', isFlashOn);
+                        };
+                    }
+
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                 } catch(err) { 
                     showMessage('Không thể truy cập camera. Vui lòng cấp quyền.', true); 
@@ -695,8 +757,19 @@
                     cancelAnimationFrame(scanAnimation);
                     scanAnimation = null;
                 }
-                if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
+                // NÂNG CẤP: Tắt đèn flash trước khi dừng camera
+                if (cameraStream) {
+                    const videoTrack = cameraStream.getVideoTracks()[0];
+                    if (videoTrack && videoTrack.getCapabilities().torch && isFlashOn) {
+                        videoTrack.applyConstraints({ advanced: [{ torch: false }] });
+                        isFlashOn = false;
+                        elements.toggleFlashBtn.classList.remove('active');
+                    }
+                    cameraStream.getTracks().forEach(track => track.stop());
+                }
+
                 // Reset cờ xử lý khi dừng
+                elements.toggleFlashBtn.style.display = 'none'; // Ẩn nút flash
                 isProcessingCode = false;
                 elements.scanActiveView.classList.remove('active');
                 elements.scanPromptView.style.display = 'flex';
@@ -711,18 +784,14 @@
                 }
 
                 if (elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = elements.cameraFeed.videoWidth;
-                    canvas.height = elements.cameraFeed.videoHeight;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(elements.cameraFeed, 0, 0, canvas.width, canvas.height);
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    // NÂNG CẤP: Vẽ video vào canvas ẩn với kích thước nhỏ hơn
+                    const ctx = ImageProcessor.offscreenCanvas.getContext('2d');
+                    ctx.drawImage(elements.cameraFeed, 0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
+                    const imageData = ctx.getImageData(0, 0, ImageProcessor.offscreenCanvas.width, ImageProcessor.offscreenCanvas.height);
                     
-                    // NÂNG CẤP: Áp dụng bộ lọc xử lý ảnh trước khi quét
-                    const grayscale = ImageProcessor.toGrayscale(imageData);
-                    const processedImageData = ImageProcessor.binarize(grayscale, canvas.width, canvas.height);
-                    const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { inversionAttempts: "dontInvert" });
-
+                    // NÂNG CẤP: Sử dụng bộ xử lý ảnh mới, mạnh mẽ hơn
+                    const processedImageData = ImageProcessor.process(imageData);
+                    const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, { inversionAttempts: "dontInvert" }); 
                     // NÂNG CẤP: Logic quét đơn giản và hiệu quả hơn
                     if (code) {
                         isProcessingCode = true; // Khóa lại để tránh quét liên tục cùng 1 mã
