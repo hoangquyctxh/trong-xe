@@ -219,19 +219,27 @@
         .result-details .status-text.error { color: var(--accent-red); }
         .result-details .status-text.cccd { color: var(--accent-blue); }
 
+        /* SỬA LỖI & NÂNG CẤP: Tăng cỡ chữ và khoảng cách cho dễ đọc trên di động */
         .sub-details {
-            margin-top: 1.75rem;
+            margin-top: 2rem;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.75rem 1.5rem; /* TĂNG KHOẢNG CÁCH */
-            font-size: clamp(1.3rem, 6vw, 1.5rem); /* TĂNG FONT LINH HOẠT */
+            grid-template-columns: 1fr; /* Chuyển về 1 cột cho dễ đọc */
+            gap: 1.5rem; 
+            font-size: clamp(1.5rem, 7vw, 1.8rem); /* Tăng mạnh cỡ chữ */
         }
         .sub-details .label { 
             color: var(--text-secondary); font-weight: 500; 
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; 
+            align-items: center;
+            gap: 0.5rem;
         }
-        .sub-details .label::after { content: ':'; } /* THÊM: Tự động thêm dấu hai chấm */
-        .sub-details .value { font-weight: 600; font-family: var(--font-mono); }
+        .sub-details .label::after { content: ''; } /* Bỏ dấu hai chấm */
+        .sub-details .value { 
+            font-weight: 700; 
+            font-family: var(--font-mono); 
+            margin-top: -0.75rem; /* Kéo value lên gần label hơn */
+            padding-left: 1.8rem; /* Thụt vào so với label có icon */
+        }
         .sub-details .value.vip-note {
             color: var(--accent-blue);
             font-weight: 700;
@@ -240,11 +248,35 @@
             grid-column: 1 / -1;
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid var(--accent-red);
-            padding: 0.75rem;
+            padding: 1rem;
             border-radius: var(--border-radius-md);
             color: #fecaca;
+            font-size: 1.1rem;
         }
         .alert-reason strong { color: var(--accent-red); }
+
+        /* SỬA LỖI: Nút đóng bị che */
+        .result-close-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 2rem;
+            line-height: 44px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 110; /* Đảm bảo luôn nổi lên trên */
+            transition: background 0.2s ease;
+        }
+        .result-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
 
         /* Nâng cấp responsive */
         @media (min-width: 768px) {
@@ -255,6 +287,9 @@
             #result-panel {
                 padding: 2rem;
                 padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+            }
+            .sub-details {
+                grid-template-columns: 1fr 1fr; /* Quay lại 2 cột trên màn hình lớn */
             }
         }
 
@@ -326,6 +361,8 @@
 
         <!-- Lớp Kết quả -->
         <div id="result-panel">
+             <!-- SỬA LỖI: Thêm nút đóng chuyên dụng -->
+            <button id="result-close-btn" class="result-close-btn" title="Đóng">&times;</button>
             <div class="result-grid">
                 <div id="status-indicator" class="status-indicator">
                     <!-- Icon sẽ được JS chèn vào đây -->
@@ -363,6 +400,7 @@
                 scannerFrame: document.getElementById('scanner-frame'),
                 scannerLine: document.getElementById('scanner-line'),
                 resultPanel: document.getElementById('result-panel'),
+                resultCloseBtn: document.getElementById('result-close-btn'), // SỬA LỖI: Thêm nút đóng
                 statusIndicator: document.getElementById('status-indicator'),
                 resultPlate: document.getElementById('result-plate'),
                 resultStatusText: document.getElementById('result-status-text'),
@@ -383,24 +421,17 @@
             let isProcessingCode = false;
             let isFlashOn = false;
             let isScanning = false;
-            let qrWorker = null; // NÂNG CẤP: Khai báo Web Worker
-            let lastScannedCode = null; // NÂNG CẤP: Lưu mã cuối cùng đã quét
+            let lastScannedCode = null; 
             let LOCATIONS_DATA = [];
 
             const beepSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/beep.mp3');
             const errorSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/error.mp3');
             const alertSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/warning.mp3');
 
-            // =================================================================
-            // NÂNG CẤP: MODULE XỬ LÝ ẢNH ĐƯỢC CHUYỂN SANG WEB WORKER
-            // =================================================================
             const ImageProcessor = {
                 offscreenCanvas: document.createElement('canvas'),
             };
 
-            // =================================================================
-            // KHU VỰC 2: CÁC HÀM TIỆN ÍCH VÀ GIAO DIỆN
-            // =================================================================
             const showMessage = (message, isError = false) => {
                 elements.messageBox.style.display = 'block';
                 elements.messageBox.className = `message-box ${isError ? 'error' : ''}`;
@@ -412,7 +443,6 @@
             const getLocationName = (locationId) => (LOCATIONS_DATA.find(loc => loc.id === locationId) || { name: 'Không xác định' }).name;
 
             const renderResult = (data) => {
-                // Reset
                 elements.statusIndicator.className = 'status-indicator';
                 elements.resultStatusText.className = 'status-text';
                 elements.subDetailsGrid.innerHTML = '';
@@ -431,19 +461,17 @@
                     icon = ICONS.cccd;
                     const dobRaw = data.dob;
                     const formattedDob = `${dobRaw.substring(0, 2)}/${dobRaw.substring(2, 4)}/${dobRaw.substring(4)}`;
-                    // NÂNG CẤP: Che số CCCD để bảo mật
                     const cccd = data.cccdNumber || '';
                     const maskedCccd = cccd.length > 4 
                         ? `${cccd.substring(0, 2)}********${cccd.substring(cccd.length - 2)}`
                         : cccd;
 
                     elements.subDetailsGrid.innerHTML = `
-                        <div class="info-item"><span class="label">Ngày sinh</span><span class="value">${formattedDob}</span></div>
-                        <div class="info-item"><span class="label">Giới tính</span><span class="value">${data.gender}</span></div>
-                        <div class="info-item"><span class="label">Số CCCD</span><span class="value">${maskedCccd}</span></div>
-                        <div class="info-item" style="grid-column: 1 / -1;"><span class="label">Địa chỉ</span><span class="value">${data.address}</span></div>
+                        <div class="info-item"><span class="label"><svg viewBox="0 0 24 24"><path d="M8 2v4m8-4v4M3.5 10h17M19 4.5a2.5 2.5 0 0 0-2.5-2.5h-9A2.5 2.5 0 0 0 5 4.5v15A2.5 2.5 0 0 0 7.5 22h9a2.5 2.5 0 0 0 2.5-2.5V4.5z"/></svg>Ngày sinh</span><span class="value">${formattedDob}</span></div>
+                        <div class="info-item"><span class="label"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>Giới tính</span><span class="value">${data.gender}</span></div>
+                        <div class="info-item" style="grid-column: 1 / -1;"><span class="label"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>Địa chỉ</span><span class="value">${data.address}</span></div>
                     `;
-                } else { // Vehicle transaction
+                } else { 
                     const tx = data.transaction;
                     plate = tx.plate || '???';
                     
@@ -453,10 +481,10 @@
                         icon = ICONS.alert;
                         elements.subDetailsGrid.innerHTML += `<div class="alert-reason"><strong>Lý do:</strong> ${data.security_alert.reason || 'Không rõ'}</div>`;
                     } else if (tx.is_vip) {
-                        statusClass = 'cccd'; // Dùng màu xanh dương nổi bật
+                        statusClass = 'cccd'; 
                         statusText = 'XE VIP - An Toàn';
                         icon = ICONS.vip;
-                        elements.subDetailsGrid.innerHTML += `<div class="info-item" style="grid-column: 1 / -1;"><span class="label">Phụ chú</span><span class="value vip-note">${tx.notes || 'Khách mời / Xe ưu tiên'}</span></div>`;
+                        elements.subDetailsGrid.innerHTML += `<div class="info-item" style="grid-column: 1 / -1;"><span class="label"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>Phụ chú</span><span class="value vip-note">${tx.notes || 'Khách mời / Xe ưu tiên'}</span></div>`;
                     } else if (tx.status === 'Đang gửi') {
                         statusClass = 'safe';
                         statusText = 'Xe đang gửi - An toàn';
@@ -468,10 +496,10 @@
                     }
 
                     elements.subDetailsGrid.innerHTML += `
-                        <div class="info-item"><span class="label">Giờ vào</span><span class="value">${formatDateTime(tx.entry_time)}</span></div>
-                        <div class="info-item"><span class="label">Giờ ra</span><span class="value">${formatDateTime(tx.exit_time)}</span></div>
-                        <div class="info-item"><span class="label">Bãi đỗ</span><span class="value">${getLocationName(tx.location_id)}</span></div>
-                        <div class="info-item"><span class="label">Phí</span><span class="value">${(tx.fee === null || tx.fee === undefined) ? '--' : `${tx.fee.toLocaleString('vi-VN')}đ`}</span></div>
+                        <div class="info-item"><span class="label"><svg viewBox="0 0 24 24"><path d="M15 3h6v6M10 14L21 3"/></svg>Giờ vào</span><span class="value">${formatDateTime(tx.entry_time)}</span></div>
+                        <div class="info-item"><span class="label"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14l5-5-5-5m5 5H9"/></svg>Giờ ra</span><span class="value">${formatDateTime(tx.exit_time)}</span></div>
+                        <div class="info-item"><span class="label"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg>Bãi đỗ</span><span class="value">${getLocationName(tx.location_id)}</span></div>
+                        <div class="info-item"><span class="label"><svg viewBox="0 0 24 24"><path d="M11.8 10.9C11.4 7.8 10.8 5.1 9.4 2.5c-1.4 2.5-2 5.3-2.4 8.4-.4 3.1.2 6.2 1.6 8.8.8 1.5 1.9 2.7 3.4 3.7 1.4-1 2.6-2.2 3.4-3.7 1.4-2.6 2-5.7 1.6-8.8zM12 12.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>Phí</span><span class="value">${(tx.fee === null || tx.fee === undefined) ? '--' : `${tx.fee.toLocaleString('vi-VN')}đ`}</span></div>
                     `;
                 }
 
@@ -485,22 +513,15 @@
 
             const hideResultPanel = () => {
                 elements.resultPanel.classList.remove('visible');
+                // SỬA LỖI: Cho phép quét lại mã cũ ngay sau khi đóng
+                lastScannedCode = null;
             };
 
-            // SỬA LỖI & NÂNG CẤP: Hàm phân tích dữ liệu CCCD được viết lại hoàn toàn
             const parseCccdData = (rawData) => {
-                // SỬA LỖI: Loại bỏ các ký tự không thể in (như ký tự NUL ở đầu) và khoảng trắng
                 const cleanedData = rawData.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
-
-                // SỬA LỖI TRIỆT ĐỂ: Chuẩn hóa chuỗi bằng cách thay thế "||" bằng "|" trước khi tách.
-                // Điều này xử lý đúng định dạng "Số CCCD mới||Số CCCD cũ|..."
                 const normalizedData = cleanedData.replace('||', '|');
                 const parts = normalizedData.split('|');
-
-                // Sau khi chuẩn hóa, chúng ta có thể lấy dữ liệu theo chỉ số một cách đáng tin cậy.
-                // Ví dụ: 001203012722||Nguyễn... -> ['001203012722', '', 'Nguyễn...', '29072003', ...]
-                if (parts.length < 7) return null; // Phải có ít nhất 7 phần tử
-
+                if (parts.length < 7) return null; 
                 return {
                     cccdNumber: parts[0],
                     fullName: parts[2],
@@ -510,23 +531,17 @@
                 };
             };
 
-
-            // =================================================================
-            // KHU VỰC 3: LOGIC CHÍNH VÀ SỰ KIỆN
-            // =================================================================
             const startScanner = async () => {
                 if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
                     return showMessage('Trình duyệt không hỗ trợ camera.', true);
                 }
                 try {
-                    // NÂNG CẤP: Yêu cầu độ phân giải cao hơn (Full HD)
                     const constraints = { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } };
                     cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
                     elements.cameraFeed.srcObject = cameraStream;
                     await elements.cameraFeed.play();
 
-                    // NÂNG CẤP: Tăng kích thước canvas xử lý ảnh
-                    const processingSize = 400; // Giảm kích thước để tăng tốc
+                    const processingSize = 400;
                     ImageProcessor.offscreenCanvas.width = processingSize;
                     ImageProcessor.offscreenCanvas.height = processingSize;
 
@@ -569,23 +584,18 @@
                 isScanning = false;
                 elements.scanControlBtn.textContent = 'Bắt đầu';
                 elements.scanControlBtn.classList.remove('scanning');
-                lastScannedCode = null; // NÂNG CẤP: Reset mã đã quét khi dừng
                 hideResultPanel();
             };
 
-            // NÂNG CẤP: Tách logic xử lý kết quả từ worker ra một hàm riêng
             const handleQrCodeResult = (code) => {
-                // Chỉ xử lý nếu có mã và mã đó khác với mã đã quét lần trước
                 if (code && code.data && code.data !== lastScannedCode) {
                     isProcessingCode = true;
-                    lastScannedCode = code.data; // Cập nhật mã đã quét
+                    lastScannedCode = code.data; 
 
-                    // NÂNG CẤP: Thêm phản hồi trực quan ngay khi mã được nhận diện
                     elements.scannerFrame.classList.add('processing');
-                    // Xóa hiệu ứng này sau một khoảng thời gian ngắn
                     setTimeout(() => elements.scannerFrame.classList.remove('processing'), 400);
 
-                    navigator.vibrate(100); // Rung nhẹ khi quét được
+                    navigator.vibrate(100); 
 
                     if (code.data.length > 500) {
                         handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
@@ -611,12 +621,9 @@
                         handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
                     }
 
-                    // Giảm thời gian chờ và chỉ reset isProcessingCode.
-                    // Tăng nhẹ độ trễ để tránh quét lại cùng 1 mã quá nhanh
                     setTimeout(() => { 
                         isProcessingCode = false; 
-                        lastScannedCode = null; // Cho phép quét lại mã cũ sau 1.5s
-                    }, 1500);
+                    }, 1500); // Tăng độ trễ để người dùng có thời gian đọc
                 }
             };
 
@@ -640,7 +647,6 @@
                     ctx.drawImage(elements.cameraFeed, sx, sy, roiSizeOnVideo, roiSizeOnVideo, 0, 0, canvasSize, canvasSize);
                     const roiImageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
 
-                    // ** KHÔI PHỤC TỐC ĐỘ: Xử lý trực tiếp trên luồng chính **
                     const code = jsQR(roiImageData.data, roiImageData.width, roiImageData.height, {
                         inversionAttempts: "dontInvert",
                     });
@@ -655,7 +661,7 @@
             };
             const handleInvalidCode = (message) => {
                 errorSound.play();
-                navigator.vibrate([200, 50, 200]); // Rung báo lỗi
+                navigator.vibrate([200, 50, 200]); 
                 elements.scannerFrame.classList.add('error');
                 elements.scannerLine.classList.add('error');
                 renderResult({ type: 'error', message: message });
@@ -672,7 +678,7 @@
 
                     if (data && data.security_alert) {
                         alertSound.play();
-                        navigator.vibrate([100, 50, 100, 50, 400]); // Rung cảnh báo
+                        navigator.vibrate([100, 50, 100, 50, 400]); 
                         elements.scannerFrame.classList.add('error');
                         elements.scannerLine.classList.add('error');
                     } else if (data) {
@@ -710,6 +716,8 @@
                     if (isScanning) stopScanner();
                     else startScanner();
                 });
+                // SỬA LỖI: Gắn sự kiện cho nút đóng mới
+                elements.resultCloseBtn.addEventListener('click', hideResultPanel);
             };
 
             init();
