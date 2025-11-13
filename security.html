@@ -177,11 +177,7 @@
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             pointer-events: all;
-        }
-        #result-panel.visible {
-            transform: translateY(0);
-        }
-        .result-grid {
+            /* NÂNG CẤP: Bố cục mới cho panel kết quả */
             display: grid;
             grid-template-columns: 150px 1fr; /* TĂNG KÍCH THƯỚC CỘT TRÁI */
             gap: 2.5rem; /* TĂNG KHOẢNG CÁCH */
@@ -297,28 +293,20 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* SỬA LỖI: Nút đóng bị che */
-        .result-close-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 2rem;
-            line-height: 44px;
+        /* --- Message Box --- */
+        #message-box {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 2rem;
+            border-radius: var(--border-radius-md);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             text-align: center;
-            cursor: pointer;
-            z-index: 110; /* Đảm bảo luôn nổi lên trên */
-            transition: background 0.2s ease;
+            z-index: 100;
         }
-        .result-close-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
+        #message-box.error { color: var(--accent-red); }
 
         /* Nâng cấp responsive */
         @media (min-width: 768px) {
@@ -335,20 +323,7 @@
             }
         }
 
-        /* --- Message Box --- */
-        #message-box {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            padding: 2rem;
-            border-radius: var(--border-radius-md);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
-            z-index: 100;
-        }
-        #message-box.error { color: var(--accent-red); }
+
     </style>
     <!-- NÂNG CẤP: Thêm keyframes cho animation -->
     <style>
@@ -405,17 +380,16 @@
         <div id="result-panel">
              <!-- SỬA LỖI: Thêm nút đóng chuyên dụng -->
             <button id="result-close-btn" class="result-close-btn" title="Đóng">&times;</button>
-            <div class="result-grid">
-                <div id="status-indicator" class="status-indicator">
-                    <!-- Icon sẽ được JS chèn vào đây -->
+            <!-- NÂNG CẤP: Bố cục thẻ kết quả mới -->
+            <div id="result-card">
+                <div id="result-card-header" class="result-card-header">
+                    <div id="result-card-icon" class="result-card-icon"></div>
+                    <h2 id="result-card-status-text"></h2>
                 </div>
-                <div class="result-details">
-                    <div id="result-plate" class="plate"></div>
-                    <div id="result-status-text" class="status-text"></div>
+                <div class="result-card-body">
+                    <div id="result-card-plate" class="result-card-plate"></div>
+                    <div id="sub-details-grid" class="sub-details"></div>
                 </div>
-            </div>
-            <div id="sub-details-grid" class="sub-details">
-                <!-- Các chi tiết phụ sẽ được JS chèn vào đây -->
             </div>
         </div>
     </div>
@@ -444,8 +418,11 @@
                 resultPanel: document.getElementById('result-panel'),
                 resultCloseBtn: document.getElementById('result-close-btn'), // SỬA LỖI: Thêm nút đóng
                 statusIndicator: document.getElementById('status-indicator'),
-                resultPlate: document.getElementById('result-plate'),
-                resultStatusText: document.getElementById('result-status-text'),
+                // NÂNG CẤP: Tham chiếu đến các phần tử của thẻ kết quả mới
+                resultCardHeader: document.getElementById('result-card-header'),
+                resultCardIcon: document.getElementById('result-card-icon'),
+                resultCardStatusText: document.getElementById('result-card-status-text'),
+                resultCardPlate: document.getElementById('result-card-plate'),
                 subDetailsGrid: document.getElementById('sub-details-grid'),
             };
 
@@ -469,6 +446,7 @@
             const beepSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/beep.mp3');
             const errorSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/error.mp3');
             const alertSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/warning.mp3');
+            // HOÀN THIỆN: Bổ sung các biến trạng thái còn thiếu
 
             const ImageProcessor = {
                 offscreenCanvas: document.createElement('canvas'),
@@ -481,12 +459,13 @@
                 setTimeout(() => { elements.messageBox.style.display = 'none'; }, 3000);
             };
 
+            // HOÀN THIỆN: Bổ sung các hàm tiện ích còn thiếu
             const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
             const getLocationName = (locationId) => (LOCATIONS_DATA.find(loc => loc.id === locationId) || { name: 'Không xác định' }).name;
 
             const renderResult = (data) => {
-                elements.statusIndicator.className = 'status-indicator';
-                elements.resultStatusText.className = 'status-text';
+                // NÂNG CẤP: Reset class cho header của thẻ mới
+                elements.resultCardHeader.className = 'result-card-header';
                 elements.subDetailsGrid.innerHTML = '';
 
                 let statusClass, statusText, plate, icon;
@@ -494,7 +473,7 @@
                 if (data.type === 'error') {
                     statusClass = 'error';
                     statusText = 'Lỗi';
-                    plate = data.message;
+                    plate = data.message; // Hiển thị thông báo lỗi ở vị trí biển số
                     icon = ICONS.error;
                 } else if (data.type === 'cccd') {
                     statusClass = 'cccd';
@@ -518,12 +497,12 @@
                     plate = tx.plate || '???';
                     
                     if (data.security_alert) {
-                        statusClass = 'alert';
+                        statusClass = 'alert'; // Giữ nguyên class để tô màu
                         statusText = 'Cảnh Báo An Ninh';
                         icon = ICONS.alert;
                         elements.subDetailsGrid.innerHTML += `<div class="alert-reason"><strong>Lý do:</strong> ${data.security_alert.reason || 'Không rõ'}</div>`;
                     } else if (tx.is_vip) {
-                        statusClass = 'cccd'; 
+                        statusClass = 'vip'; // Class mới cho VIP
                         statusText = 'XE VIP - An Toàn';
                         icon = ICONS.vip;
                         elements.subDetailsGrid.innerHTML += `<div class="info-item" style="grid-column: 1 / -1;"><div class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/><path d="M12 12h.01"/></svg>Phụ chú</div><div class="value vip-note">${tx.notes || 'Khách mời / Xe ưu tiên'}</div></div>`;
@@ -545,11 +524,11 @@
                     `;
                 }
 
-                elements.statusIndicator.classList.add(statusClass);
-                elements.statusIndicator.innerHTML = icon;
-                elements.resultPlate.textContent = plate;
-                elements.resultStatusText.textContent = statusText;
-                elements.resultStatusText.classList.add(statusClass);
+                // NÂNG CẤP: Điền dữ liệu vào thẻ kết quả mới
+                elements.resultCardHeader.classList.add(statusClass);
+                elements.resultCardIcon.innerHTML = icon;
+                elements.resultCardStatusText.textContent = statusText;
+                elements.resultCardPlate.textContent = plate;
                 elements.resultPanel.classList.add('visible');
             };
 
@@ -559,6 +538,7 @@
                 lastScannedCode = null;
             };
 
+            // HOÀN THIỆN: Bổ sung hàm phân tích dữ liệu CCCD
             const parseCccdData = (rawData) => {
                 const cleanedData = rawData.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
                 const normalizedData = cleanedData.replace('||', '|');
@@ -573,6 +553,7 @@
                 };
             };
 
+            // HOÀN THIỆN: Bổ sung hàm bắt đầu quét
             const startScanner = async () => {
                 if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
                     return showMessage('Trình duyệt không hỗ trợ camera.', true);
@@ -609,6 +590,7 @@
                 }
             };
 
+            // HOÀN THIỆN: Bổ sung hàm dừng quét
             const stopScanner = () => {
                 if (scanAnimation) cancelAnimationFrame(scanAnimation);
                 scanAnimation = null;
@@ -629,6 +611,7 @@
                 hideResultPanel();
             };
 
+            // HOÀN THIỆN: Bổ sung hàm xử lý kết quả QR
             const handleQrCodeResult = (code) => {
                 if (code && code.data && code.data !== lastScannedCode) {
                     isProcessingCode = true;
@@ -669,6 +652,7 @@
                 }
             };
 
+            // HOÀN THIỆN: Bổ sung hàm tick (vòng lặp quét)
             const tickQrScanner = () => {
                 if (isProcessingCode) {
                     scanAnimation = requestAnimationFrame(tickQrScanner);
@@ -701,6 +685,8 @@
                     scanAnimation = requestAnimationFrame(tickQrScanner);
                 }
             };
+
+            // HOÀN THIỆN: Bổ sung hàm xử lý mã không hợp lệ
             const handleInvalidCode = (message) => {
                 errorSound.play();
                 navigator.vibrate([200, 50, 200]); 
@@ -713,6 +699,7 @@
                 }, 500);
             };
 
+            // HOÀN THIỆN: Bổ sung hàm xác minh giao dịch
             const verifyTransaction = async (uniqueId) => {
                 try {
                     const { data, error } = await db.rpc('get_security_check_data', { p_unique_id: uniqueId.trim() });
@@ -746,6 +733,7 @@
                 }
             };
 
+            // HOÀN THIỆN: Bổ sung hàm khởi tạo
             const init = async () => {
                 try {
                     const { data, error } = await db.from('locations').select('*');
