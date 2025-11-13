@@ -46,5 +46,4 @@ const APP_CONFIG = {
         // Ví dụ link từ các trang video miễn phí:
         "https://pub-e8b9f290d56545b29e32c494b6ec8f86.r2.dev/video_20251019_222646.mp4"
     ]
-
 };

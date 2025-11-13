@@ -176,13 +176,12 @@
             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            pointer-events: all;
-            /* NÂNG CẤP: Bố cục mới cho panel kết quả */
-            display: grid;
-            grid-template-columns: 150px 1fr; /* TĂNG KÍCH THƯỚC CỘT TRÁI */
-            gap: 2.5rem; /* TĂNG KHOẢNG CÁCH */
-            align-items: center;
         }
+        /* SỬA LỖI: Thêm lại định nghĩa cho lớp .visible để hiển thị panel */
+        #result-panel.visible {
+            transform: translateY(0);
+        }
+
         .status-indicator {
             width: 150px; height: 150px; /* TĂNG KÍCH THƯỚC VÒNG TRÒN */
             border-radius: 50%;
@@ -413,11 +412,8 @@
                 scanControlBtn: document.getElementById('scan-control-btn'),
                 cameraFeed: document.getElementById('camera-feed'),
                 toggleFlashBtn: document.getElementById('toggle-flash-btn'),
-                scannerFrame: document.getElementById('scanner-frame'),
-                scannerLine: document.getElementById('scanner-line'),
                 resultPanel: document.getElementById('result-panel'),
                 resultCloseBtn: document.getElementById('result-close-btn'), // SỬA LỖI: Thêm nút đóng
-                statusIndicator: document.getElementById('status-indicator'),
                 // NÂNG CẤP: Tham chiếu đến các phần tử của thẻ kết quả mới
                 resultCardHeader: document.getElementById('result-card-header'),
                 resultCardIcon: document.getElementById('result-card-icon'),
@@ -425,6 +421,9 @@
                 resultCardPlate: document.getElementById('result-card-plate'),
                 subDetailsGrid: document.getElementById('sub-details-grid'),
             };
+            // SỬA LỖI: Chuyển các tham chiếu này vào đây để tránh lỗi khi DOM chưa sẵn sàng
+            elements.scannerFrame = document.getElementById('scanner-frame');
+            elements.scannerLine = document.getElementById('scanner-line');
 
             const ICONS = {
                 safe: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
@@ -497,12 +496,12 @@
                     plate = tx.plate || '???';
                     
                     if (data.security_alert) {
-                        statusClass = 'alert'; // Giữ nguyên class để tô màu
+                        statusClass = 'alert';
                         statusText = 'Cảnh Báo An Ninh';
                         icon = ICONS.alert;
                         elements.subDetailsGrid.innerHTML += `<div class="alert-reason"><strong>Lý do:</strong> ${data.security_alert.reason || 'Không rõ'}</div>`;
                     } else if (tx.is_vip) {
-                        statusClass = 'vip'; // Class mới cho VIP
+                        statusClass = 'vip';
                         statusText = 'XE VIP - An Toàn';
                         icon = ICONS.vip;
                         elements.subDetailsGrid.innerHTML += `<div class="info-item" style="grid-column: 1 / -1;"><div class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/><path d="M12 12h.01"/></svg>Phụ chú</div><div class="value vip-note">${tx.notes || 'Khách mời / Xe ưu tiên'}</div></div>`;
@@ -510,11 +509,17 @@
                         statusClass = 'safe';
                         statusText = 'Xe đang gửi - An toàn';
                         icon = ICONS.safe;
-                    } else {
+                    } else if (tx.status === 'Đã rời bãi') {
                         statusClass = 'departed';
                         statusText = 'Xe đã rời bãi';
                         icon = ICONS.departed;
+                    } else {
+                        // Trường hợp mặc định nếu có trạng thái lạ
+                        statusClass = 'safe';
+                        statusText = 'An toàn';
+                        icon = ICONS.safe;
                     }
+
                     // SỬA LỖI: Thay thế các thẻ span bằng div và thêm icon SVG
                     elements.subDetailsGrid.innerHTML += `
                         <div class="info-item"><div class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>Giờ vào</div><div class="value">${formatDateTime(tx.entry_time)}</div></div>
@@ -622,9 +627,8 @@
 
                     navigator.vibrate(100); 
 
-                    if (code.data.length > 500) {
-                        handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
-                    } else if (code.data.includes('|') && code.data.length > 40) {
+                    // SỬA LỖI: Ưu tiên kiểm tra CCCD trước
+                    if ((code.data.match(/\|/g) || []).length >= 6 && code.data.length > 40) {
                         beepSound.play();
                         elements.scannerFrame.classList.add('scanned');
                         elements.scannerLine.classList.add('scanned');
@@ -639,9 +643,11 @@
                             elements.scannerFrame.classList.remove('scanned');
                             elements.scannerLine.classList.remove('scanned');
                         }, 500);
-                    } else if (code.data.includes('_')) {
+                    } else if (code.data.startsWith('_')) { // Mã vé xe hợp lệ
                         const uniqueId = code.data.substring(code.data.indexOf('_'));
                         verifyTransaction(uniqueId);
+                    } else if (code.data.length > 500) { // Mã quá dài
+                        handleInvalidCode('Mã QR chứa dữ liệu quá lớn.');
                     } else {
                         handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
                     }
@@ -704,6 +710,7 @@
                 try {
                     const { data, error } = await db.rpc('get_security_check_data', { p_unique_id: uniqueId.trim() });
                     if (error) throw error;
+                    const hasAlert = data && data.security_alert;
 
                     if (data && data.security_alert) {
                         alertSound.play();
@@ -724,7 +731,7 @@
                         elements.scannerLine.classList.remove('error', 'scanned');
                     }, 500);
 
-                    const combinedData = { ...data.transaction, security_alert: data.security_alert };
+                    const combinedData = { ...data.transaction, security_alert: hasAlert ? data.security_alert : null };
                     renderResult({ type: 'vehicle', transaction: combinedData, security_alert: data.security_alert });
 
                 } catch (error) {
