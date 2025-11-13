@@ -14,7 +14,7 @@ const APP_CONFIG = {
     // Cấu hình thanh toán QR bằng cách tạo ảnh từ API của VietQR
     payment: {
         // URL gốc để tạo ảnh QR. Các tham số `amount` và `addInfo` sẽ được thêm vào sau.
-        imageUrlBase: "https://img.vietqr.io/image/SHBVN-700039051776-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
+        imageUrlBase: "https://img.vietqr.io/image/MSB-968866975500-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
     },
 
     // Cấu hình API thời tiết (MỚI)
@@ -46,4 +46,5 @@ const APP_CONFIG = {
         // Ví dụ link từ các trang video miễn phí:
         "https://pub-e8b9f290d56545b29e32c494b6ec8f86.r2.dev/video_20251019_222646.mp4"
     ]
+
 };
