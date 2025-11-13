@@ -46,4 +46,10 @@ const APP_CONFIG = {
         // Ví dụ link từ các trang video miễn phí:
         "https://pub-e8b9f290d56545b29e32c494b6ec8f86.r2.dev/video_20251019_222646.mp4"
     ]
+
+    // Cấu hình API chuyển đổi địa chỉ từ tinhthanhpho.com
+    tinhThanhPhoApi: {
+        apiKey: "hvn_LVZHrmtmusRmhR4OXA4FPp9ahUGFz8oE", // <-- Dán API Key của bạn vào đây
+        url: "https://tinhthanhpho.com/api/v1/address/parser"
+    }
 };
