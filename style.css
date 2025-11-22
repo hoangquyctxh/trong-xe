@@ -1,6 +1,6 @@
 /*
  * =========================================================================
- * HỆ THỐNG GIAO DIỆN "UNIFIED BUSINESS SUITE" - PHIÊN BẢN 7.0
+ * HỆ THỐNG GIAO DIỆN "UNIFIED BUSINESS SUITE" - PHIÊN BẢN 8.0
  * Tác giả: Gemini Code Assist
  * Mục tiêu: Hợp nhất, Tinh tế, Hiện đại, Trải nghiệm mượt mà cho cả hai giao diện.
  * =========================================================================
@@ -153,6 +153,12 @@ body {
 .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
 .card__header, .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); font-size: 1.1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
 .card__body, .card-body { padding: 1.5rem; }
+.card__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-main);
+}
+
 
 .input-group { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
 .input-wrapper { position: relative; flex-grow: 1; }
@@ -345,15 +351,6 @@ body[data-theme="dark"] .date-selector input::-webkit-calendar-picker-indicator 
 input:checked + .slider { background-color: var(--primary-accent); }
 input:checked + .slider:before { transform: translateX(20px); }
 
-.selected-vehicle-alert { padding: 1rem; margin-bottom: 1.5rem; border-radius: var(--radius-md); border-left: 5px solid; font-weight: 500; }
-.selected-vehicle-alert.warning { background-color: var(--warning-light); border-color: var(--warning-color); color: var(--warning-color); }
-.selected-vehicle-alert.block { background-color: var(--danger-light); border-color: var(--danger-color); color: var(--danger-color); }
-
-.info-grid { display: flex; flex-direction: column; gap: 0.75rem; }
-.info-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-main); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); }
-.info-item .label { color: var(--text-secondary); }
-.info-item .value { font-weight: 700; }
-
 .history-title { font-size: 1rem; font-weight: 600; margin-top: 2rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
 .history-list { list-style: none; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
 .history-item { 
@@ -363,27 +360,10 @@ input:checked + .slider:before { transform: translateX(20px); }
     align-items: center;
 }
 
-.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
-/* NÂNG CẤP: Biến stat-item thành một layout linh hoạt hơn */
-.stat-item {
-    background-color: var(--bg-main);
-    padding: 1.25rem;
-    border-radius: var(--radius-md);
-    display: grid;
-    grid-template-areas:
-        "label chart"
-        "value chart";
-    grid-template-columns: 1fr auto;
-    gap: 0 1rem;
-    align-items: center;
+.list-filter {
+    max-width: 300px;
+    flex-grow: 1; /* Cho phép co giãn trên mobile */
 }
-.stat-item .label { grid-area: label; font-size: 0.9rem; color: var(--text-secondary); }
-.stat-item .value { grid-area: value; font-size: 1.8rem; font-weight: 700; line-height: 1.2; }
-.stat-item-chart-wrapper { grid-area: chart; width: 60px; height: 60px; position: relative; }
-/* Đảm bảo stat-item không có biểu đồ vẫn hiển thị đúng */
-.stat-item:not(:has(.stat-item-chart-wrapper)) { grid-template-areas: "label" "value"; }
-
-.list-filter { max-width: 300px; }
 .vehicle-list-container { max-height: 60vh; overflow-y: auto; padding-right: 8px; }
 .vehicle-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 0.75rem; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer; animation: fadeIn 0.5s; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -502,6 +482,12 @@ input:checked + .slider:before { transform: translateX(20px); }
 .global-alert-reason {
     font-size: 1.1rem;
     color: var(--text-secondary);
+}
+
+.image-viewer-container img {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: var(--radius-md);
 }
 #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 1rem; }
 .toast { padding: 1rem 1.5rem; border-radius: var(--radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 1rem; font-weight: 600; animation: slideUp 0.3s ease, fadeOutToast 0.5s ease 3.5s forwards; }
@@ -804,153 +790,12 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 /* ==========================================================================
-   5.2.1. NÂNG CẤP TOÀN DIỆN: MODAL BIÊN LAI "PREMIUM"
-   ========================================================================== */
-/* Bỏ .eticket-wrapper, thay bằng .checkin-success-wrapper */
-.checkin-success-wrapper {
-    background-color: var(--bg-main);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2.5rem 2rem 1.5rem 2rem;
-    position: relative;
-    animation: floatUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-}
-
-/* ==========================================================================
-   YÊU CẦU: NÂNG CẤP GIAO DIỆN VÉ XE VIP
-   ========================================================================== */
-.checkin-success-wrapper.is-vip {
-    border-top: 5px solid var(--accent-gold);
-    background: linear-gradient(145deg, #2c2c2c, #1a1a1a); /* Nền đen-xám sang trọng */
-    color: white;
-}
-.checkin-success-wrapper.is-vip .checkin-success-title {
-    color: #facc15; /* Màu vàng gold */
-}
-.checkin-success-wrapper.is-vip .checkin-success-subtitle {
-    color: #d1d5db; /* Màu xám nhạt hơn */
-}
-.checkin-success-wrapper.is-vip .checkin-success-plate {
-    color: #fde047; /* Màu vàng sáng hơn cho biển số */
-    text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
-}
-.checkin-success-wrapper.is-vip .success-close-btn {
-    color: #e5e7eb;
-    background-color: rgba(255, 255, 255, 0.1);
-}
-.checkin-success-wrapper.is-vip .success-close-btn:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.2);
-}
-.checkin-success-qr { position: relative; } /* Cần để định vị huy hiệu VIP */
-.vip-badge {
-    position: absolute; top: -10px; right: -10px; background-color: var(--accent-gold); color: var(--text-primary);
-    padding: 5px 12px; border-radius: var(--radius-md); font-weight: 700; font-size: 0.9rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: rotate(10deg);
-}
-/* NÂNG CẤP: Nút đóng cho modal gửi xe thành công */
-.success-close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 20;
-    background-color: rgba(0,0,0,0.1);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-}
-
-.checkin-success-icon {
-    width: 80px; height: 80px;
-    margin-bottom: 1rem;
-}
-.checkin-success-icon .checkmark__circle { stroke: var(--success-color); }
-.checkin-success-icon .checkmark__check { stroke: var(--success-color); }
-
-.checkin-success-title {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--success-color);
-    margin-bottom: 0.25rem;
-}
-.checkin-success-subtitle {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
-}
-.checkin-success-qr {
-    padding: 1rem;
-    background-color: white;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-    margin-bottom: 1.5rem;
-}
-.checkin-success-qr img { max-width: 250px; width: 100%; display: block; }
-.checkin-success-plate {
-    font-family: monospace;
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 2rem;
-}
-
-.auto-close-progress-bar {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 6px; background-color: var(--border-color);
-}
-.auto-close-progress-bar { display: none; } /* YÊU CẦU: Ẩn thanh tự động đóng */
-.auto-close-progress-bar .progress {
-    width: 100%; height: 100%; background-color: var(--primary-accent);
-    animation: countdown 10s linear forwards;
-}
-@keyframes countdown { from { width: 100%; } to { width: 0%; } }
-
-@media print {
-    body * { visibility: hidden; }
-    #printable-area, #printable-area *, #printable-receipt, #printable-receipt * { visibility: visible; }
-    #printable-area, #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
-}
-
-/* ==========================================================================
    5.2.2. NÂNG CẤP TOÀN DIỆN: MODAL XÁC NHẬN MIỄN PHÍ "PRIORITY PASS"
    ========================================================================== */
 .priority-pass-wrapper {
     /* Đã được thay thế bằng .priority-pass-new */
     display: none;
 }
-
-/* THIẾT KẾ LẠI: Giao diện "Thẻ Ưu tiên" mới */
-.priority-pass-new {
-    background-color: var(--bg-main);
-    border-radius: var(--radius-lg);
-    padding: 2.5rem 2rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-}
-.priority-pass-new.vip { border-top: 5px solid var(--accent-gold); }
-.priority-pass-new.free { border-top: 5px solid var(--success-color); }
-
-.priority-pass-new__icon {
-    margin-bottom: 1rem;
-    animation: floatUp 0.5s ease-out;
-}
-.priority-pass-new.vip .priority-pass-new__icon { color: var(--accent-gold); }
-.priority-pass-new.free .priority-pass-new__icon { color: var(--success-color); }
-
-.priority-pass-new__title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    animation: floatUp 0.5s ease-out 0.1s backwards;
-}
-.priority-pass-new.vip .priority-pass-new__title { color: var(--accent-gold); }
-.priority-pass-new.free .priority-pass-new__title { color: var(--success-color); }
 
 .priority-pass-new__plate {
     font-family: monospace;
@@ -960,13 +805,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     margin-bottom: 0.5rem;
     animation: floatUp 0.5s ease-out 0.2s backwards;
 }
-
-.priority-pass-new__reason {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    animation: floatUp 0.5s ease-out 0.3s backwards;
-}
-
 /* Hiệu ứng xác nhận thành công */
 .priority-pass-new__success-overlay {
     position: absolute;
@@ -996,50 +834,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 /* ==========================================================================
-   5.2.3. NÂNG CẤP TOÀN DIỆN: MODAL BIÊN LAI "PREMIUM"
-   ========================================================================== */
-.eticket-wrapper {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    flex-direction: column;
-    animation: floatUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-}
-
-@keyframes floatUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.eticket-header {
-    background-color: var(--bg-main);
-    padding: 1rem 1.5rem;
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
-}
-.eticket-header img { height: 36px; width: auto; margin-bottom: 0.5rem; }
-.eticket-header h3 { font-size: 1rem; font-weight: 600; margin: 0; color: var(--text-secondary); }
-
-.eticket-body { display: flex; flex-direction: column; }
-
-.eticket-main {
-    padding: 2rem 1.5rem;
-    text-align: center;
-    border-bottom: 2px dashed var(--border-color);
-}
-.eticket-qr { margin-bottom: 1.5rem; }
-.eticket-qr img { max-width: 220px; width: 100%; border-radius: var(--radius-md); }
-.eticket-plate { font-family: monospace; font-size: 2.75rem; font-weight: 800; color: var(--primary-accent); letter-spacing: 2px; }
-.eticket-instruction { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem; }
-
-.eticket-stub { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.eticket-stub-item { display: flex; justify-content: space-between; align-items: baseline; }
-.eticket-stub-item span { font-size: 0.9rem; color: var(--text-secondary); }
-.eticket-stub-item strong { font-size: 1rem; font-weight: 600; text-align: right; }
-
-/* ==========================================================================
    6. Cấu hình In ấn (Print Configuration)
    ========================================================================== */
 @media print {
@@ -1058,16 +852,27 @@ input:checked + .slider:before { transform: translateX(20px); }
     .header-container { flex-wrap: wrap; }
     .header-controls { width: 100%; justify-content: space-between; margin-top: 1rem; }
     .main-navigation .container { flex-direction: column; align-items: stretch; gap: 0.5rem; padding-bottom: 0.5rem; }
+    .card__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
     .main-navigation ul { justify-content: center; }
     .nav-extra { display: none; }
+}
+
+/* ==========================================================================
+   YÊU CẦU: TỐI ƯU HÓA GIAO DIỆN CHO TÌNH NGUYỆN VIÊN TRÊN DI ĐỘNG
+   ========================================================================== */
+@media (max-width: 768px) {
+    .main-grid.sidebar-hidden { grid-template-columns: 1fr; }
+    .main-grid.sidebar-hidden .dashboard-column { display: none; }
 }
 
 @media (max-width: 600px) {
     .container { padding: 0 0.75rem; }
     .modal-body { padding: 1rem; }
     .modal-header, .modal-footer { padding: 1rem; }
-    .receipt-info-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-    .receipt-total { grid-template-columns: 1fr; }
     .payment-layout { grid-template-columns: 1fr; }
     .payment-sidebar { order: -1; }
 }
@@ -1075,8 +880,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 @media (max-width: 480px) {
     .modal-content { max-width: 98vw; } /* Tăng độ rộng modal trên màn hình rất nhỏ */
     .modal-header, .modal-footer, .modal-body { padding: 0.75rem; } /* Giảm padding */
-    .receipt-info-grid { grid-template-columns: 1fr; gap: 0.75rem; }
-    .receipt-total { grid-template-columns: 1fr; }
     .payment-layout { grid-template-columns: 1fr; }
     .payment-sidebar { order: -1; }
 }
@@ -1185,6 +988,123 @@ input:checked + .slider:before { transform: translateX(20px); }
 #offline-indicator.active {
     transform: translateY(0);
 }
+
+/* ========================================================================= */
+/* NÂNG CẤP GIAO DIỆN MODAL - XU HƯỚNG CUỐI 2025 (GEMINI)                   */
+/* PHONG CÁCH "AURORA FLOW" - GEMINI 2025                                   */
+/* ========================================================================= */
+
+/* --- Lớp phủ nền với hiệu ứng "Thủy tinh mờ" --- */
+.modal-overlay {
+    background-color: rgba(24, 38, 53, 0.5); /* Tăng độ tối nhẹ */
+    -webkit-backdrop-filter: blur(8px); /* Hiệu ứng làm mờ cho Safari */
+    backdrop-filter: blur(8px); /* Hiệu ứng làm mờ tiêu chuẩn */
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Tốc độ chuyển động mượt mà */
+}
+
+.modal-overlay.active {
+    opacity: 1;
+}
+
+/* --- Nội dung Modal với thiết kế mới --- */
+.modal-content {
+    border-radius: 24px; /* Bo góc lớn hơn, mềm mại hơn */
+    border: 1px solid var(--border-color); /* Giữ lại border gốc để tương thích theme */
+    box-shadow: 
+        0 20px 25px -5px rgb(0 0 0 / 0.1), 
+        0 8px 10px -6px rgb(0 0 0 / 0.1); /* Đổ bóng tạo chiều sâu và cảm giác "nổi" */
+    transform: scale(0.95); /* Thu nhỏ ban đầu để tạo hiệu ứng bật ra */
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden; /* Quan trọng: để bo góc header và footer */
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+/* --- Header với hiệu ứng Aurora --- */
+.modal-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--border-color);
+    position: relative; /* Cần thiết cho pseudo-element */
+    overflow: hidden; /* Để trang trí không tràn ra ngoài */
+    background-color: var(--bg-main);
+}
+
+.modal-header::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 100%;
+    background: linear-gradient(120deg, var(--primary-accent), var(--youth-union-blue), var(--success-color));
+    background-size: 200% 200%;
+    opacity: 0.1;
+    animation: aurora-flow 10s ease infinite;
+    z-index: 0;
+}
+
+@keyframes aurora-flow {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+
+.modal-header > * {
+    position: relative; /* Đảm bảo nội dung header nổi trên lớp aurora */
+    z-index: 1;
+}
+
+.modal-header h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+/* --- Body và Footer --- */
+.modal-body {
+    padding: 24px 28px;
+}
+
+.modal-footer {
+    padding: 16px 28px;
+    background-color: var(--bg-main);
+    border-top: 1px solid var(--border-color);
+}
+
+.modal-close-btn:hover, .close-btn:hover {
+    background-color: var(--border-color);
+    transform: rotate(90deg);
+}
+
+/* --- Cải tiến cho từng modal cụ thể --- */
+.location-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.location-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.image-viewer-container img {
+    border-radius: 16px; /* Bo góc cho ảnh xem trước */
+}
+
+/* --- Chế độ tối (Dark Mode) --- */
+[data-theme="dark"] .modal-content {
+    border-color: var(--border-color);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+}
+
+[data-theme="dark"] .modal-header {
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-footer {
+    background-color: #151e2d; /* Màu tối hơn một chút */
+    border-top-color: var(--border-color);
+}
+
 /* ==========================================================================
    10. NÂNG CẤP TOÀN DIỆN: Màn hình đăng nhập Nhân viên
    ========================================================================== */
@@ -1354,3 +1274,684 @@ input:checked + .slider:before { transform: translateX(20px); }
 .btn--biometric:hover {
     background-image: linear-gradient(to top, #374151, #4b5563);
 }
+/* ================================================================== */
+/* NÂNG CẤP GIAO DIỆN BẢNG TIN NHANH - GEMINI 3.0
+/* ================================================================== */
+
+/* Tái cấu trúc lại grid của dashboard */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
+/* Thiết kế thẻ thống kê mới */
+.gemini-stat-card {
+    background: linear-gradient(145deg, var(--bg-card), #fdfdff);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.gemini-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 82, 155, 0.15);
+}
+
+.gemini-stat-card__icon {
+    background-color: rgba(0, 82, 155, 0.1);
+    color: var(--youth-union-blue);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.gemini-stat-card__icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.gemini-stat-card__content {
+    z-index: 1;
+}
+
+.gemini-stat-card__label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.gemini-stat-card__value-wrapper {
+    display: flex;
+    align-items: baseline;
+    line-height: 1;
+}
+
+.gemini-stat-card__value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.gemini-stat-card__unit {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-left: 0.25rem;
+}
+
+/* Dành cho thẻ có giá trị là text (VD: thời gian) */
+.gemini-stat-card[data-stat-id="longest"] .gemini-stat-card__value {
+    font-size: 1.75rem;
+}
+
+/* Biểu đồ Gauge */
+.gemini-stat-card__chart {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 75px;
+    opacity: 0.8;
+}
+
+/* Tùy chỉnh màu nền cho giao diện tối */
+[data-theme="dark"] .gemini-stat-card {
+    background: linear-gradient(145deg, #2c3e50, #222f3c);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .gemini-stat-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2);
+}
+
+[data-theme="dark"] .gemini-stat-card__icon {
+    background-color: rgba(52, 152, 219, 0.15);
+    color: #3498db;
+}
+
+[data-theme="dark"] .gemini-stat-card__chart .chartjs-render-monitor {
+    filter: brightness(0.8);
+}
+
+/* ================================================================== */
+/* NÂNG CẤP GIAO DIỆN BẢNG TIN NHANH - GEMINI 3.0
+/* ================================================================== */
+/* ========================================= */
+/* == CSS CHO CHỨC NĂNG CHỤP ẢNH BIỂN SỐ == */
+/* ========================================= */
+
+/* Khung ngắm hình chữ nhật cho biển số */
+.scanner-viewfinder.plate-viewfinder {
+    width: 85%;
+    height: 40%; /* Chiều cao phù hợp với tỷ lệ biển số */
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    border-radius: 10px; /* Bo góc mềm mại hơn */
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+}
+
+/* Loại bỏ các góc vuông khi dùng khung chữ nhật */
+.scanner-viewfinder.plate-viewfinder .corner {
+    display: none;
+}
+
+/* Màn hình chờ xử lý OCR */
+#processing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.processing-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #FFF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+/* ==========================================================================
+   TỐI ƯU HÓA GIAO DIỆN DI ĐỘNG CHO FORM GỬI/LẤY XE
+   ========================================================================== */
+.quick-info-display .info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.95rem;
+}
+.quick-info-display .info-item .label {
+    color: var(--text-secondary);
+}
+.quick-info-display .info-item .value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   TỐI ƯU HÓA GIAO DIỆN DI ĐỘNG CHO FORM GỬI/LẤY XE (Bản vá 2.0)
+   ========================================================================== */
+
+/* ==========================================================================
+   TỐI ƯU HÓA GIAO DIỆN DI ĐỘNG CHO FORM GỬI/LẤY XE (Bản vá 3.0 - Mobile First)
+   ========================================================================== */
+
+/* Layout chính của form */
+.card {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 4rem); /* Giới hạn chiều cao card trên mobile */
+}
+.card__body {
+    flex-grow: 1; /* Cho phép phần body co giãn */
+    overflow-y: auto; /* Chỉ phần body được cuộn */
+}
+
+.form-section {
+    animation: fadeIn 0.4s ease;
+}
+
+/* Khu vực nút hành động cố định */
+.card__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    flex-shrink: 0; /* Không cho phép co lại */
+}
+
+/* ==========================================================================
+   THIẾT KẾ LẠI: KHU VỰC NHẬP LIỆU CHÍNH (GEMINI 2025)
+   ========================================================================== */
+.main-input-group {
+    display: flex;
+    align-items: stretch; /* Đảm bảo các item cao bằng nhau */
+    gap: 0.75rem;
+}
+
+.main-input-group .input-wrapper {
+    position: relative;
+    flex-grow: 1;
+}
+
+.main-input-group #search-term {
+    height: 100%;
+    font-size: 1.2rem;
+    padding: 1rem;
+    padding-right: 3.5rem; /* Chừa chỗ cho nút icon bên trong */
+    text-align: center;
+}
+
+.input-icon-btn {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+.input-icon-btn:hover {
+    background-color: var(--primary-accent-light);
+    color: var(--primary-accent);
+}
+.input-icon-btn.active {
+    background-color: var(--danger-light);
+    color: var(--danger-color);
+}
+
+/* Khu vực hiển thị thông tin xe đã gửi */
+#info-display-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-display-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--bg-main);
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.info-display-item .label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.info-display-item .value {
+    font-weight: 600;
+    text-align: right;
+}
+
+.info-display-item .value.has-image-btn {
+    padding: 0; /* Reset padding cho nút */
+}
+
+/* Responsive cho màn hình lớn hơn */
+@media (min-width: 768px) {
+    .primary-inputs {
+        flex-direction: row; /* Chuyển thành 2 cột trên desktop */
+    }
+
+    .card__footer {
+        position: static; /* Bỏ cố định trên desktop */
+    }
+
+    .card {
+        max-height: none; /* Bỏ giới hạn chiều cao trên desktop */
+    }
+
+    .action-buttons-container {
+        flex-direction: row;
+    }
+}
+
+/* KHÔI PHỤC: CSS cho phần lịch sử xe */
+.additional-details-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    animation: fadeIn 0.4s ease;
+}
+
+.history-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.history-item {
+    background-color: var(--bg-main);
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    justify-content: space-between;
+}
+/* ==========================================================================
+   TỐI ƯU HÓA GIAO DIỆN DI ĐỘNG CHO FORM GỬI/LẤY XE (Bản vá 2.0)
+   ========================================================================== */
+
+/* Các trường nhập liệu chính được ưu tiên */
+.primary-input {
+    margin-bottom: 1rem;
+}
+
+.primary-input input {
+    padding: 1rem; /* Tăng vùng đệm cho dễ chạm */
+    font-size: 1.1rem; /* Tăng cỡ chữ */
+}
+
+/* Tối ưu mục "Thêm thông tin" (details/summary) */
+.additional-info-group {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin: 1rem 0;
+    transition: all 0.3s ease-in-out;
+}
+
+.additional-info-group[hidden] {
+    display: none;
+}
+
+.additional-info-group[open] {
+    border-color: var(--primary-accent-light);
+}
+
+.additional-info-group summary {
+    padding: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none; /* Bỏ dấu tam giác mặc định */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    user-select: none;
+}
+.additional-info-group summary:hover {
+    background-color: var(--background-secondary);
+    border-radius: 11px;
+}
+
+/* Tạo dấu mũi tên tùy chỉnh bằng CSS */
+.additional-info-group summary::after {
+    content: '▼';
+    font-size: 0.8rem;
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+}
+
+.additional-info-group[open] summary::after {
+    transform: rotate(-180deg);
+}
+
+/* Hiệu ứng trượt mượt mà khi mở/đóng */
+.additional-info-content {
+    overflow: hidden;
+    padding: 0 1rem;
+    display: grid;
+    grid-template-rows: 0fr; /* Bắt đầu với chiều cao 0 */
+    transition: grid-template-rows 0.4s ease, padding 0.4s ease;
+}
+
+.additional-info-group[open] .additional-info-content {
+    grid-template-rows: 1fr; /* Chuyển thành 1fr để nội dung hiện ra */
+    padding-bottom: 1rem;
+}
+
+.additional-info-content > div {
+    min-height: 0;
+}
+
+
+
+/* Vùng hiển thị thông tin nhanh của xe */
+.quick-info-display {
+    margin: 1rem 0;
+    animation: fadeIn 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.quick-info-display .info-item {
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: var(--transition);
+}
+.quick-info-display .info-item:hover {
+    border-color: var(--primary-accent);
+    background-color: var(--primary-accent-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.info-item-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-accent-light);
+    border-radius: 50%;
+    color: var(--primary-accent);
+}
+
+.animated-icon {
+    width: 22px;
+    height: 22px;
+}
+.calendar-icon { animation: pulse-icon 2s infinite ease-in-out; }
+.clock-hand { transform-origin: center; animation: spin-hand 12s linear infinite; }
+
+@keyframes pulse-icon {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+@keyframes spin-hand {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.info-item-content {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between; /* Đẩy tiêu đề và nội dung ra 2 phía */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    gap: 1rem; /* Thêm khoảng cách phòng khi nội dung quá dài */
+}
+.quick-info-display .info-item .label {
+    color: var(--text-secondary);
+    flex-shrink: 0; /* Không cho phép tiêu đề bị co lại */
+}
+.quick-info-display .info-item .value {
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: right; /* Căn phải nội dung cho đẹp */
+}
+
+/* THIẾT KẾ LẠI: Giao diện "Thẻ Ưu tiên" mới */
+.priority-pass-new {
+    background-color: var(--bg-main);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+/* ==========================================================================
+   12. NÂNG CẤP TOÀN DIỆN: GIAO DIỆN VÉ GỬI XE ĐIỆN TỬ (DIGITAL PASS)
+   ========================================================================== */
+.digital-pass-wrapper {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px; /* Bo góc lớn hơn, mềm mại hơn */
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: floatUp 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+    position: relative;
+    border-top: 6px solid var(--youth-union-blue);
+}
+
+.pass-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background-color: var(--bg-main);
+}
+
+.pass-logo img {
+    width: 50px;
+    height: 50px;
+}
+
+.pass-titles {
+    line-height: 1.3;
+}
+
+.pass-title-main {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+}
+
+.pass-title-sub {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.pass-body {
+    padding: 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.pass-plate-section {
+    line-height: 1.2;
+}
+
+.pass-plate-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.pass-plate {
+    font-family: monospace;
+    font-size: 2.75rem;
+    font-weight: 800;
+    color: var(--primary-accent);
+    letter-spacing: 2px;
+    margin-top: 0.25rem;
+}
+
+.pass-vip-label {
+    font-weight: 700;
+    color: var(--accent-gold);
+    margin-top: 0.5rem;
+    animation: blink 2s infinite ease-in-out;
+}
+
+.pass-qr-section {
+    margin: 0 auto;
+    padding: 0.75rem;
+    background-color: white;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    width: fit-content;
+}
+
+.pass-qr-section canvas {
+    display: block;
+}
+
+.pass-qr-instruction {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.75rem;
+    font-weight: 600;
+}
+
+.pass-details-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: left;
+    background-color: var(--bg-main);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+}
+
+.pass-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.95rem;
+}
+
+.pass-detail-item span {
+    color: var(--text-secondary);
+}
+
+.pass-detail-item strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pass-footer {
+    padding: 0.75rem 1.5rem;
+    background-color: var(--bg-main);
+    border-top: 1px dashed var(--border-color);
+    text-align: center;
+}
+
+.pass-id-display {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Giao diện vé VIP */
+.digital-pass-wrapper.is-vip {
+    border-top-color: var(--accent-gold);
+    background: linear-gradient(145deg, var(--bg-card), #fdfdff);
+}
+
+[data-theme="dark"] .digital-pass-wrapper.is-vip {
+     background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+}
+
+.digital-pass-wrapper.is-vip .pass-plate {
+    color: var(--accent-gold);
+}
+
+/* Nâng cấp: Thêm hiệu ứng cho các nút trong modal */
+.modal-footer .action-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Nâng cấp: Trạng thái lỗi cho input */
+.input-wrapper input.error,
+.input-with-icon input.error {
+    border-color: var(--danger-color);
+    background-color: var(--danger-light);
+}
+
+.input-wrapper input.error:focus,
+.input-with-icon input.error:focus {
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+}
+
+/* Nâng cấp: Hiệu ứng cho nút trong modal xác nhận */
+.priority-pass-new.vip { border-top: 5px solid var(--accent-gold); }
+.priority-pass-new.free { border-top: 5px solid var(--success-color); }
+.priority-pass-new__icon { margin-bottom: 1rem; animation: floatUp 0.5s ease-out; }
+.priority-pass-new.vip .priority-pass-new__icon { color: var(--accent-gold); }
+.priority-pass-new.free .priority-pass-new__icon { color: var(--success-color); }
+.priority-pass-new__title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    animation: floatUp 0.5s ease-out 0.1s backwards;
+}
+.priority-pass-new.vip .priority-pass-new__title { color: var(--accent-gold); }
+.priority-pass-new.free .priority-pass-new__title { color: var(--success-color); }
+.priority-pass-new__reason { font-size: 1rem; color: var(--text-secondary); animation: floatUp 0.5s ease-out 0.3s backwards; }

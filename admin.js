@@ -108,14 +108,20 @@ document.addEventListener('DOMContentLoaded', () => {
         staffForm: document.getElementById('staff-form'),
         staffLocationAssignmentSelect: document.getElementById('staff-location-assignment'),
     };
+    // NÂNG CẤP: Các phần tử trang Phân tích
+    elements.analyticsResultsContainer = document.getElementById('analytics-results-container');
+    elements.analyticsChartCanvas = document.getElementById('analytics-chart-canvas');
+    elements.analyticsMetricSelect = document.getElementById('analytics-metric-select');
 
     // =================================================================
     // KHU VỰC 2: BIẾN TRẠNG THÁI TOÀN CỤC
     // =================================================================
-    let trafficChart, revenueChart, vehiclesChart, map, fullAdminData;
+    // NÂNG CẤP: Thêm biến cho biểu đồ phân tích
+    let trafficChart, revenueChart, vehiclesChart, analyticsChart, map, fullAdminData;
     let LOCATIONS_DATA = [];
     let transactionCurrentPage = 1;
     let STAFF_DATA = []; // NÂNG CẤP: Lưu trữ dữ liệu nhân viên
+    let transactionSearchTerm = ''; // SỬA LỖI: Khai báo biến tìm kiếm ở phạm vi toàn cục
     const transactionRowsPerPage = 10;
     let currentEditingRow = null; // NÂNG CẤP: Theo dõi dòng đang được sửa
     let activeSecurityAlerts = {};
@@ -250,7 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Giao dịch': 'Tra cứu, xem và chỉnh sửa tất cả các giao dịch trong hệ thống.',
                     'Quản lý Vị trí': 'Xem, thêm, sửa, xóa thông tin các điểm trông giữ xe của hệ thống.',
                     'An ninh': 'Các công cụ chuyên biệt để quản lý và giám sát an ninh hệ thống.',
-                    'Nhân sự': 'Quản lý tài khoản đăng nhập cho nhân viên tạm thời.'
+                    'Nhân sự': 'Quản lý tài khoản đăng nhập cho nhân viên tạm thời.',
+                    'Phân tích': 'Phân tích và phát hiện các hoạt động bất thường của nhân viên.' // NÂNG CẤP
                 }[pageTitleText] || 'Chào mừng đến với trang quản trị';
     
                 elements.pageTitle.textContent = pageTitleText;
@@ -260,9 +267,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.classList.add('active');
     
                 elements.pages.forEach(page => page.classList.toggle('active', page.id === targetId));
-    
                 if (targetId === 'page-locations' && map) setTimeout(() => map.invalidateSize(), 10);
-                if (targetId === 'page-transactions') fetchTransactions(1, transactionSearchTerm);
+                if (targetId === 'page-transactions') fetchTransactions(1, elements.transactionSearchInput.value);
+                if (targetId === 'page-analytics') runAnalytics(); // NÂNG CẤP
                 
                 handleSidebarLinkClick(); // Đóng menu trên di động sau khi click
             });
@@ -791,11 +798,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchTransactions = async (page = 1, searchTerm = '') => {
-        const transactionSearchTerm = searchTerm.trim();
+        transactionSearchTerm = searchTerm.trim();
         transactionCurrentPage = page;
         const startIndex = (page - 1) * transactionRowsPerPage;
         const endIndex = startIndex + transactionRowsPerPage - 1;
-
 
         try {
             let query = db.from('transactions').select('*', { count: 'exact' });
@@ -803,9 +809,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (transactionSearchTerm) {
                 if (transactionSearchTerm.startsWith('_')) {
                     query = query.eq('unique_id', transactionSearchTerm);
-                } else {
-                    const cleanedTerm = transactionSearchTerm.toUpperCase();
-                    query = query.or(`plate.ilike.%${cleanedTerm}%,phone.ilike.%${cleanedTerm}%`);
+                } else if (transactionSearchTerm.toLowerCase() === 'system') {
+                    // SỬA LỖI: Xử lý đặc biệt cho tìm kiếm giao dịch của "system" (những giao dịch có staff_username là NULL)
+                    query = query.is('staff_username', null);
+                } else { // SỬA LỖI: Xử lý tìm kiếm cho cả biển số, SĐT và tên nhân viên
+                    const cleanedTerm = transactionSearchTerm.toUpperCase(); 
+                    // Tìm kiếm trên nhiều trường: biển số, SĐT, hoặc tên nhân viên
+                    query = query.or(`plate.ilike.%${cleanedTerm}%,phone.ilike.%${cleanedTerm}%,staff_username.ilike.%${transactionSearchTerm}%`);
                 }
             }
 
@@ -874,6 +884,224 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('ADMIN FETCH ERROR:', error);
             return false;
         }
+    };
+
+    // =================================================================
+    // KHU VỰC 5.5: CÁC HÀM PHÂN TÍCH (MỚI)
+    // =================================================================
+
+    // NÂNG CẤP: Hàm điều phối chính cho các loại phân tích
+    const runAnalytics = async () => {
+        if (analyticsChart) analyticsChart.destroy(); // Xóa biểu đồ cũ
+        if (!elements.analyticsResultsContainer) return;
+        elements.analyticsResultsContainer.innerHTML = `<div class="loading-spinner"></div>`;
+        // Xóa canvas của biểu đồ cũ để tránh hiển thị lỗi
+        const chartCanvas = elements.analyticsChartCanvas;
+        if (chartCanvas) {
+            const ctx = chartCanvas.getContext('2d');
+            ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+        }
+
+        const selectedMetric = elements.analyticsMetricSelect.value;
+        document.querySelector('.chart-wrapper').style.display = 'block'; // Mặc định hiển thị chart
+
+        try {
+            // Lấy dữ liệu giao dịch trong 7 ngày gần nhất
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+            const { data: transactions, error } = await db
+                .from('transactions')
+                .select('staff_username, fee, payment_method, entry_time, exit_time, status')
+                // SỬA LỖI: Lấy tất cả các giao dịch đã kết thúc trong 7 ngày qua,
+                // thay vì chỉ các giao dịch bắt đầu trong 7 ngày qua.
+                .gte('exit_time', sevenDaysAgo.toISOString());
+
+            if (error) throw error;
+            if (!transactions || transactions.length === 0) {
+                elements.analyticsResultsContainer.innerHTML = `<p>Không có đủ dữ liệu giao dịch trong 7 ngày qua để phân tích.</p>`;
+                return;
+            }
+
+            // Gọi hàm phân tích tương ứng
+            if (selectedMetric === 'free_ratio') {
+                analyzeFreeRatio(transactions);
+            } else if (selectedMetric === 'short_duration') {
+                analyzeShortDuration(transactions);
+            }
+
+        } catch (error) {
+            showToast(`Lỗi phân tích dữ liệu: ${error.message}`, 'error');
+            elements.analyticsResultsContainer.innerHTML = `<p style="color: var(--danger-color);">Đã xảy ra lỗi khi phân tích dữ liệu.</p>`;
+        }
+    };
+
+    const analyzeFreeRatio = (transactions) => {
+            // 1. Thống kê theo từng nhân viên
+            const staffStats = transactions.reduce((acc, tx) => {
+                const username = tx.staff_username || 'system';
+                if (!acc[username]) {
+                    acc[username] = { total: 0, free: 0, name: 'Chưa xác định' };
+                }
+                acc[username].total++;
+                if (tx.fee === 0 || tx.payment_method === 'Miễn phí' || tx.payment_method === 'VIP') {
+                    acc[username].free++;
+                }
+                return acc;
+            }, {});
+
+            // Lấy tên đầy đủ của nhân viên
+            STAFF_DATA.forEach(staff => {
+                if (staffStats[staff.username]) {
+                    staffStats[staff.username].name = staff.full_name;
+                }
+            });
+
+            // 2. Tính toán tỷ lệ và mức trung bình toàn hệ thống
+            let totalTransactions = 0;
+            let totalFreeTransactions = 0;
+            const staffDataForAnalysis = Object.entries(staffStats).map(([username, stats]) => {
+                totalTransactions += stats.total;
+                totalFreeTransactions += stats.free;
+                return {
+                    username,
+                    name: stats.name,
+                    total: stats.total,
+                    free: stats.free,
+                    freeRatio: stats.total > 0 ? (stats.free / stats.total) * 100 : 0,
+                };
+            });
+
+            const overallAverageRatio = totalTransactions > 0 ? (totalFreeTransactions / totalTransactions) * 100 : 0;
+
+            // 3. Tìm các trường hợp bất thường (tỷ lệ miễn phí > 2 lần mức trung bình và có ít nhất 10 giao dịch)
+            const anomalies = staffDataForAnalysis.filter(staff =>
+                staff.total >= 10 && staff.freeRatio > (overallAverageRatio * 2) && staff.freeRatio > 5 // Ngưỡng tối thiểu 5%
+            ).sort((a, b) => b.freeRatio - a.freeRatio);
+
+            renderAnalyticsResults(anomalies, overallAverageRatio);
+            renderAnalyticsChart(staffDataForAnalysis, anomalies, overallAverageRatio);
+    };
+
+    // NÂNG CẤP: Hàm phân tích giao dịch thời gian ngắn
+    const analyzeShortDuration = (transactions) => {
+        const SHORT_DURATION_MINUTES = 5;
+
+        const shortTransactions = transactions.filter(tx => {
+            if (tx.status !== 'Đã rời bãi' || !tx.entry_time || !tx.exit_time) {
+                return false;
+            }
+            const durationMinutes = (new Date(tx.exit_time) - new Date(tx.entry_time)) / (1000 * 60);
+            return durationMinutes > 0 && durationMinutes < SHORT_DURATION_MINUTES;
+        });
+
+        if (shortTransactions.length === 0) {
+            elements.analyticsResultsContainer.innerHTML = `<div class="analytics-card normal"><div class="icon">✅</div><div class="info"><h3>Không phát hiện giao dịch bất thường</h3><p>Không có giao dịch nào có thời gian gửi xe dưới ${SHORT_DURATION_MINUTES} phút trong 7 ngày qua.</p></div></div>`;
+            document.querySelector('.chart-wrapper').style.display = 'none'; // Ẩn khu vực biểu đồ
+            return;
+        }
+
+        const staffStats = shortTransactions.reduce((acc, tx) => {
+            const username = tx.staff_username || 'system';
+            if (!acc[username]) {
+                acc[username] = { count: 0, name: 'Chưa xác định' };
+            }
+            acc[username].count++;
+            return acc;
+        }, {});
+
+        // Lấy tên đầy đủ của nhân viên
+        STAFF_DATA.forEach(staff => {
+            if (staffStats[staff.username]) {
+                staffStats[staff.username].name = staff.full_name;
+            }
+        });
+
+        renderShortDurationResults(staffStats, SHORT_DURATION_MINUTES);
+        document.querySelector('.chart-wrapper').style.display = 'none'; // Ẩn khu vực biểu đồ cho loại phân tích này
+    }
+
+    const renderAnalyticsResults = (anomalies, average) => {
+        if (anomalies.length === 0) {
+            elements.analyticsResultsContainer.innerHTML = `<div class="analytics-card normal"><div class="icon">✅</div><div class="info"><h3>Không phát hiện hoạt động bất thường</h3><p>Tỷ lệ giao dịch miễn phí/VIP trung bình toàn hệ thống là <strong>${average.toFixed(1)}%</strong>. Tất cả nhân viên đều đang hoạt động trong ngưỡng cho phép.</p></div></div>`;
+            return;
+        }
+
+        elements.analyticsResultsContainer.innerHTML = anomalies.map(staff => `
+            <div class="analytics-card anomaly">
+                <div class="icon">⚠️</div>
+                <div class="info">
+                    <h3>${staff.name} (${staff.username})</h3>
+                    <p>Có tỷ lệ giao dịch miễn phí/VIP là <strong>${staff.freeRatio.toFixed(1)}%</strong> (${staff.free}/${staff.total} giao dịch), cao hơn đáng kể so với mức trung bình <strong>${average.toFixed(1)}%</strong> của hệ thống.</p>
+                </div>
+                <button class="action-button btn-secondary view-details-btn" data-username="${staff.username}">Xem Giao dịch</button>
+            </div>
+        `).join('');
+    };
+
+    // NÂNG CẤP: Hàm render kết quả cho giao dịch ngắn
+    const renderShortDurationResults = (staffStats, threshold) => {
+        const sortedStaff = Object.entries(staffStats).sort(([, a], [, b]) => b.count - a.count);
+
+        elements.analyticsResultsContainer.innerHTML = sortedStaff.map(([username, stats]) => `
+            <div class="analytics-card anomaly">
+                <div class="icon">⏱️</div>
+                <div class="info">
+                    <h3>${stats.name} (${username})</h3>
+                    <p>Có <strong>${stats.count}</strong> giao dịch với thời gian gửi xe dưới ${threshold} phút.</p>
+                </div>
+                <button class="action-button btn-secondary view-details-btn" data-username="${username}">Xem Giao dịch</button>
+            </div>
+        `).join('');
+    }
+
+    // NÂNG CẤP: Hàm vẽ biểu đồ phân tích
+    const renderAnalyticsChart = (staffData, anomalies, average) => {
+        if (!elements.analyticsChartCanvas) return;
+
+        const anomalyUsernames = new Set(anomalies.map(a => a.username));
+        const labels = staffData.map(s => s.name);
+        const data = staffData.map(s => s.freeRatio);
+
+        const backgroundColors = staffData.map(s => 
+            anomalyUsernames.has(s.username) ? 'rgba(220, 53, 69, 0.7)' : 'rgba(0, 123, 255, 0.7)'
+        );
+        const borderColors = staffData.map(s => 
+            anomalyUsernames.has(s.username) ? 'rgba(220, 53, 69, 1)' : 'rgba(0, 123, 255, 1)'
+        );
+
+        if (analyticsChart) {
+            analyticsChart.destroy();
+        }
+
+        analyticsChart = new Chart(elements.analyticsChartCanvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Tỷ lệ Miễn phí/VIP (%)',
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Hiển thị biểu đồ cột ngang để dễ đọc tên
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Tỷ lệ (%)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw.toFixed(1)}%` } }
+                }
+            }
+        });
     };
 
     const saveTransactionChanges = async () => {
@@ -1125,39 +1353,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // NÂNG CẤP: Các hàm cho trang Cài đặt
-    const fetchSettings = async () => {
-        try {
-            const { data, error } = await db.from('app_settings').select('*');
-            if (error) throw error;
-
-            const settings = data.reduce((acc, setting) => {
-                acc[setting.setting_key] = setting.setting_value;
-                return acc;
-            }, {});
-
-            // Điền dữ liệu vào form
-            if (elements.paymentQrUrlInput) {
-                elements.paymentQrUrlInput.value = settings.payment_qr_base_url || '';
-            }
-
-        } catch (error) {
-            showToast(`Lỗi tải cài đặt: ${error.message}`, 'error');
-        }
-    };
-
-    const saveSettings = async () => {
-        const qrUrl = elements.paymentQrUrlInput.value.trim();
-        if (!qrUrl) {
-            showToast('URL mã QR không được để trống.', 'error');
-            return;
-        }
-
-        const { error } = await db.from('app_settings').upsert({ setting_key: 'payment_qr_base_url', setting_value: qrUrl });
-        if (error) showToast(`Lỗi lưu cài đặt: ${error.message}`, 'error');
-        else showToast('Đã lưu cài đặt thanh toán thành công!', 'success');
-    };
-
     // SỬA LỖI: Hàm xử lý cho menu di động
     const toggleMobileMenu = () => {
         elements.sidebar.classList.toggle('open');
@@ -1182,20 +1377,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setTodayDate();
             setupNavigation();
 
-            db.auth.getSession().then(({ data: { session } }) => {
+            // SỬA LỖI: Chờ configPromise hoàn tất trước khi kiểm tra session
+            configPromise.then(() => { 
+                db.auth.getSession().then(({ data: { session } }) => { // Sau đó mới kiểm tra session
                 if (session) {
                     elements.loginScreen.style.display = 'none';
                     elements.mainAdminContent.style.display = 'flex';
                     startAdminSession();
-                } else {
-                    // Nếu không có session, vẫn có thể cần fetch một số cài đặt công khai nếu có
-                    if(typeof fetchSettings === 'function') fetchSettings();
-                    // SỬA LỖI: Vô hiệu hóa việc tải cài đặt khi chưa đăng nhập.
-                    // Bảng 'app_settings' có thể không tồn tại, gây ra lỗi trên màn hình đăng nhập.
-                    // if(typeof fetchSettings === 'function') fetchSettings();
-                }
-            });
-
+                } // Nếu không có session, màn hình đăng nhập sẽ tự hiển thị, không cần làm gì thêm.
+            });});
             if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
             if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
                 fetchAllAdminData(elements.adminDatePicker.value);
@@ -1270,9 +1460,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.menuToggleBtn) elements.menuToggleBtn.addEventListener('click', toggleMobileMenu);
             if (elements.sidebarOverlay) elements.sidebarOverlay.addEventListener('click', closeMobileMenu);
 
-            if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', saveSettings);
-            // SỬA LỖI: Vô hiệu hóa các chức năng liên quan đến 'app_settings'
-            // if (elements.saveSettingsBtn) elements.saveSettingsBtn.addEventListener('click', saveSettings);
 
             if (elements.addStaffBtn) elements.addStaffBtn.addEventListener('click', () => openStaffModal());
             if (elements.closeStaffModalBtn) elements.closeStaffModalBtn.addEventListener('click', closeStaffModal);
@@ -1288,6 +1475,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (staff) openStaffModal(staff);
                     } else if (target.classList.contains('delete-staff-btn')) {
                         deleteStaff(staffId);
+                    }
+                });
+            }
+
+            // NÂNG CẤP: Gắn sự kiện cho dropdown phân tích
+            if (elements.analyticsMetricSelect) {
+                elements.analyticsMetricSelect.addEventListener('change', runAnalytics);
+            }
+
+            if (elements.analyticsResultsContainer) {
+                elements.analyticsResultsContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('view-details-btn')) {
+                        const username = e.target.dataset.username;
+                        // Chuyển sang tab Giao dịch và tìm kiếm theo tên nhân viên
+                        document.querySelector('.nav-link[data-target="page-transactions"]').click();
+                        elements.transactionSearchInput.value = username; // Điền tên vào ô tìm kiếm
+                        fetchTransactions(1, username);
                     }
                 });
             }

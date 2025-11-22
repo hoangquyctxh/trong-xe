@@ -1,55 +1,90 @@
-// config.js
-// File cấu hình trung tâm cho toàn bộ ứng dụng.
-// Mọi thay đổi về API, thông tin thanh toán, mức phí... đều được chỉnh sửa tại đây.
 
-// =================================================================================
-// HƯỚNG DẪN: Để bật tính năng thời tiết, hãy đăng ký tài khoản miễn phí tại
-// openweathermap.org, lấy API Key và dán vào mục apiKey bên dưới.
-// =================================================================================
+/**
+ * =================================================================================
+ * config.js - PHIÊN BẢN HOÀN CHỈNH
+ * Tệp cấu hình và khởi tạo trung tâm, giải quyết triệt để lỗi "APP_CONFIG is not defined".
+ * =================================================================================
+ *
+ * CÁCH HOẠT ĐỘNG:
+ * 1. Định nghĩa các cấu hình mặc định (STATIC_CONFIG).
+ * 2. Tạo kết nối đến Supabase.
+ * 3. Viết hàm `fetchAndMergeSettings` để tải cài đặt từ bảng `app_settings` trên Supabase.
+ * 4. Hợp nhất cài đặt từ Supabase vào cấu hình mặc định để tạo ra biến `APP_CONFIG` cuối cùng.
+ * 5. Tạo một `configPromise` để các tệp khác (main.js, admin.js) có thể "chờ" cho đến khi
+ *    quá trình tải và hợp nhất này hoàn tất.
+ *
+ * =================================================================================
+ */
 
-const APP_CONFIG = {
-    // Tên đơn vị chủ quản để đóng dấu lên ảnh
+// 1. Cấu hình tĩnh (Mặc định, làm nền)
+const STATIC_CONFIG = {
+    supabaseUrl: 'https://mtihqbmlbtrgvamxwrkm.supabase.co',
+    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10aWhxYm1sYnRyZ3ZhbXh3cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMTkwMDEsImV4cCI6MjA3NzU5NTAwMX0.hR5X8bp-XD2DfxUnvWF-yxVk4sFVW2zBunp5XXnIZ0Y',
     organizationName: "ĐOÀN TNCS HỒ CHÍ MINH P.BA ĐÌNH",
-
-    // Cấu hình thanh toán QR bằng cách tạo ảnh từ API của VietQR
-    payment: {
-        // URL gốc để tạo ảnh QR. Các tham số `amount` và `addInfo` sẽ được thêm vào sau.
-        imageUrlBase: "https://img.vietqr.io/image/MSB-968866975500-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
-    },
-
-    // Cấu hình API thời tiết (MỚI)
-    weather: {
-        apiKey: "c9b24c823032912293817419cb0cd2dc" // <-- DÁN API KEY CỦA BẠN VÀO ĐÂY
-    },
-
-    // Cấu hình tính phí gửi xe
+    weatherApiKey: "c9b24c823032912293817419cb0cd2dc",
+    autoRefreshInterval: 5000,
     fee: {
-        enabled: true,         // BẬT/TẮT THU PHÍ: true = có thu phí, false = miễn phí toàn bộ.
-        freeMinutes: 15,       // Số phút gửi xe miễn phí
-        entryFee: 10000,       // NÂNG CẤP: Phí cố định cho mỗi lượt gửi (chính sách "Theo lượt")
-        dailyFee: 30000,       // NÂNG CẤP: Phí cố định cho mỗi ngày gửi (chính sách "Theo ngày")
-        dayRate: 5000,         // Phí mỗi giờ ban ngày (từ 6h sáng đến 18h tối)
-        nightRate: 8000,       // Phí mỗi giờ ban đêm
-        nightStartHour: 18,    // Giờ bắt đầu tính phí đêm (6 PM)
-        nightEndHour: 6        // Giờ kết thúc tính phí đêm (6 AM)
+        enabled: true,
+        freeMinutes: 15,
+        entryFee: 10000,
+        dailyFee: 30000,
+        dayRate: 5000,
+        nightRate: 8000,
+        nightStartHour: 18,
+        nightEndHour: 6
     },
-
-    // Thời gian tự động làm mới dữ liệu (tính bằng mili giây)
-    autoRefreshInterval: 5000, // 5 giây
-
-    // MỚI: Danh sách video quảng cáo cho màn hình chờ
-    // Dán các đường link video của bạn vào đây.
-    // Hệ thống sẽ tự động phát lần lượt.
-    adVideos: [
-        // LƯU Ý: Phải dùng link trực tiếp đến file video .mp4.
-        // Ví dụ link từ Cloudflare R2: "https://ten-bucket.id-tai-khoan.r2.dev/ten-video.mp4"
-        // Ví dụ link từ các trang video miễn phí:
-        "https://pub-e8b9f290d56545b29e32c494b6ec8f86.r2.dev/video_20251019_222646.mp4"
-    ]
-
-    // Cấu hình API chuyển đổi địa chỉ từ tinhthanhpho.com
-    tinhThanhPhoApi: {
-        apiKey: "hvn_LVZHrmtmusRmhR4OXA4FPp9ahUGFz8oE", // <-- Dán API Key của bạn vào đây
-        url: "https://tinhthanhpho.com/api/v1/address/parser"
+    // SỬA LỖI: Bổ sung lại cấu hình payment bị thiếu.
+    payment: {
+        imageUrlBase: "https://img.vietqr.io/image/MSB-968866975500-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
     }
 };
+
+// 2. Khởi tạo biến APP_CONFIG và kết nối Supabase
+let APP_CONFIG = { ...STATIC_CONFIG };
+const db = supabase.createClient(STATIC_CONFIG.supabaseUrl, STATIC_CONFIG.supabaseKey);
+
+/**
+ * 3. Hàm tải và hợp nhất cài đặt từ Supabase.
+ * @returns {Promise<object>} Một promise sẽ resolve với đối tượng cấu hình cuối cùng.
+ */
+const fetchAndMergeSettings = async () => {
+    try {
+        const { data, error } = await db.from('app_settings').select('key, value');
+
+        if (error) {
+            // Nếu lỗi là do không tìm thấy bảng, đây là lỗi nghiêm trọng cần báo.
+            if (error.code === '42P01') { // '42P01' là mã lỗi "undefined_table" của PostgreSQL
+                console.error("❌ LỖI CẤU HÌNH NGHIÊM TRỌNG: Không tìm thấy bảng 'app_settings'. Vui lòng chạy script SQL để tạo bảng.");
+            }
+            throw error;
+        }
+
+        // Chuyển đổi dữ liệu từ Supabase thành một đối tượng phẳng
+        const dynamicConfig = data.reduce((acc, setting) => {
+            acc[setting.key] = setting.value;
+            return acc;
+        }, {});
+
+        // 4. Hợp nhất cài đặt động vào APP_CONFIG
+        // Cài đặt từ DB sẽ ghi đè lên cài đặt tĩnh nếu có trùng lặp.
+        APP_CONFIG = { ...APP_CONFIG, ...dynamicConfig };
+
+        // NÂNG CẤP: Nếu có `payment_qr_url` từ DB, hãy cập nhật nó vào cấu trúc payment.
+        if (APP_CONFIG.payment_qr_url) {
+            APP_CONFIG.payment.imageUrlBase = APP_CONFIG.payment_qr_url;
+        }
+
+        console.log('✅ Cấu hình ứng dụng đã được tải và hợp nhất thành công:', APP_CONFIG);
+        return APP_CONFIG;
+
+    } catch (error) {
+        console.warn('⚠️ Không thể tải cài đặt từ cơ sở dữ liệu, hệ thống sẽ sử dụng cấu hình mặc định.', error.message);
+        // Trong trường hợp lỗi, APP_CONFIG sẽ giữ nguyên giá trị của STATIC_CONFIG.
+        return APP_CONFIG;
+    }
+};
+
+// 5. Chạy hàm và tạo ra `configPromise`
+// Đây là một "lời hứa" rằng quá trình tải cấu hình sẽ được thực hiện.
+// Các tệp khác có thể `await configPromise` hoặc dùng `.then()` để đảm bảo APP_CONFIG đã sẵn sàng.
+const configPromise = fetchAndMergeSettings();

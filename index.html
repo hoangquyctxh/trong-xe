@@ -5,211 +5,231 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống Quản lý xe Tình nguyện</title>
     
-    <!-- Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- TỐI ƯU HÓA TỐC ĐỘ TẢI: -->
+    <!-- 1. Preconnect: Yêu cầu trình duyệt thiết lập kết nối sớm đến các tên miền quan trọng. -->
+    <!-- Điều này giúp giảm độ trễ DNS, TCP, và TLS khi tải tài nguyên từ các domain này. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://mtihqbmlbtrgvamxwrkm.supabase.co" crossorigin>
+
+    <!-- 2. Tải font không đồng bộ với `display=swap` để văn bản hiển thị ngay lập tức, tránh chặn render. -->
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- CSS - Tệp giao diện mới hoàn toàn -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Thư viện -->
+    <!-- Thư viện & Cấu hình -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- MỚI: Thư viện Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
 
-
-    <!-- Cấu hình -->
-    <script src="config.js"></script>
-    <script src="plate_data.js"></script>
+    <!-- SỬA LỖI CHÍ MẠNG: Tải config.js trước và đồng bộ (không defer). -->
+    <!-- Điều này đảm bảo biến `db` và `configPromise` luôn tồn tại trước khi main.js chạy, -->
+    <!-- loại bỏ hoàn toàn lỗi "race condition". -->
+    <script src="config.js"></script> 
+    <script src="plate_data.js" defer></script>
+    <script src="main.js" defer></script>
 </head>
 <body>
+    <div id="app-container">
+        <!-- Thanh thông báo toàn cục -->
+        <div id="global-alert-strip" class="global-alert-strip"></div>
+        <div id="toast-container"></div>
+        <div id="offline-indicator"></div>
 
-    <!-- Thanh thông báo toàn cục -->
-    <div id="global-alert-strip" class="global-alert-strip"></div>
-    <div id="toast-container"></div>
-    <div id="offline-indicator"></div>
-
-    <!-- ================================================================= -->
-    <!-- MÀN HÌNH ĐĂNG NHẬP CHO NHÂN VIÊN (THIẾT KẾ LẠI) -->
-    <!-- ================================================================= -->
-    <div id="staff-login-screen" class="login-container">
-        <div class="login-branding-panel">
-            <div class="branding-content">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn Thanh niên" class="branding-logo">
-                <h1>Hệ thống Quản lý Bãi xe Thông minh</h1>
-                <p>Dành cho Cán bộ, Đoàn viên, Tình nguyện viên</p>
-            </div>
-        </div>
-        <div class="login-form-panel">
-            <div class="login-form-wrapper">
-                <h2>Đăng nhập</h2>
-                <p class="form-subtitle">Sử dụng tài khoản được cấp để truy cập hệ thống.</p>
-                <form id="staff-login-form">
-                    <div class="form-group">
-                        <label for="staff-username">Tên đăng nhập</label>
-                        <div class="input-with-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                            <input type="text" id="staff-username" required autocomplete="username">
-                        </div>
-                    </div>
-                    <div id="staff-info-display" class="staff-info-display"></div>
-                    <div class="form-group">
-                        <label for="staff-pin">Mã PIN</label>
-                        <div class="input-with-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <input type="password" id="staff-pin" inputmode="numeric" required autocomplete="current-password">
-                        </div>
-                    </div>
-                    <p id="staff-login-error-message" class="form-error-message"></p>
-                    <button type="submit" class="action-button btn--check-in" style="width: 100%; margin-top: 1.5rem;">Đăng nhập</button>
-                    <button type="button" id="biometric-login-btn" class="action-button btn--secondary" style="width: 100%; margin-top: 0.75rem; display: none;">Đăng nhập bằng Vân tay/Khuôn mặt</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Header chính -->
-    <header class="app-header">
-        <div class="container header-container">
-            <div class="header-title">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo" class="logo">
-                <div class="title-group">
-                    <p class="subtitle" id="location-subtitle">Đang tải vị trí... <span id="change-location-btn" class="change-location-btn" hidden><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"></path></svg> Thay đổi</span></p>
-                    <h1>Bảng điều hành bãi xe</h1>
+        <!-- ================================================================= -->
+        <!-- MÀN HÌNH ĐĂNG NHẬP CHO NHÂN VIÊN (THIẾT KẾ LẠI) -->
+        <!-- ================================================================= -->
+        <div id="staff-login-screen" class="login-container">
+            <div class="login-branding-panel">
+                <div class="branding-content">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn Thanh niên" class="branding-logo">
+                    <h1>Hệ thống Quản lý Bãi xe Thông minh</h1>
+                    <p>Dành cho Cán bộ, Đoàn viên, Tình nguyện viên</p>
                 </div>
             </div>
-            <div class="header-controls">
-                <div class="date-selector">
-                    <label for="date-picker">Ngày:</label>
-                    <input type="date" id="date-picker">
-                </div>
-                <div class="theme-switch-wrapper">
-                    <label class="theme-switch" for="theme-checkbox" title="Chuyển đổi giao diện Sáng/Tối">
-                        <input type="checkbox" id="theme-checkbox"><span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Menu điều hướng -->
-    <nav class="main-navigation">
-        <div class="container">
-            <ul>
-                <li><a href="index.html" class="active">Bảng điều hành</a></li>
-                <li><a href="lookup.html" target="_blank">Tra cứu Công khai</a></li>
-                <li><a href="admin.html" target="_blank">Quản trị Hệ thống</a></li>
-            </ul>
-            <div class="nav-extra">
-                <!-- Khu vực hiển thị thông tin nhân viên đăng nhập -->
-                <div id="user-profile-widget" class="user-profile-widget"></div>
-                <div id="clock-widget" class="clock-widget"></div>
-                <div id="weather-widget" class="weather-widget"></div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Nội dung chính -->
-    <main class="container main-grid">
-        <!-- Cột trái: Tác vụ & Thông tin -->
-        <section class="main-column">
-            <!-- Card: Xử lý Gửi/Lấy xe -->
-            <article class="card">
-                <h2 class="card__header">Xử lý Gửi/Lấy xe</h2>
-                <div class="card__body">
-                    <form id="form-new-vehicle">
-                        <div class="input-group">
-                            <div class="input-wrapper">
-                                <input type="text" id="search-term" placeholder="Nhập Biển số xe..." autocomplete="off">
+            <div class="login-form-panel">
+                <div class="login-form-wrapper">
+                    <h2>Đăng nhập</h2>
+                    <p class="form-subtitle">Sử dụng tài khoản được cấp để truy cập hệ thống.</p>
+                    <form id="staff-login-form">
+                        <div class="form-group">
+                            <label for="staff-username">Tên đăng nhập</label>
+                            <div class="input-with-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                <input type="text" id="staff-username" required autocomplete="username">
                             </div>
-                            <button type="button" id="mic-btn" class="icon-btn" title="Ghi nhận bằng giọng nói"></button>
-                            <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để lấy xe"></button>
                         </div>
-                        <!-- Vùng chứa gợi ý biển số xe -->
-                        <div id="plate-suggestions" class="plate-suggestions"></div>
-                        <div class="input-wrapper">
-                            <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu gửi mới)...">
+                        <div id="staff-info-display" class="staff-info-display"></div>
+                        <div class="form-group">
+                            <label for="staff-pin">Mã PIN</label>
+                            <div class="input-with-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <input type="password" id="staff-pin" inputmode="numeric" required autocomplete="current-password">
+                            </div>
                         </div>
-                        <div class="input-wrapper" style="margin-top: 1rem;">
-                            <textarea id="vehicle-notes" placeholder="Thêm ghi chú (ví dụ: xe không biển số,...)" rows="2"></textarea>
-                        </div>
-                        <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
-                            <input type="checkbox" id="is-vip-checkbox">
-                            <label for="is-vip-checkbox">⭐ Đánh dấu là Khách mời / VIP (Miễn phí)</label>
-                        </div>
-                        <div id="action-buttons-container" class="action-buttons-container">
-                            <!-- Nút bấm và cảnh báo sẽ được JS render vào đây -->
-                        </div>
+                        <p id="staff-login-error-message" class="form-error-message"></p>
+                        <button type="submit" class="action-button btn--check-in" style="width: 100%; margin-top: 1.5rem;">Đăng nhập</button>
+                        <button type="button" id="biometric-login-btn" class="action-button btn--secondary" style="width: 100%; margin-top: 0.75rem; display: none;">Đăng nhập bằng Vân tay/Khuôn mặt</button>
                     </form>
                 </div>
-            </article>
+            </div>
+        </div>
 
-            <!-- Card: Thông tin chi tiết -->
-            <article id="vehicle-info-panel" class="card" hidden>
-                <h2 class="card__header">Thông tin chi tiết</h2>
-                <div class="card__body">
-                    <div id="selected-vehicle-alert" class="selected-vehicle-alert" hidden></div>
-                    <div id="info-details-grid" class="info-grid"></div>
-                    <h3 class="history-title">Lịch sử gửi xe</h3>
-                    <ul id="info-history-list" class="history-list"></ul>
-                </div>
-            </article>
-        </section>
-
-        <!-- Cột phải: Dashboard & Danh sách -->
-        <section class="main-column">
-            <!-- Card: Bảng tin nhanh -->
-            <article class="card">
-                <h2 class="card__header">Bảng tin nhanh</h2>
-                <div class="card__body">
-                    <div id="dashboard-grid" class="dashboard-grid">
-                        <!-- Các thẻ thống kê và biểu đồ sẽ được render vào đây bằng JavaScript -->
+        <!-- Header chính -->
+        <header class="app-header">
+            <div class="container header-container">
+                <div class="header-title">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo" class="logo">
+                    <div class="title-group">
+                        <p class="subtitle" id="location-subtitle">Đang tải vị trí... <span id="change-location-btn" class="change-location-btn" hidden><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"></path></svg> Thay đổi</span></p>
+                        <h1>Bảng điều hành bãi xe</h1>
                     </div>
                 </div>
-            </article>
-
-            <!-- Card: Danh sách xe -->
-            <article class="card">
-                <div class="card__header">
-                    <h2 id="list-title">Danh sách xe</h2>
-                    <div class="input-wrapper list-filter">
-                        <input type="text" id="filter-input" placeholder="Lọc danh sách...">
+                <div class="header-controls">
+                    <div class="date-selector">
+                        <label for="date-picker">Ngày:</label>
+                        <input type="date" id="date-picker">
+                    </div>
+                    <div class="theme-switch-wrapper">
+                        <label class="theme-switch" for="theme-checkbox" title="Chuyển đổi giao diện Sáng/Tối">
+                            <input type="checkbox" id="theme-checkbox"><span class="slider"></span>
+                        </label>
                     </div>
                 </div>
-                <div class="card__body">
-                    <div id="vehicle-list-container" class="vehicle-list-container"></div>
-                    <!-- Vùng chứa các nút phân trang -->
-                    <div id="pagination-controls" class="pagination-controls"></div>
+            </div>
+        </header>
+
+        <!-- Menu điều hướng -->
+        <nav class="main-navigation">
+            <div class="container">
+                <ul>
+                    <li><a href="index.html" class="active">Bảng điều hành</a></li>
+                    <li><a href="lookup.html" target="_blank">Tra cứu Công khai</a></li>
+                    <li><a href="admin.html" target="_blank">Quản trị Hệ thống</a></li>
+                </ul>
+                <div class="nav-extra">
+                    <!-- Khu vực hiển thị thông tin nhân viên đăng nhập -->
+                    <div id="user-profile-widget" class="user-profile-widget"></div>
+                    <div id="clock-widget" class="clock-widget"></div>
+                    <div id="weather-widget" class="weather-widget"></div>
                 </div>
-            </article>
-        </section>
-    </main>
+            </div>
+        </nav>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-        <div class="container">
-            <div id="footer-info-grid" class="footer-grid"></div>
-            <p class="copyright">Bản quyền © 2025 thuộc về Đoàn Thanh niên Phường Ba Đình.</p>
+        <!-- Nội dung chính -->
+        <main class="container main-grid sidebar-hidden">
+            <!-- Cột trái: Tác vụ & Thông tin -->
+            <section class="main-column" id="action-column">
+                <!-- Card: Xử lý Gửi/Lấy xe -->
+                <article class="card">
+                    <h2 class="card__header">Xử lý Gửi/Lấy xe</h2>
+                    <div class="card__body">
+                        <!-- NỘI DUNG CHÍNH CỦA FORM -->
+                        <!-- Phần này sẽ được JS render nội dung động, bao gồm form nhập liệu hoặc bảng thông tin xe -->
+                        <div id="vehicle-form-content">
+                            <!-- Template cho form nhập liệu xe mới -->
+                            <div id="form-new-vehicle" class="form-section">
+                                <!-- KHU VỰC NHẬP LIỆU ĐƯỢC THIẾT KẾ LẠI -->
+                                <div class="main-input-group">
+                                    <div class="input-wrapper">
+                                        <input type="text" id="search-term" placeholder="Nhập Biển số xe..." autocomplete="off">
+                                        <button type="button" id="mic-btn" class="input-icon-btn" title="Nhập bằng giọng nói"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></button>
+                                    </div>
+                                    <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để lấy xe"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></button>
+                                </div>
+                                <div id="plate-suggestions" class="plate-suggestions"></div>
+                                <div class="input-wrapper" style="margin-top: 1rem;">
+                                    <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu có)..." inputmode="numeric">
+                                </div>
+    
+                                <!-- Thông tin bổ sung (ẩn/hiện) -->
+                                <details class="additional-info-group">
+                                    <summary>Thêm thông tin (tùy chọn)</summary>
+                                    <div class="additional-info-content">
+                                        <div>
+                                            <div class="input-wrapper">
+                                                <textarea id="vehicle-notes" placeholder="Thêm ghi chú (vd: xe không yếm)..." rows="2"></textarea>
+                                            </div>
+                                            <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
+                                                <input type="checkbox" id="is-vip-checkbox">
+                                                <label for="is-vip-checkbox">⭐ Đánh dấu là Khách VIP (Miễn phí)</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+    
+                            <!-- Template cho vùng hiển thị thông tin xe đã gửi -->
+                            <div id="info-display-section" class="form-section" hidden></div>
+
+                            <!-- KHÔI PHỤC: Vùng hiển thị thông tin bổ sung và lịch sử -->
+                            <div id="additional-details-section" class="additional-details-section" hidden>
+                                <ul id="info-history-list" class="history-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Nút hành động được đưa ra ngoài và cố định ở dưới -->
+                    <div id="action-buttons-container" class="card__footer">
+                        <!-- Nút bấm và cảnh báo sẽ được JS render vào đây -->
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- Cột phải: Dashboard & Danh sách -->
+            <section class="dashboard-column" id="dashboard-column">
+                <!-- Card: Bảng tin nhanh -->
+                <article class="card">
+                    <h2 class="card__header">Bảng tin nhanh</h2>
+                    <div class="card__body">
+                        <div id="dashboard-grid" class="dashboard-grid gemini-dashboard">
+                            <!-- Các thẻ thống kê và biểu đồ sẽ được render vào đây bằng JavaScript -->
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Card: Danh sách xe -->
+                <article class="card">
+                    <div class="card__header">
+                        <h2 id="list-title">Danh sách xe</h2>
+                        <div class="input-wrapper list-filter">
+                            <input type="text" id="filter-input" placeholder="Lọc danh sách...">
+                        </div>
+                    </div>
+                    <div class="card__body">
+                        <div id="vehicle-list-container" class="vehicle-list-container"></div>
+                        <!-- Vùng chứa các nút phân trang -->
+                        <div id="pagination-controls" class="pagination-controls"></div>
+                    </div>
+                </article>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="container">
+                <div id="footer-info-grid" class="footer-grid"></div>
+                <p class="copyright">Bản quyền © 2025 thuộc về Đoàn Thanh niên Phường Ba Đình.</p>
+            </div>
+        </footer>
+
+        <!-- Các Modal của hệ thống -->
+        <div id="modal-container">
+            <!-- Các modal sẽ được render vào đây bằng JavaScript -->
         </div>
-    </footer>
 
-    <!-- Các Modal của hệ thống -->
-    <div id="modal-container">
-        <!-- Các modal sẽ được render vào đây bằng JavaScript -->
+        <!-- Màn hình chờ/Quảng cáo -->
+        <div id="idle-screen" class="idle-screen">
+            <video id="ad-video-player" class="ad-video-player" autoplay muted loop playsinline></video>
+            <div class="idle-overlay-content">
+                <div class="idle-message">Hệ thống sẵn sàng phục vụ</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Màn hình chờ/Quảng cáo -->
-    <div id="idle-screen" class="idle-screen">
-        <video id="ad-video-player" class="ad-video-player" autoplay muted loop playsinline></video>
-        <div class="idle-overlay-content">
-            <div class="idle-message">Hệ thống sẵn sàng phục vụ</div>
-        </div>
-    </div>
-
-    <!-- Tệp JavaScript logic chính -->
-    <script src="main.js"></script>
 </body>
 </html>

@@ -59,6 +59,7 @@
                     <li><a href="#" class="nav-link" data-target="page-locations"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Quản lý Vị trí</span></a></li>
                     <li><a href="#" class="nav-link" data-target="page-security"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>An ninh</span></a></li>
                     <li><a href="#" class="nav-link" data-target="page-staff"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Nhân sự</span></a></li>
+                    <li><a href="#" class="nav-link" data-target="page-analytics"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Phân tích</span></a></li>
                 </ul>
             </nav>
         </div>
@@ -241,6 +242,31 @@
                                 </thead>
                                 <tbody id="staff-table-body"></tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: PHÂN TÍCH (MỚI) -->
+            <div id="page-analytics" class="page-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Phân tích Hoạt động Nhân viên (7 ngày gần nhất)</h3>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <select id="analytics-metric-select" style="padding: 8px 12px;">
+                                <option value="free_ratio">Tỷ lệ Giao dịch Miễn phí/VIP</option>
+                                <option value="short_duration">Giao dịch có thời gian gửi xe ngắn (&lt; 5 phút)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="page-description" style="margin-bottom: 1.5rem;">Hệ thống tự động phân tích và chỉ ra các hoạt động có dấu hiệu bất thường so với mức trung bình của toàn hệ thống.</p>
+                        <!-- NÂNG CẤP: Bố cục lưới cho biểu đồ và kết quả -->
+                        <div class="analytics-layout-grid">
+                            <div class="chart-wrapper" style="position: relative; height: 400px;">
+                                <canvas id="analytics-chart-canvas"></canvas>
+                            </div>
+                            <div id="analytics-results-container" class="analytics-grid"></div>
                         </div>
                     </div>
                 </div>

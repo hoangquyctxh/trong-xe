@@ -671,11 +671,23 @@
                             handleInvalidCode('Không thể phân tích dữ liệu CCCD.');
                         }
                         setTimeout(() => {
-                            elements.scannerFrame.classList.remove('scanned');
-                            elements.scannerLine.classList.remove('scanned');
+                            elements.scannerFrame.classList.remove('scanned'); 
+                            elements.scannerLine.classList.remove('scanned'); 
                         }, 500);
-                    } else if (code.data.startsWith('_')) {
-                        const uniqueId = code.data.substring(code.data.indexOf('_'));
+                    } else if (code.data.includes('ticketId=')) { // NÂNG CẤP: Xử lý mã QR dạng URL
+                        try {
+                            const url = new URL(code.data);
+                            const uniqueId = url.searchParams.get('ticketId');
+                            if (uniqueId) {
+                                verifyTransaction(uniqueId);
+                            } else {
+                                handleInvalidCode('Mã QR không hợp lệ (URL thiếu ticketId).');
+                            }
+                        } catch (e) {
+                            handleInvalidCode('Mã QR không phải là URL hợp lệ.');
+                        }
+                    } else if (code.data.startsWith('_')) { // Giữ lại để tương thích ngược
+                        const uniqueId = code.data;
                         verifyTransaction(uniqueId);
                     } else if (code.data.length > 500) {
                         handleInvalidCode('Mã QR chứa dữ liệu không hợp lệ.');
