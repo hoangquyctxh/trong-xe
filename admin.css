@@ -55,6 +55,13 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+.main-admin-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}
+
 /* ==========================================================================
    2. Bố cục chính (Layout)
    ========================================================================== */
@@ -156,6 +163,11 @@ body {
     overflow: hidden; /* Giúp bo góc cho table bên trong */
 }
 .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.card-full-height { height: calc(100vh - 12rem); }
+.card-flex-column {
+    display: flex;
+    flex-direction: column;
+}
 .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
 .card-header h3 { font-size: 1.1rem; font-weight: 600; margin: 0; }
 .card-body { padding: 1.5rem; }
@@ -187,6 +199,12 @@ body {
 .btn-secondary:hover:not(:disabled) { background-color: var(--bg-hover); }
 .btn-danger { background-color: var(--danger-color); color: white; }
 .btn-danger:hover:not(:disabled) { background-color: #b91c1c; }
+.btn-small {
+    width: auto;
+    padding: 5px 12px;
+    font-size: 0.9rem;
+}
+
 
 /* --- Form --- */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
@@ -215,6 +233,11 @@ body {
     min-height: 1.2em; /* Giữ khoảng trống để giao diện không bị giật */
 }
 .form-group textarea { resize: vertical; }
+.form-group.no-margin { margin-bottom: 0; }
+.page-description.with-margin-bottom {
+    margin-bottom: 1.5rem;
+}
+
 
 /* --- Thanh tìm kiếm --- */
 #transaction-search-wrapper {
@@ -381,7 +404,11 @@ td.fee { font-weight: 600; color: var(--danger-color); }
 .locations-grid-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
 
 /* --- Trang An ninh --- */
-.security-layout-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 2rem; align-items: start; } /* Tăng khoảng cách */
+.security-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 2rem;
+}
 .alert-item { 
     display: flex; 
     justify-content: space-between; 
@@ -405,7 +432,11 @@ td.fee { font-weight: 600; color: var(--danger-color); }
     font-size: 0.9rem; color: var(--success-color); font-style: italic;
 }
 .alert-feedback strong { color: var(--text-primary); }
-.default-reasons-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+.default-reasons-container {
+    display: flex; flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+}
 .default-reason-btn {
     background: var(--bg-body);
     border: 1px solid var(--border-color);
@@ -417,16 +448,27 @@ td.fee { font-weight: 600; color: var(--danger-color); }
     font-weight: 500;
 }
 .default-reason-btn:hover { background-color: var(--bg-hover); border-color: var(--text-secondary); }
-#alert-level-container label {
-    cursor: pointer;
+#alert-level-container {
+    display: flex; flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+#alert-level-container label { cursor: pointer; display: flex; align-items: center; gap: 8px; }
+#alert-level-container label.danger-label { color: var(--danger-color); }
+
+.button-group-stretched {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    gap: 1rem;
+}
+.button-group-stretched .action-button {
+    flex-grow: 1;
+}
+/*#alert-level-container label {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     transition: var(--transition);
-}
+}*/
 #alert-level-container label:hover { background-color: var(--bg-body); }
 #alert-level-container input[type="radio"]:checked + strong { color: var(--primary-accent); }
 
@@ -527,6 +569,43 @@ td.fee { font-weight: 600; color: var(--danger-color); }
 .toast.info { background-image: linear-gradient(to right, #2563eb, #3b82f6); }
 @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; } }
+
+/* ==========================================================================
+   NÂNG CẤP: Hiệu ứng Pháo hoa
+   ========================================================================== */
+.fireworks-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Cho phép click xuyên qua */
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 1s ease-out 1s; /* Mờ dần sau khi bắn xong */
+}
+.fireworks-container.active {
+    opacity: 1;
+}
+.firework {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: #fff;
+    border-radius: 50%;
+    opacity: 0;
+}
+.fireworks-container.active .firework {
+    animation: firework-explode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+.firework:nth-child(1) { top: 50%; left: 50%; animation-delay: 0s; }
+.firework:nth-child(2) { top: 40%; left: 30%; animation-delay: 0.3s; }
+.firework:nth-child(3) { top: 60%; left: 70%; animation-delay: 0.6s; }
+
+@keyframes firework-explode {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: scale(30); opacity: 0; }
+}
 
 /* ==========================================================================
    6. Responsive

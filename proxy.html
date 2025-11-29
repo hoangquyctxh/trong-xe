@@ -6,36 +6,31 @@
 <body>
     <script>
         // File này hoạt động như một cầu nối để vượt qua lỗi CORS khi chạy file HTML trực tiếp.
-        // Nó nhận yêu cầu từ các trang khác, gọi đến Google Script và gửi kết quả trở lại.
+        // Nó nhận yêu cầu từ trang chính, gọi đến API bên ngoài và gửi kết quả trở lại.
         window.addEventListener('message', async (event) => { 
             const { requestId, action, payload } = event.data;
             if (!requestId || !action) return;
 
             if (action === 'callApi') {
                 try {
-                    const { url, apiKey, address } = payload;
-                    const response = await fetch(url, {
+                    const response = await fetch(payload.url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'hvn-api-key': apiKey
+                            'Authorization': `Bearer ${payload.apiKey}` // SỬA LỖI: API yêu cầu xác thực bằng Bearer Token
                         },
-                        body: JSON.stringify({ address })
+                        body: JSON.stringify({ 'raw-address': payload.address })
                     });
 
                     if (!response.ok) {
                         const errorText = await response.text();
-                        throw new Error(`Lỗi API: ${response.status} - ${errorText}`);
+                        throw new Error(`API Error ${response.status}: ${errorText}`);
                     }
 
                     const data = await response.json();
-                    // NÂNG CẤP: Kiểm tra xem API có trả về success: true không
-                    if (data.success) {
-                        event.source.postMessage({ requestId, status: 'success', data }, event.origin);
-                    } else {
-                        // Nếu API trả về lỗi, gửi lỗi đó về cho trang chính
-                        throw new Error(data.message || 'API không trả về dữ liệu hợp lệ.');
-                    }
+                    // SỬA LỖI: Luôn gửi lại kết quả từ API, bất kể success là true hay false.
+                    // Trang security.html sẽ tự quyết định cách hiển thị dựa trên kết quả này.
+                    event.source.postMessage({ requestId, status: 'success', data }, event.origin);
                 } catch (error) {
                     event.source.postMessage({ requestId, status: 'error', error: error.message }, event.origin);
                 }

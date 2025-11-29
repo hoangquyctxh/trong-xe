@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- KHU VỰC 0: KHAI BÁO BIẾN ---
-    let db;
+    // SỬA LỖI: Đã xóa dòng `let db;` không cần thiết.
+    // Giờ đây, tệp này sẽ sử dụng biến `db` toàn cục được cung cấp bởi `config.js`.
 
     // =================================================================
     // KHU VỰC 1: THAM CHIẾU DOM
@@ -265,16 +265,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialization ---
     const init = async () => {
-        // SỬA LỖI: Chờ cho configPromise từ config.js hoàn tất
-        // Điều này đảm bảo APP_CONFIG đã sẵn sàng để sử dụng.
+        // SỬA LỖI: Không cần khởi tạo lại 'db'.
+        // Tệp config.js đã khởi tạo và cung cấp sẵn đối tượng 'db' toàn cục.
+        // Chỉ cần chờ configPromise để đảm bảo cấu hình động đã được tải (nếu cần).
         try {
             await configPromise;
-            // Bước 1: Khởi tạo kết nối Supabase với cấu hình đã được tải.
-            db = supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseKey);
         } catch (error) {
-            showMessage(`Lỗi nghiêm trọng: Không thể tải cấu hình ứng dụng. ${error.message}`, true);
-            console.error("Lỗi chờ configPromise hoặc khởi tạo Supabase:", error);
-            return; // Dừng thực thi nếu không kết nối được DB
+            console.warn("Lỗi khi tải cấu hình động, nhưng vẫn tiếp tục với cấu hình tĩnh.", error);
         }
 
         // Bước 2: Tải danh sách bãi đỗ

@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginPasswordInput: document.getElementById('login-password'),
         loginErrorMessage: document.getElementById('login-error-message'),
         mainAdminContent: document.getElementById('main-admin-content'),
+        loadingOverlay: document.getElementById('loading-overlay'), // THÊM MỚI
         logoutBtn: document.getElementById('logout-btn'),
 
         pageTitle: document.getElementById('page-title'),
@@ -93,20 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettingsBtn: document.getElementById('save-settings-btn'),
 
         // SỬA LỖI: Khai báo chính xác các phần tử cho menu di động
-        menuToggleBtn: document.getElementById('menu-toggle-btn'),
-        sidebarOverlay: document.querySelector('.sidebar-overlay'),
+        menuToggleBtn: document.getElementById('menu-toggle-btn'), // Đã có
+        sidebarOverlay: document.querySelector('.sidebar-overlay'), // Đã có
+        navLinks: document.querySelectorAll('.nav-link'), // Thêm để đóng menu
 
-        // NÂNG CẤP: Các phần tử quản lý nhân sự
-        addStaffBtn: document.getElementById('add-staff-btn'),
-        staffTableBody: document.getElementById('staff-table-body'),
-        staffModal: document.getElementById('staff-modal'),
-        staffModalTitle: document.getElementById('staff-modal-title'),
-        closeStaffModalBtn: document.getElementById('close-staff-modal-btn'),
-        cancelStaffBtn: document.getElementById('cancel-staff-btn'),
-        saveStaffBtn: document.getElementById('save-staff-btn'),
-        deleteStaffBtn: document.getElementById('delete-staff-btn'),
-        staffForm: document.getElementById('staff-form'),
-        staffLocationAssignmentSelect: document.getElementById('staff-location-assignment'),
     };
     // NÂNG CẤP: Các phần tử trang Phân tích
     elements.analyticsResultsContainer = document.getElementById('analytics-results-container');
@@ -120,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let trafficChart, revenueChart, vehiclesChart, analyticsChart, map, fullAdminData;
     let LOCATIONS_DATA = [];
     let transactionCurrentPage = 1;
-    let STAFF_DATA = []; // NÂNG CẤP: Lưu trữ dữ liệu nhân viên
     let transactionSearchTerm = ''; // SỬA LỖI: Khai báo biến tìm kiếm ở phạm vi toàn cục
     const transactionRowsPerPage = 10;
     let currentEditingRow = null; // NÂNG CẤP: Theo dõi dòng đang được sửa
@@ -144,10 +134,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!elements.toastContainer) return;
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-
-        // SỬA LỖI TRIỆT ĐỂ: Đảm bảo `message` luôn là một chuỗi.
-        // Lỗi "e.replace is not a function" xảy ra ở đây khi `message` là một object.
-        const messageText = (typeof message === 'object' && message !== null) ? (message.message || JSON.stringify(message)) : String(message);
+        
+        // SỬA LỖI: Đảm bảo `message` luôn là một chuỗi trước khi hiển thị.
+        const messageText = (typeof message === 'object' && message !== null) 
+            ? (message.message || JSON.stringify(message)) 
+            : String(message);
 
         const titles = { success: 'Thành công!', error: 'Lỗi!', info: 'Thông báo' };
         const icons = { success: '✅', error: '❌', info: 'ℹ️' };
@@ -323,29 +314,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setupTransactionPagination(totalCount, transactionCurrentPage);
     };
 
-    // NÂNG CẤP: Render bảng nhân viên
-    const renderStaffTable = () => {
-        if (!elements.staffTableBody) return;
-        elements.staffTableBody.innerHTML = '';
-        if (STAFF_DATA.length === 0) {
-            elements.staffTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">Chưa có nhân viên nào.</td></tr>`;
-            return;
-        }
-        STAFF_DATA.forEach(staff => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><strong>${staff.username}</strong></td>
-                <td>${staff.full_name}</td>
-                <td>${getLocationName(staff.location_id)}</td>
-                <td>
-                    <button class="edit-btn edit-staff-btn" data-id="${staff.id}">Sửa</button>
-                    <button class="edit-btn delete-staff-btn" data-id="${staff.id}" style="color: var(--danger-color); margin-left: 5px;">Xóa</button>
-                </td>
-            `;
-            elements.staffTableBody.appendChild(row);
-        });
-    };
-
     const renderLocationsTable = () => {
         if (!elements.locationsTableBody) return;
         elements.locationsTableBody.innerHTML = '';
@@ -373,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (locationData) {
             elements.locationModalTitle.textContent = 'Chỉnh sửa Bãi đỗ xe';
             elements.locationIdInput.value = locationData.id;
-            elements.locationIdInput.disabled = true;
+            // elements.locationIdInput.disabled = true; // Không cần thiết nữa vì trường đã bị ẩn
             elements.locationNameInput.value = locationData.name;
             elements.locationLatInput.value = locationData.lat;
             elements.locationLngInput.value = locationData.lng;
@@ -394,16 +362,14 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.deleteLocationBtn.dataset.id = locationData.id;
         } else {
             elements.locationModalTitle.textContent = 'Thêm Bãi đỗ xe mới';
-            elements.locationIdInput.disabled = false;
+            // elements.locationIdInput.disabled = false; // Không cần thiết nữa
             elements.deleteLocationBtn.style.display = 'none';
         }
         toggleCustomFeeInputs();
-        // SỬA LỖI: Sử dụng class 'active' để hiển thị modal đúng cách
         elements.locationModal.classList.add('active');
     };
 
     const closeLocationModal = () => {
-        // SỬA LỖI: Sử dụng class 'active' để ẩn modal
         elements.locationModal.classList.remove('active');
     };
 
@@ -468,43 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-
-
-
-
-
-    // NÂNG CẤP: Mở/Đóng modal nhân viên
-    const openStaffModal = (staffData = null) => {
-        elements.staffForm.reset();
-        // Điền danh sách bãi đỗ vào dropdown
-        elements.staffLocationAssignmentSelect.innerHTML = LOCATIONS_DATA.map(loc => `<option value="${loc.id}">${loc.name}</option>`).join('');
-
-        if (staffData) {
-            elements.staffModalTitle.textContent = 'Chỉnh sửa Nhân viên';
-            document.getElementById('staff-id').value = staffData.id;
-            document.getElementById('staff-username').value = staffData.username;
-            document.getElementById('staff-username').disabled = true; // Không cho sửa username
-            document.getElementById('staff-pin').placeholder = "Để trống nếu không muốn đổi";
-            document.getElementById('staff-pin').required = false;
-            document.getElementById('staff-fullname').value = staffData.full_name;
-            elements.staffLocationAssignmentSelect.value = staffData.location_id;
-            elements.deleteStaffBtn.style.display = 'block';
-            elements.deleteStaffBtn.dataset.id = staffData.id;
-        } else {
-            elements.staffModalTitle.textContent = 'Thêm Nhân viên mới';
-            document.getElementById('staff-id').value = '';
-            document.getElementById('staff-username').disabled = false;
-            document.getElementById('staff-pin').placeholder = "4-6 chữ số";
-            document.getElementById('staff-pin').required = true;
-            elements.deleteStaffBtn.style.display = 'none';
-        }
-        elements.staffModal.classList.add('active');
-    };
-
-    const closeStaffModal = () => {
-        elements.staffModal.classList.remove('active');
-    };
-
 
     let adminCameraStream = null;
     let adminScanAnimation = null;
@@ -600,8 +529,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateDashboardUI = (data) => {
-        if (!data) return;
-        fullAdminData = { ...fullAdminData, ...data };
+        // SỬA LỖI: Chỉ cập nhật LOCATIONS_DATA nếu dữ liệu mới có thông tin locations.
+        // Điều này ngăn việc ghi đè LOCATIONS_DATA bằng một mảng rỗng.
+        if (data && data.locations && data.locations.length > 0) {
+            LOCATIONS_DATA = [...data.locations];
+        }
+        fullAdminData = { ...fullAdminData, ...data, locations: LOCATIONS_DATA }; // Đảm bảo fullAdminData luôn có locations
 
         if (elements.totalRevenue) elements.totalRevenue.innerHTML = `${formatCurrency(fullAdminData.totalRevenueForDate ?? 0)} <sup>đ</sup>`;
         if (elements.totalVehicles) elements.totalVehicles.textContent = fullAdminData.totalVehiclesForDate ?? 0;
@@ -707,21 +640,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const { data, error } = await db.from('locations').select('*').order('created_at');
             if (error) throw error;
             LOCATIONS_DATA = data || [];
-            renderLocationsTable();
         } catch (error) {
             showToast(`Lỗi tải danh sách bãi đỗ: ${error.message}`, 'error');
-        }
-    };
-
-    // NÂNG CẤP: Hàm tải danh sách nhân viên
-    const fetchStaff = async () => {
-        try {
-            const { data, error } = await db.from('staff_accounts').select('*').order('created_at');
-            if (error) throw error;
-            STAFF_DATA = data || [];
-            renderStaffTable();
-        } catch (error) {
-            showToast(`Lỗi tải danh sách nhân viên: ${error.message}`, 'error');
         }
     };
 
@@ -1154,9 +1074,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const saveLocation = async () => {
-        const id = elements.locationIdInput.value.trim().toUpperCase();
+        const id = elements.locationIdInput.value; // Đây sẽ là UUID khi chỉnh sửa, hoặc rỗng khi tạo mới
+        const isEditing = !!id;
+
         const locationData = {
-            id: id,
             name: elements.locationNameInput.value.trim(),
             lat: parseFloat(elements.locationLatInput.value),
             lng: parseFloat(elements.locationLngInput.value),
@@ -1174,65 +1095,36 @@ document.addEventListener('DOMContentLoaded', () => {
             fee_daily: parseInt(elements.feeDailyInput.value) || null,
         };
 
-        if (!locationData.id || !locationData.name || isNaN(locationData.lat) || isNaN(locationData.lng)) {
-            showToast('Mã, Tên, Vĩ độ và Kinh độ là bắt buộc.', 'error');
+        if (!locationData.name || isNaN(locationData.lat) || isNaN(locationData.lng)) {
+            showToast('Tên, Vĩ độ và Kinh độ là bắt buộc.', 'error');
             return;
         }
 
-        const { error } = await db.from('locations').upsert(locationData);
+        let error;
+        if (isEditing) {
+            // Khi sửa, dùng `update` với `eq` để chỉ định đúng hàng cần sửa bằng UUID
+            ({ error } = await db.from('locations').update(locationData).eq('id', id));
+        } else {
+            // Khi tạo mới, dùng `insert`. Supabase sẽ tự tạo UUID.
+            ({ error } = await db.from('locations').insert(locationData));
+        }
 
         if (error) showToast(`Lỗi lưu bãi đỗ: ${error.message}`, 'error');
         else {
-            showToast('Lưu thông tin bãi đỗ thành công!', 'success');
             closeLocationModal();
+            showToast('Lưu thông tin bãi đỗ thành công!', 'success');
         }
     };
 
     const deleteLocation = async (id) => {
         if (!confirm(`Bạn có chắc chắn muốn xóa bãi đỗ "${id}"? Hành động này không thể hoàn tác.`)) return;
         const { error } = await db.from('locations').delete().eq('id', id);
-        if (error) showToast(`Lỗi xóa bãi đỗ: ${error.message}`, 'error');
-        else {
+        if (error) {
+            showToast(`Lỗi xóa bãi đỗ: ${error.message}`, 'error');
+        } else {
             showToast('Đã xóa bãi đỗ thành công.', 'success');
             closeLocationModal(); // Đóng modal sau khi xóa
         }
-    };
-
-    // NÂNG CẤP: Hàm lưu thông tin nhân viên
-    const saveStaff = async () => {
-        const id = document.getElementById('staff-id').value;
-        const username = document.getElementById('staff-username').value.trim();
-        const pin = document.getElementById('staff-pin').value.trim();
-        const fullName = document.getElementById('staff-fullname').value.trim();
-        const locationId = elements.staffLocationAssignmentSelect.value;
-
-        if (!username || !fullName || !locationId) {
-            return showToast('Tên đăng nhập, Họ tên và Bãi đỗ là bắt buộc.', 'error');
-        }
-        if (!id && !pin) { // Bắt buộc nhập PIN khi tạo mới
-            return showToast('Mã PIN là bắt buộc khi tạo nhân viên mới.', 'error');
-        }
-        if (pin && !/^\d{4,6}$/.test(pin)) {
-            return showToast('Mã PIN phải là 4 đến 6 chữ số.', 'error');
-        }
-
-        const staffData = { username, full_name: fullName, location_id: locationId };
-        if (pin) staffData.pin = pin; // Chỉ cập nhật PIN nếu được nhập
-        if (id) staffData.id = id;
-
-        const { error } = await db.from('staff_accounts').upsert(staffData);
-        if (error) showToast(`Lỗi lưu nhân viên: ${error.message}`, 'error');
-        else {
-            showToast('Lưu thông tin nhân viên thành công!', 'success');
-            closeStaffModal();
-        }
-    };
-
-    const deleteStaff = async (id) => {
-        if (!confirm(`Bạn có chắc chắn muốn xóa nhân viên này?`)) return;
-        const { error } = await db.from('staff_accounts').delete().eq('id', id);
-        if (error) showToast(`Lỗi xóa nhân viên: ${error.message}`, 'error');
-        else showToast('Đã xóa nhân viên thành công.', 'success');
     };
 
     // =================================================================
@@ -1267,17 +1159,35 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const startAdminSession = async () => {
-        showToast('Đăng nhập thành công! Đang tải dữ liệu...', 'success');
+        try {
+            showToast('Đăng nhập thành công! Đang tải dữ liệu...', 'success');
+            fullAdminData = {}; // KHỞI TẠO: Đảm bảo fullAdminData là một đối tượng rỗng
+            
+            // SỬA LỖI TRIỆT ĐỂ: Tải đồng thời các dữ liệu nền không phụ thuộc nhau.
+            await Promise.all([
+                fetchLocations(),
+                fetchActiveAlerts(true) // Tải trong im lặng
+            ]);
 
-        await fetchLocations();
-        const dateToFetch = elements.adminDatePicker.value;
-        await fetchAllAdminData(dateToFetch);
-        await fetchTransactions(1, '');
-        await fetchActiveAlerts(false);
-        await fetchStaff(); // NÂNG CẤP: Tải danh sách nhân viên
+            // SAU KHI có LOCATIONS_DATA và STAFF_DATA, mới render các bảng phụ thuộc.
+            renderLocationsTable();
+
+            // Tải dữ liệu chính cho dashboard và bảng giao dịch.
+            const dateToFetch = elements.adminDatePicker.value;
+            await fetchAllAdminData(dateToFetch);
+            await fetchTransactions(1, '');
+
+        } catch (error) {
+            // Nếu có bất kỳ lỗi nào trong quá trình tải, báo cho người dùng.
+            showToast(`Lỗi nghiêm trọng khi tải dữ liệu: ${error.message}`, 'error');
+            elements.loadingOverlay.style.display = 'none'; // Gỡ lớp phủ để người dùng có thể thử lại
+            throw error; // Ném lỗi để ngăn các bước tiếp theo
+        }
 
         console.log("Thiết lập lắng nghe Realtime cho trang Admin...");
-        const adminChannel = db.channel('app-db-changes');
+        // SỬA LỖI: Thống nhất tên kênh và BẬT BROADCAST để đồng bộ 2 chiều
+        const channelConfig = { config: { broadcast: { self: true } } };
+        const adminChannel = db.channel('he-thong-trong-xe-channel', channelConfig);
         adminChannel
             .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' },
                 (payload) => {
@@ -1297,12 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchLocations();
                 }
             )
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_accounts' },
-                (payload) => {
-                    console.log('Admin Realtime event on "staff_accounts":', payload);
-                    fetchStaff();
-                }
-            ).subscribe((status) => {
+            .subscribe((status) => {
                 if (status === 'SUBSCRIBED') console.log('✅ Admin đã kết nối Realtime thành công!');
             });
     };
@@ -1375,17 +1280,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const init = () => {
         try {
             setTodayDate();
-            setupNavigation();
 
-            // SỬA LỖI: Chờ configPromise hoàn tất trước khi kiểm tra session
-            configPromise.then(() => { 
-                db.auth.getSession().then(({ data: { session } }) => { // Sau đó mới kiểm tra session
+            // SỬA LỖI TRIỆT ĐỂ: Logic khởi tạo tuần tự, chống race condition
+            db.auth.getSession().then(({ data: { session } }) => {
                 if (session) {
+                    // 1. Hiển thị giao diện chính nhưng vẫn bị che bởi lớp phủ
                     elements.loginScreen.style.display = 'none';
                     elements.mainAdminContent.style.display = 'flex';
-                    startAdminSession();
-                } // Nếu không có session, màn hình đăng nhập sẽ tự hiển thị, không cần làm gì thêm.
-            });});
+                    // 2. Bắt đầu tải tất cả dữ liệu
+                    startAdminSession().then(() => {
+                        // 3. CHỈ KHI MỌI THỨ SẴN SÀNG, mới gỡ lớp phủ và gắn sự kiện điều hướng
+                        elements.loadingOverlay.style.display = 'none';
+                        setupNavigation(); // Gắn sự kiện cho menu
+                    }).catch(() => {}); // Bắt lỗi để không bị unhandled promise rejection
+                } else {
+                    // Nếu không có session, ẩn lớp phủ và hiển thị màn hình đăng nhập
+                    elements.loadingOverlay.style.display = 'none';
+                }
+            });
             if (elements.resetFilterBtn) elements.resetFilterBtn.addEventListener('click', resetFilter);
             if (elements.adminDatePicker) elements.adminDatePicker.addEventListener('change', () => {
                 fetchAllAdminData(elements.adminDatePicker.value);
@@ -1460,25 +1372,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.menuToggleBtn) elements.menuToggleBtn.addEventListener('click', toggleMobileMenu);
             if (elements.sidebarOverlay) elements.sidebarOverlay.addEventListener('click', closeMobileMenu);
 
-
-            if (elements.addStaffBtn) elements.addStaffBtn.addEventListener('click', () => openStaffModal());
-            if (elements.closeStaffModalBtn) elements.closeStaffModalBtn.addEventListener('click', closeStaffModal);
-            if (elements.cancelStaffBtn) elements.cancelStaffBtn.addEventListener('click', closeStaffModal);
-            if (elements.saveStaffBtn) elements.saveStaffBtn.addEventListener('click', saveStaff);
-            if (elements.deleteStaffBtn) elements.deleteStaffBtn.addEventListener('click', (e) => deleteStaff(e.target.dataset.id));
-            if (elements.staffTableBody) {
-                elements.staffTableBody.addEventListener('click', (e) => {
-                    const target = e.target;
-                    const staffId = target.dataset.id;
-                    if (target.classList.contains('edit-staff-btn')) {
-                        const staff = STAFF_DATA.find(s => s.id.toString() === staffId);
-                        if (staff) openStaffModal(staff);
-                    } else if (target.classList.contains('delete-staff-btn')) {
-                        deleteStaff(staffId);
-                    }
-                });
-            }
-
             // NÂNG CẤP: Gắn sự kiện cho dropdown phân tích
             if (elements.analyticsMetricSelect) {
                 elements.analyticsMetricSelect.addEventListener('change', runAnalytics);
@@ -1499,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.loginForm) elements.loginForm.addEventListener('submit', handleLogin);
             if (elements.logoutBtn) elements.logoutBtn.addEventListener('click', handleLogout);
         } catch (error) {
-            console.error("Lỗi nghiêm trọng khi khởi tạo:", error);
+            console.error("Lỗi nghiêm trọng khi khởi tạo trang admin:", error);
             document.body.innerHTML = `<h1 style="text-align: center; margin-top: 50px;">LỖI KHỞI TẠO TRANG. VUI LÒNG TẢI LẠI.</h1><p style="text-align: center;">Chi tiết: ${error.message}</p>`;
         }
     };

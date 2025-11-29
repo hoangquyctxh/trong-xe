@@ -1,89 +1,82 @@
-/**
- * qr-worker.js
- * Web Worker chuyên dụng để xử lý và giải mã mã QR trên một luồng riêng biệt.
- * Tích hợp các thuật toán xử lý ảnh nâng cao để cải thiện độ chính xác trong điều kiện khó.
- * Tác giả: Gemini Code Assist
- */
-
-// Import thư viện jsQR vào trong worker
 self.importScripts('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js');
 
 /**
- * Tạo biểu đồ độ sáng (histogram) cho ảnh xám.
- * @param {Uint8ClampedArray} grayscaleData - Dữ liệu pixel của ảnh xám.
- * @returns {Int32Array} Mảng 256 phần tử chứa tần suất của mỗi mức độ xám.
+ * qr-worker.js - PHIÊN BẢN 3.0 (ADAPTIVE THRESHOLDING)
+ * Web Worker chuyên dụng để xử lý và giải mã mã QR trên một luồng riêng biệt.
+ * Tích hợp thuật toán Ngưỡng Thích ứng (Adaptive Thresholding) sử dụng Ảnh Tích phân
+ * để đạt hiệu năng cao và độ chính xác vượt trội trong mọi điều kiện ánh sáng.
+ * Tác giả: Gemini Code Assist
  */
-function createGrayscaleHistogram(grayscaleData) {
-    const histogram = new Int32Array(256).fill(0);
-    for (let i = 0; i < grayscaleData.length; i++) {
-        histogram[grayscaleData[i]]++;
-    }
-    return histogram;
-}
 
 /**
- * Tìm ngưỡng nhị phân hóa tối ưu bằng thuật toán Otsu.
- * Đây là chìa khóa để xử lý ảnh có ánh sáng không đồng đều hoặc bị lóa.
- * @param {Int32Array} histogram - Biểu đồ độ sáng của ảnh.
- * @param {number} totalPixels - Tổng số pixel trong ảnh.
- * @returns {number} Ngưỡng tối ưu (0-255).
- */
-function getOtsuThreshold(histogram, totalPixels) {
-    let sum = 0;
-    for (let i = 0; i < 256; i++) sum += i * histogram[i];
-
-    let sumB = 0, wB = 0, wF = 0, maxVariance = 0, threshold = 0;
-
-    for (let i = 0; i < 256; i++) {
-        wB += histogram[i];
-        if (wB === 0) continue;
-        wF = totalPixels - wB;
-        if (wF === 0) break;
-        sumB += i * histogram[i];
-        const meanB = sumB / wB;
-        const meanF = (sum - sumB) / wF;
-        const varianceBetween = wB * wF * (meanB - meanF) ** 2;
-        if (varianceBetween > maxVariance) {
-            maxVariance = varianceBetween;
-            threshold = i;
-        }
-    }
-    return threshold;
-}
-
-/**
- * Pipeline xử lý một ImageData: chuyển sang ảnh xám, áp dụng thuật toán Otsu và nhị phân hóa.
+ * Pipeline xử lý ảnh: Chuyển sang ảnh xám, tạo ảnh tích phân và áp dụng ngưỡng thích ứng.
  * @param {ImageData} imageData - Dữ liệu ảnh từ canvas.
  * @returns {ImageData} Dữ liệu ảnh đã được nhị phân hóa, sẵn sàng cho jsQR.
  */
-function preprocessImage(imageData) {
+function preprocessImageAdaptive(imageData) {
     const { width, height, data } = imageData;
-    const grayscale = new Uint8ClampedArray(width * height);
-    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
-        // Chuyển sang ảnh xám theo công thức độ sáng (luminance)
-        grayscale[j] = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    const integralImage = new Uint32Array(width * height);
+    const grayscaleData = new Uint8ClampedArray(width * height);
+
+    // 1. Chuyển sang ảnh xám và tạo Ảnh Tích phân (Integral Image)
+    for (let y = 0; y < height; y++) {
+        let rowSum = 0;
+        for (let x = 0; x < width; x++) {
+            const i = y * width + x;
+            const i4 = i * 4;
+            const gray = data[i4] * 0.299 + data[i4 + 1] * 0.587 + data[i4 + 2] * 0.114;
+            grayscaleData[i] = gray;
+
+            rowSum += gray;
+            integralImage[i] = (y > 0 ? integralImage[i - width] : 0) + rowSum;
+        }
     }
-    const histogram = createGrayscaleHistogram(grayscale);
-    const threshold = getOtsuThreshold(histogram, width * height);
-    
-    // Áp dụng ngưỡng để tạo ảnh đen trắng (nhị phân hóa)
-    for (let i = 0; i < grayscale.length; i++) {
-        const value = grayscale[i] > threshold ? 255 : 0;
-        const i4 = i * 4;
-        data[i4] = data[i4 + 1] = data[i4 + 2] = value;
+
+    // 2. Áp dụng Ngưỡng Thích ứng
+    const s = Math.floor(width / 8); // Kích thước vùng lân cận
+    const s2 = Math.floor(s / 2);
+    const t = 0.15; // Tỷ lệ điều chỉnh (giảm độ sáng trung bình đi 15%)
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = y * width + x;
+            const i4 = i * 4;
+
+            // Xác định vùng lân cận
+            const x1 = Math.max(0, x - s2);
+            const x2 = Math.min(width - 1, x + s2);
+            const y1 = Math.max(0, y - s2);
+            const y2 = Math.min(height - 1, y + s2);
+
+            const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+            // Tính tổng độ sáng của vùng lân cận bằng Ảnh Tích phân (cực nhanh)
+            const sum = integralImage[y2 * width + x2] -
+                        (y1 > 0 ? integralImage[(y1 - 1) * width + x2] : 0) -
+                        (x1 > 0 ? integralImage[y2 * width + (x1 - 1)] : 0) +
+                        (y1 > 0 && x1 > 0 ? integralImage[(y1 - 1) * width + (x1 - 1)] : 0);
+
+            // Nếu độ sáng của pixel hiện tại sáng hơn (1-t)% so với trung bình vùng, nó là màu trắng
+            const finalValue = (grayscaleData[i] * count) < (sum * (1.0 - t)) ? 0 : 255;
+
+            data[i4] = data[i4 + 1] = data[i4 + 2] = finalValue;
+        }
     }
+
     return imageData;
 }
 
-// Lắng nghe tin nhắn từ luồng chính
 self.onmessage = (event) => {
     const imageData = event.data;
-    // Bước 1: Xử lý ảnh nâng cao
-    const processedImageData = preprocessImage(imageData);
+
+    // Bước 1: Xử lý ảnh nâng cao bằng Ngưỡng Thích ứng
+    const processedImageData = preprocessImageAdaptive(imageData);
+
     // Bước 2: Giải mã QR từ ảnh đã xử lý
     const code = jsQR(processedImageData.data, processedImageData.width, processedImageData.height, {
         inversionAttempts: "dontInvert",
     });
-    // Bước 3: Gửi kết quả về luồng chính
-    self.postMessage(code);
+
+    // Bước 3: Gửi kết quả (hoặc null nếu không tìm thấy) về luồng chính
+    postMessage(code);
 };
