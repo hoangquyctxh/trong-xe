@@ -1996,10 +1996,14 @@
         // =========================================================================
         // MODULE 7.5: LOGIC XỬ LÝ VỊ TRÍ & ĐỒNG BỘ
         // =========================================================================
-        async determineLocation(forceShowModal = false) {
+        async determineLocation(forceShowModal = false, locationIdFromUrl = null) {
             const AUTO_SELECT_RADIUS_KM = 0.1;
             const locations = state.locations || [];
             if (locations.length === 0) return UI.showToast('Lỗi cấu hình: Không có bãi xe.', 'error');
+            if (locationIdFromUrl) {
+                const found = locations.find(l => l.id === locationIdFromUrl);
+                if (found) return this.selectLocation(found, false); // Không lưu vào localStorage
+            }
             if (locations.length === 1) return this.selectLocation(locations[0]);
 
             try {
@@ -2020,17 +2024,30 @@
             }
         },
 
-        selectLocation(location) {
+        selectLocation(location, shouldSave = true) {
             state.currentLocation = location;
-            this.saveStateToLocalStorage();
+            if (shouldSave) {
+                // Cập nhật URL thay vì lưu vào localStorage
+                const url = new URL(window.location);
+                url.searchParams.set('locationId', location.id);
+                window.history.pushState({}, '', url);
+            }
             UI.showToast(`Đã chọn bãi đỗ xe: ${location.name}`, 'success');
             UI.closeModal();
-            this.startApp();
+            // SỬA LỖI: Không gọi lại startApp() để tránh vòng lặp vô hạn.
+            // Thay vào đó, chỉ cần tải dữ liệu cho bãi xe vừa chọn.
+            this.fetchData();
+            this.fetchWeather();
+            this.setupRealtimeListeners();
         },
 
         async startApp() {
+            const urlParams = new URLSearchParams(window.location.search); // Đã có ở đây
+            const locationIdFromUrl = urlParams.get('locationId');
+
             try {
                 await Api.fetchLocations();
+                if (locationIdFromUrl) return this.selectLocation(state.locations.find(l => l.id === locationIdFromUrl), false);
 
                 this.loadStateFromLocalStorage();
                 if (!state.currentLocation) {
@@ -2108,8 +2125,8 @@
 
         saveStateToLocalStorage() {
             try {
+                // KHÔNG LƯU currentLocation nữa để tránh xung đột
                 const stateToSave = {
-                    currentLocation: state.currentLocation,
                     currentDate: state.currentDate.toISOString(),
                     vehicles: state.vehicles,
                     alerts: state.alerts,
@@ -2126,8 +2143,8 @@
                 const savedState = localStorage.getItem('appState');
                 if (savedState) {
                     const parsedState = JSON.parse(savedState);
-                    if (parsedState.currentLocation && parsedState.currentDate) {
-                        state.currentLocation = parsedState.currentLocation;
+                    // Chỉ tải các trạng thái không phụ thuộc vào bãi xe
+                    if (parsedState.currentDate) {
                         state.currentDate = new Date(parsedState.currentDate);
                         state.vehicles = parsedState.vehicles || [];
                         state.alerts = parsedState.alerts || {};

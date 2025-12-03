@@ -170,13 +170,13 @@
     <script type="module">
         // Chờ cho đến khi config.js và main.js đã được tải và thực thi
         document.addEventListener('DOMContentLoaded', () => {
-            // Đảm bảo biến 'supabase' từ config.js đã tồn tại
-            if (window.supabase) {
+            // SỬA LỖI: Sử dụng đúng biến client 'db' (window.SUPABASE_DB) đã được khởi tạo trong config.js
+            if (window.SUPABASE_DB) {
                 console.log('Bắt đầu lắng nghe thay đổi từ Supabase Realtime...');
 
                 // Giả sử bạn có một bảng tên là 'settings' và một dòng duy nhất để lưu cấu hình
                 // với cột 'key' là 'fee_mode' và cột 'value' chứa chế độ hiện tại.
-                const channel = window.supabase.channel('public:settings')
+                const channel = window.SUPABASE_DB.channel('public:settings')
                     .on(
                         'postgres_changes',
                         { event: 'UPDATE', schema: 'public', table: 'settings', filter: 'key=eq.fee_mode' },
