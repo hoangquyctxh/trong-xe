@@ -31,6 +31,7 @@
     <!-- Trình duyệt sẽ tải chúng song song và thực thi theo đúng thứ tự sau khi HTML được phân tích xong. -->
     <!-- Điều này đảm bảo `config.js` luôn chạy trước `main.js` và DOM đã sẵn sàng. -->
     <script src="config.js" defer></script>
+    <script src="fee_calculator.js" defer></script>
     <script src="plate_data.js" defer></script>
     <script src="main.js" defer></script>
 </head>
@@ -89,41 +90,18 @@
                         <article class="card">
                             <h2 class="card__header">Xử lý Gửi/Lấy xe</h2>
                             <div class="card__body">
-                                <div id="vehicle-form-content">
-                                    <div id="form-new-vehicle" class="form-section">
-                                        <div class="main-input-group">
-                                            <div class="input-wrapper">
-                                                <input type="text" id="search-term" placeholder="Nhập Biển số xe..." autocomplete="off">
-                                                <button type="button" id="mic-btn" class="input-icon-btn" title="Nhập bằng giọng nói"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></button>
-                                            </div>
-                                            <button type="button" id="scan-qr-btn" class="icon-btn" title="Quét mã QR để lấy xe"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg></button>
-                                        </div>
-                                        <div id="plate-suggestions" class="plate-suggestions"></div>
-                                        <div class="input-wrapper" style="margin-top: 1rem;">
-                                            <input type="tel" id="phone-number" placeholder="Số điện thoại (nếu có)..." inputmode="numeric">
-                                        </div>
-                                        <details class="additional-info-group">
-                                            <summary>Thêm thông tin (tùy chọn)</summary>
-                                            <div class="additional-info-content">
-                                                <div>
-                                                    <div class="input-wrapper">
-                                                        <textarea id="vehicle-notes" placeholder="Thêm ghi chú (vd: xe không yếm)..." rows="2"></textarea>
-                                                    </div>
-                                                    <div class="vip-checkbox-wrapper" id="vip-checkbox-container">
-                                                        <input type="checkbox" id="is-vip-checkbox">
-                                                        <label for="is-vip-checkbox">⭐ Đánh dấu là Khách VIP (Miễn phí)</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </details>
+                                <!-- GIAO DIỆN MỚI: "ACTION HUB" - Đơn giản, trực quan cho tình nguyện viên -->
+                                <div class="action-hub-v1">
+                                    <input type="text" id="search-term" placeholder="1. NHẬP BIỂN SỐ XE" autocomplete="off">
+                                    <div id="plate-suggestions" class="plate-suggestions"></div>
+                                    <p class="action-hub-prompt">2. CHỌN HÀNH ĐỘNG</p>
+                                    <div id="action-buttons-container" class="action-hub-buttons">
+                                        <!-- Các nút Gửi/Lấy xe sẽ được render ở đây -->
                                     </div>
-                                    <div id="info-display-section" class="form-section" hidden></div>
-                                    <div id="additional-details-section" class="additional-details-section" hidden>
-                                        <ul id="info-history-list" class="history-list"></ul>
-                                    </div>
+                                    <!-- Vùng hiển thị thông tin phụ (form gửi xe, thông tin xe đã gửi) -->
+                                    <div id="action-hub-details" class="action-hub-details"></div>
                                 </div>
                             </div>
-                            <div id="action-buttons-container" class="card__footer"></div>
                         </article>
                     </div>
 
@@ -136,7 +114,13 @@
 
             <section class="main-column" id="dashboard-column">
                 <article class="card">
-                    <h2 class="card__header">Bảng tin nhanh</h2>
+                    <div class="card__header">
+                        <h2>Bảng tin nhanh</h2>
+                        <div id="data-sync-indicator" class="data-sync-indicator" title="Dữ liệu vừa được đồng bộ">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><polyline points="16 16 12 12 8 16"></polyline></svg>
+                            <span>Đã cập nhật</span>
+                        </div>
+                    </div>
                     <div class="card__body">
                         <div id="dashboard-grid" class="dashboard-grid gemini-dashboard"></div>
                     </div>
@@ -179,5 +163,42 @@
             <div class="firework"></div>
         </div>
     </div>
+
+    <!-- =================================================================== -->
+    <!-- NÂNG CẤP: TỰ ĐỘNG CẬP NHẬT GIAO DIỆN KHI CÓ THAY ĐỔI TỪ ADMIN (Sử dụng Supabase Realtime) -->
+    <!-- =================================================================== -->
+    <script type="module">
+        // Chờ cho đến khi config.js và main.js đã được tải và thực thi
+        document.addEventListener('DOMContentLoaded', () => {
+            // Đảm bảo biến 'supabase' từ config.js đã tồn tại
+            if (window.supabase) {
+                console.log('Bắt đầu lắng nghe thay đổi từ Supabase Realtime...');
+
+                // Giả sử bạn có một bảng tên là 'settings' và một dòng duy nhất để lưu cấu hình
+                // với cột 'key' là 'fee_mode' và cột 'value' chứa chế độ hiện tại.
+                const channel = window.supabase.channel('public:settings')
+                    .on(
+                        'postgres_changes',
+                        { event: 'UPDATE', schema: 'public', table: 'settings', filter: 'key=eq.fee_mode' },
+                        (payload) => {
+                            console.log('Phát hiện thay đổi chế độ thu phí!', payload.new);
+                            const newConfig = payload.new.value; // value bây giờ là một object { type, collection, name }
+
+                            // Gọi một hàm toàn cục (global function) được định nghĩa trong main.js để cập nhật UI.
+                            // Điều này giúp giữ cho logic cập nhật giao diện ở đúng nơi của nó.
+                            if (typeof window.updateFeeModeDisplay === 'function') {
+                                // SỬA LỖI: Truyền toàn bộ object cấu hình mới
+                                window.updateFeeModeDisplay({
+                                    type: newConfig.type,
+                                    collection: newConfig.collection,
+                                    name: newConfig.name
+                                });
+                            }
+                        }
+                    )
+                    .subscribe();
+            }
+        });
+    </script>
 </body>
 </html>

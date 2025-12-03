@@ -39,7 +39,7 @@
         isVipCheckbox: document.getElementById('is-vip-checkbox'),
         actionButtonsContainer: document.getElementById('action-buttons-container'),
         additionalInfoGroup: document.querySelector('.additional-info-group'),
-        vehicleFormContent: document.getElementById('vehicle-form-content'),
+        actionHubDetails: document.getElementById('action-hub-details'),
         micBtn: document.getElementById('mic-btn'),
         scanQrBtn: document.getElementById('scan-qr-btn'),
 
@@ -74,6 +74,7 @@
         currentDate: new Date(),
         vehicles: [],
         alerts: {},
+        vehicleMap: new Map(), // CẢI TIẾN: Map để tra cứu xe tức thì
         selectedPlate: null,
         selectedVehicle: null,
         isLoading: true,
@@ -91,6 +92,11 @@
         isOnline: navigator.onLine,
         syncQueue: [],
     };
+    let filterDebounceTimer; // BIẾN CHO DEBOUNCE LỌC DANH SÁCH
+    let globalSearchDebounceTimer; // BIẾN CHO DEBOUNCE
+
+    // CỜ ĐỂ TRÁNH GỌI NHIỀU LẦN FETCH SONG SONG TRONG NỀN
+    let isBackgroundRefreshing = false;
 
     // =========================================================================
     // MODULE 2: API SERVICES - GIAO TIẾP VỚI SUPABASE
@@ -197,10 +203,13 @@
                 status: 'Đang gửi',
                 fee: prePayment ? prePayment.fee : null,
                 payment_method: prePayment ? prePayment.method : null,
+                fee_policy_snapshot: prePayment ? prePayment.snapshot : null, // Thêm snapshot vào giao dịch offline
                 staff_username: staffUsername,
             };
             const { error } = await db.from('transactions').insert([transactionData]);
             if (error) throw new Error(`Lỗi check-in: ${error.message}. Xe [${plate}] có thể đã tồn tại trong bãi.`);
+            // THÔNG BÁO cho admin & client khác biết có giao dịch mới
+            UI.notifyDataChangedFromIndex('transaction_created', { unique_id: uniqueID, plate });
             return transactionData;
         },
 
@@ -216,6 +225,8 @@
                 staff_username: staffUsername,
             }).eq('unique_id', uniqueID);
             if (error) throw new Error(`Lỗi check-out: ${error.message}. Giao dịch có thể đã được xử lý.`);
+            // THÔNG BÁO cho admin & client khác biết giao dịch đã cập nhật
+            UI.notifyDataChangedFromIndex('transaction_updated', { unique_id: uniqueID });
             return true;
         },
 
@@ -302,6 +313,32 @@
                 toast.style.animation = 'fadeOutToast 0.5s ease forwards';
                 setTimeout(() => toast.remove(), 500);
             }, 3500);
+        },
+
+        /**
+         * THÔNG BÁO CHO CÁC CLIENT KHÁC (vd: admin.html) BIẾT DỮ LIỆU ĐÃ THAY ĐỔI.
+         * - Dùng chung kênh 'he-thong-trong-xe-realtime' giống admin.js.
+         * - Nếu Supabase Realtime chưa bật trên bảng, broadcast này vẫn hoạt động.
+         */
+        notifyDataChangedFromIndex(event = 'data_changed', payload = {}) {
+            try {
+                const channel = db.channel('he-thong-trong-xe-realtime', {
+                    config: { broadcast: { self: false } }
+                });
+                channel.subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('[Index] Broadcasting data_changed →', { event, payload });
+                        // Sự kiện tổng quát để admin tự reload
+                        channel.send({ type: 'broadcast', event: 'data_changed', payload });
+                        // Sự kiện chi tiết (mở rộng trong tương lai nếu cần)
+                        if (event && event !== 'data_changed') {
+                            channel.send({ type: 'broadcast', event, payload });
+                        }
+                    }
+                });
+            } catch (e) {
+                console.warn('Không thể broadcast data_changed từ index:', e);
+            }
         },
 
         renderApp() {
@@ -394,6 +431,18 @@
             dom.changeLocationBtn.hidden = !state.currentLocation;
         },
 
+        // SỬA LỖI NGHIÊM TRỌNG: Cập nhật cả state và UI khi chế độ thu phí thay đổi
+        updateFeeModeDisplay(newPolicy) {
+            if (state.currentLocation) {
+                state.currentLocation.fee_policy_type = newPolicy.type;
+                state.currentLocation.fee_collection_policy = newPolicy.collection;
+                // Cập nhật lại toàn bộ header để hiển thị badge mới
+                this.renderHeader();
+                this.showToast(`Chế độ thu phí đã được cập nhật thành: ${newPolicy.name}`, 'info');
+                console.log(`State đã được cập nhật với chế độ mới:`, state.currentLocation);
+            }
+        },
+
         renderSuggestions(term) {
             if (!term || term.length < 2) {
                 dom.plateSuggestions.classList.remove('visible');
@@ -411,65 +460,71 @@
         },
 
         renderActionButtons() {
-            let buttonsHtml = '';
-            let alertHtml = '';
+            // ===================================================================
+            // THIẾT KẾ LẠI: Giao diện "Action Hub" - Luôn hiển thị 2 nút chính
+            // CẬP NHẬT: Hiển thị Gửi hoặc Lấy xe tùy theo trạng thái
+            // ===================================================================
+            const plate = dom.searchTermInput.value.trim();
+            const isPlateValid = plate.length >= 4;
+            const vehicleStatus = state.selectedVehicle?.status;
 
-            if (state.selectedVehicle) {
-                const alert = state.alerts[state.selectedPlate];
-                let isDisabled = false;
+            // Xác định nút nào sẽ hiển thị
+            const showCheckIn = !vehicleStatus || vehicleStatus === 'new' || vehicleStatus === 'departed' || vehicleStatus === 'parking_remote';
+            const showCheckOut = vehicleStatus === 'parking';
 
-                if (alert && (state.selectedVehicle.status === 'parking' || state.selectedVehicle.status === 'new')) {
-                    alertHtml = Templates.actionAlertBox(alert.level, state.selectedPlate, alert.reason);
-                    if (alert.level === 'block') {
-                        isDisabled = true;
-                    }
-                }
+            // Thêm/xóa class để điều khiển animation
+            dom.actionButtonsContainer.classList.toggle('show-check-out', showCheckOut);
 
-                switch (state.selectedVehicle.status) {
-                    case 'new': // NÂNG CẤP: Luôn hiển thị nút gửi xe cho trường hợp mới
-                        buttonsHtml = Templates.actionButton('check-in', 'Xác nhận Gửi xe');
-                        break;
-                    case 'parking':
-                        buttonsHtml = Templates.actionButton('check-out', isDisabled ? 'XE ĐANG BỊ CHẶN' : 'Xác nhận Lấy xe', isDisabled);
-                        buttonsHtml += Templates.secondaryActionButton('view-ticket', 'Xem lại vé điện tử');
-                        break;
-                    case 'departed':
-                        // NÂNG CẤP: Hiển thị thông báo thân thiện hơn và không có nút bấm
-                        buttonsHtml = `<div class="action-alert-box" style="background-color: var(--bg-main); border-color: var(--border-color); color: var(--text-secondary); text-align: center;">Xe này đã rời bãi.</div>`;
-                        break;
-                    case 'parking_remote':
-                        // NÂNG CẤP: Thông báo xe đang ở bãi khác
-                        buttonsHtml = `<div class="action-alert-box alert-warning"><div class="action-alert-reason">Xe đang được gửi ở một bãi khác. Không thể thực hiện thao tác tại đây.</div></div>`;
-                        break;
-                }
-            } else {
-                buttonsHtml = Templates.actionButton('check-in', 'Xác nhận Gửi xe');
+            // Render cả 2 nút nhưng chỉ 1 nút được hiển thị qua CSS
+            dom.actionButtonsContainer.innerHTML = `
+                ${Templates.actionButton('check-in', 'Gửi xe', !isPlateValid || !showCheckIn)}
+                ${Templates.actionButton('check-out', 'Lấy xe', !isPlateValid || !showCheckOut)}
+            `;
+            // Hiển thị cảnh báo nếu có
+            const alert = state.alerts[state.selectedPlate];
+            const detailsContainer = dom.actionHubDetails;
+            const existingAlert = detailsContainer.querySelector('.action-alert-box');
+            if (existingAlert) existingAlert.remove(); // Xóa cảnh báo cũ
+
+            if (alert) {
+                const alertHtml = Templates.actionAlertBox(alert.level, state.selectedPlate, alert.reason);
+                detailsContainer.insertAdjacentHTML('afterbegin', alertHtml);
             }
-            dom.actionButtonsContainer.innerHTML = alertHtml + buttonsHtml;
         },
 
         updateMainFormUI() {
             // NÂNG CẤP: Đơn giản hóa logic, chỉ hiển thị thông tin khi có xe được chọn
+            // TÁI CẤU TRÚC V3: Sửa lỗi "nháy" và reset mục details.
             const vehicleStatus = state.selectedVehicle?.status;
-            const formNew = dom.vehicleFormContent.querySelector('#form-new-vehicle');
-            const infoDisplay = dom.vehicleFormContent.querySelector('#info-display-section');
-            const additionalDetails = dom.vehicleFormContent.querySelector('#additional-details-section');
+            const wrapper = dom.actionHubDetails;
+            if (!wrapper) {
+                return;
+            }
+        
+            const vehicle = state.selectedVehicle?.data;
+            const existingDetailsNode = wrapper.querySelector(`[data-vehicle-id="${vehicle?.unique_id}"]`);
+        
+            // Nếu khu vực chi tiết đã được render cho đúng xe này rồi thì không làm gì cả để tránh bị "nháy"
+            // BỔ SUNG: Kiểm tra xem form xe mới đã hiển thị chưa
+            if (vehicleStatus === 'new' && wrapper.querySelector('#phone-number')) {
+                return;
+            }
 
-            if (!formNew || !infoDisplay || !additionalDetails) return;
-
+            if (existingDetailsNode) {
+                // Có thể thêm logic cập nhật "phẫu thuật" các giá trị nhỏ ở đây nếu cần,
+                // ví dụ: cập nhật lại phí tạm tính mà không render lại toàn bộ.
+                return;
+            }
+        
+            wrapper.innerHTML = ''; // Chỉ xóa nội dung cũ khi cần render cái mới.
+        
             if (vehicleStatus === 'parking' || vehicleStatus === 'departed') {
-                // Có xe trong bãi (đang gửi hoặc đã rời) -> Hiển thị thông tin
-                infoDisplay.hidden = false;
-                additionalDetails.hidden = false;
-                const vehicle = state.selectedVehicle.data;
-
-                // NÂNG CẤP: Gọi template để render thông tin chi tiết, bao gồm cả ảnh
-                infoDisplay.innerHTML = Templates.vehicleInfoDisplay(vehicle);
-
-                const historyList = additionalDetails.querySelector('#info-history-list');
+                // Xe đang gửi hoặc đã rời bãi -> Hiển thị thông tin chi tiết
+                wrapper.innerHTML = Templates.parkedVehicleInfo(vehicle);
+                // Tải lịch sử bất đồng bộ
+                const historyList = wrapper.querySelector('#info-history-list');
                 if (historyList) {
-                    historyList.innerHTML = '<li>Đang tải lịch sử...</li>';
-                    Api.fetchHistory(state.selectedPlate).then(history => {
+                    Api.fetchHistory(vehicle.plate).then(history => {
                         historyList.innerHTML = history && history.length > 0
                             ? history.map(Templates.historyItem).join('')
                             : '<li>Chưa có lịch sử gửi xe.</li>';
@@ -478,92 +533,105 @@
                         console.error(err);
                     });
                 }
-            } else {
-                // Xe mới hoặc không tìm thấy -> Ẩn khu vực thông tin
-                infoDisplay.hidden = true;
-                additionalDetails.hidden = true;
-                infoDisplay.innerHTML = '';
+            } else if (vehicleStatus === 'parking_remote') {
+                // Xe ở bãi khác, hiển thị cảnh báo
+                wrapper.innerHTML = `<div class="action-alert-box alert-warning" style="margin-top: 1rem;"><div class="action-alert-reason">Xe đang được gửi ở một bãi khác. Không thể thực hiện thao tác tại đây.</div></div>`;
+            } else if (vehicleStatus === 'new') {
+                // SỬA LỖI: Hiển thị form nhập thông tin cho xe mới
+                wrapper.innerHTML = Templates.newVehicleFormV2();
+            }
+
+            // Cập nhật lại các DOM element có thể đã được tạo lại
+            // (chỉ cần thiết nếu form được render lại)
+            dom.phoneNumberInput = document.getElementById('phone-number');
+            dom.vehicleNotesInput = document.getElementById('vehicle-notes');
+            dom.isVipCheckbox = document.getElementById('is-vip-checkbox');
+        },
+
+        // ===================================================================
+        // GIẢI PHÁP TRIỆT ĐỂ CHỐNG "NHÁY": CẬP NHẬT "PHẪU THUẬT" DOM
+        // Thay vì render lại toàn bộ item, hàm này chỉ cập nhật các phần
+        // thực sự thay đổi bên trong một vehicle-item đã có trên màn hình.
+        // ===================================================================
+        updateVehicleItemDOM(node, vehicleData) {
+            if (!node || !vehicleData) return;
+
+            const isParking = vehicleData.status === 'Đang gửi';
+
+            // 1. Cập nhật class chính (quan trọng nhất)
+            node.classList.toggle('departed-item', !isParking);
+
+            // 2. Cập nhật icon và trạng thái
+            const iconContainer = node.querySelector('.icon');
+            const statusBadge = node.querySelector('.status-badge');
+            if (iconContainer) {
+                iconContainer.innerHTML = Templates.vehicleItemIcon(isParking);
+            }
+            if (statusBadge) {
+                statusBadge.textContent = vehicleData.status;
+                statusBadge.className = `status-badge ${isParking ? 'parking' : 'departed'}`;
+            }
+        },
+
+        // YÊU CẦU: Hiển thị chỉ báo khi dữ liệu được cập nhật
+        showDataSyncIndicator() {
+            const indicator = document.getElementById('data-sync-indicator');
+            if (indicator) {
+                indicator.classList.add('active');
+                setTimeout(() => indicator.classList.remove('active'), 2000);
             }
         },
 
         renderDashboard() {
-            // NÂNG CẤP: Sử dụng template "Gemini Stat Card" mới
+            // ===================================================================
+            // THIẾT KẾ LẠI TOÀN DIỆN: BẢNG TIN NHANH V3 (Yêu cầu người dùng)
+            // ===================================================================
             const parkingVehicles = state.vehicles.filter(v => v.status === 'Đang gửi');
             const totalToday = state.vehicles.length;
             const capacity = state.currentLocation?.capacity || 0;
-            const occupancyRate = capacity > 0 ? (parkingVehicles.length / capacity) * 100 : 0;
 
-            const longestParking = parkingVehicles.length > 0
-                ? parkingVehicles.reduce((a, b) => new Date(a.entry_time) < new Date(b.entry_time) ? a : b)
-                : null;
-            
-            // NÂNG CẤP: Truyền thêm dữ liệu chi tiết cho thẻ Gauge
-            const gaugeData = {
-                value: occupancyRate.toFixed(0),
-                current: parkingVehicles.length,
-                capacity: capacity
-            };
+            // Tính toán các chỉ số mới
+            const revenueToday = state.vehicles
+                .filter(v => v.status === 'Đã rời bãi' && v.fee > 0)
+                .reduce((sum, v) => sum + v.fee, 0);
+
+            const vipCount = parkingVehicles.filter(v => v.is_vip).length;
 
             const statItemsHtml = `
-                ${Templates.geminiStatCard('gauge', 'Tỷ lệ lấp đầy', gaugeData, '%', 'Bãi xe đã đầy bao nhiêu phần trăm', 'occupancy-chart')}
-                ${Templates.geminiStatCard('vehicles', 'Xe hiện tại', parkingVehicles.length, ` / ${capacity > 0 ? capacity : 'N/A'}`, 'Số xe đang có trong bãi')}
-                ${Templates.geminiStatCard('total', 'Tổng lượt trong ngày', totalToday, 'lượt', 'Tổng số xe đã ra/vào trong ngày')}
-                ${Templates.geminiStatCard('longest', 'Gửi lâu nhất', longestParking ? `<span class="live-duration" data-starttime="${longestParking.entry_time}">${Utils.calculateDuration(longestParking.entry_time)}</span>` : '--', '', 'Xe có thời gian gửi lâu nhất trong bãi')}
+                ${Templates.geminiStatCard('vehicles', 'Xe trong bãi', parkingVehicles.length, ` / ${capacity > 0 ? capacity : 'N/A'}`, 'Số xe đang có trong bãi so với sức chứa', 'vehicles')}
+                ${Templates.geminiStatCard('revenue', 'Doanh thu hôm nay', Utils.formatCurrency(revenueToday), 'đ', 'Tổng doanh thu từ các xe đã rời bãi trong ngày', 'revenue')}
+                ${Templates.geminiStatCard('total', 'Tổng lượt xe', totalToday, 'lượt', 'Tổng số xe đã ra/vào trong ngày', 'total')}
+                ${Templates.geminiStatCard('vip', 'Xe VIP', vipCount, 'xe', 'Số xe VIP/Khách mời đang có trong bãi', 'vip')}
             `;
-
+ 
             dom.dashboardGrid.innerHTML = statItemsHtml;
 
-            // NÂNG CẤP: Kích hoạt hiệu ứng số đếm
-            this.animateValue(document.querySelector('[data-stat-id="vehicles"] .gemini-stat-card__value'), 0, parkingVehicles.length, 1000);
-            this.animateValue(document.querySelector('[data-stat-id="total"] .gemini-stat-card__value'), 0, totalToday, 1000);
+            // Cập nhật giá trị tĩnh cho các thẻ (đảm bảo không có hiệu ứng số đếm)
+            const vehiclesCardValue = document.querySelector('[data-stat-id="vehicles"] .gemini-stat-card__value');
+            if (vehiclesCardValue) vehiclesCardValue.textContent = parkingVehicles.length;
 
-            const chartCanvas = document.getElementById('occupancy-chart');
-            
-            // NÂNG CẤP: Màu sắc biểu đồ thay đổi theo tỷ lệ
-            const getGaugeColor = (rate) => {
-                if (rate > 90) return '#dc2626'; // Đỏ
-                if (rate > 70) return '#f59e0b'; // Vàng
-                return '#2563eb'; // Xanh
-            };
+            const revenueCardValue = document.querySelector('[data-stat-id="revenue"] .gemini-stat-card__value');
+            if (revenueCardValue) revenueCardValue.textContent = Utils.formatCurrency(revenueToday);
 
-            const chartData = {
-                datasets: [{
-                    data: [occupancyRate, 100 - occupancyRate],
-                    backgroundColor: [getGaugeColor(occupancyRate), 'rgba(128, 128, 128, 0.1)'],
-                    borderColor: 'transparent',
-                    circumference: 270, // Vẽ biểu đồ bán nguyệt (gauge)
-                    rotation: 225,    // Xoay để bắt đầu từ góc dưới bên trái
-                    cutout: '80%',    // Làm cho vòng mỏng hơn, đẹp hơn
-                    borderRadius: 5,
-                }]
-            };
+            const totalCardValue = document.querySelector('[data-stat-id="total"] .gemini-stat-card__value');
+            if (totalCardValue) totalCardValue.textContent = totalToday;
 
-            if (chartCanvas) {
-                if (state.statusPieChart) state.statusPieChart.destroy();
-                state.statusPieChart = new Chart(chartCanvas, {
-                    type: 'doughnut',
-                    data: chartData,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { enabled: false }
-                        },
-                        animation: {
-                            animateScale: true,
-                            animateRotate: true
-                        }
-                    }
-                });
-            }
+            const vipCardValue = document.querySelector('[data-stat-id="vip"] .gemini-stat-card__value');
+            if (vipCardValue) vipCardValue.textContent = vipCount;
         },
 
         renderVehicleList() {
+            // ===================================================================
+            // GIẢI PHÁP CUỐI CÙNG CHỐNG "NHÁY": CẬP NHẬT THÔNG MINH
+            // Xóa bỏ hoàn toàn cơ chế DOM diffing cũ (so sánh outerHTML) - NGUYÊN NHÂN GỐC RỄ.
+            // Thay thế bằng logic duyệt và "phẫu thuật" trực tiếp các node đã có.
+            // ===================================================================
             const filteredVehicles = state.vehicles.filter(v => {
-                const term = state.filterTerm.toUpperCase();
+                const term = state.filterTerm;
                 if (!term) return true;
-                return v.plate.toUpperCase().includes(term) || v.phone?.includes(term);
+                const upperTerm = term.toUpperCase();
+                // NÂNG CẤP: Tìm kiếm theo cả biển số và số điện thoại
+                return v.plate.toUpperCase().includes(upperTerm) || v.phone?.includes(term);
             });
 
             const totalItems = filteredVehicles.length;
@@ -571,6 +639,7 @@
             if (state.currentPage > totalPages && totalPages > 0) {
                 state.currentPage = totalPages;
             }
+
             const startIndex = (state.currentPage - 1) * state.itemsPerPage;
             const endIndex = startIndex + state.itemsPerPage;
             const paginatedVehicles = filteredVehicles.slice(startIndex, endIndex);
@@ -580,12 +649,42 @@
                 dom.paginationControls.innerHTML = '';
                 return;
             }
+
             if (paginatedVehicles.length === 0) {
                 dom.vehicleListContainer.innerHTML = Templates.emptyState('Không có xe nào trong danh sách.');
                 dom.paginationControls.innerHTML = '';
                 return;
             }
-            dom.vehicleListContainer.innerHTML = paginatedVehicles.map(v => Templates.vehicleItem(v, state.alerts)).join('');
+
+            const newVehicleIds = new Set(paginatedVehicles.map(v => v.unique_id));
+            const existingNodesMap = new Map(Array.from(dom.vehicleListContainer.children).map(node => [node.dataset.id, node]));
+
+            // 1. Xóa các node không còn trong danh sách mới
+            existingNodesMap.forEach((node, id) => {
+                if (!newVehicleIds.has(id)) {
+                    node.remove();
+                }
+            });
+
+            // 2. Cập nhật, thêm và sắp xếp lại các node
+            paginatedVehicles.forEach((vehicle, index) => {
+                const existingNode = existingNodesMap.get(vehicle.unique_id);
+                if (existingNode) {
+                    // Node đã tồn tại, chỉ di chuyển nó đến đúng vị trí nếu cần
+                    if (dom.vehicleListContainer.children[index] !== existingNode) {
+                        dom.vehicleListContainer.insertBefore(existingNode, dom.vehicleListContainer.children[index]);
+                    }
+                } else {
+                    // Node mới, tạo và chèn vào đúng vị trí
+                    const newNode = document.createElement('div');
+                    newNode.innerHTML = Templates.vehicleItem(vehicle, state.alerts);
+                    const childNode = newNode.firstElementChild;
+                    if (childNode) {
+                        const referenceNode = dom.vehicleListContainer.children[index];
+                        dom.vehicleListContainer.insertBefore(childNode, referenceNode || null);
+                    }
+                }
+            });
 
             this.renderPagination(totalPages, state.currentPage);
         },
@@ -687,37 +786,6 @@
             }
         },
 
-        // NÂNG CẤP: Hiển thị vé ngay trong trang thay vì modal
-        showTicketView(data) {            const ticketHtml = Templates.checkInReceiptView(data); // Sử dụng template mới
-            dom.ticketViewContainer.innerHTML = ticketHtml;            dom.actionColumn.classList.add('is-hidden');
-            dom.ticketViewContainer.classList.remove('is-hidden');
-
-            // Tạo QR Code sau khi vé đã được render
-            setTimeout(() => {
-                const qrCanvas = document.getElementById('checkin-qrcode-canvas');
-                if (qrCanvas && data.unique_id) {
-                    const lookupUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '').replace(/\/$/, '')}/lookup.html?ticketId=${data.unique_id}`;
-                    // Gán URL cho link
-                    const qrLink = document.getElementById('qr-code-link');
-                    if(qrLink) qrLink.href = lookupUrl;
-                    // Vẽ QR code
-                    QRCode.toCanvas(qrCanvas, lookupUrl, { width: 140, errorCorrectionLevel: 'H', margin: 1 }, (error) => {
-                        if (error) console.error('Lỗi tạo QR code:', error);
-                    });
-                }
-                if (data.isNew) {
-                    // Kích hoạt hiệu ứng pháo hoa
-                    this.startConfetti();
-                }
-            }, 100);
-        },
-
-        hideTicketView() {
-            dom.actionColumn.classList.remove('is-hidden');
-            dom.ticketViewContainer.classList.add('is-hidden');
-            dom.ticketViewContainer.innerHTML = ''; // Dọn dẹp để tránh lỗi
-        },
-
         showPaymentConfirmation(status, message) {
             const modalContent = dom.modalContainer.querySelector('.modal-content');
             if (!modalContent) return;
@@ -783,9 +851,36 @@
             </div>
         `,
         infoItem: (label, value) => `<div class="info-item"><span class="label">${label}</span><span class="value">${value}</span></div>`,
+        newVehicleFormV2: () => `
+            <div class="form-section-v2" style="margin-top: 1.5rem;">
+                <div class="input-wrapper">
+                    <input type="tel" id="phone-number" placeholder="Số điện thoại (ưu tiên)" inputmode="numeric">
+                </div>
+                <div class="input-wrapper">
+                    <textarea id="vehicle-notes" placeholder="Thêm ghi chú (vd: xe không yếm)..." rows="2"></textarea>
+                </div>
+                <div class="vip-checkbox-wrapper" id="vip-checkbox-container" title="Đánh dấu xe này là của khách mời hoặc trường hợp đặc biệt, sẽ được miễn phí gửi xe.">
+                    <input type="checkbox" id="is-vip-checkbox">
+                    <label for="is-vip-checkbox">⭐ Đánh dấu là Khách VIP (Miễn phí)</label>
+                </div>
+            </div>
+        `,
+        parkedVehicleInfo: (vehicle) => `
+            <div class="form-section-v2" style="margin-top: 1.5rem;" data-vehicle-id="${vehicle.unique_id}">
+                <div id="info-display-section" class="form-section">${Templates.vehicleInfoDisplay(vehicle)}</div>
+                ${Templates.secondaryActionButton('view-ticket', 'Xem lại vé điện tử')}
+                <details class="additional-info-group">
+                    <summary>Thông tin chi tiết & Lịch sử</summary>
+                    <div class="additional-info-content">
+                        <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">LỊCH SỬ GỬI XE GẦN ĐÂY</h4>
+                        <ul id="info-history-list" class="history-list" style="margin-top: 0;"><li>Đang tải lịch sử...</li></ul>
+                    </div>
+                </details>
+            </div>
+        `,
         vehicleInfoDisplay: (vehicle) => {
             const isParking = vehicle.status === 'Đang gửi';
-            const fee = isParking ? Utils.calculateFee(vehicle.entry_time, null, vehicle.is_vip) : vehicle.fee;
+            const fee = isParking ? FeeCalculator.calculate(vehicle, null, state.currentLocation) : (vehicle.fee ?? 0);
             const duration = isParking ? `<span class="live-duration" data-starttime="${vehicle.entry_time}">${Utils.calculateDuration(vehicle.entry_time)}</span>` : Utils.calculateDuration(vehicle.entry_time, vehicle.exit_time);
             const feeDisplay = isParking ? `<span class="live-fee" data-starttime="${vehicle.entry_time}" data-isvip="${vehicle.is_vip}">${Utils.formatCurrency(fee)}đ</span>` : `<strong>${Utils.formatCurrency(fee)}đ</strong>`;
  
@@ -827,86 +922,59 @@
                         </div>
                         <div class="history-location">${locationName}</div>
                     </div>
-                </li>`;
+                </li>`; // Sửa lỗi: Thêm thẻ đóng </li>
         },
-        geminiStatCard: (id, label, value, unit, description, canvasId = null) => {
-            // NÂNG CẤP: Bộ icon SVG mới, đồng bộ và hiện đại
-            // THIẾT KẾ LẠI: Sử dụng icon động
+        geminiStatCard: (id, label, value, unit, description, iconName) => {
+            // ===================================================================
+            // THIẾT KẾ LẠI TOÀN DIỆN: BỘ ICON VÀ THẺ THỐNG KÊ V3
+            // ===================================================================
             const icons = {
-                gauge: `<svg class="animated-icon gauge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
-                            <path class="gauge-needle" d="M22 12A10 10 0 0 0 12 2v10z"/>
-                        </svg>`,
-                vehicles: `<svg class="animated-icon vehicle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3c0 .6.4 1 1 1h2"/>
-                            <path d="M19 17H5v-5.9c0-1.2 1-2.1 2.1-2.1h9.8c1.2 0 2.1.9 2.1 2.1V17Z"/>
-                            <circle cx="8.5" cy="13.5" r=".5"/><circle cx="15.5" cy="13.5" r=".5"/>
-                        </svg>`,
-                total: `<svg class="animated-icon total-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path class="total-line-1" d="M8 6h10"/>
-                            <path class="total-line-2" d="M8 12h10"/>
-                            <path class="total-line-3" d="M8 18h10"/>
-                            <path class="total-line-4" d="M4 6h.01"/><path class="total-line-5" d="M4 12h.01"/><path class="total-line-6" d="M4 18h.01"/>
-                        </svg>`,
-                longest: `<svg class="animated-icon longest-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline class="longest-hand-hour" points="12 6 12 12"/>
-                            <polyline class="longest-hand-minute" points="12 12 16 14"/>
-                        </svg>`,
+                vehicles: `<svg class="animated-icon vehicle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v3c0 .6.4 1 1 1h2"/><path d="M19 17H5v-5.9c0-1.2 1-2.1 2.1-2.1h9.8c1.2 0 2.1.9 2.1 2.1V17Z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>`,
+                revenue: `<svg class="animated-icon revenue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`,
+                total: `<svg class="animated-icon total-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>`,
+                vip: `<svg class="animated-icon vip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`,
             };
 
-            const chartHtml = canvasId ? `<div class="gemini-stat-card__chart"><canvas id="${canvasId}"></canvas></div>` : '';
-
-            // THIẾT KẾ LẠI HOÀN TOÀN: Bố cục thẻ dọc, tập trung vào dữ liệu
-            if (id === 'gauge') {
-                const gaugeData = value; // value bây giờ là một object
-                return `
-                    <div class="gemini-stat-card" data-stat-id="gauge" title="${description}">
-                        <div class="gemini-stat-card__header">
-                            <div class="gemini-stat-card__icon">${icons[id] || ''}</div>
-                            <span class="gemini-stat-card__label">${label}</span>
-                        </div>
-                        <div class="gemini-stat-card__gauge-wrapper">
-                            <canvas id="${canvasId}"></canvas>
-                            <div class="gemini-stat-card__value-wrapper">
-                                <span class="gemini-stat-card__value">${gaugeData.value}</span><span class="gemini-stat-card__unit">${unit}</span>
-                                <span class="gemini-stat-card__sub-value">${gaugeData.current} / ${gaugeData.capacity > 0 ? gaugeData.capacity : 'N/A'} xe</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="gemini-stat-card" data-stat-id="${id}" title="${description}">
-                    <div class="gemini-stat-card__header">
-                        <div class="gemini-stat-card__icon">${icons[id] || ''}</div>
-                        <span class="gemini-stat-card__label">${label}</span>
-                    </div>
-                    <div class="gemini-stat-card__value-wrapper">
-                        <span class="gemini-stat-card__value">${value}</span><span class="gemini-stat-card__unit">${unit}</span>
-                    </div>
-                    ${chartHtml}
-                </div>
-            `;
+            const iconHtml = icons[iconName] || '';
+            return `<div class="gemini-stat-card" data-stat-id="${id}" title="${description}"><div class="gemini-stat-card__header"><div class="gemini-stat-card__icon">${iconHtml}</div><span class="gemini-stat-card__label">${label}</span></div><div class="gemini-stat-card__value-wrapper"><span class="gemini-stat-card__value">${value}</span><span class="gemini-stat-card__unit">${unit}</span></div></div>`;
         },
-        // NÂNG CẤP: Icon động cho danh sách xe
+        // TÁCH LOGIC: Tạo template riêng cho icon để hàm updateVehicleItemDOM có thể tái sử dụng
+        vehicleItemIcon: (isParking) => isParking
+            ? `<svg class="icon--parking" viewBox="0 0 24 24"><circle class="pulse-wave" cx="12" cy="12" r="6"/><path class="vehicle-shape" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>`
+            : `<svg class="icon--departed" viewBox="0 0 24 24"><path class="vehicle-shape" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/><path class="checkmark-path" fill="none" d="M8 12l3 3 5-5"/></svg>`,
+        // ===================================================================
+        // THIẾT KẾ LẠI TOÀN DIỆN: GIAO DIỆN DANH SÁCH XE V5
+        // Bố cục dạng bảng, thông tin rõ ràng, hiện đại.
+        // THIẾT KẾ LẠI TOÀN DIỆN: GIAO DIỆN DANH SÁCH XE V6 (Yêu cầu người dùng)
+        // Phong cách tối giản, hiện đại, tối ưu cho các thiết bị hiển thị.
+        // ===================================================================
         vehicleItem: (v, alerts) => {
             const alert = alerts[v.plate];
-            let alertClass = '';
-            let alertIcon = '';
             const isParking = v.status === 'Đang gửi';
-            if (alert) {
-                alertClass = `alert-${alert.level}`;
-                alertIcon = `<svg class="alert-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
-            }
+            const alertClass = alert ? `alert-${alert.level}` : '';
 
-            // NÂNG CẤP: Sử dụng SVG động cho trạng thái xe
-            const iconHtml = isParking
-                ? `<svg class="icon--parking" viewBox="0 0 24 24"><circle class="pulse-wave" cx="12" cy="12" r="6"/><path class="vehicle-shape" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>`
-                : `<svg class="icon--departed" viewBox="0 0 24 24"><path class="vehicle-shape" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/><path class="checkmark-path" fill="none" d="M8 12l3 3 5-5"/></svg>`;
+            const alertIcon = alert ? `<div class="vehicle-v5__alert-icon alert-${alert.level}" title="${alert.reason}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>` : '';
+            const vipIcon = v.is_vip ? `<div class="vehicle-v5__vip-icon" title="Khách VIP"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div>` : '';
 
-            return `<div class="vehicle-item ${v.is_vip ? 'is-vip' : ''} ${alertClass} ${!isParking ? 'departed-item' : ''}" data-plate="${v.plate}"><div class="icon">${iconHtml}</div><div class="info"><div class="plate">${alertIcon} ${v.plate} <span class="status-badge ${isParking ? 'parking' : 'departed'}">${v.status}</span></div><div class="details"><span>${Utils.formatDateTime(v.entry_time)}</span></div></div></div>`;
+            return `
+                <div class="vehicle-item-v5 ${!isParking ? 'departed' : ''} ${alertClass}" data-plate="${v.plate}" data-id="${v.unique_id}">
+                    <div class="vehicle-v5__cell vehicle-v5__plate">
+                        <div class="vehicle-v5__plate-text">${v.plate}</div>
+                        <div class="vehicle-v5__icons">${alertIcon}${vipIcon}</div>
+                    </div>
+                    <div class="vehicle-v5__cell vehicle-v5__status">
+                        <span class="status-badge-v5 status--${isParking ? 'parking' : 'departed'}">${v.status}</span>
+                    </div>
+                    <div class="vehicle-v5__cell vehicle-v5__time">
+                        <span class="time-label">Vào:</span>
+                        <span class="time-value">${Utils.formatDateTime(v.entry_time)}</span>
+                    </div>
+                    <div class="vehicle-v5__cell vehicle-v5__duration">
+                        <span class="time-label">Gửi:</span>
+                        <span class="time-value live-duration" data-starttime="${v.entry_time}">${Utils.calculateDuration(v.entry_time)}</span>
+                    </div>
+                </div>
+            `;
         },
         skeletonItem: () => `<div class="skeleton-item"></div>`,
         emptyState: (text) => `<div class="empty-state">${text}</div>`,
@@ -942,7 +1010,7 @@
         imageViewerModal({ imageUrl, plate }) {
             // NÂNG CẤP: Modal xem ảnh chuyên dụng
             const title = `Ảnh xe: ${plate}`;
-            const content = `<div class="image-viewer-container"><img src="${imageUrl}" alt="Ảnh xe ${plate}"></div>`;
+            const content = `<div class="image-viewer-container"><img src="${imageUrl}" alt="Ảnh xe ${plate}" loading="lazy"></div>`;
             const footer = `<button class="action-button btn--secondary" data-action="close-modal">Đóng</button>`;
             return this.modal(title, content, '85vw');
         },
@@ -952,28 +1020,102 @@
             const footer = `<button class="action-button btn--secondary" data-action="close-modal">Hủy bỏ</button>`;
             return this.modal('Quét mã QR để lấy xe', content, footer, '480px');
         },
+
+        // ====================================================================================================
+        // THIẾT KẾ LẠI HOÀN TOÀN: MODAL THANH TOÁN "PAYMENT FLOW V4"
+        // Triết lý: "Hỏi -> Hiển thị -> Xác nhận" - Quy trình 3 bước rõ ràng, dẫn dắt người dùng.
+        // Bố cục:
+        // - Bước 1: Chọn phương thức.
+        // - Bước 2: Hiển thị thông tin tương ứng (QR hoặc Tiền mặt).
+        // - Bước 3: Nút xác nhận cuối cùng.
+        // ====================================================================================================
         paymentModal({ fee, vehicle }) {
             const memo = `TTGX ${vehicle.plate} ${vehicle.unique_id}`;
-            // NÂNG CẤP: Tự động tạo QR code thanh toán VietQR
             const qrUrl = `${APP_CONFIG.payment.imageUrlBase}&amount=${fee}&addInfo=${encodeURIComponent(memo)}`;
-            const content = `<div class="payment-layout"><div class="payment-main"><div class="payment-qr-section"><div class="qr-wrapper"><img src="${qrUrl}" alt="QR Code Thanh toán"><p>Nội dung chuyển khoản: <strong>${memo}</strong></p></div></div><div class="payment-actions"><button class="action-button btn--check-in" data-action="complete-payment" data-method="Chuyển khoản QR"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Đã nhận (QR)</span></button><button class="action-button btn--reprint" data-action="complete-payment" data-method="Tiền mặt"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg><span>Đã nhận (Tiền mặt)</span></button></div></div><div class="payment-sidebar"><div class="payment-summary"><h3>Thanh toán cho xe</h3><div class="summary-plate">${vehicle.plate}</div></div><div class="payment-details">${Templates.infoItem('Giờ vào', `<strong>${Utils.formatDateTime(vehicle.entry_time)}</strong>`)}${Templates.infoItem('Thời gian gửi', `<strong class="live-duration" data-starttime="${vehicle.entry_time}">${Utils.calculateDuration(vehicle.entry_time)}</strong>`)}</div><div class="payment-total"><div class="fee-label">TỔNG CỘNG</div><div class="fee-display">${Utils.formatCurrency(fee)}<span>đ</span></div></div></div><div class="payment-confirmation-overlay"><div class="confirmation-icon-wrapper success"><svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg></div><div class="confirmation-icon-wrapper error"><svg class="cross" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="cross__circle" cx="26" cy="26" r="25" fill="none"/><path class="cross__path cross__path--right" fill="none" d="M16,16 l20,20" /><path class="cross__path cross__path--left" fill="none" d="M16,36 l20,-20" /></svg></div><p class="confirmation-text"></p></div></div>`;
-            const footer = `<button class="action-button btn--secondary" data-action="close-modal">Hủy bỏ</button>`;
-            return this.modal('Xác nhận Thanh toán', content, '800px', true);
+
+            const content = `
+                <div class="payment-flow-v4">
+                    <div class="payment-header-info">
+                        <span class="summary-label">Thanh toán cho xe <strong>${vehicle.plate}</strong></span>
+                        <div class="payment-total">
+                            <div class="fee-label">Tổng phí cần thu</div>
+                            <div class="fee-display">${Utils.formatCurrency(fee)}<span>đ</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Bước 1: Chọn phương thức -->
+                    <div class="payment-step active" id="payment-step-1">
+                        <p class="action-prompt">Khách hàng chọn thanh toán bằng:</p>
+                        <div class="payment-method-options">
+                            <button class="payment-method-btn method-qr" data-action="select-payment-method" data-method="Chuyển khoản QR">
+                                <div class="payment-method-icon-wrapper">
+                                    <svg class="payment-method-icon icon-qr-animated" viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM17 17h2v2h-2zM19 19h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2z"/></svg>
+                                </div>
+                                <span>QR Code</span>
+                            </button>
+                            <button class="payment-method-btn method-cash" data-action="select-payment-method" data-method="Tiền mặt">
+                                <div class="payment-method-icon-wrapper">
+                                    <svg class="payment-method-icon icon-cash-animated" viewBox="0 0 24 24"><path d="M1 12s2-6 11-6 11 6 11 6-2 6-11 6-11-6-11-6z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                                <span>Tiền mặt</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bước 2: Hiển thị thông tin & Xác nhận -->
+                    <div class="payment-step" id="payment-step-2">
+                        <!-- Vùng hiển thị QR (ẩn) -->
+                        <div class="payment-display-area" id="qr-display-area">
+                            <p class="display-instruction">Vui lòng đưa mã QR cho khách hàng quét</p>
+                            <div class="payment-qr-section">
+                                <div class="qr-wrapper">
+                                    <img src="${qrUrl}" alt="QR Code Thanh toán">
+                                    <p class="qr-memo">Nội dung: <strong>${memo}</strong></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vùng hiển thị Tiền mặt (ẩn) -->
+                        <div class="payment-display-area" id="cash-display-area">
+                             <p class="display-instruction">Vui lòng nhận đúng số tiền từ khách</p>
+                             <div class="cash-animation-wrapper">
+                                <svg class="cash-stack-icon" viewBox="0 0 64 64"><path class="cash-stack-bill" d="M55.5 32.8H8.5c-1.7 0-3-1.3-3-3V17.2c0-1.7 1.3-3 3-3h47c1.7 0 3 1.3 3 3v12.5c0 1.7-1.3 3.1-3 3.1z"/><path class="cash-stack-bill" d="M55.5 40.8H8.5c-1.7 0-3-1.3-3-3V25.2c0-1.7 1.3-3 3-3h47c1.7 0 3 1.3 3 3v12.5c0 1.7-1.3 3.1-3 3.1z"/><path class="cash-stack-bill" d="M55.5 48.8H8.5c-1.7 0-3-1.3-3-3V33.2c0-1.7 1.3-3 3-3h47c1.7 0 3 1.3 3 3v12.5c0 1.7-1.3 3.1-3 3.1z"/><circle class="cash-stack-coin" cx="32" cy="32" r="10"/></svg>
+                             </div>
+                        </div>
+
+                        <!-- Bước 3: Nút xác nhận hoàn tất -->
+                        <button class="action-button btn--check-in" data-action="complete-payment">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span>Đã hoàn tất thanh toán</span>
+                        </button>
+                    </div>
+
+                    <!-- Lớp phủ xác nhận (giữ nguyên) -->
+                    <div class="payment-confirmation-overlay">
+                        <div class="confirmation-icon-wrapper success"><svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg></div>
+                        <div class="confirmation-icon-wrapper error"><svg class="cross" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="cross__circle" cx="26" cy="26" r="25" fill="none"/><path class="cross__path cross__path--right" fill="none" d="M16,16 l20,20" /><path class="cross__path cross__path--left" fill="none" d="M16,36 l20,-20" /></svg></div>
+                        <p class="confirmation-text"></p>
+                    </div>
+                </div>
+            `;
+
+            const footer = `<button class="action-button btn--secondary" data-action="back-to-selection" style="display: none;">Quay lại</button><button class="action-button btn--secondary" data-action="close-modal">Hủy bỏ</button>`;
+            return this.modal('Xác nhận Thanh toán', content, footer, '550px');
         },
         confirmationModal({ title, plate, reason, type }) {
             const isVip = type === 'vip';
             const passTitle = isVip ? 'XE ƯU TIÊN' : 'MIỄN PHÍ GỬI XE';
-            // NÂNG CẤP: Icon SVG cho từng loại xác nhận
-            const icon = isVip
-                ? `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`
-                : `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
 
             const content = `
-                <div class="priority-pass-new ${isVip ? 'vip' : 'free'}">
-                    <div class="priority-pass-new__icon">${icon}</div>
-                    <h3 class="priority-pass-new__title">${passTitle}</h3><div class="priority-pass-new__plate">${plate}</div>
-                    <p class="priority-pass-new__reason">Lý do: <strong>${reason}</strong></p>
-                    <div class="priority-pass-new__success-overlay">
+                <div class="confirm-card-v1 ${isVip ? 'is-vip' : 'is-free'}">
+                    <div class="confirm-card__header">
+                        <h3 class="confirm-card__title">${passTitle}</h3>
+                    </div>
+                    <div class="confirm-card__body">
+                        <div class="confirm-card__plate">${plate}</div>
+                        <p class="confirm-card__reason">Lý do: <strong>${reason}</strong></p>
+                    </div>
+                    <div class="confirm-card__success-overlay">
                         <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
                         <p>ĐÃ XÁC NHẬN</p>
                     </div>
@@ -998,52 +1140,50 @@
 
         // TÁI CẤU TRÚC: Hàm này CHỈ tạo ra nội dung HTML của tấm vé.
         digitalPassContent(data) {
+            // ====================================================================================================
+            // THIẾT KẾ LẠI HOÀN TOÀN: GIAO DIỆN VÉ "THẺ THANH NIÊN" (YÊU CẦU MỚI)
+            // Triết lý: "Năng động, Tươi sáng, Hiện đại"
+            // ====================================================================================================
             const isVip = data.is_vip;
             const passClass = isVip ? 'is-vip' : 'is-standard';
-            const eventName = state.currentLocation?.event_name || 'PHƯỜNG BA ĐÌNH';
-
+            const locationName = Utils.getLocationNameById(data.location_id) || 'Bãi xe Ba Đình';
+ 
             return `
-                <div class="digital-pass-wrapper ${passClass}">
-                    <div class="digital-pass__brand-strip"></div>
-                    <div class="digital-pass__header">
-                        <div class="digital-pass__logo">
-                            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn TNCS Hồ Chí Minh">
-                        </div>
-                        <div class="digital-pass__titles">
-                            <div class="digital-pass__org-name">ĐOÀN TNCS HỒ CHÍ MINH</div>
-                            <div class="digital-pass__event-name">${eventName.toUpperCase()}</div>
+                <div class="youth-pass ${passClass}">
+                    ${isVip ? '<div class="youth-pass__vip-banner"><span>KHÁCH MỜI</span></div>' : ''}
+                    <div class="youth-pass__header">
+                        <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn Thanh Niên" class="youth-pass__logo">
+                        <div class="youth-pass__titles">
+                            <div class="youth-pass__org-name">ĐOÀN TNCS HỒ CHÍ MINH</div>
+                            <div class="youth-pass__event-name">VÉ GỬI XE ĐIỆN TỬ</div>
                         </div>
                     </div>
-                    <div class="digital-pass__body">
-                        <div class="digital-pass__main-info">
-                            <div class="digital-pass__plate-section">
-                                <span class="digital-pass__label">Biển số xe</span>
-                                <div class="digital-pass__plate">
-                                    <span>${data.plate.slice(0, -4)}</span>
-                                    <span>${data.plate.slice(-4)}</span>
-                                </div>
-                            </div>
-                            <div class="digital-pass__qr-section" title="Nhấn để mở trang tra cứu trong tab mới">
-                                <a id="qr-code-link" href="#" target="_blank" rel="noopener noreferrer">
-                                    <canvas id="checkin-qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
-                                </a>
-                            </div>
+                    <div class="youth-pass__body">
+                        <div class="youth-pass__plate-section">
+                            <span class="youth-pass__label">Biển số xe</span>
+                            <div class="youth-pass__plate">${data.plate}</div>
                         </div>
-                        <p class="digital-pass__qr-instruction">Sử dụng mã này khi lấy xe</p>
-                        <div class="digital-pass__details">
-                            <div class="digital-pass__detail-item">
+
+                        <div class="youth-pass__qr-section">
+                             <a id="qr-code-link" href="#" target="_blank" rel="noopener noreferrer">
+                                <canvas id="checkin-qrcode-canvas"></canvas>
+                            </a>
+                            <span class="youth-pass__qr-instruction">Sử dụng mã này khi lấy xe</span>
+                        </div>
+
+                        <div class="youth-pass__details">
+                             <div class="detail-item">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                 <span>Giờ vào: <strong>${Utils.formatDateTime(data.entry_time)}</strong></span>
                             </div>
-                            <div class="digital-pass__detail-item">
+                            <div class="detail-item">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                                <span>Tại: <strong>${Utils.getLocationNameById(data.location_id)}</strong></span>
+                                <span>Tại: <strong>${locationName}</strong></span>
                             </div>
-                            ${isVip ? '<div class="digital-pass__detail-item vip-badge"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg><span>Loại vé: <strong>KHÁCH MỜI / VIP</strong></span></div>' : ''}
                         </div>
                     </div>
-                    <div class="digital-pass__footer">
-                        <span>ID: ${data.unique_id}</span>
+                    <div class="youth-pass__footer">
+                        <div class="youth-pass__id">ID: ${data.unique_id}</div>
                     </div>
                 </div>`;
         },
@@ -1055,8 +1195,8 @@
             // ====================================================================================================
             const title = data.isNew ? 'GỬI XE THÀNH CÔNG' : 'VÉ GỬI XE ĐIỆN TỬ';
             const content = this.digitalPassContent(data); // Gọi hàm mới để lấy nội dung
-            const footer = `<button class="action-button btn--secondary" data-action="close-modal" style="width: 100%; max-width: 200px; margin: 0 auto;">Đóng</button>`;
-            return this.modal(title, content, footer, '450px');
+            const footer = `<button class="action-button btn--secondary" data-action="close-modal" style="width: 100%; max-width: 200px; margin: 0 auto;">Đóng</button>`; // Bố cục dọc, modal sẽ tự điều chỉnh
+            return this.modal(title, content, footer, 'auto');
         },
 
         // NÂNG CẤP: Template cho view vé xe (thay vì modal)
@@ -1091,51 +1231,6 @@
             const h = Math.floor(diff / 3600); diff %= 3600;
             const m = Math.floor(diff / 60);
             return [d > 0 ? `${d}d` : '', h > 0 ? `${h}h` : '', `${m}m`].filter(Boolean).join(' ') || '0m';
-        },
-
-        // SỬA LỖI NGHIÊM TRỌNG: Tái cấu trúc hoàn toàn logic tính phí
-        calculateFee(startTime, endTime, isVIP) {
-            const policyType = state.currentLocation?.fee_policy_type || 'free';
-            const config = APP_CONFIG.fee;
-            const locationConfig = state.currentLocation || {};
-
-            if (!config.enabled || isVIP || !startTime || policyType === 'free') {
-                return 0;
-            }
-
-            // Kịch bản 1: Tính phí KHI VÀO (chưa có endTime) để quyết định có thu trước hay không
-            if (endTime === null) {
-                if (policyType === 'per_entry') return locationConfig.fee_per_entry ?? config.entryFee ?? 5000;
-                if (policyType === 'daily') return locationConfig.fee_daily ?? config.dailyFee ?? 20000;
-                return 0; // Không thu trước cho loại hình theo giờ
-            }
-
-            // Kịch bản 2: Tính phí KHI RA (đã có endTime)
-            const diffMinutes = Math.floor((new Date(endTime) - new Date(startTime)) / 1000 / 60);
-            if (diffMinutes <= config.freeMinutes) return 0;
-
-            const chargeableMinutes = diffMinutes - config.freeMinutes;
-            switch (policyType) {
-                case 'per_entry':
-                    return locationConfig.fee_per_entry ?? config.entryFee ?? 5000;
-                case 'daily':
-                    const totalDays = Math.ceil(chargeableMinutes / (60 * 24));
-                    return (locationConfig.fee_daily ?? config.dailyFee ?? 20000) * Math.max(1, totalDays);
-                case 'hourly':
-                    let totalFee = 0;
-                    const totalChargeableHours = Math.ceil(chargeableMinutes / 60);
-                    const dayRate = locationConfig.fee_hourly_day ?? config.dayRate;
-                    const nightRate = locationConfig.fee_hourly_night ?? config.nightRate;
-                    const chargeableStartTime = new Date(new Date(startTime).getTime() + config.freeMinutes * 60000);
-
-                    for (let i = 0; i < totalChargeableHours; i++) {
-                        const currentHour = new Date(chargeableStartTime.getTime() + i * 60 * 60 * 1000).getHours();
-                        totalFee += (currentHour >= config.nightStartHour || currentHour < config.nightEndHour) ? nightRate : dayRate;
-                    }
-                    return totalFee;
-                default:
-                    return 0;
-            }
         },
 
         decodePlate: (plate) => {
@@ -1298,48 +1393,52 @@
         },
 
         handleFilterChange(e) {
-            state.filterTerm = e.target.value;
-            state.currentPage = 1;
-            UI.renderVehicleList();
+            // TỐI ƯU HÓA: Sử dụng debounce để tránh lọc lại danh sách trên mỗi phím bấm
+            clearTimeout(filterDebounceTimer);
+            filterDebounceTimer = setTimeout(() => {
+                state.filterTerm = e.target.value;
+                state.currentPage = 1;
+                UI.renderVehicleList();
+            }, 250); // Chờ 250ms sau khi người dùng ngừng gõ
         },
 
-        async handleSearchTermChange(e) {
+        handleSearchTermChange(e) {
             const searchTerm = e.target.value.trim();
             const cleanedPlate = searchTerm.toUpperCase().replace(/[^A-Z0-9]/g, '');
             state.selectedPlate = cleanedPlate;
 
+            // Bước 1: Reset và cập nhật giao diện ngay lập tức
             if (searchTerm.length < 4) {
                 state.selectedVehicle = null;
                 UI.renderActionButtons();
                 UI.updateMainFormUI();
                 UI.renderSuggestions('');
+                clearTimeout(globalSearchDebounceTimer); // Hủy debounce nếu xóa hết
                 return;
             }
 
-            const foundParking = state.vehicles.find(v =>
-                v.status === 'Đang gửi' && (v.plate === cleanedPlate || (v.phone && v.phone === searchTerm))
-            );
+            // Bước 2: Tìm kiếm tức thì trong danh sách xe đã tải (cực nhanh)
+            // CẢI TIẾN: Sử dụng Map để tra cứu O(1)
+            const foundVehicle = state.vehicleMap.get(cleanedPlate);
 
-            if (foundParking) {
-                state.selectedVehicle = { data: foundParking, status: 'parking' };
-                const alert = state.alerts[foundParking.plate];
+            if (foundVehicle && foundVehicle.status === 'Đang gửi') {
+                // Tìm thấy xe trong bãi hiện tại -> Hiển thị ngay
+                state.selectedVehicle = { data: foundVehicle, status: 'parking' };
+                const alert = state.alerts[foundVehicle.plate];
                 if (alert) UI.showGlobalAlertModal(alert);
             } else {
+                // Không tìm thấy trong bãi, thử tìm trong danh sách đã rời bãi
                 const foundDeparted = state.vehicles.find(v => v.plate === cleanedPlate && v.status === 'Đã rời bãi');
                 if (foundDeparted) {
                     state.selectedVehicle = { data: foundDeparted, status: 'departed' };
                 } else {
-                    try {
-                        const globalVehicle = await Api.findVehicleGlobally(cleanedPlate);
-                        state.selectedVehicle = globalVehicle ? { data: globalVehicle, status: 'parking_remote' } : { data: null, status: 'new' };
-                    } catch (error) {
-                        UI.showToast(error.message, 'error');
-                        state.selectedVehicle = { data: null, status: 'new' };
-                    }
+                    // Không tìm thấy trong dữ liệu hiện tại -> Mặc định là xe mới
+                    state.selectedVehicle = { data: null, status: 'new' };
+                    // Bước 3: Kích hoạt tìm kiếm ngầm trên toàn hệ thống (có debounce)
+                    this.debounce(() => this.performGlobalSearch(cleanedPlate), 300)();
                 }
             }
-
-            UI.renderActionButtons();
+            UI.renderActionButtons(); // Cập nhật nút bấm dựa trên kết quả tìm kiếm tức thì
             UI.updateMainFormUI();
             if (state.selectedVehicle?.status === 'new' || state.selectedVehicle?.status === 'parking_remote') {
                 UI.renderSuggestions(cleanedPlate);
@@ -1369,12 +1468,13 @@
             if (!button) return;
 
             const action = button.dataset.action;
-            if (!['check-in', 'check-out', 'view-ticket', 'complete-payment'].includes(action)) return;
+            if (!['check-in', 'check-out', 'complete-payment'].includes(action)) return;
 
             if (state.isProcessing) return;
 
-            if (action === 'view-ticket') {
-                this.processViewTicket();
+            const plate = dom.searchTermInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!plate) {
+                UI.showToast('Vui lòng nhập biển số xe!', 'error');
                 return;
             }
 
@@ -1384,8 +1484,12 @@
             button.innerHTML = '<span>Đang xử lý...</span>';
 
             try {
-                if (action === 'check-in') await this.processCheckIn();
-                if (action === 'check-out') await this.processCheckOut();
+                // Cập nhật state.selectedPlate trước khi xử lý
+                state.selectedPlate = plate;
+
+                if (action === 'check-in') await this.processCheckIn(plate);
+                if (action === 'check-out') await this.processCheckOut(plate);
+
             } catch (error) {
                 UI.showToast(error.message, 'error');
             } finally {
@@ -1415,63 +1519,96 @@
             }
         },
 
-        async processCheckIn() {
-            const plate = state.selectedPlate;
-            if (!plate) throw new Error('Biển số không hợp lệ.');
+        async processCheckIn(plate) {
 
             const isAlreadyParking = state.vehicles.some(v => v.plate === plate && v.status === 'Đang gửi');
             if (isAlreadyParking) {
                 throw new Error(`Xe ${plate} đã có trong bãi. Vui lòng kiểm tra lại.`);
             }
 
-            const phone = dom.phoneNumberInput.value.trim();
-            const isVIP = dom.isVipCheckbox.checked;
-            const notes = dom.vehicleNotesInput.value.trim();
+            const phone = dom.phoneNumberInput ? dom.phoneNumberInput.value.trim() : '';
+            const isVIP = dom.isVipCheckbox ? dom.isVipCheckbox.checked : false;
+            const notes = dom.vehicleNotesInput ? dom.vehicleNotesInput.value.trim() : '';
 
             const staffInfo = JSON.parse(localStorage.getItem('staffInfo'));
             const staffUsername = staffInfo?.username || 'unknown';
 
-            let newTransaction;
+            let newTransaction; 
 
             // Đơn giản hóa logic: Chỉ kiểm tra chính sách thu phí khi vào
             const collectionPolicy = state.currentLocation?.fee_collection_policy || 'post_paid';
             const isPrePaid = collectionPolicy === 'pre_paid';
 
-            if (isPrePaid && Utils.calculateFee(new Date(), null, isVIP) > 0) {
+            // TẠO "ẢNH CHỤP" QUY TẮC PHÍ TẠI THỜI ĐIỂM CHECK-IN
+            const feePolicySnapshot = {
+                type: state.currentLocation.fee_policy_type,
+                collection: state.currentLocation.fee_collection_policy,
+                per_entry: state.currentLocation.fee_per_entry ?? FeeCalculator.config.per_entry,
+                daily: state.currentLocation.fee_daily ?? FeeCalculator.config.daily,
+                hourly_day: state.currentLocation.fee_hourly_day ?? FeeCalculator.config.hourly_day,
+                hourly_night: state.currentLocation.fee_hourly_night ?? FeeCalculator.config.hourly_night,
+            };
+
+            // Tạo một đối tượng giao dịch giả để tính phí trả trước
+            const tempTransaction = { entry_time: new Date(), is_vip: isVIP, fee_policy_snapshot: feePolicySnapshot };
+
+            if (isPrePaid && FeeCalculator.calculate(tempTransaction, null, state.currentLocation) > 0) {
                 // Xử lý thu phí trước
-                const calculatedFee = Utils.calculateFee(new Date(), null, isVIP);
+                const calculatedFee = FeeCalculator.calculate(tempTransaction, null, state.currentLocation);
                 const uniqueID = '_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
                 const paymentResult = await this.getPaymentResult(calculatedFee, { plate, entry_time: new Date().toISOString(), unique_id: uniqueID });
                 if (!paymentResult) throw new Error('Đã hủy thao tác gửi xe.');
-                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, paymentResult, uniqueID, staffUsername);
+                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { ...paymentResult, snapshot: feePolicySnapshot }, uniqueID, staffUsername);
             } else {
-                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, null, null, staffUsername);
+                // Gửi xe không thu phí trước, vẫn lưu snapshot
+                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { snapshot: feePolicySnapshot }, null, staffUsername);
             }
 
             // NÂNG CẤP: Hiển thị vé theo thiết bị
             if (Utils.isMobile()) {
-                UI.showModal('checkInReceipt', { ...newTransaction, isNew: true });
-                await App.resetFormAndFetchData(); // Reset form ngay trên mobile
+                UI.showModal('checkInReceipt', { ...newTransaction, isNew: true });                await App.resetFormAndFetchData(); // Reset form ngay trên mobile
             } else {
-                UI.showTicketView({ ...newTransaction, isNew: true });
-                await App.fetchData(true); // Chỉ tải lại dữ liệu nền trên desktop
+                UI.showModal('checkInReceipt', { ...newTransaction, isNew: true });                await App.fetchData(true); // Chỉ tải lại dữ liệu nền trên desktop
             }
         },
 
         async getPaymentResult(fee, vehicleData) {
             return new Promise((resolve) => {
                 UI.showModal('payment', { fee, vehicle: vehicleData });
+                let selectedMethod = null;
+                const modal = dom.modalContainer.querySelector('.modal-content');
+                const backBtn = modal.querySelector('[data-action="back-to-selection"]');
+
                 const modalClickHandler = (e) => {
                     const target = e.target.closest('[data-action]');
                     if (!target) return;
+
                     const action = target.dataset.action;
+
+                    // Xử lý chuyển bước trong modal
+                    if (action === 'select-payment-method') {
+                        selectedMethod = target.dataset.method;
+                        modal.querySelector('#payment-step-1').classList.remove('active');
+                        modal.querySelector('#payment-step-2').classList.add('active');
+                        modal.querySelector(`#${selectedMethod === 'Tiền mặt' ? 'cash' : 'qr'}-display-area`).style.display = 'block';
+                        if (backBtn) backBtn.style.display = 'inline-flex';
+                        return;
+                    }
+
+                    // Xử lý hoàn tất hoặc hủy
                     if (action === 'complete-payment') {
-                        const method = target.dataset.method;
+                        if (!selectedMethod) return; // Phải chọn phương thức trước
                         dom.modalContainer.removeEventListener('click', modalClickHandler);
-                        resolve({ fee, method });
+                        resolve({ fee, method: selectedMethod });
                     } else if (action === 'close-modal') {
                         dom.modalContainer.removeEventListener('click', modalClickHandler);
                         resolve(null);
+                    } else if (action === 'back-to-selection') { // Xử lý quay lại
+                        modal.querySelector('#payment-step-2').classList.remove('active');
+                        modal.querySelector('#payment-step-1').classList.add('active');
+                        modal.querySelectorAll('.payment-display-area').forEach(el => el.style.display = 'none');
+                        if (backBtn) backBtn.style.display = 'none';
+                        selectedMethod = null;
                     }
                 };
                 dom.modalContainer.addEventListener('click', modalClickHandler);
@@ -1486,9 +1623,13 @@
             await App.resetFormAndFetchData();
         },
 
-        async processCheckOut() {
-            const vehicle = state.selectedVehicle?.data;
+        async processCheckOut(plate) {
+            const vehicle = state.vehicles.find(v => v.plate === plate && v.status === 'Đang gửi');
+
             if (!vehicle) throw new Error('Không có thông tin xe để lấy ra.');
+
+            // Cập nhật state để các hàm khác có thể sử dụng
+            state.selectedVehicle = { data: vehicle, status: 'parking' };
 
             const alert = state.alerts[vehicle.plate];
             if (alert?.level === 'block') throw new Error(`XE BỊ CHẶN: ${alert.reason}`);
@@ -1502,17 +1643,21 @@
                 return;
             }
 
+            // SỬA LỖI LOGIC NGHIÊM TRỌNG: Phải kiểm tra điều kiện miễn phí một cách độc lập,
+            // không chỉ dựa vào kết quả của calculateFee, vì phí có thể là 0 do gửi trong thời gian ngắn.
             const isVIP = vehicle.is_vip;
-            const fee = Utils.calculateFee(vehicle.entry_time, null, isVIP);
+            const isFreeMode = state.currentLocation?.fee_policy_type === 'free';
+            // SỬA LỖI CHÍ MẠNG: Luôn truyền new Date() khi lấy xe để tính phí chính xác tại thời điểm hiện tại.
+            // Việc truyền `null` sẽ khiến hàm hiểu sai là đang tính phí cho xe vào (pre-paid).
+            const fee = FeeCalculator.calculate(vehicle, new Date(), state.currentLocation);
 
-            if (fee > 0) {
+            if (fee > 0 || !isVIP && !isFreeMode) {
                 if (!state.isOnline) {
                     throw new Error("Không thể xử lý thanh toán khi đang offline.");
                 }
                 const paymentResult = await this.getPaymentResult(fee, vehicle);
                 if (paymentResult) {
                     await this.processPayment(paymentResult.method);
-                    return;
                 }
                 throw new Error('Đã hủy thanh toán.');
             }
@@ -1528,9 +1673,9 @@
             }
             // NÂNG CẤP: Hiển thị vé theo thiết bị
             if (Utils.isMobile()) {
-                UI.showModal('checkInReceipt', { ...vehicle, isNew: false });
+                UI.showModal('checkInReceipt', { ...vehicle, isNew: false });            
             } else {
-                UI.showTicketView({ ...vehicle, isNew: false });
+                UI.showModal('checkInReceipt', { ...vehicle, isNew: false });
             }
         },
 
@@ -1544,11 +1689,6 @@
                 const locationId = target.closest('.location-card').dataset.locationId;
                 const location = state.locations.find(l => l.id === locationId);
                 if (location) App.selectLocation(location);
-                return;
-            }
-
-            if (action === 'back-to-form') {
-                UI.hideTicketView();                App.resetFormAndFetchData();
                 return;
             }
 
@@ -1607,7 +1747,7 @@
         // NÂNG CẤP: Logic xử lý thanh toán và hiển thị kết quả
         async processPayment(paymentMethod) {
             const vehicle = state.selectedVehicle?.data;
-            const fee = Utils.calculateFee(vehicle.entry_time, null, vehicle.is_vip);
+            const fee = FeeCalculator.calculate(vehicle, new Date(), state.currentLocation);
             const staffInfo = JSON.parse(localStorage.getItem('staffInfo'));
             const staffUsername = staffInfo?.username || 'unknown';
 
@@ -1707,31 +1847,37 @@
                 const alert = state.alerts[vehicle.plate];
                 if (alert?.level === 'block') throw new Error(`XE BỊ CHẶN: ${alert.reason}`);
 
-                const fee = Utils.calculateFee(vehicle.entry_time, null, vehicle.is_vip);
                 const staffInfo = JSON.parse(localStorage.getItem('staffInfo'));
                 const staffUsername = staffInfo?.username || 'unknown';
 
-                if (fee > 0) {
+                // NÂNG CẤP: Tự động cho xe đã thanh toán trước ra khỏi bãi
+                if (vehicle.fee !== null && vehicle.payment_method) {
+                    await Api.checkOut(vehicle.unique_id, vehicle.fee, vehicle.payment_method, staffUsername);
+                    UI.showToast(`Đã cho xe ${vehicle.plate} ra (đã thanh toán trước).`, 'success');
+                    await App.resetFormAndFetchData();
+                } else {
+                    // Xử lý cho xe chưa thanh toán như bình thường
+                    const fee = FeeCalculator.calculate(vehicle, new Date(), state.currentLocation);
+                    if (fee <= 0) { // Bao gồm cả xe miễn phí và VIP
+                        const reason = vehicle.is_vip ? 'Khách VIP' : 'Miễn phí';
+                        await Api.checkOut(vehicle.unique_id, 0, reason, staffUsername);
+                        UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
+                        await App.resetFormAndFetchData();
+                        return;
+                    }
+
                     if (!state.isOnline) throw new Error("Không thể xử lý thanh toán khi đang offline.");
                     const paymentResult = await this.getPaymentResult(fee, vehicle);
                     if (!paymentResult) throw new Error('Đã hủy thanh toán.');
 
                     await Api.checkOut(vehicle.unique_id, paymentResult.fee, paymentResult.method, staffUsername);
-                    UI.showPaymentConfirmation('success', 'Thành công!');
                     const reason = `Đã thanh toán ${Utils.formatCurrency(fee)}đ`;
 
                     setTimeout(async () => {
                         UI.closeModal();
                         UI.showModal('finalSuccess', { plate: vehicle.plate, reason: reason });
-                        UI.startConfetti('confetti-container');
                         await App.resetFormAndFetchData();
-                    }, 2500);
-
-                } else {
-                    const reason = vehicle.is_vip ? 'Khách VIP' : 'Miễn phí';
-                    await Api.checkOut(vehicle.unique_id, 0, reason, staffUsername);
-                    UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
-                    await App.resetFormAndFetchData();
+                    }, 1500);
                 }
             } catch (error) {
                 UI.showToast(error.message, 'error');
@@ -1755,7 +1901,20 @@
                 window.addEventListener('online', () => this.handleConnectionChange(true));
                 window.addEventListener('offline', () => this.handleConnectionChange(false));
                 setInterval(() => Api.processSyncQueue(), 15000);
-                // Bỏ qua hoàn toàn logic đăng nhập và khởi động ứng dụng trực tiếp.
+                
+                // KHÔI PHỤC & CẢI TIẾN: Tự động đồng bộ dữ liệu theo chu kỳ như một cơ chế dự phòng,
+                // đảm bảo dữ liệu luôn mới nhất ngay cả khi tín hiệu realtime bị lỡ.
+                const refreshIntervalMs = (APP_CONFIG.autoRefreshInterval || 30000); // Tăng thời gian lên 30s
+                setInterval(async () => {
+                    if (!state.isOnline || isBackgroundRefreshing) return;
+                    try {
+                        isBackgroundRefreshing = true;
+                        await this.fetchData(true); // isSilent = true → không show loading
+                    } finally {
+                        isBackgroundRefreshing = false;
+                    }
+                }, refreshIntervalMs);
+                
                 this.startApp();
             });
         },
@@ -1784,7 +1943,7 @@
 
             if (dom.vehicleListContainer) {
                 dom.vehicleListContainer.addEventListener('click', (e) => {
-                    const item = e.target.closest('.vehicle-item');
+                    const item = e.target.closest('.vehicle-item-v5');
                     if (item) Handlers.handleVehicleItemClick(item);
                 });
             }
@@ -1807,19 +1966,23 @@
                 }
             });
 
-            if (dom.vehicleFormContent) {
-                dom.vehicleFormContent.addEventListener('click', (e) => {
-                    const button = e.target.closest('[data-action="view-image"]');
-                    // SỬA LỖI: Sử dụng Event Delegation để xử lý click trên nút "Xem ảnh"
-                    // được tạo động.
-                    if (button) {
-                        UI.showModal('image-viewer', { imageUrl: button.dataset.imageUrl, plate: button.dataset.plate });
+            // SỬA LỖI & TÁI CẤU TRÚC: Gắn listener vào card body để bắt sự kiện click trên các nút được tạo động
+            const cardBody = document.querySelector('#action-column .card__body');
+            if (cardBody) {
+                cardBody.addEventListener('click', (e) => {
+                    const imageButton = e.target.closest('[data-action="view-image"]');
+                    const viewTicketButton = e.target.closest('[data-action="view-ticket"]');
+    
+                    if (imageButton) {
+                        UI.showModal('image-viewer', { imageUrl: imageButton.dataset.imageUrl, plate: imageButton.dataset.plate });
+                    } else if (viewTicketButton) {
+                        // KHÔI PHỤC: Xử lý sự kiện click cho nút "Xem lại vé xe"
+                        Handlers.processViewTicket();
                     }
                 });
             }
+
             if (dom.modalContainer) dom.modalContainer.addEventListener('click', (e) => Handlers.handleModalClick(e));
-            // SỬA LỖI: Gắn listener vào đúng container của view vé xe
-            if (dom.ticketViewContainer) dom.ticketViewContainer.addEventListener('click', (e) => Handlers.handleViewActionClick(e));
 
             // Nâng cấp: Thêm trình nghe sự kiện cho widget người dùng
             if (dom.userProfileWidget) {
@@ -1830,12 +1993,9 @@
             }
         },
 
-        setupGlobalEventListeners() {
-            ['mousemove', 'mousedown', 'keypress', 'touchstart'].forEach(event => {
-                window.addEventListener(event, () => App.resetIdleTimer());
-            });
-        },
-
+        // =========================================================================
+        // MODULE 7.5: LOGIC XỬ LÝ VỊ TRÍ & ĐỒNG BỘ
+        // =========================================================================
         async determineLocation(forceShowModal = false) {
             const AUTO_SELECT_RADIUS_KM = 0.1;
             const locations = state.locations || [];
@@ -1872,6 +2032,7 @@
             try {
                 await Api.fetchLocations();
 
+                this.loadStateFromLocalStorage();
                 if (!state.currentLocation) {
                     await this.determineLocation();
                     if (!state.currentLocation) return;
@@ -1901,6 +2062,19 @@
                 state.vehicles = vehicles;
                 state.alerts = alerts;
 
+                // CẢI TIẾN: Xây dựng lại Map tra cứu nhanh
+                state.vehicleMap.clear();
+                vehicles.forEach(v => state.vehicleMap.set(v.plate, v));
+
+
+                // ĐỒNG BỘ LẠI currentLocation NẾU BÃI ĐỖ ĐÃ BỊ SỬA TÊN / CẤU HÌNH TỪ ADMIN
+                if (state.currentLocation?.id) {
+                    const updatedLoc = locations.find(l => l.id === state.currentLocation.id);
+                    if (updatedLoc) {
+                        state.currentLocation = updatedLoc;
+                    }
+                }
+
                 if (state.isOnline) this.saveStateToLocalStorage();
             } catch (error) {
                 UI.showToast(error.message, 'error');
@@ -1909,12 +2083,14 @@
             } finally {
                 state.isLoading = false;
                 UI.renderApp();
+                if (!isSilent) {
+                    UI.showDataSyncIndicator(); // Hiển thị chỉ báo khi tải xong
+                }
             }
         },
 
         async resetFormAndFetchData() {
-            dom.searchTermInput.value = '';
-            UI.hideTicketView(); // Ẩn view vé xe và hiện lại form
+            dom.searchTermInput.value = '';            
             dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
             await this.fetchData(true);
         },
@@ -1991,45 +2167,117 @@
                 return;
             }
 
-            // SỬA LỖI: Thống nhất tên kênh và BẬT BROADCAST để đồng bộ 2 chiều
-            const channelConfig = { config: { broadcast: { self: true } } };
-            const mainChannel = db.channel('he-thong-trong-xe-channel', channelConfig);
-            mainChannel
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-                    console.log('Realtime: Giao dịch thay đổi. Tải lại dữ liệu...');
-                    this.fetchData(true);
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'security_alerts' }, async (payload) => {
-                    console.log('Realtime: Cảnh báo an ninh thay đổi.', payload);
-                    let alertData = payload.new || payload.old;
-                    if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                        UI.showGlobalAlertModal(alertData);
-                    } else if (payload.eventType === 'DELETE') {
-                        UI.showToast(`Cảnh báo cho xe ${alertData.plate} đã được gỡ bỏ.`, 'success');
-                    }
-                    await this.fetchData(true);
-                    if (state.selectedVehicle && alertData && state.selectedVehicle.data.plate === alertData.plate) {
-                        UI.renderActionButtons();
-                    }
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, async (payload) => {
-                    console.log('Realtime: Thông tin bãi đỗ thay đổi.', payload);
-                    UI.showToast('Cài đặt bãi đỗ vừa được cập nhật từ quản trị viên.', 'info');
+            // KHÔI PHỤC & TỐI ƯU HÓA: Lắng nghe các thay đổi trên CSDL
+            // và các sự kiện broadcast từ các client khác (vd: admin.html).
+            const channel = db.channel('he-thong-trong-xe-realtime');
 
-                    await Api.fetchLocations();
+            channel
+                // 1. Lắng nghe thay đổi trực tiếp từ bảng transactions
+                .on(
+                    'postgres_changes', {
+                        event: '*',
+                    schema: 'public', // Lắng nghe tất cả sự kiện
+                        table: 'transactions'
+                    },
+                    (payload) => {
+                        console.log('Realtime: Phát hiện thay đổi trên bảng transactions.', payload);
+                        // THAY ĐỔI: Xử lý thông minh thay vì tải lại toàn bộ
+                        const handleTransactionChange = (record) => {
+                            const index = state.vehicles.findIndex(v => v.unique_id === record.unique_id);
+                            
+                            if (payload.eventType === 'INSERT') {
+                                if (index === -1) {
+                                    state.vehicles.unshift(record);
+                                    state.vehicleMap.set(record.plate, record); // Cập nhật Map
+                                    UI.renderVehicleList(); // Vẽ lại toàn bộ danh sách để chèn mục mới
+                                }
+                            } else if (payload.eventType === 'UPDATE') {
+                                 if (index > -1) {
+                                     // Cập nhật state
+                                     Object.assign(state.vehicles[index], record);
+                                     state.vehicleMap.set(record.plate, state.vehicles[index]); // Cập nhật Map
+                                     // "PHẪU THUẬT" DOM, KHÔNG RENDER LẠI TOÀN BỘ
+                                     const nodeToUpdate = dom.vehicleListContainer.querySelector(`[data-id="${record.unique_id}"]`);
+                                     if (nodeToUpdate) UI.updateVehicleItemDOM(nodeToUpdate, record);
+                                 }
+                            } else if (payload.eventType === 'DELETE') {
+                                 if (index > -1) {
+                                     const oldRecord = state.vehicles[index];
+                                     state.vehicles.splice(index, 1); // Xóa khỏi state
+                                     state.vehicleMap.delete(oldRecord.plate); // Cập nhật Map
+                                     const nodeToRemove = dom.vehicleListContainer.querySelector(`[data-id="${oldRecord.unique_id}"]`);
+                                     if (nodeToRemove) nodeToRemove.remove(); // Xóa khỏi DOM
+                                 }
+                            }
+                        };
 
-                    if (state.currentLocation) {
-                        const updatedLocation = state.locations.find(loc => loc.id === state.currentLocation.id);
-                        if (updatedLocation) {
-                            state.currentLocation = updatedLocation;
-                            App.saveStateToLocalStorage();
+                        // Supabase gửi cả `new` và `old` cho UPDATE và DELETE
+                        const record = payload.new || payload.old;
+                        if (record) {
+                            handleTransactionChange(record);
                         }
+                        // Vẽ lại các thành phần bị ảnh hưởng mà không tải lại toàn bộ trang
+                        UI.renderDashboard(); // Bảng tin nhanh vẫn cần cập nhật
+                        UI.showDataSyncIndicator();
                     }
-                    UI.renderApp();
-                })
+                )
+                // 2. Lắng nghe thay đổi trên bảng security_alerts
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'security_alerts'
+                    },
+                    (payload) => {
+                        console.log('Realtime: Phát hiện thay đổi trên bảng security_alerts.', payload);
+                        // Chỉ cần tải lại cảnh báo và render lại giao diện là đủ
+                        Api.fetchAlerts().then(alerts => {
+                            state.alerts = alerts;
+                            UI.renderApp();
+                            UI.showDataSyncIndicator();
+                        });
+                    }
+                )
+                // 3. Lắng nghe thay đổi trên bảng locations (cấu hình bãi đỗ)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'security_alerts'
+                    },
+                    (payload) => {
+                        console.log('Realtime: Phát hiện thay đổi trên bảng locations.', payload);
+                        Api.fetchLocations().then(locations => {
+                            state.locations = locations;
+                            // Cập nhật lại thông tin bãi đỗ hiện tại nếu nó bị thay đổi
+                            if (state.currentLocation?.id) {
+                                const updatedLoc = locations.find(l => l.id === state.currentLocation.id);
+                                if (updatedLoc) {
+                                    state.currentLocation = updatedLoc;
+                                }
+                            }
+                            // Chỉ render lại header và dashboard
+                            UI.renderApp();
+                            UI.showDataSyncIndicator();
+                        });
+                    }
+                )
+                // 4. Lắng nghe tín hiệu broadcast tổng quát từ admin.js (dự phòng)
+                .on(
+                    'broadcast',
+                    {
+                        event: 'data_changed'
+                    },
+                    (payload) => {
+                        console.log('Realtime: Nhận tín hiệu \"data_changed\", đang làm mới dữ liệu...', payload);
+                        this.fetchData(true);
+                    }
+                )
                 .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') console.log('✅ Đã kết nối Realtime thành công!');
-                });
+                if (status === 'SUBSCRIBED') console.log('✅ Realtime: Đã kết nối và sẵn sàng nhận tín hiệu!');
+            });
         },
 
         applySavedTheme() {
@@ -2050,7 +2298,9 @@
             });
             document.querySelectorAll('.live-fee').forEach(el => {
                 const isVIP = el.dataset.isvip === 'true';
-                el.textContent = Utils.formatCurrency(Utils.calculateFee(el.dataset.starttime, null, isVIP)) + 'đ';
+                // SỬA LỖI: Lấy dữ liệu xe từ data-vehicle để đảm bảo có snapshot
+                const vehicleData = JSON.parse(el.dataset.vehicle || '{}');
+                el.textContent = Utils.formatCurrency(FeeCalculator.calculate(vehicleData, null, state.currentLocation)) + 'đ';
             });
         },
 
@@ -2121,3 +2371,6 @@
     // Bắt đầu ứng dụng!
     App.init();
     IdleScreenManager.init();
+// Thêm hàm này vào tệp main.js của bạn
+// Gán hàm này vào đối tượng window để mã trong index.html có thể gọi được
+window.updateFeeModeDisplay = UI.updateFeeModeDisplay.bind(UI);

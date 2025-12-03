@@ -22,14 +22,6 @@ const STATIC_CONFIG = {
     organizationName: "ĐOÀN TNCS HỒ CHÍ MINH P.BA ĐÌNH",
     weatherApiKey: "c9b24c823032912293817419cb0cd2dc",
     autoRefreshInterval: 5000,
-    fee: {
-        enabled: true,
-        freeMinutes: 15,
-        dayRate: 5000,
-        nightRate: 8000,
-        nightStartHour: 18,
-        nightEndHour: 6
-    },
     payment: {
         imageUrlBase: "https://img.vietqr.io/image/MSB-968866975500-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
     },
@@ -41,7 +33,9 @@ const STATIC_CONFIG = {
 
 // 2. Khởi tạo biến APP_CONFIG và kết nối Supabase
 let APP_CONFIG = { ...STATIC_CONFIG };
+// Dùng một Supabase client dùng chung cho toàn bộ ứng dụng (được gắn lên window để tái sử dụng)
 const db = supabase.createClient(STATIC_CONFIG.supabase.url, STATIC_CONFIG.supabase.anonKey);
+window.SUPABASE_DB = db;
 
 /**
  * 3. Hàm tải và hợp nhất cài đặt từ Supabase.
@@ -49,7 +43,8 @@ const db = supabase.createClient(STATIC_CONFIG.supabase.url, STATIC_CONFIG.supab
  */
 const fetchAndMergeSettings = async () => {
     try {
-        const { data, error } = await db.from('app_settings').select('key, value').eq('is_active', true);
+        // NÂNG CẤP: Không phụ thuộc vào cột is_active (tránh lỗi nếu DB chưa có cột này)
+        const { data, error } = await db.from('app_settings').select('key, value');
 
         if (error) {
             if (error.code === '42P01') {
@@ -69,6 +64,11 @@ const fetchAndMergeSettings = async () => {
         // Cập nhật các cấu trúc lồng nhau nếu có giá trị từ DB
         if (APP_CONFIG.payment_qr_url) {
             APP_CONFIG.payment.imageUrlBase = APP_CONFIG.payment_qr_url;
+        }
+
+        // TÁI CẤU TRÚC: "Bơm" cấu hình phí vào module FeeCalculator
+        if (typeof FeeCalculator !== 'undefined' && FeeCalculator.updateConfig) {
+            FeeCalculator.updateConfig(APP_CONFIG.fee);
         }
 
         console.log('✅ Cấu hình ứng dụng đã được tải và hợp nhất thành công:', APP_CONFIG);

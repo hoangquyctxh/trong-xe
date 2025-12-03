@@ -1,9 +1,9 @@
 /*
  * =========================================================================
- * HỆ THỐNG GIAO DIỆN "AETHER SUITE" - PHIÊN BẢN 11.0 (FINAL & COMPLETE)
+ * HỆ THỐNG GIAO DIỆN "AETHER SUITE" - PHIÊN BẢN 12.0 (REFINED)
  * Tác giả: Gemini Code Assist
- * Mục tiêu: Tái cấu trúc hoàn toàn, tối ưu hiệu suất, nhất quán tuyệt đối,
- *          mang lại trải nghiệm người dùng đẳng cấp và dễ dàng bảo trì.
+ * Mục tiêu: Tái cấu trúc, tối ưu hóa, đảm bảo tính nhất quán và dễ bảo trì,
+ *          mang lại trải nghiệm người dùng đẳng cấp.
  * =========================================================================
  */
 
@@ -11,10 +11,10 @@
    1. BIẾN VÀ THIẾT LẬP CƠ BẢN (VARIABLES & BASE SETUP)
    ========================================================================== */
 :root {
-    /* Bảng màu "Aetherial Light" - Sáng & Chuyên nghiệp */
+    /* Bảng màu "Aetherial Light" */
     --bg-main: #f8fafc;
     --bg-card: #ffffff;
-    --bg-header: rgba(255, 255, 255, 0.85); /* Hiệu ứng mờ cho header */
+    --bg-header: rgba(255, 255, 255, 0.85);
     --bg-input: #ffffff;
     --bg-hover: #f1f5f9;
     --border-color: #e2e8f0;
@@ -23,33 +23,39 @@
     --text-secondary: #64748b;
     --text-placeholder: #94a3b8;
 
-    /* Màu nhấn */
+    /* Màu sắc thương hiệu & nhấn */
     --primary-accent: #2563eb;
     --primary-accent-light: #dbeafe;
     --youth-union-blue: #1488DB;
 
-    /* Các màu trạng thái */
+    /* Màu trạng thái */
     --danger-color: #dc2626;
     --danger-light: #fee2e2;
     --success-color: #16a34a;
     --success-light: #dcfce7;
     --warning-color: #f59e0b;
     --warning-light: #fef3c7;
-    --accent-gold: #ca8a04;
-    --accent-gold-light: #fef9c3; /* Nền cho VIP checkbox */
+    --vip-gold: #ca8a04;
+    --vip-gold-light: #fef9c3;
 
-    /* Hiệu ứng & Bo góc */
+    /* Font & Typography */
+    --font-main: 'Be Vietnam Pro', sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+
+    /* Shadows & Effects */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Sizing & Radius */
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
-    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    --font-main: 'Be Vietnam Pro', sans-serif;
+    --header-height: 85px;
 }
 
 body[data-theme="dark"] {
-    /* Bảng màu "Midnight Slate" - Tối & Hiện đại */
+    /* Bảng màu "Midnight Slate" */
     --bg-main: #0f172a;
     --bg-card: #1e293b;
     --bg-header: rgba(30, 41, 59, 0.85);
@@ -60,48 +66,51 @@ body[data-theme="dark"] {
     --text-primary: #f1f5f9;
     --text-secondary: #94a3b8;
     --text-placeholder: #64748b;
+
     --primary-accent: #38bdf8;
     --primary-accent-light: #1e293b;
+
     --danger-light: #450a0a;
     --success-light: #14532d;
     --warning-light: #422006;
-    --accent-gold: #facc15;
-    --accent-gold-light: #423b13; /* Nền cho VIP checkbox (dark) */
+    --vip-gold: #facc15;
+    --vip-gold-light: #423b13;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
     font-family: var(--font-main);
+    font-size: 16px;
+    line-height: 1.6;
     background: var(--bg-main);
     color: var(--text-primary);
-    line-height: 1.6;
-    font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.3s, color 0.3s;
 }
 .container { max-width: 1440px; margin: 0 auto; padding: 0 1.5rem; }
+a { color: var(--primary-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
 /* ==========================================================================
    2. BỐ CỤC CHÍNH (LAYOUT)
    ========================================================================== */
 .app-header {
     background-color: var(--bg-header);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     padding: 1.25rem 0;
 }
 .header-container { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 .header-title { display: flex; align-items: center; gap: 1rem; }
-.header-title .logo { width: 45px; height: 45px; }
+.header-title .logo { width: 45px; height: 45px; border-radius: 8px; }
 .header-title .subtitle { font-size: 0.9rem; color: var(--text-secondary); }
 .header-title h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 .header-controls { display: flex; align-items: center; gap: 1.5rem; }
 
-/* BỔ SUNG LẠI: Thanh điều hướng chính */
 .main-navigation {
     background-color: var(--bg-card);
     border-bottom: 1px solid var(--border-color);
@@ -111,18 +120,17 @@ body {
 .main-navigation ul { list-style: none; display: flex; }
 .main-navigation ul a {
     display: block;
-    padding: 0.8rem 1.2rem;
+    padding: 0.9rem 1.2rem;
     text-decoration: none;
     color: var(--text-secondary);
     font-weight: 600;
     border-bottom: 3px solid transparent;
     transition: var(--transition);
 }
-.main-navigation ul a:hover { color: var(--primary-accent); }
+.main-navigation ul a:hover { color: var(--primary-accent); background-color: var(--bg-hover); }
 .main-navigation ul a.active { color: var(--primary-accent); border-bottom-color: var(--primary-accent); }
 .nav-extra { display: flex; align-items: center; gap: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); }
 
-/* SỬA LỖI: Chỉ "đóng băng" header trên màn hình lớn */
 @media (min-width: 769px) {
     .app-header {
         position: sticky;
@@ -131,57 +139,29 @@ body {
     }
     .main-navigation {
         position: sticky;
-        top: 85px; /* Chiều cao của app-header */
+        top: var(--header-height);
         z-index: 997;
     }
 }
 
-.change-location-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background-color: transparent;
-    border: 1px solid transparent;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: var(--transition);
-}
-.change-location-btn:hover { background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary); }
-
-.fee-status-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    border-radius: 20px;
-    margin-left: 4px;
-}
-.fee-status-badge.paid { background-color: var(--primary-accent-light); color: var(--primary-accent); border: 1px solid var(--primary-accent); }
-.fee-status-badge.free { background-color: var(--success-light); color: var(--success-color); border: 1px solid var(--success-color); }
-
 .main-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-top: 1.5rem; align-items: start; }
 .main-column { display: flex; flex-direction: column; gap: 1.5rem; }
 
-/* NÂNG CẤP: Container cho phép chuyển đổi view */
 .view-switcher-container {
     position: relative;
-    display: grid; /* Sử dụng grid để 2 view chồng lên nhau */
+    display: grid;
 }
 .view-content {
-    grid-area: 1 / 1; /* Đặt cả 2 view vào cùng một ô grid */
+    grid-area: 1 / 1;
     transition: opacity 0.4s ease, transform 0.4s ease;
 }
 .view-content.is-hidden {
     opacity: 0;
     transform: scale(0.95);
-    pointer-events: none; /* Không cho phép tương tác với view bị ẩn */
+    pointer-events: none;
 }
 
-.app-footer { border-top: 1px solid var(--border-color); margin-top: 2rem; padding: 2rem 0; text-align: center; color: var(--text-secondary); font-size: 0.9rem; }
+.app-footer { border-top: 1px solid var(--border-color); margin-top: 3rem; padding: 2rem 0; text-align: center; color: var(--text-secondary); font-size: 0.9rem; }
 
 /* ==========================================================================
    3. CÁC THÀNH PHẦN CHUNG (COMPONENTS)
@@ -196,7 +176,7 @@ body {
     flex-direction: column;
 }
 .card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
-.card__header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); font-size: 1.1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.card__header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color-light); font-size: 1.1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 .card__body { padding: 1.5rem; flex-grow: 1; }
 .card__footer {
     padding: 1rem 1.5rem;
@@ -205,17 +185,22 @@ body {
     flex-shrink: 0;
 }
 
-.input-wrapper { position: relative; flex-grow: 1; }
-.input-wrapper input, .input-wrapper textarea {
+.input-wrapper { position: relative; }
+.input-wrapper input, .input-wrapper select, .input-wrapper textarea {
     width: 100%; padding: 0.8rem 1rem; font-size: 1rem;
     background-color: var(--bg-input); border: 1px solid var(--border-color);
     border-radius: var(--radius-md); color: var(--text-primary);
     transition: var(--transition);
     font-family: var(--font-main);
 }
-.input-wrapper input::placeholder, .input-wrapper textarea::placeholder { color: var(--text-placeholder); text-transform: none; }
+.input-wrapper input::placeholder, .input-wrapper textarea::placeholder { color: var(--text-placeholder); }
 .input-wrapper textarea { resize: vertical; min-height: 60px; }
 .input-wrapper input:focus, .input-wrapper textarea:focus { outline: none; border-color: var(--primary-accent); box-shadow: 0 0 0 4px var(--primary-accent-light); }
+
+/* NÂNG CẤP: Thay đổi placeholder cho ô lọc danh sách */
+#filter-input::placeholder {
+    font-style: italic;
+}
 
 .icon-btn {
     flex-shrink: 0; width: 48px; height: 48px; border-radius: var(--radius-md);
@@ -224,7 +209,7 @@ body {
     display: flex; align-items: center; justify-content: center;
 }
 .icon-btn:hover:not(:disabled) { background-color: var(--primary-accent-light); color: var(--primary-accent); border-color: var(--primary-accent); }
-.icon-btn.active { color: var(--danger-color); background-color: var(--danger-light); animation: pulse-mic 1.5s infinite; }
+.icon-btn.active { color: var(--danger-color); background-color: var(--danger-light); border-color: var(--danger-color); animation: pulse-mic 1.5s infinite; }
 @keyframes pulse-mic { 0%, 100% { box-shadow: 0 0 0 0 var(--danger-light); } 50% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); } }
 
 .action-button {
@@ -237,9 +222,28 @@ body {
 }
 .action-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 .action-button:active:not(:disabled) { transform: translateY(0); box-shadow: var(--shadow-md); }
-.action-button:disabled { background: var(--bg-hover) !important; color: var(--text-secondary) !important; cursor: not-allowed; transform: none; box-shadow: none; }
+.action-button:disabled { background: var(--border-color) !important; color: var(--text-secondary) !important; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* HIỆU ỨNG NÚT BẤM - ĐÃ SỬA LỖI */
+/* Hiệu ứng vệt sáng khi hover (Chuyển từ index.html vào) */
+.action-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
+    transform: skewX(-25deg);
+    pointer-events: none; /* Quan trọng: không để hiệu ứng chặn click */
+}
+.action-button:hover::after {
+    animation: shine-effect 0.8s ease-out;
+}
+@keyframes shine-effect { from { left: -150%; } to { left: 150%; } }
+
+.action-button:active:not(:disabled) { transform: translateY(0); box-shadow: var(--shadow-md); }
+.action-button:disabled { background: var(--border-color) !important; color: var(--text-secondary) !important; cursor: not-allowed; transform: none; box-shadow: none; }
+
 .btn-icon-wrapper {
     position: relative;
     width: 20px;
@@ -262,11 +266,11 @@ body {
     transform: translateY(0) scale(1);
 }
 
-.secondary-action-wrapper { margin-top: 0.75rem; text-align: center; }
+.secondary-action-wrapper { margin-top: 1rem; margin-bottom: 1rem; text-align: center; }
 .secondary-action-btn {
     background: none; border: none;
     color: var(--text-secondary); font-weight: 600;
-    cursor: pointer; text-decoration: none;
+    cursor: pointer;
     border-bottom: 1px dashed var(--text-secondary);
     transition: var(--transition);
 }
@@ -275,7 +279,7 @@ body {
 .action-alert-box {
     padding: 1rem; margin-bottom: 1rem;
     border-radius: var(--radius-md); border-left: 4px solid;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.3s ease-out;
 }
 .action-alert-box.alert-warning { background-color: var(--warning-light); border-color: var(--warning-color); color: var(--warning-color); }
 .action-alert-box.alert-block { background-color: var(--danger-light); border-color: var(--danger-color); color: var(--danger-color); }
@@ -296,26 +300,46 @@ body {
 .suggestion-item { padding: 0.75rem 1.2rem; cursor: pointer; transition: var(--transition); }
 .suggestion-item:hover { background-color: var(--primary-accent-light); }
 
+/* Button Variants */
 .btn--check-in { background-color: var(--primary-accent); }
 .btn--check-out { background-color: var(--danger-color); }
 .btn--view-ticket, .btn--reprint { background-color: #4b5563; }
 .btn--secondary { background-color: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-color); }
 .btn--secondary:hover { background-color: var(--bg-hover); }
 
-.vip-checkbox-wrapper { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background-color: var(--accent-gold-light); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
-.vip-checkbox-wrapper:hover { background-color: var(--accent-gold); color: white; }
+.vip-checkbox-wrapper { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background-color: var(--vip-gold-light); border: 1px solid var(--vip-gold); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
+.vip-checkbox-wrapper:hover { background-color: var(--vip-gold); color: white; }
 .vip-checkbox-wrapper:hover label { color: white; }
-.vip-checkbox-wrapper input { width: 16px; height: 16px; accent-color: var(--accent-gold); }
-.vip-checkbox-wrapper label { font-weight: 600; color: var(--accent-gold); transition: var(--transition); }
+.vip-checkbox-wrapper input { width: 16px; height: 16px; accent-color: var(--vip-gold); }
+.vip-checkbox-wrapper label { font-weight: 600; color: var(--vip-gold); transition: var(--transition); }
+
+.change-location-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background-color: transparent; border: 1px solid transparent;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 600;
+    color: var(--text-secondary); cursor: pointer;
+    transition: var(--transition);
+}
+.change-location-btn:hover { background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary); }
 
 .status-badge { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white; }
 .status-badge.parking { background-color: var(--success-color); }
 .status-badge.departed { background-color: var(--text-secondary); }
 
+/* Huy hiệu trạng thái thu phí */
+.fee-status-badge {
+    font-size: 0.8rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    margin-left: 8px; vertical-align: middle;
+}
+.fee-status-badge.free { background-color: var(--success-light); color: var(--success-color); }
+.fee-status-badge.paid { background-color: var(--warning-light); color: var(--warning-color); }
+
 /* ==========================================================================
    4. CÁC THÀNH PHẦN CỤ THỂ (SPECIFIC COMPONENTS)
    ========================================================================== */
-.date-selector { display: flex; align-items: center; gap: 0.5rem; background-color: var(--bg-hover); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); }
+.date-selector { display: flex; align-items: center; gap: 0.5rem; background-color: var(--bg-hover); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
 .date-selector input { padding: 0.25rem; border: none; background: transparent; color: var(--text-primary); }
 body[data-theme="dark"] .date-selector input::-webkit-calendar-picker-indicator { filter: invert(1); }
 
@@ -326,44 +350,102 @@ input:checked + .slider { background-color: var(--primary-accent); }
 input:checked + .slider:before { transform: translateX(20px); }
 
 .history-list { list-style: none; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
-.history-item { background-color: var(--bg-hover); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; }
+.history-item { background-color: var(--bg-hover); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color-light); }
 .history-details { display: flex; flex-direction: column; gap: 0.25rem; }
 .history-time, .history-duration { font-size: 0.9rem; }
 .history-location { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
 
 .list-filter { max-width: 300px; flex-grow: 1; }
-.vehicle-list-container { max-height: 55vh; overflow-y: auto; padding-right: 8px; }
-.vehicle-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 0.75rem; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer; animation: fadeIn 0.5s; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.vehicle-item:hover { border-color: var(--primary-accent); background-color: var(--primary-accent-light); transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.vehicle-item .icon { width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background-color: var(--bg-hover); border-radius: 50%; color: var(--text-secondary); }
-.vehicle-item .plate { font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; }
-.vehicle-item .details { font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 1rem; }
-.vehicle-item .icon svg { width: 24px; height: 24px; }
-
-.icon--parking .vehicle-shape { fill: var(--success-color); }
-.icon--parking .pulse-wave { fill: var(--success-color); transform-origin: center; animation: pulse 2s ease-out infinite; }
-@keyframes pulse { 0% { transform: scale(0.5); opacity: 0.5; } 50% { opacity: 0.2; } 100% { transform: scale(1.5); opacity: 0; } }
-
-.vehicle-item.departed-item .icon { background-color: transparent; }
-.icon--departed .vehicle-shape { fill: var(--text-secondary); opacity: 0.5; }
-.icon--departed .checkmark-path { stroke: var(--success-color); stroke-width: 2; stroke-dasharray: 20; stroke-dashoffset: 20; animation: draw-checkmark 0.5s ease-out 0.5s forwards; }
-@keyframes draw-checkmark { to { stroke-dashoffset: 0; } }
-
-.vehicle-item.departed-item { opacity: 0.7; }
-.vehicle-item.departed-item:hover { opacity: 1; }
-.vehicle-item.is-vip { border-left: 4px solid var(--accent-gold); background-color: var(--accent-gold-light); }
-.vehicle-item.alert-warning { border-left: 4px solid var(--warning-color); background-color: var(--warning-light); }
-.vehicle-item.alert-block { border-left: 4px solid var(--danger-color); background-color: var(--danger-light); }
-
-.alert-icon { color: var(--danger-color); margin-right: 0.5rem; animation: blink 1.5s infinite ease-in-out; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-.skeleton-item { background-color: var(--bg-hover); border-radius: var(--radius-md); height: 78px; margin-bottom: 10px; animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-@keyframes pulse-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
 
 /* ==========================================================================
-   5. MODALS VÀ THÔNG BÁO (MODALS & NOTIFICATIONS)
+   GIAO DIỆN DANH SÁCH XE (VEHICLE LIST V6)
+   ========================================================================== */
+.vehicle-list-container {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.vehicle-item-v5 {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.5fr 1fr; /* Plate, Status, Time, Duration */
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* TỐI ƯU HÓA: Thay thế box-shadow bằng outline để cuộn mượt hơn */
+.vehicle-item-v5:hover {
+    transform: translateY(-3px) scale(1.01);
+    outline: 2px solid var(--primary-accent);
+    outline-offset: -2px;
+    border-color: var(--primary-accent);
+    background-color: var(--primary-accent-light);
+}
+.vehicle-v5__cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* Ngăn chặn co giãn ngoài ý muốn */
+}
+.vehicle-v5__plate {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+}
+.vehicle-v5__plate-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.vehicle-v5__icons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.vehicle-v5__time, .vehicle-v5__duration {
+    text-align: right;
+}
+.time-label { font-size: 0.8rem; color: var(--text-secondary); }
+.time-value { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+
+/* KHÔI PHỤC: Trạng thái rời bãi của V5 */
+.vehicle-item-v5.departed { opacity: 0.65; background-color: var(--bg-hover); }
+.vehicle-item-v5.departed:hover { opacity: 1; }
+
+/* Badge trạng thái V5 */
+.status-badge-v5 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    text-align: center;
+    white-space: nowrap;
+}
+.status--parking { background-color: var(--success-light); color: var(--success-color); }
+.status--departed { background-color: var(--bg-hover); color: var(--text-secondary); }
+
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.skeleton-item { background-color: var(--bg-hover); border-radius: var(--radius-md); height: 70px; margin-bottom: 0.75rem; animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes pulse-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-secondary); }
+
+/* KHÔI PHỤC: Hiệu ứng pháo hoa cho modal xác nhận */
+.confetti { position: absolute; width: 10px; height: 10px; background-color: #f00; opacity: 0; animation: confetti-fall 3s ease-out forwards; }
+@keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+/* ==========================================================================
+   5. MODALS, TOASTS & OVERLAYS
    ========================================================================== */
 .modal-overlay { position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; }
 .modal-overlay.active { opacity: 1; pointer-events: auto; }
@@ -371,14 +453,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 .modal-overlay.active .modal-content { transform: scale(1); opacity: 1; }
 .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: relative; overflow: hidden; background-color: var(--bg-hover); }
 .modal-header::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 100%; background: linear-gradient(120deg, var(--primary-accent), var(--youth-union-blue), var(--success-color)); background-size: 200% 200%; opacity: 0.1; animation: aurora-flow 10s ease infinite; z-index: 0; }
-@keyframes aurora-flow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-.modal-header > * { position: relative; z-index: 1; }
 .modal-header h2 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+.modal-header > * { position: relative; z-index: 1; }
 .modal-close-btn { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: var(--text-secondary); line-height: 1; transition: var(--transition); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
-.modal-close-btn:hover { background-color: var(--bg-hover); transform: rotate(90deg); }
+.modal-close-btn:hover { background-color: var(--border-color); transform: rotate(90deg); }
 .modal-body { padding: 1.5rem; overflow: auto; flex: 1 1 auto; }
 .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.75rem; background-color: var(--bg-hover); flex-shrink: 0; }
+@keyframes aurora-flow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
+/* Global Alert (in modal) */
 .global-alert-wrapper { text-align: center; }
 .global-alert-plate-box { padding: 1.5rem 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: inline-block; width: 100%; }
 .alert-bg-warning { background-color: var(--warning-light); }
@@ -386,7 +469,31 @@ input:checked + .slider:before { transform: translateX(20px); }
 .global-alert-plate { font-family: monospace; font-size: 3rem; font-weight: 700; color: var(--text-primary); }
 .global-alert-reason { font-size: 1.1rem; color: var(--text-secondary); }
 
-.image-viewer-container img { max-width: 100%; max-height: 80vh; border-radius: var(--radius-lg); }
+/* Image Viewer Modal */
+.image-viewer-modal .modal-content {
+    max-width: 90vw;
+    max-height: 95vh;
+    background-color: transparent;
+    box-shadow: none;
+    overflow: visible;
+    width: auto; /* Sửa lỗi: Để modal co giãn theo ảnh */
+}
+.image-viewer-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%; /* Sửa lỗi: Đảm bảo container chiếm hết không gian */
+}
+.image-viewer-container img {
+    max-width: 90vw; /* Sửa lỗi: Giới hạn chiều rộng tối đa */
+    max-height: 85vh; /* Sửa lỗi: Giới hạn chiều cao tối đa */
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    object-fit: contain;
+}
+
 #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 1rem; }
 .toast { padding: 1rem 1.5rem; border-radius: var(--radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 1rem; font-weight: 600; animation: slideUpToast 0.4s ease, fadeOutToast 0.5s ease 3.5s forwards; }
 .toast--success { background-color: var(--success-color); }
@@ -395,6 +502,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 @keyframes slideUpToast { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; } }
 
+/* Location Modal */
 .modal-subtitle { font-size: 1rem; color: var(--text-secondary); margin-bottom: 1.5rem; text-align: center; }
 .location-card-list { display: flex; flex-direction: column; gap: 1rem; }
 .location-card { background-color: var(--bg-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; cursor: pointer; transition: var(--transition); position: relative; overflow: hidden; }
@@ -408,21 +516,154 @@ input:checked + .slider:before { transform: translateX(20px); }
 .location-detail { display: flex; align-items: center; gap: 0.75rem; color: var(--text-secondary); }
 .location-detail svg { flex-shrink: 0; }
 
-.payment-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; }
-.payment-main { display: flex; flex-direction: column; gap: 1.5rem; }
-.payment-qr-section { background-color: var(--bg-hover); border-radius: var(--radius-md); padding: 1.5rem; flex-grow: 1; display: flex; align-items: center; justify-content: center; }
-.payment-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.payment-sidebar { background-color: var(--bg-hover); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; }
-.payment-summary { text-align: center; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
-.payment-summary h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; }
-.summary-plate { font-family: monospace; font-size: 2.2rem; font-weight: 700; color: var(--text-primary); }
-.payment-details { padding: 1.5rem 0; display: flex; flex-direction: column; gap: 0.75rem; }
-.payment-total { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
-.fee-label { font-size: 1rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; }
-.fee-display { font-size: 3.2rem; font-weight: 800; color: var(--danger-color); line-height: 1; }
-.fee-display span { font-size: 1.5rem; vertical-align: super; margin-left: 4px; }
+/* ==========================================================================
+   6. MODAL THANH TOÁN (PAYMENT FLOW)
+   ========================================================================== */
+.payment-flow-v4 {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
 
-.payment-confirmation-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; z-index: 10; pointer-events: none; }
+.payment-header-info {
+    background-color: var(--bg-hover);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.05);
+    margin: -0.5rem -0.5rem 0; /* Kéo nhẹ ra ngoài để tạo cảm giác nổi khối */
+}
+
+.payment-header-info .summary-label {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.payment-total {
+    margin-top: 0.5rem;
+}
+
+.fee-label { font-size: 1rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; }
+.fee-display { font-family: var(--font-mono); font-size: 3.5rem; font-weight: 800; color: var(--danger-color); line-height: 1; animation: floatUp 0.5s ease-out; }
+.fee-display span { font-size: 1.8rem; vertical-align: super; margin-left: 4px; }
+
+.payment-step {
+    display: none; /* Ẩn tất cả các bước theo mặc định */
+    flex-direction: column;
+    gap: 1.5rem;
+    animation: fadeIn 0.4s ease-out;
+}
+.payment-step.active {
+    display: flex; /* Chỉ hiện bước active */
+}
+
+.action-prompt {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.payment-method-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    width: 100%;
+}
+
+.payment-method-btn {
+    background-color: var(--bg-hover);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm);
+}
+.payment-method-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+.payment-method-btn.method-cash:hover { background-color: var(--success-light); border-color: var(--success-color); color: var(--success-color); }
+.payment-method-btn.method-qr:hover { background-color: var(--primary-accent-light); border-color: var(--primary-accent); color: var(--primary-accent); }
+
+.payment-method-icon-wrapper { width: 48px; height: 48px; position: relative; }
+.payment-method-icon { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: var(--transition); }
+.payment-method-btn:hover .payment-method-icon { fill: var(--primary-accent); }
+.payment-method-btn.method-cash:hover .payment-method-icon { fill: var(--success-color); }
+
+/* ==========================================================================
+   ICON ĐỘNG V5 - TỐI GIẢN & TINH TẾ
+   ========================================================================== */
+
+/* Icon QR động: Đường quét mượt mà */
+.icon-qr-animated::after {
+    content: '';
+    position: absolute;
+    left: 15%; right: 15%; top: 15%;
+    height: 2px;
+    background: var(--primary-accent);
+    box-shadow: 0 0 5px var(--primary-accent);
+    border-radius: 2px;
+    animation: qr-scan-line 2.5s ease-in-out infinite;
+}
+@keyframes qr-scan-line { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(16px); } }
+
+/* Icon Tiền mặt động: Hiệu ứng "con mắt" nhìn */
+.icon-cash-animated path:last-child { animation: cash-pupil-look 4s ease-in-out infinite; transform-origin: center; }
+@keyframes cash-pupil-look { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-2px, -1px); } 50% { transform: translate(0, 0); } 75% { transform: translate(2px, 1px); } }
+
+.payment-display-area {
+    display: none; /* Ẩn các vùng hiển thị chi tiết */
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
+}
+.display-instruction {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.payment-qr-section { text-align: center; }
+.qr-wrapper { display: inline-block; }
+.qr-wrapper img { max-width: 250px; width: 100%; height: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 0.5rem; background-color: white; box-shadow: var(--shadow-sm); }
+.qr-memo { font-size: 0.9rem; color: var(--text-secondary); margin-top: 1rem; }
+
+.cash-animation-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 250px; /* Đảm bảo chiều cao tương đương vùng QR */
+    overflow: hidden;
+}
+.cash-stack-icon { width: 180px; height: auto; }
+.cash-stack-icon .cash-stack-bill {
+    fill: var(--success-light);
+    stroke: var(--success-color);
+    stroke-width: 2;
+    animation: cash-stack-shuffle 3s ease-in-out infinite;
+}
+.cash-stack-icon .cash-stack-bill:nth-child(2) { animation-delay: -0.1s; }
+.cash-stack-icon .cash-stack-bill:nth-child(1) { animation-delay: -0.2s; }
+.cash-stack-icon .cash-stack-coin { fill: var(--vip-gold); stroke: #ca8a04; stroke-width: 2; animation: cash-stack-shuffle 3s ease-in-out infinite 0.3s; }
+@keyframes cash-stack-shuffle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* Payment Confirmation */
+.payment-confirmation-overlay {
+    position: relative;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; z-index: 10; pointer-events: none;
+}
 .payment-confirmation-overlay.active { opacity: 1; pointer-events: auto; }
 .confirmation-text { font-size: 1.5rem; font-weight: 700; margin-top: 1rem; animation: fade-in-text 0.4s ease-in 0.5s forwards; opacity: 0; }
 @keyframes fade-in-text { to { opacity: 1; } }
@@ -435,6 +676,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 @keyframes scale-up { 0% { transform: scale(0.7); } 45% { transform: scale(1.05); } 80% { transform: scale(0.95); } 100% { transform: scale(1); } }
 @keyframes stroke { 100% { stroke-dashoffset: 0; } }
 
+/* QR Scanner */
 .qr-scanner-body { position: relative; width: 100%; height: auto; overflow: hidden; border-radius: var(--radius-md); background-color: #000; }
 #camera-feed { width: 100%; height: auto; display: block; }
 .scanner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-shadow: inset 0 0 0 500px rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; }
@@ -446,10 +688,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 .scanner-viewfinder .corner-br { bottom: -2px; right: -2px; border-width: 0 var(--corner-thickness) var(--corner-thickness) 0; border-bottom-right-radius: var(--radius-md); }
 @keyframes pulse-corners { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.9); opacity: 0.7; } }
 
-.qr-wrapper { text-align: center; }
-.qr-wrapper img { max-width: 250px; width: 100%; height: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 0.5rem; background-color: white; box-shadow: var(--shadow-sm); }
-.qr-wrapper p { font-size: 0.9rem; color: var(--text-secondary); margin-top: 1rem; }
-
 .scanner-feedback-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(22, 163, 74, 0.85); backdrop-filter: blur(3px); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
 .scanner-feedback-overlay.active { opacity: 1; pointer-events: auto; }
 .feedback-icon { width: 60px; height: 60px; margin-bottom: 1rem; }
@@ -457,13 +695,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 .feedback-icon .checkmark__check { stroke: white; stroke-width: 4; }
 .feedback-plate { font-family: monospace; font-size: 2rem; font-weight: 700; }
 
-.priority-pass-new { background-color: var(--bg-hover); border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center; position: relative; overflow: hidden; border: 1px solid var(--border-color); }
-.priority-pass-new__plate { font-family: monospace; font-size: 3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; animation: floatUp 0.5s ease-out 0.2s backwards; }
-.priority-pass-new__success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; z-index: 10; pointer-events: none; }
-.priority-pass-new__success-overlay.active { opacity: 1; pointer-events: auto; }
-.priority-pass-new__success-overlay .checkmark { width: 80px; height: 80px; }
-.priority-pass-new__success-overlay p { font-size: 1.2rem; font-weight: 700; margin-top: 1rem; }
-
+/* Fireworks Effect */
 .fireworks-container {
     position: fixed;
     top: 0;
@@ -472,14 +704,14 @@ input:checked + .slider:before { transform: translateX(20px); }
     height: 100%;
     pointer-events: none;
     z-index: 9999;
-    opacity: 0;
-    transition: opacity 1s ease-out 1s;
+    opacity: 1; /* Hiệu ứng pháo hoa sẽ tự biến mất */
 }
 .fireworks-container.active {
     opacity: 1;
 }
 .firework {
     position: absolute;
+    /* Sửa lỗi: Thêm thuộc tính transform-origin */
     width: 6px;
     height: 6px;
     background-color: #fff;
@@ -487,7 +719,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     opacity: 0;
 }
 .fireworks-container.active .firework {
-    animation: firework-explode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    animation: firework-explode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; /* Sửa lỗi: cú pháp animation */
 }
 .firework:nth-child(1) { top: 50%; left: 50%; animation-delay: 0s; background-color: #38bdf8; }
 .firework:nth-child(2) { top: 40%; left: 30%; animation-delay: 0.3s; background-color: #34d399; }
@@ -497,42 +729,45 @@ input:checked + .slider:before { transform: translateX(20px); }
 @media print { body * { visibility: hidden; } #printable-area, #printable-area * { visibility: visible; } #printable-area { position: absolute; left: 0; top: 0; width: 100%; } }
 
 /* ==========================================================================
-   6. GIAO DIỆN ĐÁP ỨNG (RESPONSIVE)
+   7. GIAO DIỆN ĐÁP ỨNG (RESPONSIVE)
    ========================================================================== */
 @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } }
 @media (max-width: 768px) {
     .container { padding: 0 1rem; }
     .header-container { flex-wrap: wrap; }
     .header-controls { width: 100%; justify-content: space-between; margin-top: 1rem; }
-    .card__header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .card__header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .main-navigation .container { flex-direction: column; align-items: stretch; gap: 0.5rem; padding-bottom: 0.5rem; }
     .main-navigation ul { justify-content: center; }
     .nav-extra { display: none; }
 }
-@media (max-width: 600px) {
-    .container { padding: 0 0.75rem; }
-    .modal-body, .modal-header, .modal-footer { padding: 1rem; }
-    .payment-layout { grid-template-columns: 1fr; }
-    .payment-sidebar { order: -1; }
-    .main-input-group { flex-direction: column; }
+@media (max-width: 600px) { .container { padding: 0 0.75rem; } .modal-body, .modal-header, .modal-footer { padding: 1rem; } .main-input-group { flex-direction: column; }
     .main-input-group #search-term { text-align: left; }
+    .payment-method-options { grid-template-columns: 1fr; }
+    .vehicle-item-v6 { grid-template-columns: auto 1fr; gap: 0.75rem; }
+    .v6-meta { grid-column: 2 / 3; justify-self: end; margin-top: 0.25rem; }
+    .v6-time { display: none; } /* Ẩn bớt trên màn hình rất nhỏ */
 }
 @media (max-width: 480px) {
     .modal-content { max-width: 98vw; }
     .modal-header, .modal-footer, .modal-body { padding: 0.75rem; }
+    .digital-pass__main-info { flex-direction: column; align-items: center; gap: 1.5rem; }
+    .digital-pass__plate-section { text-align: center; }
+    .digital-pass__plate { font-size: 2.2rem; }
+    .digital-pass__qr-instruction { text-align: center; margin-top: 0.5rem; }
 }
 
 /* ==========================================================================
-   7. MÀN HÌNH CHỜ (IDLE SCREEN)
+   8. MÀN HÌNH CHỜ (IDLE SCREEN)
    ========================================================================== */
-.idle-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.7s ease; }
+.idle-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 10010; opacity: 0; pointer-events: none; transition: opacity 0.7s ease; }
 .idle-screen.active { opacity: 1; pointer-events: auto; }
 .ad-video-player { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: cover; transform: translate(-50%, -50%); }
 .idle-overlay-content { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); color: white; text-align: center; background-color: rgba(0, 0, 0, 0.4); padding: 1rem 2rem; border-radius: var(--radius-lg); backdrop-filter: blur(8px); }
 .idle-message { font-size: 1.5rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
 /* ==========================================================================
-   8. PHÂN TRANG (PAGINATION)
+   9. PHÂN TRANG (PAGINATION)
    ========================================================================== */
 .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
 .pagination-btn { padding: 0.5rem 1rem; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); font-weight: 600; }
@@ -541,13 +776,13 @@ input:checked + .slider:before { transform: translateX(20px); }
 .pagination-btn.active { background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); font-weight: 700; }
 
 /* ==========================================================================
-   9. CHẾ ĐỘ NGOẠI TUYẾN (OFFLINE MODE)
+   10. CHỈ BÁO TRẠNG THÁI (INDICATORS)
    ========================================================================== */
 #offline-indicator { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--warning-color); color: var(--text-primary); text-align: center; padding: 0.5rem; font-weight: 600; z-index: 10001; transform: translateY(100%); transition: transform 0.4s ease; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
 #offline-indicator.active { transform: translateY(0); }
 
 /* ==========================================================================
-   10. MÀN HÌNH ĐĂNG NHẬP (LOGIN SCREEN)
+   11. MÀN HÌNH ĐĂNG NHẬP (LOGIN SCREEN)
    ========================================================================== */
 .login-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 10002; transition: opacity 0.5s ease; }
 .login-branding-panel { width: 55%; height: 100%; background-image: linear-gradient(to bottom right, var(--youth-union-blue), #153a73); display: flex; align-items: center; justify-content: center; color: white; padding: 3rem; text-align: center; }
@@ -575,14 +810,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 @media (max-width: 900px) { .login-branding-panel { display: none; } .login-form-panel { width: 100%; } }
 
 /* ==========================================================================
-   11. WIDGET TIỆN ÍCH
+   12. WIDGET TIỆN ÍCH (WIDGETS)
    ========================================================================== */
 .user-profile-widget { display: flex; align-items: center; gap: 12px; padding: 0.5rem 1rem; background-color: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 30px; }
 .user-profile-widget .user-icon { color: var(--primary-accent); }
 .user-profile-widget .user-name { font-weight: 600; color: var(--text-primary); }
 .user-profile-widget .logout-btn { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 4px; display: flex; align-items: center; border-radius: 50%; transition: var(--transition); }
 .user-profile-widget .logout-btn:hover { background-color: var(--danger-light); color: var(--danger-color); }
-
+.user-profile-widget .admin-login-link { display: flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 600; color: var(--text-primary); transition: var(--transition); }
+.user-profile-widget .admin-login-link:hover { color: var(--primary-accent); }
 .clock-widget, .weather-widget { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
 
 /* ==========================================================================
@@ -590,104 +826,205 @@ input:checked + .slider:before { transform: translateX(20px); }
    ========================================================================== */
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
 
-/* THIẾT KẾ LẠI HOÀN TOÀN: Bố cục thẻ dọc, tập trung vào dữ liệu */
 .gemini-stat-card {
-    background: var(--bg-card);
+    background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
+    gap: 1rem;
     position: relative;
     overflow: hidden;
     transition: var(--transition);
     box-shadow: var(--shadow-sm);
-    text-align: center; /* Căn giữa tất cả */
 }
 .gemini-stat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
 
 .gemini-stat-card__header {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.75rem;
     width: 100%;
 }
-.gemini-stat-card__icon { background-color: var(--primary-accent-light); color: var(--primary-accent); border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+.gemini-stat-card__icon {
+    background-color: var(--primary-accent-light);
+    color: var(--primary-accent);
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
 .gemini-stat-card__icon svg { width: 24px; height: 24px; }
-.gemini-stat-card__label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+.gemini-stat-card__label { font-size: 1rem; color: var(--text-primary); font-weight: 600; }
 
 .gemini-stat-card__value-wrapper {
     display: flex;
     align-items: baseline;
     line-height: 1;
-    justify-content: center;
-    flex-grow: 1; /* Đẩy giá trị vào giữa theo chiều dọc */
-    padding: 1rem 0;
+    flex-grow: 1;
+    padding-top: 1rem;
 }
-.gemini-stat-card__value { font-size: 2.5rem; font-weight: 700; color: var(--text-primary); }
-.gemini-stat-card__unit { font-size: 1.2rem; font-weight: 600; color: var(--text-secondary); margin-left: 0.25rem; }
-.gemini-stat-card[data-stat-id="longest"] .gemini-stat-card__value { font-size: 1.75rem; }
-.gemini-stat-card__chart { width: 80px; height: 40px; margin-top: 0.5rem; }
- 
-/* Bố cục đặc biệt cho thẻ Gauge */
-.gemini-stat-card[data-stat-id="gauge"] { justify-content: flex-start; }
-.gemini-stat-card__gauge-wrapper { position: relative; width: 100%; height: 120px; display: flex; align-items: center; justify-content: center; margin-top: 1rem; }
-.gemini-stat-card[data-stat-id="gauge"] .gemini-stat-card__value-wrapper { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; line-height: 1.1; padding: 0; }
-.gemini-stat-card[data-stat-id="gauge"] .gemini-stat-card__sub-value { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
-.gemini-stat-card[data-stat-id="gauge"] .gemini-stat-card__value { font-size: 2.2rem; }
-.gemini-stat-card[data-stat-id="gauge"] .gemini-stat-card__unit { font-size: 1.5rem; }
-[data-theme="dark"] .gemini-stat-card__icon { background-color: var(--primary-accent-light); color: var(--primary-accent); }
-[data-theme="dark"] .gemini-stat-card__chart .chartjs-render-monitor { filter: brightness(0.8); }
+.gemini-stat-card__value { font-size: 3rem; font-weight: 700; color: var(--text-primary); }
+.gemini-stat-card__unit { font-size: 1.5rem; font-weight: 600; color: var(--text-secondary); margin-left: 0.5rem; }
 
-/* THIẾT KẾ LẠI: Hiệu ứng cho icon động */
-.gemini-stat-card:hover .animated-icon.gauge-icon .gauge-needle {
-    animation: gauge-swing 1.5s ease-in-out forwards;
-}
-@keyframes gauge-swing { 0% { transform: rotate(0); } 50% { transform: rotate(-30deg); } 100% { transform: rotate(10deg); } }
-.gauge-needle { transform-origin: 12px 12px; transition: transform 0.5s ease; }
+/* Tùy chỉnh màu sắc cho từng thẻ */
+.gemini-stat-card[data-stat-id="vehicles"] .gemini-stat-card__icon { background-color: var(--primary-accent-light); color: var(--primary-accent); }
+.gemini-stat-card[data-stat-id="revenue"] .gemini-stat-card__icon { background-color: var(--success-light); color: var(--success-color); }
+.gemini-stat-card[data-stat-id="total"] .gemini-stat-card__icon { background-color: #eef2ff; color: #4f46e5; }
+.gemini-stat-card[data-stat-id="vip"] .gemini-stat-card__icon { background-color: var(--vip-gold-light); color: var(--vip-gold); }
 
-.gemini-stat-card:hover .animated-icon.vehicle-icon {
-    animation: vehicle-bounce 0.8s ease-in-out;
-}
-@keyframes vehicle-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+[data-theme="dark"] .gemini-stat-card[data-stat-id="vehicles"] .gemini-stat-card__icon { background-color: #1e3a8a; color: #60a5fa; }
+[data-theme="dark"] .gemini-stat-card[data-stat-id="revenue"] .gemini-stat-card__icon { background-color: #166534; color: #4ade80; }
+[data-theme="dark"] .gemini-stat-card[data-stat-id="total"] .gemini-stat-card__icon { background-color: #312e81; color: #818cf8; }
+[data-theme="dark"] .gemini-stat-card[data-stat-id="vip"] .gemini-stat-card__icon { background-color: #713f12; color: #fcd34d; }
 
-/* SỬA LỖI: Hiệu ứng cho icon "Tổng lượt" mới */
-.total-icon path { stroke-dasharray: 20; stroke-dashoffset: 20; }
-.gemini-stat-card:hover .animated-icon.total-icon path {
-    animation: draw-line 0.8s ease-out forwards;
+/* Hiệu ứng icon động khi hover */
+.gemini-stat-card:hover .animated-icon {
+    animation: icon-bounce 0.6s cubic-bezier(0.5, 0, 0.1, 1);
 }
-@keyframes draw-line { to { stroke-dashoffset: 0; } }
-.gemini-stat-card:hover .animated-icon.total-icon .total-line-2 { animation-delay: 0.1s; }
-.gemini-stat-card:hover .animated-icon.total-icon .total-line-3 { animation-delay: 0.2s; }
-.gemini-stat-card:hover .animated-icon.total-icon .total-line-4 { animation-delay: 0.3s; }
-.gemini-stat-card:hover .animated-icon.total-icon .total-line-5 { animation-delay: 0.4s; }
-.gemini-stat-card:hover .animated-icon.total-icon .total-line-6 { animation-delay: 0.5s; }
+@keyframes icon-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
 
-.longest-hand-minute {
-    transform-origin: 12px 12px;
-    animation: rotate-hand 60s linear infinite;
+.gemini-stat-card:hover .vip-icon {
+    animation: icon-spin 0.8s cubic-bezier(0.5, 0, 0.1, 1);
 }
-@keyframes rotate-hand { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes icon-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.gemini-stat-card:hover .revenue-icon path {
+    animation: revenue-wave 1.5s ease-in-out infinite;
+}
+@keyframes revenue-wave {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px) scaleY(1.05); }
+}
 
 /* ==========================================================================
-   13. FORM GỬI/LẤY XE
+   14. FORM CHÍNH (MAIN FORM)
    ========================================================================== */
-.main-input-group { display: flex; align-items: stretch; gap: 0.75rem; }
-.main-input-group #search-term { height: 100%; font-size: 1.2rem; padding: 1rem; padding-right: 3.5rem; text-align: center; text-transform: uppercase; }
-.input-icon-btn { position: absolute; top: 50%; right: 0.5rem; transform: translateY(-50%); width: 40px; height: 40px; border: none; background-color: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: var(--transition); }
-.input-icon-btn:hover { background-color: var(--primary-accent-light); color: var(--primary-accent); }
-.input-icon-btn.active { background-color: var(--danger-light); color: var(--danger-color); }
+.action-hub-v1 {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+}
+.input-with-button-wrapper {
+    position: relative;
+    flex-grow: 1;
+}
+.input-with-button-wrapper #search-term {
+    padding-right: 60px; /* Tạo khoảng trống cho nút QR */
+}
+.input-with-button-wrapper #scan-qr-btn {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    height: calc(100% - 12px);
+    width: 48px;
+}
+.main-input-group {
+    display: flex;
+    gap: 0.75rem;
+}
+.main-input-group #search-term {
+    flex-grow: 1;
+}
+.main-input-group .icon-btn {
+    height: auto; /* Để nút co giãn theo chiều cao của input */
+}
+.action-hub-v1 #search-term {
+    font-size: 1.5rem;
+    padding: 1.25rem;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+.action-hub-prompt {
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+}
+.action-hub-buttons {
+    position: relative;
+    height: 62px; /* Chiều cao của nút để không bị nhảy layout */
+    overflow: hidden;
+}
 
-#info-display-section { display: flex; flex-direction: column; gap: 0.75rem; }
+.action-hub-buttons .action-button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s ease;
+}
+
+/* Trạng thái mặc định: Hiện nút Gửi xe */
+.action-hub-buttons .btn--check-in {
+    transform: scale(1);
+    opacity: 1;
+}
+.action-hub-buttons .btn--check-out {
+    transform: scale(0.8) translate(50%, -50%); /* Di chuyển ra góc trên phải */
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Khi có class 'show-check-out': Hiện nút Lấy xe */
+.action-hub-buttons.show-check-out .btn--check-in {
+    transform: scale(0.8) translate(-50%, 50%); /* Di chuyển ra góc dưới trái */
+    opacity: 0;
+    pointer-events: none;
+}
+.action-hub-buttons.show-check-out .btn--check-out {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.action-hub-buttons .action-button {
+    padding: 1.25rem;
+    font-size: 1.1rem;
+}
+.action-hub-details {
+    transition: all 0.4s ease;
+    overflow: hidden;
+}
+.action-hub-details > div {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.form-details-wrapper {
+    margin-top: 1.5rem;
+    animation: fadeIn 0.4s ease-out;
+}
+.form-section-v2 { 
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#info-display-section { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
 .info-display-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-hover); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
 .info-display-item .label { color: var(--text-secondary); font-weight: 500; }
 .info-display-item .value { font-weight: 600; text-align: right; }
 
-.additional-details-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); animation: fadeIn 0.4s ease; }
-.additional-info-group { border: 1px solid var(--border-color); border-radius: var(--radius-md); margin: 1rem 0; transition: var(--transition); }
-.additional-info-group[open] { border-color: var(--primary-accent-light); }
-.additional-info-group summary { padding: 1rem; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; transition: var(--transition); user-select: none; }
+.additional-info-group { border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: var(--transition); }
+.additional-info-group[open] { border-color: var(--primary-accent); box-shadow: 0 0 0 4px var(--primary-accent-light); }
+.additional-info-group summary { padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; transition: var(--transition); user-select: none; }
 .additional-info-group summary:hover { background-color: var(--bg-hover); }
 .additional-info-group summary::after { content: '▼'; font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.3s ease; }
 .additional-info-group[open] summary::after { transform: rotate(-180deg); }
@@ -696,352 +1033,193 @@ input:checked + .slider:before { transform: translateX(20px); }
 .additional-info-content > div { min-height: 0; display: flex; flex-direction: column; gap: 1rem; }
 
 /* ==========================================================================
-   14. VÉ XE ĐIỆN TỬ "PRESTIGE PASS"
+   15. VÉ XE ĐIỆN TỬ "THẺ THANH NIÊN" - THIẾT KẾ MỚI
    ========================================================================== */
-.digital-pass-wrapper {
+.youth-pass {
     background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: floatUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+    animation: floatUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) 0.1s backwards;
     position: relative;
-    border-top: 8px solid var(--youth-union-blue);
+    border: 1px solid var(--border-color);
 }
-.digital-pass__pattern {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background-image:
-        linear-gradient(var(--border-color-light) 1px, transparent 1px),
-        linear-gradient(to right, var(--border-color-light) 1px, transparent 1px);
-    background-size: 24px 24px;
-    opacity: 0.4;
-    pointer-events: none;
-}
-.digital-pass__header, .digital-pass__body, .digital-pass__footer { position: relative; z-index: 1; }
-.digital-pass__header { display: flex; align-items: center; gap: 1rem; padding: 1.5rem; background-color: var(--bg-hover); border-bottom: 1px solid var(--border-color); }
-.digital-pass__logo img { width: 50px; height: 50px; }
-.digital-pass__titles { line-height: 1.3; flex-grow: 1; }
-.digital-pass__org-name { font-weight: 800; font-size: 1.1rem; color: var(--text-primary); text-transform: uppercase; transition: color 0.3s ease; }
-.digital-pass__event-name { font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); }
-.digital-pass__vip-badge { background-color: var(--accent-gold); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
-.digital-pass__body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
-.digital-pass__main-info {
+.youth-pass__header {
+    background-color: var(--youth-union-blue);
+    color: white;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 3px solid #0d6efd;
+    position: relative;
+}
+/* Hiệu ứng sóng */
+.youth-pass__header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: cover;
+    transform: translateY(100%);
+}
+body[data-theme="dark"] .youth-pass__header::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%231e293b' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+}
+
+.youth-pass__logo {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border-radius: 50%;
+    padding: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.youth-pass__titles { line-height: 1.2; }
+.youth-pass__org-name { font-weight: 800; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+.youth-pass__event-name { font-weight: 500; font-size: 0.9rem; opacity: 0.9; }
+
+.youth-pass__body {
+    padding: 2.5rem 1.5rem 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
     text-align: center;
 }
-.digital-pass__plate-section { line-height: 1.2; }
-.digital-pass__label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
-.digital-pass__plate { font-family: monospace; font-size: 2.5rem; font-weight: 800; color: var(--text-primary); letter-spacing: 2px; margin-top: 0.25rem; transition: color 0.3s ease; }
-.digital-pass__qr-section { text-align: center; flex-shrink: 0; }
-.digital-pass__qr-section canvas { display: block; border-radius: var(--radius-md); padding: 8px; background-color: white; box-shadow: var(--shadow-sm); }
-.digital-pass__qr-instruction { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.75rem; font-weight: 600; }
 
-@media (min-width: 480px) {
-    .digital-pass__body { padding: 2rem; gap: 2rem; }
-    .digital-pass__main-info {
-        flex-direction: row;
-        justify-content: space-between;
-        text-align: left;
-    }
-    .digital-pass__plate { font-size: 2.75rem; }
-}
-
-.digital-pass__details { display: flex; flex-direction: column; gap: 0.75rem; background-color: var(--bg-hover); padding: 1rem; border-radius: var(--radius-md); }
-.digital-pass__detail-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.95rem; }
-.digital-pass__detail-item svg { color: var(--text-secondary); flex-shrink: 0; }
-.digital-pass__detail-item span { color: var(--text-secondary); }
-.digital-pass__detail-item strong { font-weight: 600; color: var(--text-primary); }
-.digital-pass__footer { padding: 0.75rem 1.5rem; background-color: var(--bg-hover); border-top: 1px dashed var(--border-color); text-align: center; font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); }
-
-.digital-pass-wrapper.is-vip {
-    border-top-color: var(--accent-gold);
-    background: linear-gradient(145deg, var(--bg-card), var(--accent-gold-light));
-}
-.digital-pass-wrapper.is-vip .digital-pass__plate { color: var(--accent-gold); }
-.digital-pass-wrapper.is-vip .digital-pass__org-name { color: var(--accent-gold); }
-
-[data-theme="dark"] .digital-pass__pattern { opacity: 0.1; }
-[data-theme="dark"] .digital-pass-wrapper.is-vip {
-    background: linear-gradient(145deg, #2c2c2c, #3a3214);
-}
-
-.priority-pass-new.vip { border-top: 5px solid var(--accent-gold); }
-.priority-pass-new.free { border-top: 5px solid var(--success-color); }
-.priority-pass-new__icon { margin-bottom: 1rem; animation: floatUp 0.5s ease-out; }
-.priority-pass-new.vip .priority-pass-new__icon { color: var(--accent-gold); }
-.priority-pass-new.free .priority-pass-new__icon { color: var(--success-color); }
-.priority-pass-new__title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; animation: floatUp 0.5s ease-out 0.1s backwards; }
-.priority-pass-new.vip .priority-pass-new__title { color: var(--accent-gold); }
-.priority-pass-new.free .priority-pass-new__title { color: var(--success-color); }
-.priority-pass-new__reason { font-size: 1rem; color: var(--text-secondary); animation: floatUp 0.5s ease-out 0.3s backwards; }
-
-[data-theme="dark"] .modal-content { border-color: var(--border-color); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2); }
-[data-theme="dark"] .modal-header { border-bottom-color: var(--border-color); }
-[data-theme="dark"] .modal-footer { background-color: #151e2d; border-top-color: var(--border-color); }
-
-/* THIẾT KẾ LẠI: Nút đăng nhập/quản trị */
-.user-profile-widget .admin-login-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: var(--transition);
-}
-.user-profile-widget .admin-login-link:hover {
-    color: var(--primary-accent);
-}
-
-/* ==========================================================================
-   14. VÉ XE ĐIỆN TỬ "PRESTIGE PASS V2" - THIẾT KẾ LẠI HOÀN TOÀN
-   ========================================================================== */
-.digital-pass-wrapper {
-    background-color: var(--bg-card);
-    border-radius: 20px;
-    box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-color);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    animation: floatUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-    position: relative;
-}
-.digital-pass__brand-strip {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 8px;
-}
-.digital-pass-wrapper.is-standard .digital-pass__brand-strip { background-color: var(--youth-union-blue); }
-
-.digital-pass__header { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem 1.25rem 2rem; border-bottom: 1px solid var(--border-color); }
-.digital-pass__logo img { width: 45px; height: 45px; }
-.digital-pass__titles { line-height: 1.3; flex-grow: 1; }
-.digital-pass__org-name { font-weight: 700; font-size: 1rem; color: var(--text-primary); text-transform: uppercase; }
-.digital-pass__event-name { font-weight: 500; font-size: 0.85rem; color: var(--text-secondary); }
-
-.digital-pass__body { padding: 1.5rem 1.5rem 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
-
-/* Bố cục thông minh cho thông tin chính */
-.digital-pass__main-info {
-    display: flex;
-    flex-direction: column; /* Mặc định xếp dọc cho mobile */
-    align-items: center;
-    gap: 1.5rem;
-}
-.digital-pass__plate-section { text-align: center; }
-.digital-pass__label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
-.digital-pass__plate {
-    font-family: monospace;
-    font-size: 2.5rem;
+.youth-pass__plate-section { line-height: 1.1; }
+.youth-pass__label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+.youth-pass__plate {
+    font-family: var(--font-mono);
+    font-size: 2.75rem;
     font-weight: 800;
-    color: var(--text-primary);
+    color: var(--primary-accent);
     letter-spacing: 2px;
     margin-top: 0.25rem;
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-}
-.digital-pass__qr-section { flex-shrink: 0; padding: 8px; background-color: white; border-radius: 12px; box-shadow: var(--shadow-md); }
-.digital-pass__qr-section canvas { display: block; border-radius: 8px; }
-.digital-pass__qr-instruction { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; text-align: center; margin-top: -0.5rem; }
-
-/* Khi màn hình đủ lớn, chuyển sang bố cục ngang */
-@media (min-width: 480px) {
-    .digital-pass__body { padding: 2rem 2rem 2rem 2.5rem; }
-    .digital-pass__main-info {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .digital-pass__plate-section { text-align: left; }
-    .digital-pass__plate { font-size: 2.75rem; justify-content: flex-start; }
-    .digital-pass__qr-instruction { text-align: right; margin-top: 0.5rem; }
 }
 
-.digital-pass__details { display: flex; flex-direction: column; gap: 0.75rem; background-color: var(--bg-hover); padding: 1rem; border-radius: var(--radius-md); }
-.digital-pass__detail-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.95rem; }
-.digital-pass__detail-item svg { color: var(--text-secondary); flex-shrink: 0; }
-.digital-pass__detail-item span { color: var(--text-secondary); }
-.digital-pass__detail-item strong { font-weight: 600; color: var(--text-primary); }
-.digital-pass__footer { padding: 0.75rem 1.5rem; background-color: var(--bg-hover); border-top: 1px dashed var(--border-color); text-align: center; font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); }
-
-/* --- Phiên bản VIP/Khách mời --- */
-.digital-pass-wrapper.is-vip {
-    background: #1C1C1E; /* Nền đen nhám */
-    border: 1px solid #3A3A3C;
-    box-shadow: var(--shadow-lg), 0 0 0 1px #3A3A3C;
-}
-.digital-pass-wrapper.is-vip .digital-pass__brand-strip {
-    background: linear-gradient(180deg, #F0D78C, #D4AF37, #B8860B);
-}
-.digital-pass-wrapper.is-vip .digital-pass__header,
-.digital-pass-wrapper.is-vip .digital-pass__details,
-.digital-pass-wrapper.is-vip .digital-pass__footer {
-    background-color: #2C2C2E;
-    border-color: #3A3A3C;
-}
-.digital-pass-wrapper.is-vip .digital-pass__org-name,
-.digital-pass-wrapper.is-vip .digital-pass__plate,
-.digital-pass-wrapper.is-vip .digital-pass__detail-item strong {
-    color: #F0D78C; /* Màu vàng nhạt cho text chính */
-}
-.digital-pass-wrapper.is-vip .digital-pass__label,
-.digital-pass-wrapper.is-vip .digital-pass__event-name,
-.digital-pass-wrapper.is-vip .digital-pass__qr-instruction,
-.digital-pass-wrapper.is-vip .digital-pass__detail-item span,
-.digital-pass-wrapper.is-vip .digital-pass__detail-item svg,
-.digital-pass-wrapper.is-vip .digital-pass__footer {
-    color: #8E8E93; /* Màu xám nhạt cho text phụ */
-}
-.digital-pass-wrapper.is-vip .digital-pass__logo img { filter: invert(1) brightness(0.9) sepia(1) hue-rotate(10deg) saturate(5); }
-.digital-pass-wrapper.is-vip .digital-pass__detail-item.vip-badge strong { color: #FFD700; }
-.digital-pass-wrapper.is-vip .digital-pass__detail-item.vip-badge svg { color: #FFD700; }
-
-/* Nút quay lại trên view vé xe */
-.ticket-view-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-.back-to-form-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-.back-to-form-btn:hover { color: var(--primary-accent); }
-
-/* THIẾT KẾ LẠI: Nút đăng nhập/quản trị */
-.user-profile-widget .admin-login-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: var(--transition);
-}
-.user-profile-widget .admin-login-link:hover {
-    color: var(--primary-accent);
-}
-
-/* ==========================================================================
-   14. VÉ XE ĐIỆN TỬ "PRESTIGE PASS V2" - THIẾT KẾ LẠI HOÀN TOÀN
-   ========================================================================== */
-.digital-pass-wrapper {
-    background-color: var(--bg-card);
-    border-radius: 20px;
-    box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-color);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    animation: floatUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-    position: relative;
-}
-.digital-pass__brand-strip {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 8px;
-}
-.digital-pass-wrapper.is-standard .digital-pass__brand-strip { background-color: var(--youth-union-blue); }
-
-.digital-pass__header { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem 1.25rem 2rem; border-bottom: 1px solid var(--border-color); }
-.digital-pass__logo img { width: 45px; height: 45px; }
-.digital-pass__titles { line-height: 1.3; flex-grow: 1; }
-.digital-pass__org-name { font-weight: 700; font-size: 1rem; color: var(--text-primary); text-transform: uppercase; }
-.digital-pass__event-name { font-weight: 500; font-size: 0.85rem; color: var(--text-secondary); }
-
-.digital-pass__body { padding: 1.5rem 1.5rem 1.5rem 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
-
-/* Bố cục thông minh cho thông tin chính */
-.digital-pass__main-info {
-    display: flex;
-    flex-direction: column; /* Mặc định xếp dọc cho mobile */
-    align-items: center;
-    gap: 1.5rem;
-}
-.digital-pass__plate-section { text-align: center; }
-.digital-pass__label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
-.digital-pass__plate {
-    font-family: monospace;
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    letter-spacing: 2px;
-    margin-top: 0.25rem;
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-}
-.digital-pass__qr-section { flex-shrink: 0; }
-.digital-pass__qr-section a {
+.youth-pass__qr-section { text-align: center; }
+.youth-pass__qr-section canvas {
     display: inline-block;
-    padding: 8px; background-color: white; border-radius: 12px; box-shadow: var(--shadow-md);
-    transition: var(--transition);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
 }
-.digital-pass__qr-section a:hover { transform: scale(1.05); box-shadow: var(--shadow-lg); }
-.digital-pass__qr-section canvas { display: block; border-radius: 8px; }
-.digital-pass__qr-instruction { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; text-align: center; margin-top: -0.5rem; }
-
-/* Khi màn hình đủ lớn, chuyển sang bố cục ngang */
-@media (min-width: 480px) {
-    .digital-pass__body { padding: 2rem 2rem 2rem 2.5rem; }
-    .digital-pass__main-info {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .digital-pass__plate-section { text-align: left; }
-    .digital-pass__plate { font-size: 2.75rem; justify-content: flex-start; }
-    .digital-pass__qr-instruction { text-align: right; margin-top: 0.5rem; }
+.youth-pass__qr-instruction {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 0.75rem;
 }
 
-.digital-pass__details { display: flex; flex-direction: column; gap: 0.75rem; background-color: var(--bg-hover); padding: 1rem; border-radius: var(--radius-md); }
-.digital-pass__detail-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.95rem; }
-.digital-pass__detail-item svg { color: var(--text-secondary); flex-shrink: 0; }
-.digital-pass__detail-item span { color: var(--text-secondary); }
-.digital-pass__detail-item strong { font-weight: 600; color: var(--text-primary); }
-.digital-pass__footer { padding: 0.75rem 1.5rem; background-color: var(--bg-hover); border-top: 1px dashed var(--border-color); text-align: center; font-family: monospace; font-size: 0.85rem; color: var(--text-secondary); }
+.youth-pass__details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background-color: var(--bg-hover);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    width: 100%;
+    border: 1px solid var(--border-color-light);
+}
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    text-align: left;
+}
+.detail-item svg { color: var(--text-secondary); flex-shrink: 0; }
+.detail-item span { color: var(--text-secondary); }
+.detail-item strong { font-weight: 600; color: var(--text-primary); }
 
-/* --- Phiên bản VIP/Khách mời --- */
-.digital-pass-wrapper.is-vip {
-    background: #1C1C1E; /* Nền đen nhám */
-    border: 1px solid #3A3A3C;
-    box-shadow: var(--shadow-lg), 0 0 0 1px #3A3A3C;
+.youth-pass__footer {
+    background-color: var(--bg-hover);
+    padding: 1.5rem 1.5rem 1rem;
+    margin-top: auto;
+    position: relative;
 }
-.digital-pass-wrapper.is-vip .digital-pass__brand-strip {
-    background: linear-gradient(180deg, #F0D78C, #D4AF37, #B8860B);
+/* Hiệu ứng sóng ngược */
+.youth-pass__footer::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23f1f5f9' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: cover;
+    transform: translateY(-100%);
 }
-.digital-pass-wrapper.is-vip .digital-pass__header,
-.digital-pass-wrapper.is-vip .digital-pass__details,
-.digital-pass-wrapper.is-vip .digital-pass__footer {
-    background-color: #2C2C2E;
-    border-color: #3A3A3C;
+body[data-theme="dark"] .youth-pass__footer::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23334155' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
 }
-.digital-pass-wrapper.is-vip .digital-pass__org-name,
-.digital-pass-wrapper.is-vip .digital-pass__plate,
-.digital-pass-wrapper.is-vip .digital-pass__detail-item strong {
-    color: #F0D78C; /* Màu vàng nhạt cho text chính */
+
+.youth-pass__id {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    position: relative;
 }
-.digital-pass-wrapper.is-vip .digital-pass__label,
-.digital-pass-wrapper.is-vip .digital-pass__event-name,
-.digital-pass-wrapper.is-vip .digital-pass__qr-instruction,
-.digital-pass-wrapper.is-vip .digital-pass__detail-item span,
-.digital-pass-wrapper.is-vip .digital-pass__detail-item svg,
-.digital-pass-wrapper.is-vip .digital-pass__footer {
-    color: #8E8E93; /* Màu xám nhạt cho text phụ */
+
+/* VIP Variant */
+.youth-pass.is-vip .youth-pass__plate { color: var(--vip-gold); }
+.youth-pass__vip-banner {
+    position: absolute;
+    top: 25px;
+    right: -35px;
+    background-color: var(--vip-gold);
+    color: white;
+    padding: 8px 40px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 2;
 }
-.digital-pass-wrapper.is-vip .digital-pass__logo img { filter: invert(1) brightness(0.9) sepia(1) hue-rotate(10deg) saturate(5); }
-.digital-pass-wrapper.is-vip .digital-pass__detail-item.vip-badge strong { color: #FFD700; }
-.digital-pass-wrapper.is-vip .digital-pass__detail-item.vip-badge svg { color: #FFD700; }
+
+/* ==========================================================================
+   16. CÁC THÀNH PHẦN KHÁC (MISCELLANEOUS)
+   ========================================================================== */
+/* Thẻ xác nhận cho xe ra (VIP/Miễn phí) */
+.confirm-card-v1 {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    text-align: center;
+    position: relative;
+}
+.confirm-card__header {
+    padding: 0.75rem 1rem;
+    color: white;
+}
+.confirm-card-v1.is-vip .confirm-card__header { background-color: var(--vip-gold); }
+.confirm-card-v1.is-free .confirm-card__header { background-color: var(--success-color); }
+.confirm-card__title { font-size: 1rem; font-weight: 700; text-transform: uppercase; }
+.confirm-card__body { padding: 2rem 1.5rem; }
+.confirm-card__plate {
+    font-family: var(--font-mono);
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+.confirm-card__reason { font-size: 1rem; color: var(--text-secondary); }
+.confirm-card__success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; z-index: 10; pointer-events: none; }
+.confirm-card__success-overlay.active { opacity: 1; pointer-events: auto; }
+.confirm-card__success-overlay .checkmark { width: 80px; height: 80px; }
+.confirm-card__success-overlay p { font-size: 1.2rem; font-weight: 700; margin-top: 1rem; }

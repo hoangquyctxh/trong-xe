@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const db = supabase.createClient(
+    // Tái sử dụng Supabase client chung để tránh tạo nhiều GoTrueClient trong cùng browser
+    const db = window.SUPABASE_DB || supabase.createClient(
         'https://mtihqbmlbtrgvamxwrkm.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10aWhxYm1sYnRyZ3ZhbXh3cmttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwMTkwMDEsImV4cCI6MjA3NzU5NTAwMX0.hR5X8bp-XD2DfxUnvWF-yxVk4sFVW2zBunp5XXnIZ0Y'
     );
