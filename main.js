@@ -672,12 +672,12 @@
                 if (existingNode) {
                     // Node đã tồn tại, chỉ di chuyển nó đến đúng vị trí nếu cần
                     if (dom.vehicleListContainer.children[index] !== existingNode) {
-                        dom.vehicleListContainer.insertBefore(existingNode, dom.vehicleListContainer.children[index]);
+                        dom.vehicleListContainer.insertBefore(existingNode, dom.vehicleListContainer.children[index] || null);
                     }
                 } else {
                     // Node mới, tạo và chèn vào đúng vị trí
                     const newNode = document.createElement('div');
-                    newNode.innerHTML = Templates.vehicleItem(vehicle, state.alerts);
+                    newNode.innerHTML = Templates.vehicleItemV7(vehicle, state.alerts);
                     const childNode = newNode.firstElementChild;
                     if (childNode) {
                         const referenceNode = dom.vehicleListContainer.children[index];
@@ -975,6 +975,37 @@
                     </div>
                 </div>
             `;
+        },
+        // ===================================================================
+        // THIẾT KẾ MỚI: GIAO DIỆN DANH SÁCH XE V7 - "INFO CARD"
+        // Hiện đại, thân thiện và có hiệu ứng tốt hơn.
+        // ===================================================================
+        vehicleItemV7: (v, alerts) => {
+            const alert = alerts[v.plate];
+            const isParking = v.status === 'Đang gửi';
+            const alertIcon = alert ? `<div class="v7-icon v7-alert-icon alert-${alert.level}" title="${alert.reason}"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>` : '';
+            const vipIcon = v.is_vip ? `<div class="v7-icon v7-vip-icon" title="Khách VIP"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></div>` : '';
+
+            return `
+                <div class="vehicle-item-v7 ${!isParking ? 'departed' : ''}" data-plate="${v.plate}" data-id="${v.unique_id}">
+                    <div class="v7-main">
+                        <div class="v7-plate">${v.plate}</div>
+                        <div class="v7-status-icons">
+                            ${alertIcon}
+                            ${vipIcon}
+                        </div>
+                    </div>
+                    <div class="v7-meta">
+                        <div class="v7-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+                            <span>${Utils.formatDateTime(v.entry_time)}</span>
+                        </div>
+                        <div class="v7-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span class="live-duration" data-starttime="${v.entry_time}">${Utils.calculateDuration(v.entry_time)}</span>
+                        </div>
+                    </div>
+                </div>`;
         },
         skeletonItem: () => `<div class="skeleton-item"></div>`,
         emptyState: (text) => `<div class="empty-state">${text}</div>`,
@@ -1657,9 +1688,11 @@
                 }
                 const paymentResult = await this.getPaymentResult(fee, vehicle);
                 if (paymentResult) {
-                    await this.processPayment(paymentResult.method);
+                    await this.processPayment(paymentResult.method); // Chờ thanh toán hoàn tất
+                    return; // SỬA LỖI: Thoát khỏi hàm sau khi xử lý thành công để không chạy đến dòng báo lỗi
                 }
-                throw new Error('Đã hủy thanh toán.');
+                // Chỉ throw lỗi khi paymentResult là null (người dùng đã hủy)
+                throw new Error('Đã hủy thanh toán.'); 
             }
             const reason = isVIP ? 'Khách VIP' : 'Miễn phí';
             UI.showModal('confirmation', { title: 'Xác nhận Miễn phí', plate: vehicle.plate, reason, type: isVIP ? 'vip' : 'free' });
@@ -1943,7 +1976,7 @@
 
             if (dom.vehicleListContainer) {
                 dom.vehicleListContainer.addEventListener('click', (e) => {
-                    const item = e.target.closest('.vehicle-item-v5');
+                    const item = e.target.closest('.vehicle-item-v7'); // Sửa selector để khớp với class mới
                     if (item) Handlers.handleVehicleItemClick(item);
                 });
             }
@@ -2214,7 +2247,8 @@
                                      Object.assign(state.vehicles[index], record);
                                      state.vehicleMap.set(record.plate, state.vehicles[index]); // Cập nhật Map
                                      // "PHẪU THUẬT" DOM, KHÔNG RENDER LẠI TOÀN BỘ
-                                     const nodeToUpdate = dom.vehicleListContainer.querySelector(`[data-id="${record.unique_id}"]`);
+                                     // SỬA LỖI: Gọi hàm cập nhật giao diện cho xe đã rời bãi
+                                     const nodeToUpdate = dom.vehicleListContainer.querySelector(`[data-id="${record.unique_id}"]`); 
                                      if (nodeToUpdate) UI.updateVehicleItemDOM(nodeToUpdate, record);
                                  }
                             } else if (payload.eventType === 'DELETE') {
