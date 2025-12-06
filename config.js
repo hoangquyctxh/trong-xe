@@ -23,7 +23,28 @@ const STATIC_CONFIG = {
     weatherApiKey: "c9b24c823032912293817419cb0cd2dc",
     autoRefreshInterval: 5000,
     payment: {
-        imageUrlBase: "https://img.vietqr.io/image/MSB-968866975500-compact.png?accountName=NGUYEN%20CAO%20HOANG%20QUY"
+        imageUrlBase: "https://qr.sepay.vn/img?bank=MSB&acc=968866975500&template=qronly&amount=0&des=0",
+        getQrUrl: function (fee, memo) {
+            const encodedMemo = encodeURIComponent(memo || '');
+            const baseUrl = this.imageUrlBase || APP_CONFIG.payment.imageUrlBase;
+
+            // Logic cho SePay: thay thế amount=0 và des=0
+            if (baseUrl.includes('amount=0') && baseUrl.includes('des=0')) {
+                return baseUrl
+                    .replace('amount=0', `amount=${fee || 0}`)
+                    .replace('des=0', `des=${encodedMemo}`);
+            }
+
+            // Logic cũ (VietQR): thay thế amount=0 và addInfo=0
+            if (baseUrl.includes('amount=0') && baseUrl.includes('addInfo=0')) {
+                return baseUrl
+                    .replace('amount=0', `amount=${fee || 0}`)
+                    .replace('addInfo=0', `addInfo=${encodedMemo}`);
+            }
+
+            // Fallback
+            return `${baseUrl}&amount=${fee || 0}&addInfo=${encodedMemo}`;
+        }
     },
     tinhThanhPhoApi: {
         url: 'https://tinhthanhpho.com/api/standardize-address',
@@ -62,9 +83,10 @@ const fetchAndMergeSettings = async () => {
         APP_CONFIG = { ...APP_CONFIG, ...dynamicConfig };
 
         // Cập nhật các cấu trúc lồng nhau nếu có giá trị từ DB
-        if (APP_CONFIG.payment_qr_url) {
-            APP_CONFIG.payment.imageUrlBase = APP_CONFIG.payment_qr_url;
-        }
+        // TẠM THỜI VÔ HIỆU HÓA: Ưu tiên mã SePay mới từ code cứng (vì DB vẫn đang lưu mã cũ)
+        // if (APP_CONFIG.payment_qr_url) {
+        //     APP_CONFIG.payment.imageUrlBase = APP_CONFIG.payment_qr_url;
+        // }
 
         // TÁI CẤU TRÚC: "Bơm" cấu hình phí vào module FeeCalculator
         if (typeof FeeCalculator !== 'undefined' && FeeCalculator.updateConfig) {

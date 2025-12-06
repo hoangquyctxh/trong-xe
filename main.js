@@ -1069,7 +1069,7 @@ const Templates = {
     paymentModal({ fee, vehicle }) {
         if (!vehicle) return '';
         const memo = `TTGX ${vehicle.plate || 'UNK'} ${vehicle.unique_id || 'UNK'}`;
-        const qrUrl = `${APP_CONFIG.payment.imageUrlBase}&amount=${fee || 0}&addInfo=${encodeURIComponent(memo)}`;
+        const qrUrl = APP_CONFIG.payment.getQrUrl(fee, memo);
 
         const content = `
             <div class="payment-flow-v10">
