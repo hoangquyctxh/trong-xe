@@ -1,135 +1,284 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <base target="_top">
-    <style>
-      body { font-family: 'Be Vietnam Pro', 'Arial', sans-serif; margin: 0; padding: 20px; color: #333; font-size: 12px; display: flex; justify-content: center; }
-      .container { width: 100%; max-width: 700px; border: 1px solid #ccc; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-      .header { text-align: center; margin-bottom: 20px; }
-      .header img { width: 60px; height: auto; margin-bottom: 10px; }
-      .header h1 { margin: 0; font-size: 18px; color: #0d47a1; }
-      .header p { margin: 2px 0; font-size: 10px; }
-      .title { text-align: center; font-size: 22px; font-weight: bold; margin: 20px 0; color: #0d47a1; }
-      .invoice-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
-      .invoice-info div { width: 48%; }
-      .invoice-info p { margin: 2px 0; }
-      .section-title { font-weight: bold; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-      table th, table td { border: 1px solid #eee; padding: 8px; text-align: left; }
-      table th { background-color: #f5f5f5; font-weight: bold; }
-      .total-row td { font-weight: bold; background-color: #f5f5f5; }
-      .amount-in-words { margin-top: 10px; font-style: italic; }
-      .footer { margin-top: 30px; display: flex; justify-content: space-around; text-align: center; }
-      .footer div { width: 45%; }
-      .footer p { margin: 5px 0; }
-      .text-right { text-align: right; }
-      .text-center { text-align: center; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAkFBMVEX/AAD/////Kir/ERH/BAT/qan/ICD/yMj/4+P/9PT/wsL/Zmb/paX/ior/UFD/gID/rq7/zMz/6ur/d3f/n5//X1//lJT/sbH/1NT/7u7/aGj/fHz/T0//cHD/jIz/Pz//v7//goL/mJj/eXn/RUX/YWH/trb/0ND/5ub/amr/o6P/Wlr/iIj/t7f/xsb/8PD/ExOFAAACyElEQVR4nO3ci1KiQBSG4ZgYQkFwEVxR0aCIiIuIuP//F/sgmG5gKjWp65xzzp8z/QO2rqo1aGqSAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQeD/gB/1fJk/z/gYAAAAASUVORK5CYII=" alt="Logo">
-        <h1 style="text-transform: uppercase;"><?= orgName ?></h1>
-        <p style="font-weight: 500;"><?= orgAddress ?></p>
-        <p>Mã số thuế: <?= taxId ?> | Hotline: <?= orgHotline ?></p>
-      </div>
 
-      <h2 class="title">BIÊN LAI THU TIỀN DỊCH VỤ</h2>
-      <p class="text-center">Ngày <?= exitDate ?> tháng <?= exitMonth ?> năm <?= exitYear ?></p>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: 'Be Vietnam Pro', 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      font-size: 12px;
+      display: flex;
+      justify-content: center;
+    }
 
-      <div class="invoice-info">
-        <div>
-          <p><strong>Số biên lai:</strong> <?= uniqueID ?></p>
-          <p><strong>Biển số xe:</strong> <?= plate ?></p>
-          <p><strong>Loại xe:</strong> <?= vehicleType ?></p>
-        </div>
-        <div class="text-right">
-          <p><strong>Giờ vào:</strong> <?= entryTimeDisplay ?></p>
-          <p><strong>Giờ ra:</strong> <?= exitTimeDisplay ?></p>
-          <p><strong>Tổng thời gian:</strong> <?= duration ?></p>
-        </div>
-      </div>
+    .container {
+      width: 100%;
+      max-width: 700px;
+      border: 1px solid #ccc;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
 
-      <div class="section-title">Chi tiết dịch vụ</div>
-      <table>
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Nội dung</th>
-            <th>Đơn vị</th>
-            <th>Số lượng</th>
-            <th>Đơn giá</th>
-            <th>Thành tiền</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>Phí trông giữ xe</td>
-            <td>Lượt</td>
-            <td>1</td>
-            <td><?= feeDisplay ?></td>
-            <td><?= feeDisplay ?></td>
-          </tr>
-          <tr class="total-row">
-            <td colspan="5" class="text-right">Tổng cộng:</td>
-            <td><?= feeDisplay ?></td>
-          </tr>
-        </tbody>
-      </table>
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-      <!-- MỚI: Bảng diễn giải chi tiết cách tính phí -->
-      <div class="section-title">Diễn giải cách tính phí</div>
-      <table>
-          <thead>
-              <tr>
-                  <th>Loại giờ</th>
-                  <th>Số giờ</th>
-                  <th>Đơn giá (/giờ)</th>
-              </tr>
-          </thead>
-          <tbody>
-              <tr>
-                  <td>Giờ ban ngày</td>
-                  <td><?= dayHours ?></td>
-                  <td><?= dayRateFormatted ?></td>
-              </tr>
-              <tr>
-                  <td>Giờ ban đêm</td>
-                  <td><?= nightHours ?></td>
-                  <td><?= nightRateFormatted ?></td>
-              </tr>
-          </tbody>
-      </table>
+    .header img {
+      width: 60px;
+      height: auto;
+      margin-bottom: 10px;
+    }
 
-      <p><strong>Số tiền bằng chữ:</strong> <?= feeInWords ?> đồng.</p>
-      <p><strong>Phương thức thanh toán:</strong>
-          <!-- SỬA LỖI TRIỆT ĐỂ: Thay thế cú pháp PHP không hợp lệ bằng thẻ <template> của HTML -->
-          <span id="payment-method-display">
-              <template id="payment-vip">
-                  VIP <em style="font-size: 0.9em; color: #555;">(Miễn phí theo chính sách dành cho khách mời/xe ưu tiên)</em>
-              </template>
-              <template id="payment-free">
-                  Miễn phí <em style="font-size: 0.9em; color: #555;">(Miễn phí do thời gian gửi xe dưới <?= freeMinutes ?> phút)</em>
-              </template>
-              <template id="payment-normal"><?= paymentMethod ?></template>
-          </span>
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      color: #0d47a1;
+    }
+
+    .header p {
+      margin: 2px 0;
+      font-size: 10px;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      margin: 20px 0;
+      color: #0d47a1;
+    }
+
+    .invoice-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .invoice-info div {
+      width: 48%;
+    }
+
+    .invoice-info p {
+      margin: 2px 0;
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    table th,
+    table td {
+      border: 1px solid #eee;
+      padding: 8px;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+    }
+
+    .total-row td {
+      font-weight: bold;
+      background-color: #f5f5f5;
+    }
+
+    .amount-in-words {
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    .footer {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .footer div {
+      width: 45%;
+    }
+
+    .footer p {
+      margin: 5px 0;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAkFBMVEX/AAD/////Kir/ERH/BAT/qan/ICD/yMj/4+P/9PT/wsL/Zmb/paX/ior/UFD/gID/rq7/zMz/6ur/d3f/n5//X1//lJT/sbH/1NT/7u7/aGj/fHz/T0//cHD/jIz/Pz//v7//goL/mJj/eXn/RUX/YWH/trb/0ND/5ub/amr/o6P/Wlr/iIj/t7f/xsb/8PD/ExOFAAACyElEQVR4nO3ci1KiQBSG4ZgYQkFwEVxR0aCIiIuIuP//F/sgmG5gKjWp65xzzp8z/QO2rqo1aGqSAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQeD/gB/1fJk/z/gYAAAAASUVORK5CYII="
+        alt="Logo">
+      <h1 style="text-transform: uppercase;">
+        <?= orgName ?>
+      </h1>
+      <p style="font-weight: 500;">
+        <?= orgAddress ?>
       </p>
-
-
-      <div class="footer">
-        <div>
-          <p><strong>Người nộp tiền</strong></p>
-          <p>(Ký, ghi rõ họ tên)</p>
-        </div>
-        <div>
-          <p><strong>Người thu tiền</strong></p>
-          <p>(Ký, ghi rõ họ tên)</p>
-          <p style="margin-top: 50px;"><?= orgName ?></p>
-        </div>
-      </div>
-      <p class="text-center" style="margin-top: 20px; font-size: 10px;">Cảm ơn Quý khách đã sử dụng dịch vụ!</p>
+      <p>Mã số thuế:
+        <?= taxId ?> | Hotline:
+        <?= orgHotline ?>
+      </p>
     </div>
-  </body>
+
+    <h2 class="title">BIÊN LAI THU TIỀN DỊCH VỤ</h2>
+    <p class="text-center">Ngày
+      <?= exitDate ?> tháng
+      <?= exitMonth ?> năm
+      <?= exitYear ?>
+    </p>
+
+    <div class="invoice-info">
+      <div>
+        <p><strong>Số biên lai:</strong>
+          <?= uniqueID ?>
+        </p>
+        <p><strong>Biển số xe:</strong>
+          <?= plate ?>
+        </p>
+        <p><strong>Tỉnh:</strong>
+          <?= vehicleType ?>
+        </p>
+      </div>
+      <div class="text-right">
+        <p><strong>Giờ vào:</strong>
+          <?= entryTimeDisplay ?>
+        </p>
+        <p><strong>Giờ ra:</strong>
+          <?= exitTimeDisplay ?>
+        </p>
+        <p><strong>Tổng thời gian:</strong>
+          <?= duration ?>
+        </p>
+      </div>
+    </div>
+
+    <div class="section-title">Chi tiết dịch vụ</div>
+    <table>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Nội dung</th>
+          <th>Đơn vị</th>
+          <th>Số lượng</th>
+          <th>Đơn giá</th>
+          <th>Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Phí trông giữ xe</td>
+          <td>Lượt</td>
+          <td>1</td>
+          <td>
+            <?= feeDisplay ?>
+          </td>
+          <td>
+            <?= feeDisplay ?>
+          </td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="5" class="text-right">Tổng cộng:</td>
+          <td>
+            <?= feeDisplay ?>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- MỚI: Bảng diễn giải chi tiết cách tính phí -->
+    <div class="section-title">Diễn giải cách tính phí</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Loại giờ</th>
+          <th>Số giờ</th>
+          <th>Đơn giá (/giờ)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Giờ ban ngày</td>
+          <td>
+            <?= dayHours ?>
+          </td>
+          <td>
+            <?= dayRateFormatted ?>
+          </td>
+        </tr>
+        <tr>
+          <td>Giờ ban đêm</td>
+          <td>
+            <?= nightHours ?>
+          </td>
+          <td>
+            <?= nightRateFormatted ?>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>Số tiền bằng chữ:</strong>
+      <?= feeInWords ?> đồng.
+    </p>
+    <p><strong>Phương thức thanh toán:</strong>
+      <!-- SỬA LỖI TRIỆT ĐỂ: Thay thế cú pháp PHP không hợp lệ bằng thẻ <template> của HTML -->
+      <span id="payment-method-display">
+        <template id="payment-vip">
+          VIP <em style="font-size: 0.9em; color: #555;">(Miễn phí theo chính sách dành cho khách mời/xe ưu tiên)</em>
+        </template>
+        <template id="payment-free">
+          Miễn phí <em style="font-size: 0.9em; color: #555;">(Miễn phí do thời gian gửi xe dưới
+            <?= freeMinutes ?> phút)
+          </em>
+        </template>
+        <template id="payment-normal">
+          <?= paymentMethod ?>
+        </template>
+      </span>
+    </p>
+
+
+    <div class="footer">
+      <div>
+        <p><strong>Người nộp tiền</strong></p>
+        <p>(Ký, ghi rõ họ tên)</p>
+      </div>
+      <div>
+        <p><strong>Người thu tiền</strong></p>
+        <p>(Ký, ghi rõ họ tên)</p>
+        <p style="margin-top: 50px;">
+          <?= orgName ?>
+        </p>
+      </div>
+    </div>
+    <p class="text-center" style="margin-top: 20px; font-size: 10px;">Cảm ơn Quý khách đã sử dụng dịch vụ!</p>
+  </div>
+</body>
+
 </html>

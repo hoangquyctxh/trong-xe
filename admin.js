@@ -224,16 +224,19 @@ document.addEventListener('DOMContentLoaded', () => {
          * - Khác biệt: Không giới hạn theo location_id => admin xem được toàn hệ thống.
          */
         async fetchDataForDate(date) {
-            const dateStr = date.toISOString().slice(0, 10);
-            const startOfDayUTC = new Date(`${dateStr}T00:00:00Z`);
-            const endOfDayUTC = new Date(startOfDayUTC.getTime() + 24 * 60 * 60 * 1000);
+            // SỬA: Logic thời gian local
+            const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+            const startOfDayUTC = startOfDay.toISOString();
+            const endOfDayUTC = endOfDay.toISOString();
 
             let query = db.from('transactions').select('*');
 
             // Sử dụng cùng điều kiện OR như main.js để tránh lệch dữ liệu theo múi giờ/ngày
             query = query.or(
                 `status.eq.Đang gửi,` +
-                `and(status.eq.Đã rời bãi,exit_time.gte.${startOfDayUTC.toISOString()},exit_time.lt.${endOfDayUTC.toISOString()})`
+                `and(status.eq.Đã rời bãi,exit_time.gte.${startOfDayUTC},exit_time.lt.${endOfDayUTC})`
             );
 
             const { data, error } = await query.order('entry_time', { ascending: false });
@@ -383,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Transactions
             dom.transactionSearchInput.addEventListener('input', Handlers.handleTransactionSearch);
-            if(dom.transactionScanQrBtn) {
+            if (dom.transactionScanQrBtn) {
                 dom.transactionScanQrBtn.addEventListener('click', Handlers.openAdminQrScanner);
                 dom.closeAdminScannerBtn.addEventListener('click', Handlers.closeAdminQrScanner);
             }
@@ -416,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.executeSqlBtn.addEventListener('click', Handlers.handleExecuteSql);
 
             // Analytics
-            if(dom.analyticsMetricSelect) dom.analyticsMetricSelect.addEventListener('change', Handlers.handleAnalyticsMetricChange);
+            if (dom.analyticsMetricSelect) dom.analyticsMetricSelect.addEventListener('change', Handlers.handleAnalyticsMetricChange);
         },
 
         renderDashboard() {
@@ -1031,20 +1034,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.start();
             } else {
                 dom.loginScreen.style.display = 'flex';
-                if(dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
+                if (dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
             }
         },
 
         async start() {
             dom.loginScreen.style.display = 'none';
             dom.mainContent.style.display = 'grid';
-            if(dom.loadingOverlay) dom.loadingOverlay.classList.remove('hidden');
+            if (dom.loadingOverlay) dom.loadingOverlay.classList.remove('hidden');
 
-            dom.adminDatePicker.value = state.currentDate.toISOString().slice(0, 10);
+            // SỬA: Lấy ngày hiện tại theo giờ địa phương (YYYY-MM-DD)
+            const offset = state.currentDate.getTimezoneOffset() * 60000;
+            const localDate = new Date(state.currentDate.getTime() - offset);
+            dom.adminDatePicker.value = localDate.toISOString().slice(0, 10);
 
             await this.loadInitialData();
 
-            if(dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
+            if (dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
         },
 
         async loadInitialData() {

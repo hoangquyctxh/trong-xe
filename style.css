@@ -9511,3 +9511,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
     border-radius: 4px;
     display: inline-block;
 }
+
+#toast-container {
+    z-index: 20000 !important;
+}

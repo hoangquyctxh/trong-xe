@@ -109,21 +109,25 @@ let isBackgroundRefreshing = false;
 // =========================================================================
 const Api = {
     async fetchVehiclesForDate(date) {
-        const dateStr = date.toISOString().slice(0, 10);
+        // SỬA: Sử dụng múi giờ địa phương để tạo query chính xác
+        const offset = date.getTimezoneOffset() * 60000;
+        const localDate = new Date(date.getTime() - offset);
+        const dateStr = localDate.toISOString().slice(0, 10);
 
-        if (!state.isOnline) {
-            console.log("Offline mode: Reading vehicles from local state.");
-            return state.vehicles;
-        }
+        // Query vẫn cần UTC cho range tìm kiếm trong DB (giả sử DB lưu UTC)
+        // Nhưng nếu người dùng chọn ngày X theo giờ Việt Nam, ta cần tìm các khoảng thời gian tương ứng
+        // Cách đơn giản nhất: Tạo start/end timestamp dựa trên ngày đã chọn ở local time
+        const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
-        const startOfDayUTC = new Date(`${dateStr}T00:00:00Z`);
-        const endOfDayUTC = new Date(startOfDayUTC.getTime() + 24 * 60 * 60 * 1000);
+        const startOfDayUTC = startOfDay.toISOString();
+        const endOfDayUTC = endOfDay.toISOString();
 
         let query = db.from('transactions').select('*');
         if (state.currentLocation?.id) {
             query = query.eq('location_id', state.currentLocation.id);
         }
-        query = query.or(`status.eq.Đang gửi,and(status.eq.Đã rời bãi,exit_time.gte.${startOfDayUTC.toISOString()},exit_time.lt.${endOfDayUTC.toISOString()})`);
+        query = query.or(`status.eq.Đang gửi,and(status.eq.Đã rời bãi,exit_time.gte.${startOfDayUTC},exit_time.lt.${endOfDayUTC})`);
         const { data, error } = await query.order('entry_time', { ascending: false });
         if (error) throw new Error(`Lỗi tải dữ liệu xe: ${error.message}`);
         return data || [];
@@ -141,9 +145,44 @@ const Api = {
     },
 
     async fetchHistory(plate) {
-        const { data, error } = await db.from('transactions').select('*').eq('plate', plate).order('entry_time', { ascending: false }).limit(5);
+        const { data, error } = await db.from('transactions')
+            .select('*')
+            .eq('plate', plate)
+            .order('entry_time', { ascending: false })
+            .limit(5);
         if (error) throw new Error(`Lỗi tải lịch sử: ${error.message}`);
         return data || [];
+    },
+
+    // NEW: Lấy thông tin mới nhất của xe (bất kể thời gian) để điền tự động
+    // CẢI TIẾN: Chỉ lấy bản ghi CÓ số điện thoại
+    async fetchLatestVehicleInfo(plate) {
+        // Tìm bản ghi gần nhất có số điện thoại khác null và khác rỗng
+        const { data, error } = await db.from('transactions')
+            .select('phone, is_vip, notes')
+            .eq('plate', plate)
+            .neq('phone', null)
+            .neq('phone', '')
+            .order('entry_time', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            console.error("Lỗi lấy thông tin xe cũ:", error);
+            return null;
+        }
+
+        // Nếu không tìm thấy bản ghi có SĐT, thử tìm bản ghi VIP
+        if (!data) {
+            const { data: vipData } = await db.from('transactions')
+                .select('phone, is_vip, notes')
+                .eq('plate', plate)
+                .eq('is_vip', true)
+                .limit(1)
+                .maybeSingle();
+            return vipData;
+        }
+        return data;
     },
 
     async fetchAlerts() {
@@ -154,19 +193,6 @@ const Api = {
         const { data, error } = await db.from('security_alerts').select('*');
         if (error) throw new Error(`Lỗi tải cảnh báo: ${error.message}`);
         return data.reduce((acc, alert) => { acc[alert.plate] = alert; return acc; }, {});
-    },
-
-    async findVehicleGlobally(plate) {
-        const { data, error } = await db.from('transactions')
-            .select('*')
-            .eq('plate', plate)
-            .eq('status', 'Đang gửi')
-            .limit(1)
-            .single();
-        if (error && error.code !== 'PGRST116') {
-            throw new Error(`Lỗi tìm kiếm toàn cục: ${error.message}`);
-        }
-        return data;
     },
 
     async getStaffInfoByUsername(username) {
@@ -513,6 +539,10 @@ const UI = {
         // SỬA LỖI: Kiểm tra xem form gửi xe có đang hiển thị hay không TRƯỚC KHI ẩn nó đi.
         const wasCheckinFormVisible = dom.checkinFormDetails.style.display === 'block';
 
+        // SỬA LỖI: Lưu trạng thái mở/đóng của thẻ thông tin để khôi phục sau khi render lại
+        // Điều này ngăn thẻ bị tự động đóng khi auto-refresh chạy.
+        const wasInfoExpanded = dom.vehicleInfoDisplay.querySelector('.collapsible-card.expanded') !== null;
+
         // XÓA CẢNH BÁO CŨ (NẾU CÓ) TRƯỚC KHI RENDER LẠI
         const existingAlert = dom.actionHubDetails.querySelector('.action-alert-box');
         if (existingAlert) existingAlert.remove();
@@ -544,10 +574,25 @@ const UI = {
             // Hiển thị khu vực thông tin chi tiết
             dom.vehicleInfoDisplay.style.display = 'block';
 
-            // NÂNG CẤP: Đảm bảo thẻ thông tin được thu gọn khi hiển thị lần đầu
+            // NÂNG CẤP: Khôi phục trạng thái mở/đóng của thẻ
             const collapsibleCard = dom.vehicleInfoDisplay.querySelector('.collapsible-card');
             if (collapsibleCard) {
-                collapsibleCard.classList.remove('expanded');
+                // Nếu trước đó đang mở, hãy mở lại. Ngược lại thì giữ nguyên (đóng).
+                if (wasInfoExpanded) {
+                    collapsibleCard.classList.add('expanded');
+                } else {
+                    collapsibleCard.classList.remove('expanded');
+                }
+            }
+
+            // SỬA LỖI (User Request): Xe đã từng gửi (departed) quay lại thì PHẢI hiện form nhập liệu
+            if (vehicleStatus === 'departed') {
+                if (!wasCheckinFormVisible) {
+                    dom.phoneInput.value = vehicle.phone || '';
+                    dom.notesInput.value = '';
+                    if (dom.isVipCheckbox) dom.isVipCheckbox.checked = !!vehicle.is_vip;
+                }
+                dom.checkinFormDetails.style.display = 'block';
             }
 
         } else if (vehicleStatus === 'parking_remote') {
@@ -902,7 +947,7 @@ const Templates = {
 
         let html = `
                 ${Templates.infoDisplayItem('Trạng thái', `<span class="status-badge ${isParking ? 'parking' : 'departed'}">${vehicle.is_vip ? `VIP` : vehicle.status}</span>`)}
-                ${Templates.infoDisplayItem('Loại xe', Utils.decodePlate(vehicle.plate))}
+                ${Templates.infoDisplayItem('Tỉnh', Utils.decodePlate(vehicle.plate))}
                 ${Templates.infoDisplayItem('Giờ vào', `<strong>${Utils.formatDateTime(vehicle.entry_time)}</strong>`)}
                 ${isParking ? '' : Templates.infoDisplayItem('Giờ ra', Utils.formatDateTime(vehicle.exit_time))}
                 ${Templates.infoDisplayItem('Thời gian gửi', duration)}
@@ -1076,7 +1121,7 @@ const Templates = {
                 <div class="ticket-paper">
                     <div class="ticket-header">
                         <span class="ticket-brand">Vé Gửi Xe</span>
-                        <span class="ticket-id">ID: ${(vehicle.unique_id || '').substring(0, 8).toUpperCase()}</span>
+                        <span class="ticket-id" style="font-size: 0.7em; word-break: break-all;">ID: ${vehicle.unique_id || ''}</span>
                     </div>
                     
                     <div class="ticket-info-grid">
@@ -1158,19 +1203,6 @@ const Templates = {
                     <div class="confirm-card__success-overlay">
                         <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
                         <p>ĐÃ XÁC NHẬN</p>
-                    </div>
-                </div>`;
-        const footer = `<button class="action-button btn--secondary" data-action="confirm-no">Hủy bỏ</button><button class="action-button ${isVip ? 'btn--reprint' : 'btn--check-in'}" data-action="confirm-yes"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>Xác nhận cho xe ra</span></button>`;
-        return this.modal(title, content, footer, '450px');
-    },
-    checkoutSuccessModal({ vehicle, fee, method }) {
-        const isPaid = fee > 0;
-        const title = isPaid ? 'Giao dịch thành công' : 'Xác nhận thành công';
-
-        const content = `
-                <div class="checkout-success-v6">
-                    <div id="checkout-success-confetti" class="confetti-container"></div>
-                    <div class="success-v6__header">
                         <div class="success-v6__icon">
                             <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
                         </div>
@@ -1502,6 +1534,12 @@ const Handlers = {
         UI.updateMainFormUI();
         if (state.selectedVehicle?.status === 'new' || state.selectedVehicle?.status === 'parking_remote') {
             UI.renderSuggestions(cleanedPlate);
+
+            // NÂNG CẤP (User Request): Tự động điền SĐT cho xe đã từng gửi (ngay cả khi không có trong state hiện tại)
+            clearTimeout(globalSearchDebounceTimer);
+            globalSearchDebounceTimer = setTimeout(() => {
+                App.attemptAutoFill(cleanedPlate);
+            }, 500); // Debounce 500ms
         }
     },
 
@@ -2185,6 +2223,21 @@ const App = {
                 }
             }
 
+            // SỬA LỖI: Cập nhật lại state.selectedVehicle từ danh sách mới
+            // Điều này ngăn chặn việc UI bị reset (và modal bị đóng) khi auto-refresh chạy
+            if (state.selectedPlate) {
+                const refreshedVehicle = state.vehicles.find(v => v.plate === state.selectedPlate && v.status === 'Đang gửi');
+                if (refreshedVehicle) {
+                    state.selectedVehicle = { data: refreshedVehicle, status: 'parking' };
+                } else if (!state.selectedVehicle || state.selectedVehicle.status !== 'new') {
+                    // Nếu không tìm thấy xe đang gửi, và không phải đang nhập xe mới -> Reset
+                    // (Nhưng nếu đang nhập xe mới, giữ nguyên để không mất dữ liệu form)
+                    if (state.filterTerm === state.selectedPlate) { // Chỉ reset nếu đang filter theo biển số này
+                        // state.selectedVehicle = null; // Tạm thời disable reset để tránh nháy
+                    }
+                }
+            }
+
             if (state.isOnline) this.saveStateToLocalStorage();
         } catch (error) {
             UI.showToast(error.message, 'error');
@@ -2236,14 +2289,22 @@ const App = {
             const savedState = localStorage.getItem('appState');
             if (savedState) {
                 const parsedState = JSON.parse(savedState);
-                // Chỉ tải các trạng thái không phụ thuộc vào bãi xe
+                // SỬA: Không khôi phục currentDate để luôn mặc định là hôm nay
+                /*
                 if (parsedState.currentDate) {
                     state.currentDate = new Date(parsedState.currentDate);
-                    state.vehicles = parsedState.vehicles || [];
-                    state.alerts = parsedState.alerts || {};
-                    state.syncQueue = parsedState.syncQueue || [];
-                    return true;
+                    // Update date picker text if exists
+                    const dateDisplay = document.getElementById('current-date');
+                    if (dateDisplay) {
+                        dateDisplay.textContent = Utils.formatDate(state.currentDate);
+                    }
                 }
+                */
+                // Chỉ tải các trạng thái không phụ thuộc vào bãi xe
+                if (parsedState.vehicles) state.vehicles = parsedState.vehicles;
+                if (parsedState.alerts) state.alerts = parsedState.alerts;
+                if (parsedState.syncQueue) state.syncQueue = parsedState.syncQueue;
+                return true;
             }
         } catch (e) {
             console.error("Error loading state from localStorage", e);
@@ -2369,33 +2430,31 @@ const App = {
                 {
                     event: '*',
                     schema: 'public',
-                    table: 'locations' // SỬA LỖI: Lắng nghe đúng bảng 'locations'
+                    table: 'locations'
                 },
                 (payload) => {
                     console.log('Realtime: Phát hiện thay đổi trên bảng locations.', payload);
                     Api.fetchLocations().then(locations => {
                         state.locations = locations;
-                        // Cập nhật lại thông tin bãi đỗ hiện tại nếu nó bị thay đổi
                         if (state.currentLocation?.id) {
                             const updatedLoc = locations.find(l => l.id === state.currentLocation.id);
                             if (updatedLoc) {
                                 state.currentLocation = updatedLoc;
                             }
                         }
-                        // Chỉ render lại header và dashboard
                         UI.renderApp();
                         UI.showDataSyncIndicator();
                     });
                 }
             )
-            // 4. Lắng nghe tín hiệu broadcast tổng quát từ admin.js (dự phòng)
+            // 4. Lắng nghe tín hiệu broadcast tổng quát
             .on(
                 'broadcast',
                 {
                     event: 'data_changed'
                 },
                 (payload) => {
-                    console.log('Realtime: Nhận tín hiệu \"data_changed\", đang làm mới dữ liệu...', payload);
+                    console.log('Realtime: Nhận tín hiệu broadcast.', payload);
                     this.fetchData(true);
                 }
             )
