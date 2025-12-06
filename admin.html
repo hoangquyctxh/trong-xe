@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bảng điều khiển Quản trị - Hệ thống trông xe</title>
-    
+    <title>Quản trị Hệ thống - Smart Parking</title>
+
     <!-- Fonts & Libraries -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
-    <!-- Thư viện JS bên thứ ba (defer để không chặn render, đồng bộ với index.html) -->
+    <!-- Thư viện JS bên thứ ba -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
@@ -22,390 +24,604 @@
     <script src="config.js" defer></script>
 
 </head>
+
 <body>
     <!-- ================================================================= -->
-    <!-- MÀN HÌNH ĐĂNG NHẬP -->
+    <!-- MÀN HÌNH ĐĂNG NHẬP (PREMIUM DESIGN) -->
     <!-- ================================================================= -->
     <div id="login-screen">
-        <div class="login-card">
-            <h2>Đăng nhập Quản trị</h2>
+        <div class="login-card glass-panel">
+            <div class="login-header">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                    alt="Logo" class="login-logo">
+                <h2>Quản trị Hệ thống</h2>
+                <p>Đăng nhập để truy cập bảng điều khiển</p>
+            </div>
             <form id="login-form">
-                <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" required>
+                <div class="form-group floating-label">
+                    <input type="email" id="login-email" required placeholder=" " autocomplete="email">
+                    <label for="login-email">Email quản trị</label>
                 </div>
-                <div class="form-group">
+                <div class="form-group floating-label">
+                    <input type="password" id="login-password" required placeholder=" " autocomplete="current-password">
                     <label for="login-password">Mật khẩu</label>
-                    <input type="password" id="login-password" required>
                 </div>
                 <p id="login-error-message"></p>
-                <button type="submit" class="action-button btn-primary" style="width: 100%; margin-top: 1.5rem;">Đăng nhập</button>
+                <button type="submit" class="action-button btn-primary btn-lg btn-glow">
+                    <span>Đăng nhập ngay</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                    </svg>
+                </button>
             </form>
+        </div>
+        <div class="login-bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
         </div>
     </div>
 
     <!-- ================================================================= -->
-    <!-- NỘI DUNG CHÍNH -->
+    <!-- NỘI DUNG CHÍNH (DASHBOARD LAYOUT) -->
     <!-- ================================================================= -->
-    <!-- LỚP PHỦ TẢI DỮ LIỆU BAN ĐẦU -->
+    <!-- LỚP PHỦ TẢI DỮ LIỆU -->
     <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-spinner-wrapper">
-            <div class="loading-spinner"></div>
-            <p>Đang tải dữ liệu quản trị...</p>
+        <div class="loading-content">
+            <div class="spinner-box">
+                <div class="three-quarter-spinner"></div>
+            </div>
+            <p>Đang đồng bộ dữ liệu...</p>
         </div>
     </div>
 
     <div id="main-admin-content" class="main-admin-container" style="display: none;">
-        <div class="sidebar">
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="sidebar glass-sidebar">
             <div class="sidebar-header">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
-                <h2>Quản trị</h2>
+                <div class="logo-wrapper">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                        alt="Logo">
+                </div>
+                <div class="brand-text">
+                    <h3>Smart Admin</h3>
+                    <span>Parking System</span>
+                </div>
             </div>
-            <nav class="nav-menu">
+
+            <nav class="nav-menu custom-scrollbar">
                 <ul>
-                    <li><a href="index.html" title="Quay về trang điều hành chính"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg><span>Bảng điều hành</span></a></li>
-                    <li><a href="#" class="nav-link active" data-target="page-dashboard" title="Thống kê và biểu đồ trực quan về hoạt động trong ngày."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8a2 2 0 0 1 0 2.8l-6 6-3.4-3.4-3-3a2 2 0 0 1 0-2.8l6-6a2 2 0 0 1 2.8 0z"/></svg><span>Tổng quan</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="page-transactions" title="Quản lý, tìm kiếm và chỉnh sửa tất cả giao dịch."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/><path d="m15 5 3 3"/></svg><span>Giao dịch</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="page-locations" title="Thêm, sửa, xóa và xem các bãi đỗ xe trên bản đồ."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span>Quản lý Vị trí</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="page-security" title="Gửi và giám sát các cảnh báo an ninh."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>An ninh</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="page-analytics" title="Phân tích các hoạt động đáng ngờ."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Phân tích</span></a></li>
-                    <li><a href="#" class="nav-link" data-target="page-sql-editor" title="Thực thi lệnh SQL trực tiếp trên CSDL."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/></svg><span>SQL Editor</span></a></li>
+                    <li class="nav-category">TỔNG QUAN</li>
+                    <li>
+                        <a href="#" class="nav-link active" data-target="page-dashboard">
+                            <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg></div>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="index.html" class="nav-link go-home">
+                            <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                    <polyline points="9 22 9 12 15 12 15 22" />
+                                </svg></div>
+                            <span>Về trang chủ</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-category">QUẢN LÝ</li>
+                    <li>
+                        <a href="#" class="nav-link" data-target="page-transactions">
+                            <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                    <polyline points="10 9 9 9 8 9" />
+                                </svg></div>
+                            <span>Giao dịch</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link" data-target="page-locations">
+                            <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg></div>
+                            <span>Bãi đỗ xe</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-category">HỆ THỐNG</li>
+                    <li>
+                        <a href="#" class="nav-link" data-target="page-security">
+                            <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                </svg></div>
+                            <span>An ninh</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="#" class="nav-link" data-target="page-sql-editor">
+                            <div class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <database />
+                                    <path d="M12 12c-3 0-6-2-6-5s3-5 6-5 6 2 6 5-3 5-6 5z" />
+                                    <path d="M12 12c3 0 6 2 6 5s-3 5-6 5-6-2-6-5" />
+                                    <path d="M12 22c3 0 6-2 6-5" />
+                                </svg></div>
+                            <span>SQL Data</span>
+                        </a>
+                    </li>
                 </ul>
+
+                <div class="sidebar-footer">
+                    <button id="logout-btn" class="logout-btn-micro">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                        <span>Đăng xuất</span>
+                    </button>
+                    <div class="version-tag">v3.1.0</div>
+                </div>
             </nav>
-        </div>
-        <!-- Lớp phủ để đóng menu trên di động -->
+        </aside>
+
         <div class="sidebar-overlay"></div>
 
         <main class="main-content">
-            <!-- THANH ĐIỀU HƯỚNG TRÊN (TOP BAR) -->
-            <header class="top-bar">
-                <div class="page-header">
-                    <!-- Nút Hamburger Menu cho di động -->
-                    <button id="menu-toggle-btn" class="action-button btn-secondary" style="width: auto; padding: 0.5rem; display: none;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            <!-- TOP BAR GLASS -->
+            <header class="top-bar glass-header">
+                <div class="top-bar-left">
+                    <button id="menu-toggle-btn" class="icon-btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
                     </button>
-                    <div>
-                        <h1 id="page-title">Tổng quan hệ thống</h1>
-                        <p id="page-description">Thống kê và biểu đồ trực quan về hoạt động trong ngày.</p>
+                    <div class="page-title-wrapper">
+                        <h1 id="page-title">Tổng quan</h1>
+                        <p id="page-description">Số liệu thống kê thời gian thực</p>
                     </div>
                 </div>
-                <div class="top-bar-actions">
-                    <button id="logout-btn" class="action-button btn-secondary"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Đăng xuất</button>
+                <!-- Controls right (Date picker moved here for better UX) -->
+                <div class="top-bar-right">
+                    <div class="date-picker-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <input type="date" id="admin-date-picker">
+                    </div>
                 </div>
             </header>
 
-            <!-- PAGE: TỔNG QUAN -->
-            <div id="page-dashboard" class="page-content active">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon revenue"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="1" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-                        <div class="stat-info">
-                            <h3>Doanh thu</h3>
-                            <p id="total-revenue">0 <sup>đ</sup></p>
+            <div class="content-wrapper">
+                <!-- PAGE: TỔNG QUAN -->
+                <div id="page-dashboard" class="page-content active">
+                    <!-- Stats Cards Row -->
+                    <div class="stats-row">
+                        <div class="stat-card glass-card revenue-card">
+                            <div class="stat-content">
+                                <h3>Doanh thu</h3>
+                                <p class="stat-value" id="total-revenue">0 <sup>đ</sup></p>
+                                <span class="stat-trend positive">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                        <polyline points="17 6 23 6 23 12"></polyline>
+                                    </svg>
+                                    Hôm nay
+                                </span>
+                            </div>
+                            <div class="stat-deco-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <line x1="12" x2="12" y1="1" y2="23" />
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="stat-card glass-card vehicles-card">
+                            <div class="stat-content">
+                                <h3>Lượt xe</h3>
+                                <p class="stat-value" id="total-vehicles">0</p>
+                                <span class="stat-trend neutral">Tổng cộng</span>
+                            </div>
+                            <div class="stat-deco-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M14 16.5V14a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v2.5" />
+                                    <path d="M12 12V8" />
+                                    <circle cx="12" cy="6" r="2" />
+                                    <path
+                                        d="M15 20a2 2 0 0 0 2-2V9.5a2.5 2.5 0 0 0-2.5-2.5h-5A2.5 2.5 0 0 0 7 9.5V18a2 2 0 0 0 2 2h6Z" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="stat-card glass-card parking-card">
+                            <div class="stat-content">
+                                <h3>Đang gửi</h3>
+                                <p class="stat-value" id="current-vehicles">0</p>
+                                <span class="stat-trend highlight">Hiện tại</span>
+                            </div>
+                            <div class="stat-deco-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                                    <circle cx="7" cy="17" r="2" />
+                                    <circle cx="17" cy="17" r="2" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon vehicles"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16.5V14a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v2.5"/><path d="M12 12V8"/><circle cx="12" cy="6" r="2"/><path d="M15 20a2 2 0 0 0 2-2V9.5a2.5 2.5 0 0 0-2.5-2.5h-5A2.5 2.5 0 0 0 7 9.5V18a2 2 0 0 0 2 2h6Z"/></svg></div>
-                        <div class="stat-info">
-                            <h3>Tổng lượt xe</h3>
-                            <p id="total-vehicles">0</p>
+
+                    <!-- Main Chart Area -->
+                    <div class="dashboard-grid">
+                        <div class="chart-panel glass-card full-width">
+                            <div class="card-header borderless">
+                                <h3>Lưu lượng xe theo giờ</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container main-chart"><canvas id="traffic-chart"></canvas></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon parking"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>
-                        <div class="stat-info">
-                            <h3>Xe đang gửi</h3>
-                            <p id="current-vehicles">0</p>
+
+                        <div class="chart-panel glass-card">
+                            <div class="card-header borderless">
+                                <h3 id="revenue-chart-title">Doanh thu / Bãi</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container"><canvas id="revenue-chart"></canvas></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon date"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></div>
-                        <div class="stat-info">
-                            <h3>Chọn ngày</h3>
-                            <input type="date" id="admin-date-picker">
+                        <div class="chart-panel glass-card">
+                            <div class="card-header borderless">
+                                <h3 id="vehicles-chart-title">Lượt xe / Bãi</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container"><canvas id="vehicles-chart"></canvas></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header"><h3>Lưu lượng xe theo giờ</h3></div>
-                    <div class="card-body">
-                        <div class="chart-container"><canvas id="traffic-chart"></canvas></div>
-                    </div>
-                </div>
-
-                <div class="chart-grid">
-                    <div class="card">
-                        <div class="card-header"><h3 id="revenue-chart-title">Doanh thu theo bãi đỗ xe</h3></div>
-                        <div class="card-body">
-                            <div class="chart-container"><canvas id="revenue-chart"></canvas></div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header"><h3 id="vehicles-chart-title">Lượt xe theo bãi đỗ xe</h3></div>
-                        <div class="card-body">
-                            <div class="chart-container"><canvas id="vehicles-chart"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PAGE: GIAO DỊCH -->
-            <div id="page-transactions" class="page-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Tất cả Giao dịch</h3>
-                        <div id="transaction-search-wrapper">
-                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <input type="text" id="transaction-search-input" placeholder="Tìm theo Biển số, ID, SĐT...">
-                            <svg id="transaction-scan-qr-btn" class="action-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="Quét mã QR để tìm giao dịch"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg>
-                        </div>
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead><tr><th>Biển số</th><th>Giờ vào</th><th>Giờ ra</th><th>Phí</th><th>Thanh toán</th><th>Bãi đỗ xe</th><th style="text-align: center;">Trạng thái</th><th style="text-align: center;">Hành động</th></tr></thead>
-                            <tbody id="transaction-log-body"></tbody>
-                        </table>
-                    </div>
-                    <div id="pagination-controls"></div>
-                </div>
-            </div>
-
-            <!-- PAGE: QUẢN LÝ VỊ TRÍ -->
-            <div id="page-locations" class="page-content">
-                <div class="locations-grid-layout">
-                    <div class="card">
+                <!-- PAGE: GIAO DỊCH -->
+                <div id="page-transactions" class="page-content">
+                    <div class="glass-card table-panel">
                         <div class="card-header">
-                            <h3>Bản đồ các điểm trông giữ xe</h3>
+                            <h3>Quản lý Giao dịch</h3>
+                            <div id="transaction-search-wrapper" class="modern-search">
+                                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input type="text" id="transaction-search-input" placeholder="Tìm kiếm biển số, ID...">
+                                <button id="transaction-scan-qr-btn" class="icon-btn-small" title="Quét QR">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect x="3" y="3" width="7" height="7"></rect>
+                                        <rect x="14" y="3" width="7" height="7"></rect>
+                                        <rect x="14" y="14" width="7" height="7"></rect>
+                                        <rect x="3" y="14" width="7" height="7" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                        <div class="card-body" style="height: 500px;"><div id="map-container"></div></div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Danh sách Bãi đỗ xe</h3>
-                            <button id="add-location-btn" class="action-button btn-primary">Thêm Bãi đỗ mới</button>
-                        </div>
-                        <div class="table-wrapper">
+                        <div class="table-wrapper custom-scrollbar">
                             <table>
-                                <thead><tr><th>Mã (ID)</th><th>Tên Bãi đỗ</th><th>Địa chỉ</th><th>Hành động</th></tr></thead>
-                                <tbody id="locations-table-body"></tbody>
+                                <thead>
+                                    <tr>
+                                        <th>Biển số</th>
+                                        <th>Giờ vào</th>
+                                        <th>Giờ ra</th>
+                                        <th>Phí</th>
+                                        <th>PTTT</th>
+                                        <th>Bãi đỗ</th>
+                                        <th class="text-center">Trạng thái</th>
+                                        <th class="text-center">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transaction-log-body"></tbody>
                             </table>
                         </div>
+                        <div id="pagination-controls" class="modern-pagination"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- PAGE: AN NINH -->
-            <div id="page-security" class="page-content">
-                <div class="security-layout-grid">
-                    <div class="card">
-                        <div class="card-header"><h3>Gửi Cảnh báo An ninh</h3></div>
+                <!-- PAGE: QUẢN LÝ VỊ TRÍ -->
+                <div id="page-locations" class="page-content">
+                    <div class="locations-layout">
+                        <div class="glass-card map-view">
+                            <div class="card-header borderless">
+                                <h3>Bản đồ Bãi đỗ</h3>
+                            </div>
+                            <div class="card-body flush">
+                                <div id="map-container"></div>
+                            </div>
+                        </div>
+                        <div class="glass-card list-view">
+                            <div class="card-header">
+                                <h3>Danh sách Bãi</h3>
+                                <button id="add-location-btn" class="btn-primary btn-sm btn-glow">+ Thêm mới</button>
+                            </div>
+                            <div class="locations-grid" id="locations-grid">
+                                <!-- JS will render location cards here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: AN NINH -->
+                <div id="page-security" class="page-content">
+                    <div class="security-grid">
+                        <div class="glass-card alert-form-panel">
+                            <div class="card-header">
+                                <h3>🚨 Phát lệnh Cảnh báo</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group floating-label">
+                                    <input type="text" id="security-alert-plate" required placeholder=" "
+                                        style="text-transform: uppercase;">
+                                    <label>Biển số xe</label>
+                                </div>
+                                <div class="form-group floating-label">
+                                    <textarea id="security-alert-reason" required placeholder=" " rows="3"></textarea>
+                                    <label>Lý do cảnh báo</label>
+                                </div>
+                                <div class="quick-tags">
+                                    <span class="tag default-reason-btn">Xe nghi vấn</span>
+                                    <span class="tag default-reason-btn">Báo mất cắp</span>
+                                    <span class="tag default-reason-btn">Yêu cầu giữ lại</span>
+                                </div>
+                                <div id="alert-level-container" class="alert-options">
+                                    <label class="radio-card">
+                                        <input type="radio" name="alert-level" value="warning" checked>
+                                        <div class="radio-content">
+                                            <strong>Cảnh báo</strong>
+                                            <small>Hiển thị thông báo khi xe vào</small>
+                                        </div>
+                                    </label>
+                                    <label class="radio-card danger">
+                                        <input type="radio" name="alert-level" value="block">
+                                        <div class="radio-content">
+                                            <strong>Chặn xe</strong>
+                                            <small>Không cho phép xe ra khỏi bãi</small>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="btn-group">
+                                    <button id="send-security-alert-btn" class="action-button btn-danger btn-block">Gửi
+                                        Cảnh Báo Ngay</button>
+                                    <button id="remove-alert-btn" class="action-button btn-secondary btn-block">Gỡ Cảnh
+                                        Báo</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card alert-list-panel">
+                            <div class="card-header">
+                                <h3>Danh sách đang theo dõi</h3>
+                            </div>
+                            <div id="active-alerts-list" class="custom-scrollbar styled-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- PAGE: SQL -->
+                <div id="page-sql-editor" class="page-content">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <h3>SQL Editor (Advanced)</h3>
+                        </div>
                         <div class="card-body">
-                            <div class="form-group" style="margin-bottom: 1rem;">
-                                <label for="security-alert-plate">Biển số xe cần cảnh báo</label>
-                                <input type="text" id="security-alert-plate" placeholder="Ví dụ: 29A12345">
+                            <div class="sql-editor-warning">
+                                <strong>⚠️ Cẩn thận:</strong> Tính năng này dành cho nhà phát triển.
                             </div>
-                            <div class="form-group" style="margin-bottom: 1rem;">
-                                <label for="security-alert-reason">Lý do cảnh báo</label>
-                                <textarea id="security-alert-reason" placeholder="Ví dụ: Xe nghi vấn, báo mất cắp..." rows="3"></textarea>
-                            </div>
-                            <div class="default-reasons-container">
-                                <button type="button" class="default-reason-btn">Xe nghi vấn</button>
-                                <button type="button" class="default-reason-btn">Báo mất cắp</button>
-                                <button type="button" class="default-reason-btn">Yêu cầu giữ lại</button>
-                            </div>
-                            <div id="alert-level-container">
-                                <label><input type="radio" name="alert-level" value="warning" checked> <strong>Cảnh báo</strong> (Hiển thị thông báo)</label>
-                                <label class="danger-label"><input type="radio" name="alert-level" value="block"> <strong>Chặn Lấy Xe</strong> (Không cho phép checkout)</label>
-                            </div>
-                            <div class="button-group-stretched">
-                                <button id="remove-alert-btn" class="action-button btn-secondary">Gỡ Cảnh báo</button>
-                                <button id="send-security-alert-btn" class="action-button btn-danger">Gửi Cảnh Báo</button>
-                            </div>
+                            <textarea id="sql-query-input" class="code-editor"
+                                placeholder="SELECT * FROM transactions..."></textarea>
+                            <button id="execute-sql-btn" class="btn-danger btn-sm" style="margin-top: 1rem;">Run
+                                Query</button>
+                            <div id="sql-results-container" class="sql-output custom-scrollbar"></div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header"><h3><span style="color: var(--danger-color);">🚨</span> Giám sát Cảnh báo</h3></div>
-                        <div id="active-alerts-list" style="max-height: 500px; overflow-y: auto;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PAGE: PHÂN TÍCH (MỚI) -->
-            <div id="page-analytics" class="page-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Phân tích Hoạt động Nhân viên (7 ngày gần nhất)</h3>
-                        <div class="form-group no-margin">
-                            <select id="analytics-metric-select" style="padding: 8px 12px;">
-                                <option value="free_ratio">Tỷ lệ Giao dịch Miễn phí/VIP</option>
-                                <option value="short_duration">Giao dịch có thời gian gửi xe ngắn (&lt; 5 phút)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <p class="page-description with-margin-bottom">Hệ thống tự động phân tích và chỉ ra các hoạt động có dấu hiệu bất thường so với mức trung bình của toàn hệ thống.</p>
-                        <!-- NÂNG CẤP: Bố cục lưới cho biểu đồ và kết quả -->
-                        <div class="analytics-layout-grid">
-                            <canvas id="analytics-chart-canvas"></canvas>
-                            <div id="analytics-results-container" class="analytics-grid"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PAGE: SQL EDITOR (MỚI) -->
-            <div id="page-sql-editor" class="page-content">
-                <div class="card">
-                    <div class="card-header"><h3>SQL Editor</h3></div>
-                    <div class="card-body">
-                        <div class="sql-editor-warning">
-                            <strong>CẢNH BÁO:</strong> Tính năng này can thiệp trực tiếp vào cơ sở dữ liệu. Một lệnh sai có thể gây mất dữ liệu vĩnh viễn. Hãy chắc chắn bạn biết mình đang làm gì.
-                        </div>
-                        <textarea id="sql-query-input" placeholder="-- Viết câu lệnh SQL của bạn ở đây...&#10;SELECT * FROM transactions LIMIT 10;"></textarea>
-                        <button id="execute-sql-btn" class="action-button btn-danger">Thực thi Lệnh</button>
-                    </div>
-                    <div id="sql-results-container"></div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- ================================================================= -->
-    <!-- MODALS -->
-    <!-- ================================================================= -->
-    <!-- MODAL: CHỈNH SỬA GIAO DỊCH (THIẾT KẾ LẠI) -->
-    <div id="transaction-modal" class="modal" style="display: none;">
-        <div class="modal-content">
+    <!-- MODALS (PREMIUM) -->
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content glass-modal">
             <div class="modal-header">
-                <h2 id="transaction-modal-title">Chỉnh sửa Giao dịch</h2>
-                <button id="close-transaction-modal-btn" class="close-btn" title="Đóng">&times;</button>
+                <h2 id="transaction-modal-title">Chi tiết Giao dịch</h2>
+                <button id="close-transaction-modal-btn" class="close-btn">&times;</button>
             </div>
-            <div class="modal-body">
-                <form id="transaction-form">
+            <div class="modal-body custom-scrollbar">
+                <form id="transaction-form" class="modern-form">
                     <input type="hidden" id="transaction-unique-id">
-                    <div class="form-grid">
-                        <div class="form-group"><label for="transaction-plate">Biển số xe</label><input type="text" id="transaction-plate" required></div>
-                        <div class="form-group"><label for="transaction-fee">Phí (VNĐ)</label><input type="number" id="transaction-fee"></div>
-                        <div class="form-group"><label for="transaction-entry-time">Giờ vào</label><input type="datetime-local" id="transaction-entry-time"></div>
-                        <div class="form-group"><label for="transaction-exit-time">Giờ ra</label><input type="datetime-local" id="transaction-exit-time"></div>
-                        <div class="form-group"><label for="transaction-payment-method">Phương thức TT</label>
+                    <div class="form-row">
+                        <div class="form-group floating-label">
+                            <input type="text" id="transaction-plate" required placeholder=" ">
+                            <label>Biển số</label>
+                        </div>
+                        <div class="form-group floating-label">
+                            <input type="number" id="transaction-fee" placeholder=" ">
+                            <label>Phí (VNĐ)</label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Giờ vào</label><input type="datetime-local"
+                                id="transaction-entry-time"></div>
+                        <div class="form-group"><label>Giờ ra</label><input type="datetime-local"
+                                id="transaction-exit-time"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phương thức</label>
                             <select id="transaction-payment-method">
-                                <option value="">Chưa chọn</option>
+                                <option value="">-- Chọn --</option>
                                 <option value="Tiền mặt">Tiền mặt</option>
                                 <option value="Chuyển khoản QR">Chuyển khoản QR</option>
                                 <option value="Miễn phí">Miễn phí</option>
                                 <option value="VIP">VIP</option>
                             </select>
                         </div>
-                        <div class="form-group"><label for="transaction-status">Trạng thái</label>
+                        <div class="form-group">
+                            <label>Trạng thái</label>
                             <select id="transaction-status">
                                 <option value="Đang gửi">Đang gửi</option>
                                 <option value="Đã rời bãi">Đã rời bãi</option>
                             </select>
                         </div>
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <label for="transaction-notes">Ghi chú</label><textarea id="transaction-notes" rows="3"></textarea>
-                        </div>
+                    </div>
+                    <div class="form-group floating-label">
+                        <textarea id="transaction-notes" rows="2" placeholder=" "></textarea>
+                        <label>Ghi chú</label>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" id="delete-transaction-btn" class="action-button btn-danger" style="margin-right: auto;">Xóa Giao dịch</button>
-                <button type="button" id="cancel-transaction-btn" class="action-button btn-secondary">Hủy</button>
-                <button type="button" id="save-transaction-btn" class="action-button btn-primary">Lưu thay đổi</button>
+                <button id="delete-transaction-btn" class="btn-text-danger">Xóa bỏ</button>
+                <div class="right-actions">
+                    <button id="cancel-transaction-btn" class="btn-secondary">Hủy</button>
+                    <button id="save-transaction-btn" class="btn-primary">Lưu thay đổi</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="location-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header"><h2 id="location-modal-title">Thêm Bãi đỗ xe mới</h2><button id="close-location-modal-btn" class="close-btn" title="Đóng">&times;</button></div>
-            <div class="modal-body">
-                <form id="location-form">
-                    <div class="form-grid">
-                        <input type="hidden" id="location-id">
-                        <div class="form-group"><label for="location-name">Tên Bãi đỗ</label><input type="text" id="location-name" required></div>
-                        <div class="form-group"><label for="location-lat">Vĩ độ (Latitude)</label><input type="number" step="any" id="location-lat" required></div>
-                        <div class="form-group"><label for="location-lng">Kinh độ (Longitude)</label><input type="number" step="any" id="location-lng" required></div>
+    <!-- Location Modal & Scanner Modal (Keep simpler structure but improved classes) -->
+    <div id="location-modal" class="modal">
+        <div class="modal-content glass-modal">
+            <div class="modal-header">
+                <h2 id="location-modal-title">Bãi đỗ xe</h2><button id="close-location-modal-btn"
+                    class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body custom-scrollbar">
+                <form id="location-form" class="modern-form">
+                    <input type="hidden" id="location-id">
+                    <div class="form-group floating-label"><input type="text" id="location-name" required
+                            placeholder=" "><label>Tên bãi đỗ</label></div>
+                    <div class="form-row">
+                        <div class="form-group floating-label"><input type="number" step="any" id="location-lat"
+                                required placeholder=" "><label>Vĩ độ</label></div>
+                        <div class="form-group floating-label"><input type="number" step="any" id="location-lng"
+                                required placeholder=" "><label>Kinh độ</label></div>
                     </div>
-                    <div class="form-group" style="margin-top: 1.25rem;"><label for="location-address">Địa chỉ</label><input type="text" id="location-address"></div>
-                    <div class="form-grid" style="margin-top: 1.25rem;">
-                        <div class="form-group"><label for="location-capacity">Sức chứa</label><input type="number" id="location-capacity"></div>
-                        <div class="form-group"><label for="location-hotline">Hotline</label><input type="text" id="location-hotline"></div>
+                    <div class="form-group floating-label"><input type="text" id="location-address"
+                            placeholder=" "><label>Địa chỉ</label></div>
+
+                    <div class="divider"><span>Thông tin bổ sung</span></div>
+
+                    <div class="form-row">
+                        <div class="form-group floating-label"><input type="number" id="location-capacity"
+                                placeholder=" "><label>Sức chứa</label></div>
+                        <div class="form-group floating-label"><input type="text" id="location-hotline"
+                                placeholder=" "><label>Hotline</label></div>
                     </div>
-                    <div class="form-group" style="margin-top: 1.25rem;">
-                        <label for="location-operating-hours">Giờ hoạt động</label>
-                        <input type="text" id="location-operating-hours" placeholder="Ví dụ: 08:00 – 22:00">
-                    </div>
-                    <div class="form-group" style="margin-top: 1.25rem;">
-                        <label for="location-event-name">Tên sự kiện (nếu có)</label>
-                        <input type="text" id="location-event-name" placeholder="Ví dụ: Lễ hội Áo dài 2025">
-                    </div>
-                    <div class="form-group" style="margin-top: 1.25rem;">
-                        <label for="location-fee-policy-type">Loại hình thu phí</label>
+                    <div class="form-group floating-label"><input type="text" id="location-operating-hours"
+                            placeholder=" "><label>Giờ hoạt động</label></div>
+                    <div class="form-group floating-label"><input type="text" id="location-event-name"
+                            placeholder=" "><label>Tên sự kiện</label></div>
+
+                    <div class="divider"><span>Cấu hình phí</span></div>
+
+                    <div class="form-group">
+                        <label>Loại hình thu phí</label>
                         <select id="location-fee-policy-type">
                             <option value="free">Miễn phí</option>
-                            <option value="hourly">Thu phí theo giờ</option>
-                            <option value="per_entry">Thu phí theo lượt</option>
-                            <option value="daily">Thu phí theo ngày</option>
+                            <option value="hourly">Theo giờ</option>
+                            <option value="per_entry">Theo lượt</option>
+                            <option value="daily">Theo ngày</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="location-fee-collection-policy">Thời điểm thu phí</label>
+                        <label>Thời điểm thu</label>
                         <select id="location-fee-collection-policy">
-                            <option value="post_paid">Thu phí khi xe ra (Mặc định)</option>
-                            <option value="pre_paid">Thu phí ngay khi xe vào</option>
+                            <option value="post_paid">Khi ra (Mặc định)</option>
+                            <option value="pre_paid">Khi vào</option>
                         </select>
-                        <small style="margin-top: 5px; color: var(--text-secondary);">Lưu ý: "Thu phí khi vào" chỉ áp dụng cho loại hình "Theo lượt" hoặc "Theo ngày".</small>
                     </div>
-                    <div id="custom-fee-inputs-wrapper" style="margin-top: 1.25rem; border-top: 1px solid var(--border-color-light); padding-top: 1.25rem;">
-                        <div class="fee-input-group" data-policy="hourly" style="display: none;">
-                            <div class="form-group">
-                            <label for="location-fee-hourly-day">Phí giờ ban ngày (đ/h)</label>
-                            <input type="number" id="location-fee-hourly-day" placeholder="Mặc định: 5,000">
-                            </div>
-                            <div class="form-group">
-                            <label for="location-fee-hourly-night">Phí giờ ban đêm (đ/h)</label>
-                            <input type="number" id="location-fee-hourly-night" placeholder="Mặc định: 8,000">
-                            </div>
+                    <div id="custom-fee-inputs-wrapper" class="fee-config-box">
+                        <div class="fee-input-group" data-policy="hourly">
+                            <div class="form-group floating-label"><input type="number" id="location-fee-hourly-day"
+                                    placeholder=" "><label>Giá ban ngày</label></div>
+                            <div class="form-group floating-label"><input type="number" id="location-fee-hourly-night"
+                                    placeholder=" "><label>Giá ban đêm</label></div>
                         </div>
-                        <div class="fee-input-group" data-policy="per_entry" style="display: none;">
-                            <div class="form-group">
-                                <label for="location-fee-per-entry">Phí mỗi lượt</label>
-                                <input type="number" id="location-fee-per-entry" placeholder="Mặc định: 10,000">
-                            </div>
+                        <div class="fee-input-group" data-policy="per_entry">
+                            <div class="form-group floating-label"><input type="number" id="location-fee-per-entry"
+                                    placeholder=" "><label>Giá mỗi lượt</label></div>
                         </div>
-                        <div class="fee-input-group" data-policy="daily" style="display: none;">
-                            <div class="form-group">
-                                <label for="location-fee-daily">Phí mỗi ngày</label>
-                                <input type="number" id="location-fee-daily" placeholder="Mặc định: 30,000">
-                            </div>
+                        <div class="fee-input-group" data-policy="daily">
+                            <div class="form-group floating-label"><input type="number" id="location-fee-daily"
+                                    placeholder=" "><label>Giá mỗi ngày</label></div>
                         </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" id="delete-location-btn" class="action-button btn-danger" style="margin-right: auto; display: none;">Xóa</button>
-                <button type="button" id="cancel-location-btn" class="action-button btn-secondary">Hủy</button>
-                <button type="button" id="save-location-btn" class="action-button btn-primary">Lưu</button>
+                <button id="delete-location-btn" class="btn-text-danger" style="display: none;">Xóa bãi đỗ</button>
+                <div class="right-actions">
+                    <button id="cancel-location-btn" class="btn-secondary">Hủy</button>
+                    <button id="save-location-btn" class="btn-primary">Lưu cấu hình</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="admin-qr-scanner-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header"><h2>Quét mã QR</h2><button id="close-admin-scanner-btn" class="close-btn" title="Đóng">&times;</button></div>
-            <div class="modal-body">
+    <!-- QR Scanner Modal -->
+    <div id="admin-qr-scanner-modal" class="modal">
+        <div class="modal-content glass-modal compact">
+            <div class="modal-header">
+                <h2>Quét QR</h2><button id="close-admin-scanner-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body no-padding">
                 <video id="admin-camera-feed"></video>
                 <div class="scanner-overlay">
-                    <div class="scanner-viewfinder">
-                        <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
-                    </div>
+                    <div class="scanner-viewfinder"></div>
                 </div>
                 <div id="admin-scan-feedback" class="scanner-feedback">
-                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52"><circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/><path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/></svg>
-                </div> 
+                    <div class="checkmark-circle"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -414,5 +630,16 @@
     <div id="fireworks-container"></div>
 
     <script src="admin.js"></script>
+
+    <!-- STATUS NOTIFICATION MODAL -->
+    <div id="status-modal" class="modal" style="z-index: 2000;">
+        <div class="modal-content glass-modal status-modal-content">
+            <div class="status-icon-container"></div>
+            <h3 id="status-modal-title">Thành công!</h3>
+            <p id="status-modal-message">Thao tác đã được thực hiện.</p>
+            <button id="status-modal-btn" class="btn-primary">Đóng</button>
+        </div>
+    </div>
 </body>
+
 </html>

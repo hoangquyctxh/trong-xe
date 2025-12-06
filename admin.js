@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Locations
         mapContainer: document.getElementById('map-container'),
-        locationsTableBody: document.getElementById('locations-table-body'),
+        locationsGrid: document.getElementById('locations-grid'),
         addLocationBtn: document.getElementById('add-location-btn'),
         locationModal: document.getElementById('location-modal'),
         locationModalTitle: document.getElementById('location-modal-title'),
@@ -107,13 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
         removeAlertBtn: document.getElementById('remove-alert-btn'),
         activeAlertsList: document.getElementById('active-alerts-list'),
 
-        // Analytics
-        analyticsMetricSelect: document.getElementById('analytics-metric-select'),
-        analyticsChartCanvas: document.getElementById('analytics-chart-canvas'),
-        analyticsResultsContainer: document.getElementById('analytics-results-container'),
-        // Fraud Analytics
-        suspiciousFreeTransactionsContainer: document.getElementById('suspicious-free-transactions'),
-        vipByStaffStatsContainer: document.getElementById('vip-by-staff-stats'),
 
 
         // SQL Editor
@@ -124,6 +117,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Toast
         toastContainer: document.getElementById('toast-container'),
         fireworksContainer: document.getElementById('fireworks-container'),
+
+        // Status Modal
+        statusModal: document.getElementById('status-modal'),
+        statusIconContainer: document.querySelector('.status-icon-container'),
+        statusModalTitle: document.getElementById('status-modal-title'),
+        statusModalMessage: document.getElementById('status-modal-message'),
+        statusModalBtn: document.getElementById('status-modal-btn'),
     };
 
     const state = {
@@ -200,6 +200,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     payload
                 });
             }
+        },
+
+        showStatusModal(type, title, message) {
+            dom.statusModalTitle.textContent = title;
+            dom.statusModalMessage.textContent = message;
+
+            if (type === 'success') {
+                dom.statusIconContainer.innerHTML = `
+                    <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>`;
+            } else {
+                dom.statusIconContainer.innerHTML = `<div class="error-icon"></div>`;
+            }
+
+            dom.statusModal.style.display = 'flex';
+            dom.statusModalBtn.onclick = () => dom.statusModal.style.display = 'none';
         }
     };
 
@@ -398,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Locations
             dom.addLocationBtn.addEventListener('click', Handlers.handleAddLocation);
-            dom.locationsTableBody.addEventListener('click', Handlers.handleLocationAction);
+            dom.locationsGrid.addEventListener('click', Handlers.handleLocationAction);
             dom.closeLocationModalBtn.addEventListener('click', () => dom.locationModal.style.display = 'none');
             dom.cancelLocationBtn.addEventListener('click', () => dom.locationModal.style.display = 'none');
             dom.saveLocationBtn.addEventListener('click', Handlers.handleSaveLocation);
@@ -538,42 +556,71 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         renderLocations() {
-            dom.locationsTableBody.innerHTML = state.locations.map(loc => `
-                <tr data-id="${loc.id}">
-                    <td>${loc.id}</td>
-                    <td>${loc.name}</td>
-                    <td>${loc.address || 'Chưa có'}</td>
-                    <td>
-                        <button class="action-button btn-secondary btn-small" data-action="edit-location">Sửa</button>
-                    </td>
-                </tr>
+            if (!dom.locationsGrid) return;
+            const html = state.locations.map(loc => `
+                <div class="location-card" data-id="${loc.id}">
+                    <div class="loc-card-left">
+                        <div class="loc-icon-box">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><polygon points="9 9 15 9 15 13 9 13 9 9"></polygon><path d="M9 13v3"></path></svg>
+                        </div>
+                        <div class="loc-info">
+                            <h4 class="loc-name">${loc.name}</h4>
+                            <p class="loc-address">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                ${loc.address || 'Chưa cập nhật địa chỉ'}
+                            </p>
+                            <div class="loc-badges">
+                                <span class="badge badge-indigo">
+                                    Capacity: <b>${loc.capacity || '-'}</b>
+                                </span>
+                                <span class="badge badge-gray">
+                                    ${loc.operating_hours || '24/7'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="loc-actions">
+                        <button class="btn-icon-action edit" data-action="edit-location" title="Chỉnh sửa">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                        <button class="btn-icon-action delete" data-action="delete-location" title="Xóa">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
             `).join('');
+            dom.locationsGrid.innerHTML = html;
         },
 
         renderAlerts() {
             if (state.alerts.length === 0) {
-                dom.activeAlertsList.innerHTML = '<p class="empty-state">Không có cảnh báo nào đang hoạt động.</p>';
+                dom.activeAlertsList.innerHTML = `
+                    <div class="empty-state-illustration">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        <p>Hệ thống an toàn</p>
+                        <span>Không có cảnh báo nào đang hoạt động</span>
+                    </div>`;
                 return;
             }
             dom.activeAlertsList.innerHTML = state.alerts.map(alert => `
-                <div class="alert-item alert-${alert.level}" data-plate="${alert.plate}">
-                    <div class="alert-info">
-                        <strong>${alert.plate}</strong>
-                        <p>${alert.reason}</p>
-                        <small>Tạo lúc: ${new Date(alert.created_at).toLocaleString('vi-VN')}</small>
+                <div class="security-alert-card ${alert.level}" data-plate="${alert.plate}">
+                    <div class="alert-header">
+                        <div class="plate-badge">${alert.plate}</div>
+                        <span class="alert-badge ${alert.level}">${alert.level === 'block' ? 'CHẶN XE' : 'CẢNH BÁO'}</span>
                     </div>
-                    <button class="action-button btn-danger btn-small" data-action="remove-alert">Gỡ</button>
+                    <div class="alert-body">
+                        <div class="alert-reason-row">
+                            <span class="icon">📝</span>
+                            <span class="text">${alert.reason}</span>
+                        </div>
+                        <div class="alert-time-row">
+                            <span class="icon">🕒</span>
+                            <span class="text">${new Date(alert.created_at).toLocaleString('vi-VN')}</span>
+                        </div>
+                    </div>
+                    <button class="btn-remove-security" data-action="remove-alert">Gỡ bỏ</button>
                 </div>
             `).join('');
-        },
-
-        initMap() {
-            if (state.map || !dom.mapContainer) return;
-            const center = state.locations.length > 0 ? [state.locations[0].lat, state.locations[0].lng] : [21.0285, 105.8542];
-            state.map = L.map(dom.mapContainer).setView(center, 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(state.map);
         },
 
         renderMapMarkers() {
@@ -583,8 +630,55 @@ document.addEventListener('DOMContentLoaded', () => {
             state.locations.forEach(loc => {
                 if (loc.lat && loc.lng) {
                     const marker = L.marker([loc.lat, loc.lng]).addTo(state.map);
-                    marker.bindPopup(`<b>${loc.name}</b><br>${loc.address || 'Chưa có địa chỉ'}`);
+                    const popupContent = `
+                        <div class="map-popup-content">
+                            <b>${loc.name}</b><br>
+                            <span class="text-sm text-gray">${loc.address || 'Chưa có địa chỉ'}</span>
+                            <div class="map-actions mt-2">
+                                <button class="btn-xs btn-primary btn-edit-marker" data-id="${loc.id}">Sửa</button>
+                                <button class="btn-xs btn-danger btn-delete-marker" data-id="${loc.id}">Xóa</button>
+                            </div>
+                        </div>
+                    `;
+                    marker.bindPopup(popupContent);
                     state.mapMarkers.push(marker);
+                }
+            });
+        },
+
+        initMap() {
+            if (state.map || !dom.mapContainer) return;
+            const center = state.locations.length > 0 ? [state.locations[0].lat, state.locations[0].lng] : [21.0285, 105.8542];
+            state.map = L.map(dom.mapContainer).setView(center, 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(state.map);
+
+            // Right-click to add location
+            state.map.on('contextmenu', (e) => {
+                Handlers.openAddLocationModalAt(e.latlng);
+            });
+
+            // Bind actions when popup opens
+            state.map.on('popupopen', (e) => {
+                const popupNode = e.popup.getElement();
+                const editBtn = popupNode.querySelector('.btn-edit-marker');
+                const delBtn = popupNode.querySelector('.btn-delete-marker');
+
+                if (editBtn) {
+                    editBtn.onclick = (event) => {
+                        event.stopPropagation(); // Prevent map click logic if any
+                        Handlers.handleEditLocationFromMap(editBtn.dataset.id);
+                        state.map.closePopup();
+                    };
+                }
+                if (delBtn) {
+                    delBtn.onclick = (event) => {
+                        event.stopPropagation();
+                        // Special handling to set ID for delete handler if needed, or just call directly
+                        Handlers.handleDeleteLocationFromMap(delBtn.dataset.id);
+                        state.map.closePopup();
+                    };
                 }
             });
         },
@@ -594,28 +688,100 @@ document.addEventListener('DOMContentLoaded', () => {
             const metric = dom.analyticsMetricSelect.value;
             console.log(`Đang render phân tích cho: ${metric}`);
 
-            // Dữ liệu giả để minh họa
-            const labels = ['Nhân viên A', 'Nhân viên B', 'Nhân viên C', 'Nhân viên D'];
-            const data = metric === 'free_ratio' ? [15, 5, 25, 8] : [5, 12, 3, 7];
-            const chartLabel = metric === 'free_ratio' ? '% Giao dịch miễn phí' : 'Số giao dịch < 5 phút';
+            let labels = [];
+            let data = [];
+            let chartLabel = '';
+            let chartType = 'bar';
+            let bgColors = 'rgba(79, 70, 229, 0.7)'; // Default Indigo
+
+            const transactions = state.transactions || [];
+
+            if (metric === 'revenue_by_method') {
+                // REVENUE BY PAYMENT METHOD
+                const sums = transactions.reduce((acc, t) => {
+                    const method = t.paymentMethod ? (t.paymentMethod === 'cash' ? 'Tiền mặt' : (t.paymentMethod === 'banking' ? 'Chuyển khoản' : 'Thẻ')) : 'Chưa thu';
+                    // Only count valid fees
+                    const fee = parseFloat(t.fee) || 0;
+                    acc[method] = (acc[method] || 0) + fee;
+                    return acc;
+                }, {});
+                labels = Object.keys(sums);
+                data = Object.values(sums);
+                chartLabel = 'Doanh thu (VNĐ)';
+
+            } else if (metric === 'traffic_hourly') {
+                // TRAFFIC BY HOUR (0-23)
+                const hours = new Array(24).fill(0);
+                transactions.forEach(t => {
+                    if (t.entryTime) {
+                        const date = new Date(t.entryTime);
+                        const h = date.getHours();
+                        if (!isNaN(h)) hours[h]++;
+                    }
+                });
+                labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+                data = hours;
+                chartLabel = 'Lượt xe vào';
+                chartType = 'line';
+                bgColors = 'rgba(16, 185, 129, 0.2)'; // Emerald transparent
+
+            } else {
+                // STATUS DISTRIBUTION
+                const counts = transactions.reduce((acc, t) => {
+                    const status = t.status === 'in' ? 'Đang gửi' : 'Đã ra';
+                    acc[status] = (acc[status] || 0) + 1;
+                    return acc;
+                }, {});
+                labels = Object.keys(counts);
+                data = Object.values(counts);
+                chartLabel = 'Số lượng xe';
+                bgColors = ['rgba(59, 130, 246, 0.7)', 'rgba(239, 68, 68, 0.7)'];
+            }
 
             if (state.charts.analytics) state.charts.analytics.destroy();
-            state.charts.analytics = new Chart(dom.analyticsChartCanvas, {
-                type: 'bar',
+
+            const config = {
+                type: chartType,
                 data: {
                     labels: labels,
                     datasets: [{
                         label: chartLabel,
                         data: data,
-                        backgroundColor: 'rgba(220, 38, 38, 0.6)',
-                        borderColor: 'rgb(220, 38, 38)',
-                        borderWidth: 1
+                        backgroundColor: chartType === 'line' ? bgColors : (Array.isArray(bgColors) ? bgColors : bgColors),
+                        borderColor: chartType === 'line' ? '#10B981' : '#4F46E5',
+                        borderWidth: 1,
+                        fill: chartType === 'line',
+                        tension: 0.4
                     }]
                 },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
-            });
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            };
 
-            dom.analyticsResultsContainer.innerHTML = labels.map((label, index) => `<div class="analytics-item"><div class="name">${label}</div><div class="value">${data[index]}</div><div class="details">${metric === 'free_ratio' ? 'Tỷ lệ miễn phí/VIP' : 'Lượt gửi xe ngắn'}</div></div>`).join('');
+            state.charts.analytics = new Chart(dom.analyticsChartCanvas, config);
+
+            // Update Summary Text
+            dom.analyticsResultsContainer.innerHTML = `
+                <div class="analytics-summary-box">
+                    <h4>Tổng quan</h4>
+                    <p>Dữ liệu dựa trên <b>${transactions.length}</b> giao dịch gần nhất.</p>
+                </div>
+                ${labels.map((label, i) => `
+                    <div class="analytics-item">
+                        <div class="name">${label}</div>
+                        <div class="value">${metric === 'revenue_by_method' ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data[i]) : data[i]}</div>
+                        <div class="details">${metric === 'revenue_by_method' ? 'thu được' : 'lượt'}</div>
+                    </div>
+                `).join('')}
+            `;
         },
 
         toggleCustomFeeInputs() {
@@ -669,8 +835,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         handleNavClick(e) {
-            e.preventDefault();
             const targetId = e.currentTarget.dataset.target;
+            if (!targetId) return; // Allow natural navigation for links without data-target (e.g. Home)
+
+            e.preventDefault();
 
             dom.pages.forEach(page => page.classList.remove('active'));
             document.getElementById(targetId).classList.add('active');
@@ -682,6 +850,14 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.pageDescription.textContent = e.currentTarget.title || '';
 
             if (targetId === 'page-fraud-analytics') Handlers.handleRenderFraudAnalytics();
+
+            // Fix: Resize map when switching to locations tab
+            if (targetId === 'page-locations' && state.map) {
+                setTimeout(() => {
+                    state.map.invalidateSize();
+                }, 100);
+            }
+
             if (dom.sidebar.classList.contains('open')) {
                 dom.sidebar.classList.remove('open');
                 dom.sidebarOverlay.classList.remove('open');
@@ -792,12 +968,51 @@ document.addEventListener('DOMContentLoaded', () => {
             UI.toggleCustomFeeInputs();
         },
 
+        openAddLocationModalAt(latlng) {
+            Handlers.handleAddLocation();
+            dom.locationLat.value = latlng.lat.toFixed(6);
+            dom.locationLng.value = latlng.lng.toFixed(6);
+            // Optional: Fetch address here if we had an API
+        },
+
+        handleEditLocationFromMap(id) {
+            const location = state.locations.find(l => l.id == id);
+            if (location) {
+                // Populate form (Reuse logic - could be extracted to a helper but duplicating for safety now)
+                dom.locationId.value = location.id;
+                dom.locationName.value = location.name;
+                dom.locationLat.value = location.lat;
+                dom.locationLng.value = location.lng;
+                dom.locationAddress.value = location.address || '';
+                dom.locationCapacity.value = location.capacity || '';
+                dom.locationHotline.value = location.hotline || '';
+                dom.locationOperatingHours.value = location.operating_hours || '';
+                dom.locationEventName.value = location.event_name || '';
+                dom.locationFeePolicyType.value = location.fee_policy_type || 'free';
+                dom.locationFeeCollectionPolicy.value = location.fee_collection_policy || 'post_paid';
+                dom.locationFeeHourlyDay.value = location.fee_hourly_day || '';
+                dom.locationFeeHourlyNight.value = location.fee_hourly_night || '';
+                dom.locationFeePerEntry.value = location.fee_per_entry || '';
+                dom.locationFeeDaily.value = location.fee_daily || '';
+
+                dom.locationModalTitle.textContent = 'Chỉnh sửa Bãi đỗ xe';
+                dom.deleteLocationBtn.style.display = 'block';
+                dom.locationModal.style.display = 'flex';
+                UI.toggleCustomFeeInputs();
+            }
+        },
+
+        handleDeleteLocationFromMap(id) {
+            dom.locationId.value = id;
+            Handlers.handleDeleteLocation();
+        },
+
         handleLocationAction(e) {
             const button = e.target.closest('[data-action="edit-location"]');
             if (!button) return;
 
-            const row = button.closest('tr');
-            const id = row.dataset.id;
+            const card = button.closest('.location-card');
+            const id = card.dataset.id;
             const location = state.locations.find(l => l.id == id);
 
             if (location) {
@@ -845,12 +1060,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 await Api.saveLocation(locationData);
-                Utils.showToast('Lưu thông tin bãi đỗ thành công!');
+
+                const isUpdate = !!locationData.id;
+                Utils.showStatusModal(
+                    'success',
+                    isUpdate ? 'Cập nhật thành công!' : 'Thêm mới thành công!',
+                    isUpdate ? 'Thông tin bãi đỗ xe đã được lưu.' : 'Bãi đỗ xe mới đã được thêm vào hệ thống.'
+                );
+
                 dom.locationModal.style.display = 'none';
                 await App.loadInitialData();
-                Utils.notifyDataChanged('settings_changed', { type: 'locations' }); // THÔNG BÁO THAY ĐỔI CÀI ĐẶT
+                Utils.notifyDataChanged('settings_changed', { type: 'locations' });
             } catch (error) {
-                Utils.showToast(`Lỗi: ${error.message}`, 'toast--error');
+                Utils.showStatusModal('error', 'Lỗi lưu dữ liệu', error.message);
             }
         },
 
@@ -908,18 +1130,22 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         handleAlertAction(e) {
-            const plate = e.target.closest('.alert-item')?.dataset.plate;
-            if (!plate) return;
+            const card = e.target.closest('.security-alert-card');
+            if (!card) return;
+            const plate = card.dataset.plate;
 
-            if (e.target.matches('[data-action="remove-alert"]')) {
+            // Handle "Remove" button click
+            if (e.target.closest('[data-action="remove-alert"]')) {
                 dom.securityAlertPlate.value = plate;
                 Handlers.handleRemoveAlert();
             } else {
+                // Handle Card Click (Auto-fill form)
                 const alert = state.alerts.find(a => a.plate === plate);
                 if (alert) {
                     dom.securityAlertPlate.value = alert.plate;
                     dom.securityAlertReason.value = alert.reason;
-                    document.querySelector(`input[name="alert-level"][value="${alert.level}"]`).checked = true;
+                    const radio = document.querySelector(`input[name="alert-level"][value="${alert.level}"]`);
+                    if (radio) radio.checked = true;
                 }
             }
         },
@@ -1040,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async start() {
             dom.loginScreen.style.display = 'none';
-            dom.mainContent.style.display = 'grid';
+            dom.mainContent.style.display = 'flex'; // Fix: Use flex to match CSS layout
             if (dom.loadingOverlay) dom.loadingOverlay.classList.remove('hidden');
 
             // SỬA: Lấy ngày hiện tại theo giờ địa phương (YYYY-MM-DD)

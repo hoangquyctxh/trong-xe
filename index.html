@@ -102,10 +102,33 @@
                             <h2 class="card__header">Xử lý Gửi/Lấy xe</h2>
                             <div class="card__body">
                                 <!-- GIAO DIỆN MỚI: "ACTION HUB" - Đơn giản, trực quan cho tình nguyện viên -->
-                                <div class="action-hub-v1">
-                                    <input type="text" id="search-term" placeholder="1. NHẬP BIỂN SỐ XE"
-                                        autocomplete="off">
-                                    <div id="plate-suggestions" class="plate-suggestions"></div>
+                                <!-- GIAO DIỆN MỚI: "PREMIUM ACTION HUB" -->
+                                <div class="action-hub-wrapper">
+                                    <!-- 1. INPUT ZONE -->
+                                    <div class="plate-input-container">
+                                        <input type="text" id="search-term" class="plate-input-field"
+                                            placeholder="NHẬP BIỂN SỐ XE..." autocomplete="off" spellcheck="false">
+                                        <button id="scan-qr-btn" class="btn-scan-qr-premium" title="Quét mã QR">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                                <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                                <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                                <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                                <rect x="7" y="7" width="10" height="10" rx="1"></rect>
+                                            </svg>
+                                        </button>
+                                        <div id="plate-suggestions" class="plate-suggestions-popover custom-scrollbar">
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. STATUS & ACTION ZONE -->
+                                    <div id="action-buttons-container" class="action-zone">
+                                        <div class="action-zone-empty-state">
+                                            Nhập biển số hoặc Quét QR để hiển thị hành động
+                                        </div>
+                                    </div>
                                     <!-- NỘI DUNG MỚI: Sẽ được JS điều khiển hiển thị -->
 
                                     <!-- A. Form nhập thông tin bổ sung cho xe mới -->
@@ -132,10 +155,7 @@
                                         </div>
                                     </div>
 
-                                    <p class="action-hub-prompt">2. CHỌN HÀNH ĐỘNG</p>
-                                    <div id="action-buttons-container" class="action-hub-buttons">
-                                        <!-- Các nút Gửi/Lấy xe sẽ được render ở đây -->
-                                    </div>
+
                                     <!-- Vùng hiển thị thông tin phụ (form gửi xe, thông tin xe đã gửi) -->
                                     <div id="action-hub-details" class="action-hub-details">
 

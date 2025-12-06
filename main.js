@@ -1922,16 +1922,33 @@ const Handlers = {
     tickQrScanner() {
         const video = document.getElementById('camera-feed');
         if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
-            const canvas = document.createElement('canvas');
+            // TỐI ƯU HÓA: Tái sử dụng canvas
+            if (!state.qrCanvas) {
+                state.qrCanvas = document.createElement('canvas');
+            }
+            const canvas = state.qrCanvas;
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+            // THÔNG MINH HƠN: Thử cả 2 chế độ (inversion) để bắt QR nền đen/trắng
+            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
 
             if (code && code.data && !state.isProcessing) {
+                // PHẢN HỒI NHANH: Visual Feedback
+                const viewfinder = document.querySelector('.scanner-viewfinder');
+                if (viewfinder) {
+                    viewfinder.style.borderColor = '#10B981'; // Green success
+                    viewfinder.style.boxShadow = '0 0 20px #10B981';
+                }
+
                 cancelAnimationFrame(state.scanAnimation);
+
+                // Rung phản hồi nếu thiết bị hỗ trợ
+                if (navigator.vibrate) navigator.vibrate(200);
+
                 this.processQrCheckout(code.data);
                 return;
             }
@@ -2266,6 +2283,46 @@ const App = {
             Api.processSyncQueue();
         } else {
             UI.showToast('Mất kết nối mạng. Chuyển sang chế độ ngoại tuyến.', 'error');
+        }
+    },
+
+    // NÂNG CẤP: Tính năng tự động điền thông tin xe cũ (SĐT, VIP)
+    async attemptAutoFill(plate) {
+        if (!plate || plate.length < 4) return;
+
+        console.log(`Auto-fill attempt for: ${plate}`);
+
+        try {
+            // Tìm giao dịch gần nhất của xe này có SĐT
+            const { data, error } = await db.from('transactions')
+                .select('phone, is_vip, notes')
+                .eq('plate', plate)
+                .neq('phone', null)
+                .neq('phone', '')
+                .order('entry_time', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (error) {
+                console.warn("Auto-fill error:", error);
+                return;
+            }
+
+            if (data && data.phone) {
+                if (dom.phoneInput) {
+                    dom.phoneInput.value = data.phone; // Auto-fill phone
+                    // Hiệu ứng visual để người dùng biết đã tự động điền
+                    dom.phoneInput.style.backgroundColor = '#ecfdf5'; // Light green
+                    setTimeout(() => dom.phoneInput.style.backgroundColor = '', 1000);
+                }
+                if (dom.isVipCheckbox && data.is_vip) {
+                    dom.isVipCheckbox.checked = true;
+                }
+                // Không điền ghi chú cũ để tránh nhầm lẫn, nhưng có thể cân nhắc sau
+                console.log("Auto-filled:", data);
+            }
+        } catch (e) {
+            console.error("Auto-fill exception:", e);
         }
     },
 
