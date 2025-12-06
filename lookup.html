@@ -1,271 +1,113 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cổng Tra cứu Thông tin Gửi xe</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    
-    <style>
-        /* === THIẾT KẾ LẠI HOÀN TOÀN GIAO DIỆN - v2.0 === */
-        :root {
-            --primary-accent: #4f46e5;
-            --primary-accent-light: rgba(79, 70, 229, 0.1);
-            --text-primary: #e0e7ff;
-            --text-secondary: #a5b4fc;
-            --bg-glass: rgba(255, 255, 255, 0.05);
-            --border-color: rgba(255, 255, 255, 0.15);
-            --success-color: #22c55e;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --border-radius-lg: 1rem;
-            --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Be Vietnam Pro', sans-serif;
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-            color: var(--text-primary);
-            line-height: 1.6;
-            padding: 2rem 1rem;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        header {
-            display: flex; align-items: center; gap: 1rem;
-            margin-bottom: 2.5rem;
-            padding: 0 1rem;
-        }
-        .logo img { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.1); padding: 5px; }
-        .title-group h1 { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
-        .title-group .subtitle { font-size: 1rem; color: var(--text-secondary); }
+    <!-- NÂNG CẤP: Thêm thư viện Day.js để xử lý và đồng bộ thời gian -->
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/utc.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/timezone.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/duration.js"></script>
 
-        /* --- KHU VỰC TÌM KIẾM "GLASSMORPHISM" --- */
-        #search-section {
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            padding: 2rem;
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-lg);
-            margin-bottom: 2.5rem;
-            transition: all 0.3s ease;
-        }
-        .search-form { display: flex; gap: 1rem; }
-        .search-form input {
-            flex-grow: 1;
-            padding: 1rem 1.25rem;
-            border: 1px solid var(--border-color);
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            border-radius: 0.75rem;
-            background: rgba(0,0,0,0.2);
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-        .search-form input::placeholder { color: var(--text-secondary); }
-        .search-form button, .btn-scan-qr {
-            padding: 1rem 1.5rem;
-            border: none;
-            background: var(--primary-accent);
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            border-radius: 0.75rem;
-            transition: all 0.2s ease;
-            display: inline-flex; align-items: center; gap: 0.5rem;
-        }
-        .search-form button:hover, .btn-scan-qr:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); }
-        .or-divider { text-align: center; color: var(--text-secondary); margin: 1.5rem 0; font-weight: 600; position: relative; }
-        .or-divider::before, .or-divider::after {
-            content: ''; position: absolute; top: 50%; width: calc(50% - 30px); height: 1px; background: var(--border-color);
-        }
-        .or-divider::before { left: 0; }
-        .or-divider::after { right: 0; }
-        .btn-scan-qr { width: 100%; justify-content: center; background: transparent; border: 2px solid var(--primary-accent); }
-
-        /* --- KHU VỰC KẾT QUẢ --- */
-        #results-section { animation: fadeIn 0.5s ease-out; }
-        .plate-display-header {
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
-            padding: 1.5rem 2rem;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .plate-display-header .label { font-size: 1rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
-        .plate-display {
-            font-size: clamp(2.2rem, 8vw, 3rem); /* TỐI ƯU HÓA: Font chữ linh hoạt */
-            font-weight: 800;
-            letter-spacing: 2px;
-            color: #fff;
-        }
-
-        .history-list {
-            display: grid;
-            gap: 1.5rem;
-        }
-        .history-card {
-            background: var(--bg-glass);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
-            padding: 1.5rem;
-            animation: slideUp 0.5s ease-out;
-            animation-fill-mode: both;
-        }
-        .history-card:nth-child(2) { animation-delay: 0.1s; }
-        .history-card:nth-child(3) { animation-delay: 0.2s; }
-
-        .history-card-body { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-        .history-card .detail-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .history-card .detail-item:last-child { padding-bottom: 0; border-bottom: none; }
-        .history-card .label {
-            display: flex; align-items: center; gap: 0.75rem;
-            color: var(--text-secondary); font-weight: 500;
-        }
-        .history-card .label svg { width: 20px; height: 20px; }
-        .history-card .value { font-weight: 700; text-align: right; }
-        .history-card .status-badge {
-            font-size: 0.85rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 99px; color: #fff;
-        }
-        .history-card .status-badge.parking { background-color: var(--success-color); box-shadow: 0 0 10px var(--success-color); }
-        .history-card .status-badge.departed { background-color: #64748b; }
-        
-        /* --- THÔNG BÁO VÀ TRẠNG THÁI TẢI --- */
-        .message-box, .loading-box {
-            text-align: center; padding: 3rem;
-            background: var(--bg-glass); backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius-lg);
-            animation: fadeIn 0.5s ease;
-        }
-        .loading-spinner {
-            width: 50px; height: 50px;
-            border: 5px solid var(--border-color);
-            border-top-color: var(--primary-accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* --- MODAL --- */
-        .modal { 
-            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(10, 10, 30, 0.6);
-            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
-            animation: fadeIn 0.3s ease;
-        }
-        .modal-content {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-            border: 1px solid var(--border-color);
-            padding: 2rem; max-width: 500px; width: 90%; 
-            box-shadow: var(--shadow-lg);
-            border-radius: var(--border-radius-lg);
-            animation: slideUp 0.4s ease-out;
-        }
-        #camera-feed { width: 100%; height: auto; border-radius: 0.75rem; }
-        .modal-content .modal-title { margin-bottom: 1rem; font-size: 1.5rem; }
-        #close-scanner-btn {
-            width: 100%; margin-top: 1.5rem; background: #475569;
-            font-weight: 700; font-size: 1.1rem; padding: 1rem;
-        }
-
-        /* --- HIỆU ỨNG --- */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* --- RESPONSIVE --- */
-        @media (max-width: 600px) {
-            body { padding: 1rem 0.5rem; }
-            .container { padding: 0.5rem; }
-            header { margin-bottom: 2rem; }
-            .title-group h1 { font-size: clamp(1.5rem, 6vw, 1.8rem); }
-            .title-group .subtitle { font-size: 0.9rem; }
-            #search-section { padding: 1.5rem; }
-            .search-form { flex-direction: column; }
-            .search-form input { padding: 1.1rem 1.25rem; } /* Tăng vùng chạm */
-            /* TỐI ƯU HÓA: Modal quét QR toàn màn hình trên di động */
-            .modal-content {
-                width: 100vw;
-                height: 100vh;
-                border-radius: 0;
-                padding: 1.5rem;
-                justify-content: center; display: flex; flex-direction: column;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="lookup.css"> <!-- Đảm bảo dòng này vẫn còn -->
 </head>
+
 <body>
-    <header>
-        <div class="logo">
-            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn">
+    <div class="bg-shape-1"></div>
+    <div class="bg-shape-2"></div>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-wrapper">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                    alt="Huy hiệu Đoàn" class="logo-img">
+            </div>
+            <div class="title-group">
+                <p class="subtitle">ĐOÀN THANH NIÊN PHƯỜNG BA ĐÌNH - HÀ NỘI</p>
+                <h1>Cổng Tra Cứu</h1>
+            </div>
         </div>
-        <div class="title-group">
-            <p class="subtitle">Hệ thống trông giữ xe thông minh</p>
-            <h1>Cổng Tra cứu</h1>
-        </div> 
     </header>
 
-    <div class="container">
+    <div class="main-container">
         <!-- Khu vực tìm kiếm -->
-        <div id="search-section">
+        <div id="search-section" class="card search-card">
+            <h2 class="section-title">Tra cứu Thông tin Gửi xe</h2>
             <form id="plate-search-form" class="search-form" autocomplete="off">
-                <input type="text" id="plate-input" placeholder="Nhập biển số, mã vé hoặc SĐT..." required autocapitalize="characters" autocorrect="off">
-                <button type="submit">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span>Tìm kiếm</span>
-                </button>
+                <div class="input-group">
+                    <input type="text" id="plate-input" placeholder="Nhập biển số hoặc mã vé..." required
+                        autocapitalize="characters" autocorrect="off">
+                    <button type="submit" class="btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <span>Tìm kiếm</span>
+                    </button>
+                </div>
             </form>
-            <div class="or-divider">HOẶC</div>
-            <button id="scan-qr-btn" class="btn-scan-qr" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                <span>Quét mã QR từ vé xe</span>
+
+            <div class="divider">
+                <span>HOẶC</span>
+            </div>
+
+            <button id="scan-qr-btn" class="btn-secondary btn-full" type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <path d="M12 22l0 .01"></path>
+                    <path d="M12 12l0 .01"></path>
+                </svg>
+                <span>Quét mã QR vé xe</span>
             </button>
         </div>
 
         <!-- Khu vực hiển thị kết quả -->
         <div id="results-section" style="display: none;">
-            <div id="plate-display-header" class="plate-display-header">
-                <div class="label">Kết quả tra cứu cho</div>
-                <div id="plate-display" class="plate-display"></div>
+            <div class="result-header">
+                <span class="label">Kết quả cho biển số</span>
+                <div id="plate-display" class="plate-number"></div>
             </div>
+
             <div id="history-container" class="history-list">
                 <!-- Lịch sử sẽ được chèn vào đây bằng JS -->
             </div>
         </div>
 
         <!-- Khu vực thông báo và tải -->
-        <div id="message-box" style="display: none;">
-            <!-- Thông báo lỗi hoặc đang tải sẽ được chèn vào đây bằng JS -->
+        <div id="message-box" style="display: none;"></div>
+    </div>
+
+    <!-- Modal xác thực số điện thoại -->
+    <div id="phone-verification-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">Xác thực chủ xe</h3>
+            <p style="text-align: center; color: var(--text-sub); margin-bottom: 1.5rem;">
+                Vui lòng nhập số điện thoại đã đăng ký để xem thông tin chi tiết của xe <strong
+                    id="verify-plate-number"></strong>
+            </p>
+            <form id="phone-verify-form">
+                <div class="input-group" style="margin-bottom: 1rem;">
+                    <input type="tel" id="verify-phone-input" class="input-rounded" placeholder="Nhập số điện thoại..."
+                        required pattern="[0-9]{10,12}" style="text-align: center; letter-spacing: 1px;">
+                </div>
+                <button type="submit" class="btn-primary btn-full">Xác nhận</button>
+                <button type="button" id="close-verify-btn" class="btn-secondary btn-full"
+                    style="margin-top: 0.5rem;">Hủy bỏ</button>
+            </form>
         </div>
     </div>
 
@@ -273,14 +115,18 @@
     <div id="qr-scanner-modal" class="modal">
         <div class="modal-content">
             <h3 class="modal-title">Quét mã QR trên vé xe</h3>
-            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1rem;">Di chuyển camera để mã QR nằm trong khung hình.</p>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 1rem;">Di chuyển camera để mã QR
+                nằm
+                trong khung hình.</p>
             <video id="camera-feed" playsinline></video>
             <button id="close-scanner-btn" class="btn-scan-qr">Đóng</button>
         </div>
     </div>
 
     <!-- SỬA LỖI: Nhúng tệp cấu hình để cung cấp kết nối Supabase -->
+    <script src="fee_calculator.js"></script>
     <script src="config.js"></script>
     <script src="lookup.js" defer></script>
 </body>
+
 </html>

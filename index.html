@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,10 +14,11 @@
     <link rel="preconnect" href="https://mtihqbmlbtrgvamxwrkm.supabase.co" crossorigin>
 
     <!-- 2. Tải font không đồng bộ với `display=swap` để văn bản hiển thị ngay, không chặn render. -->
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <!-- 3. CSS giao diện -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=v3_final">
 
     <!-- 4. THƯ VIỆN & KỊCH BẢN -->
     <!-- Các thư viện bên thứ ba được tải với defer để không chặn render. -->
@@ -35,6 +37,7 @@
     <script src="plate_data.js" defer></script>
     <script src="main.js" defer></script>
 </head>
+
 <body>
     <!-- Container chính của ứng dụng (ẩn ban đầu) -->
     <div id="app-container">
@@ -45,9 +48,17 @@
         <header class="app-header">
             <div class="container header-container">
                 <div class="header-title">
-                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo" class="logo">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                        alt="Logo" class="logo">
                     <div class="title-group">
-                        <p class="subtitle" id="location-subtitle">Đang tải vị trí... <span id="change-location-btn" class="change-location-btn" hidden><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"></path></svg> Thay đổi</span></p>
+                        <p class="subtitle" id="location-subtitle">Đang tải vị trí... <span id="change-location-btn"
+                                class="change-location-btn" hidden><svg xmlns="http://www.w3.org/2000/svg" width="14"
+                                    height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125">
+                                    </path>
+                                </svg> Thay đổi</span></p>
                         <h1>Bảng điều hành bãi xe</h1>
                     </div>
                 </div>
@@ -92,14 +103,68 @@
                             <div class="card__body">
                                 <!-- GIAO DIỆN MỚI: "ACTION HUB" - Đơn giản, trực quan cho tình nguyện viên -->
                                 <div class="action-hub-v1">
-                                    <input type="text" id="search-term" placeholder="1. NHẬP BIỂN SỐ XE" autocomplete="off">
+                                    <input type="text" id="search-term" placeholder="1. NHẬP BIỂN SỐ XE"
+                                        autocomplete="off">
                                     <div id="plate-suggestions" class="plate-suggestions"></div>
+                                    <!-- NỘI DUNG MỚI: Sẽ được JS điều khiển hiển thị -->
+
+                                    <!-- A. Form nhập thông tin bổ sung cho xe mới -->
+                                    <div id="checkin-form-details" class="form-details-wrapper" style="display: none;">
+                                        <div class="form-section-v2">
+                                            <div class="input-wrapper">
+                                                <label for="phone-input">Số điện thoại (tùy chọn)</label>
+                                                <input type="tel" id="phone-input"
+                                                    placeholder="Để nhận thông báo khi cần">
+                                            </div>
+                                            <div class="input-wrapper">
+                                                <label for="notes-input">Ghi chú</label>
+                                                <textarea id="notes-input"
+                                                    placeholder="Ví dụ: Xe có vết xước ở cửa trái..."></textarea>
+                                            </div>
+                                            <!-- BỔ SUNG: Checkbox cho Khách VIP -->
+                                            <div class="vip-checkbox-wrapper" id="vip-checkbox-container"
+                                                title="Đánh dấu xe này là của khách mời hoặc trường hợp đặc biệt, sẽ được miễn phí gửi xe.">
+                                                <input type="checkbox" id="is-vip-checkbox">
+                                                <label for="is-vip-checkbox">⭐ Đánh dấu là Khách VIP (Miễn phí)</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <p class="action-hub-prompt">2. CHỌN HÀNH ĐỘNG</p>
                                     <div id="action-buttons-container" class="action-hub-buttons">
                                         <!-- Các nút Gửi/Lấy xe sẽ được render ở đây -->
                                     </div>
                                     <!-- Vùng hiển thị thông tin phụ (form gửi xe, thông tin xe đã gửi) -->
-                                    <div id="action-hub-details" class="action-hub-details"></div>
+                                    <div id="action-hub-details" class="action-hub-details">
+
+                                        <!-- B. Khu vực hiển thị thông tin chi tiết và lịch sử cho xe đã có trong bãi -->
+                                        <div id="vehicle-info-display" class="info-display-wrapper"
+                                            style="display: none;">
+                                            <!-- YÊU CẦU MỚI: Thẻ thông tin có thể thu gọn/mở rộng -->
+                                            <div class="collapsible-card">
+                                                <div class="collapsible-card__header" data-action="toggle-vehicle-info">
+                                                    <span class="collapsible-card__title">Xem Thông tin & Lịch sử
+                                                        xe</span>
+                                                    <svg class="collapsible-card__chevron"
+                                                        xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2.5" stroke-linecap="round"
+                                                        stroke-linejoin="round">
+                                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                                    </svg>
+                                                </div>
+                                                <div class="collapsible-card__body">
+                                                    <div id="info-display-section">
+                                                        <!-- Thông tin nhận dạng & trạng thái sẽ được JS chèn vào đây -->
+                                                    </div>
+                                                    <h3 class="history-title">Lịch sử ra vào gần đây</h3>
+                                                    <ul id="vehicle-history-list" class="history-list">
+                                                        <!-- Lịch sử sẽ được JS chèn vào đây -->
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </article>
@@ -117,7 +182,12 @@
                     <div class="card__header">
                         <h2>Bảng tin nhanh</h2>
                         <div id="data-sync-indicator" class="data-sync-indicator" title="Dữ liệu vừa được đồng bộ">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><polyline points="16 16 12 12 8 16"></polyline></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                            </svg>
                             <span>Đã cập nhật</span>
                         </div>
                     </div>
@@ -136,7 +206,7 @@
                     <div class="card__body">
                         <div id="vehicle-list-container" class="vehicle-list-container"></div>
                         <div id="pagination-controls" class="pagination-controls"></div>
-                            </div>
+                    </div>
                 </article>
             </section>
         </main>
@@ -201,4 +271,5 @@
         });
     </script>
 </body>
+
 </html>

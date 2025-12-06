@@ -111,6 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
         analyticsMetricSelect: document.getElementById('analytics-metric-select'),
         analyticsChartCanvas: document.getElementById('analytics-chart-canvas'),
         analyticsResultsContainer: document.getElementById('analytics-results-container'),
+        // Fraud Analytics
+        suspiciousFreeTransactionsContainer: document.getElementById('suspicious-free-transactions'),
+        vipByStaffStatsContainer: document.getElementById('vip-by-staff-stats'),
+
 
         // SQL Editor
         sqlQueryInput: document.getElementById('sql-query-input'),
@@ -674,6 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.pageTitle.textContent = e.currentTarget.querySelector('span').textContent;
             dom.pageDescription.textContent = e.currentTarget.title || '';
 
+            if (targetId === 'page-fraud-analytics') Handlers.handleRenderFraudAnalytics();
             if (dom.sidebar.classList.contains('open')) {
                 dom.sidebar.classList.remove('open');
                 dom.sidebarOverlay.classList.remove('open');
@@ -918,6 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         handleAnalyticsMetricChange() {
             UI.renderAnalytics();
+            UI.renderFraudAnalytics();
         },
 
         async handleExecuteSql() {
@@ -945,6 +951,70 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 dom.executeSqlBtn.disabled = false;
                 dom.executeSqlBtn.textContent = 'Thực thi Lệnh';
+            }
+        },
+
+        handleRenderFraudAnalytics() {
+            // 1. Phân tích giao dịch miễn phí đáng ngờ
+            const SUSPICIOUS_DURATION_MINUTES = 60; // Giao dịch miễn phí trên 60 phút là đáng ngờ
+            const suspiciousFreeTxs = state.transactions.filter(tx =>
+                tx.status === 'Đã rời bãi' &&
+                tx.fee === 0 &&
+                !tx.is_vip &&
+                tx.payment_method !== 'Đã thanh toán trước' &&
+                new Date(tx.exit_time) - new Date(tx.entry_time) > SUSPICIOUS_DURATION_MINUTES * 60 * 1000
+            );
+
+            if (suspiciousFreeTxs.length > 0) {
+                const tableHtml = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Biển số</th>
+                                <th>Thời gian gửi</th>
+                                <th>Nhân viên xử lý</th>
+                                <th>Lý do</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${suspiciousFreeTxs.map(tx => `
+                                <tr>
+                                    <td><span class="plate">${tx.plate}</span></td>
+                                    <td>${Math.round((new Date(tx.exit_time) - new Date(tx.entry_time)) / 60000)} phút</td>
+                                    <td>${tx.staff_username || 'N/A'}</td>
+                                    <td>${tx.payment_method || 'Miễn phí'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                dom.suspiciousFreeTransactionsContainer.innerHTML = tableHtml;
+            } else {
+                dom.suspiciousFreeTransactionsContainer.innerHTML = '<p class="empty-state">Không có giao dịch miễn phí nào đáng ngờ.</p>';
+            }
+
+            // 2. Phân tích số lượt xe VIP theo nhân viên
+            const vipByStaff = state.transactions
+                .filter(tx => tx.is_vip)
+                .reduce((acc, tx) => {
+                    const staff = tx.staff_username || 'Chưa rõ';
+                    acc[staff] = (acc[staff] || 0) + 1;
+                    return acc;
+                }, {});
+
+            const sortedStaff = Object.entries(vipByStaff).sort((a, b) => b[1] - a[1]);
+
+            if (sortedStaff.length > 0) {
+                const statsHtml = sortedStaff.map(([staff, count]) => `
+                    <div class="analytics-item">
+                        <div class="name">${staff}</div>
+                        <div class="value">${count}</div>
+                        <div class="details">lượt xe VIP</div>
+                    </div>
+                `).join('');
+                dom.vipByStaffStatsContainer.innerHTML = statsHtml;
+            } else {
+                dom.vipByStaffStatsContainer.innerHTML = '<p class="empty-state">Chưa có giao dịch VIP nào được ghi nhận.</p>';
             }
         }
     };

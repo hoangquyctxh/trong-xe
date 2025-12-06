@@ -1,1384 +1,9513 @@
-/*
+﻿/*
+
  * =========================================================================
- * HỆ THỐNG GIAO DIỆN "AETHER SUITE" - PHIÊN BẢN 12.0 (REFINED)
- * Tác giả: Gemini Code Assist
- * Mục tiêu: Tái cấu trúc, tối ưu hóa, đảm bảo tính nhất quán và dễ bảo trì,
- *          mang lại trải nghiệm người dùng đẳng cấp.
+
+ * Há»† THá»NG GIAO DIá»†N "AETHER SUITE" - PHIÃŠN Báº¢N 12.0 (REFINED)
+
+ * TÃ¡c giáº£: Gemini Code Assist
+
+ * Má»¥c tiÃªu: TÃ¡i cáº¥u trÃºc, tá»‘i Æ°u hÃ³a, Ä‘áº£m báº£o tÃ­nh nháº¥t quÃ¡n vÃ  dá»… báº£o trÃ¬,
+
+ *          mang láº¡i tráº£i nghiá»‡m ngÆ°á»i dÃ¹ng Ä‘áº³ng cáº¥p.
+
  * =========================================================================
+
  */
 
+
+
 /* ==========================================================================
-   1. BIẾN VÀ THIẾT LẬP CƠ BẢN (VARIABLES & BASE SETUP)
+
+   1. BIáº¾N VÃ€ THIáº¾T Láº¬P CÆ  Báº¢N (VARIABLES & BASE SETUP)
+
    ========================================================================== */
+
 :root {
-    /* Bảng màu "Aetherial Light" */
+
+    /* Báº£ng mÃ u "Aetherial Light" */
+
     --bg-main: #f8fafc;
+
     --bg-card: #ffffff;
+
     --bg-header: rgba(255, 255, 255, 0.85);
+
     --bg-input: #ffffff;
+
     --bg-hover: #f1f5f9;
+
     --border-color: #e2e8f0;
+
     --border-color-light: #f1f5f9;
+
     --text-primary: #1e293b;
+
     --text-secondary: #64748b;
+
     --text-placeholder: #94a3b8;
 
-    /* Màu sắc thương hiệu & nhấn */
+
+
+    /* MÃ u sáº¯c thÆ°Æ¡ng hiá»‡u & nháº¥n */
+
     --primary-accent: #2563eb;
+
     --primary-accent-light: #dbeafe;
+
     --youth-union-blue: #1488DB;
 
-    /* Màu trạng thái */
+
+
+    /* MÃ u tráº¡ng thÃ¡i */
+
     --danger-color: #dc2626;
+
     --danger-light: #fee2e2;
+
     --success-color: #16a34a;
+
     --success-light: #dcfce7;
+
     --warning-color: #f59e0b;
+
     --warning-light: #fef3c7;
+
     --vip-gold: #ca8a04;
+
     --vip-gold-light: #fef9c3;
 
+
+
     /* Font & Typography */
+
     --font-main: 'Be Vietnam Pro', sans-serif;
+
     --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
 
+
+
     /* Shadows & Effects */
+
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
     --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
+
+
     /* Sizing & Radius */
+
     --radius-md: 0.5rem;
+
     --radius-lg: 0.75rem;
+
     --header-height: 85px;
+
 }
+
+
 
 body[data-theme="dark"] {
-    /* Bảng màu "Midnight Slate" */
+
+    /* Báº£ng mÃ u "Midnight Slate" */
+
     --bg-main: #0f172a;
+
     --bg-card: #1e293b;
+
     --bg-header: rgba(30, 41, 59, 0.85);
+
     --bg-input: #334155;
+
     --bg-hover: #334155;
+
     --border-color: #334155;
+
     --border-color-light: #293548;
+
     --text-primary: #f1f5f9;
+
     --text-secondary: #94a3b8;
+
     --text-placeholder: #64748b;
 
+
+
     --primary-accent: #38bdf8;
+
     --primary-accent-light: #1e293b;
 
+
+
     --danger-light: #450a0a;
+
     --success-light: #14532d;
+
     --warning-light: #422006;
+
     --vip-gold: #facc15;
+
     --vip-gold-light: #423b13;
+
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-    font-family: var(--font-main);
-    font-size: 16px;
-    line-height: 1.6;
-    background: var(--bg-main);
-    color: var(--text-primary);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.3s, color 0.3s;
+
+
+*,
+
+*::before,
+
+*::after {
+
+    box-sizing: border-box;
+
+    margin: 0;
+
+    padding: 0;
+
 }
-.container { max-width: 1440px; margin: 0 auto; padding: 0 1.5rem; }
-a { color: var(--primary-accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+
+
+
+html {
+
+    scroll-behavior: smooth;
+
+}
+
+
+
+body {
+
+    font-family: var(--font-main);
+
+    font-size: 16px;
+
+    line-height: 1.6;
+
+    background: var(--bg-main);
+
+    color: var(--text-primary);
+
+    -webkit-font-smoothing: antialiased;
+
+    -moz-osx-font-smoothing: grayscale;
+
+    transition: background-color 0.3s, color 0.3s;
+
+}
+
+
+
+.container {
+
+    max-width: 1440px;
+
+    margin: 0 auto;
+
+    padding: 0 1.5rem;
+
+}
+
+
+
+a {
+
+    color: var(--primary-accent);
+
+    text-decoration: none;
+
+}
+
+
+
+a:hover {
+
+    text-decoration: underline;
+
+}
+
+
 
 /* ==========================================================================
-   2. BỐ CỤC CHÍNH (LAYOUT)
+
+   2. Bá» Cá»¤C CHÃNH (LAYOUT)
+
    ========================================================================== */
+
 .app-header {
+
     background-color: var(--bg-header);
+
     backdrop-filter: blur(10px);
+
     -webkit-backdrop-filter: blur(10px);
+
     border-bottom: 1px solid var(--border-color);
+
     box-shadow: var(--shadow-sm);
+
     padding: 1.25rem 0;
+
 }
-.header-container { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.header-title { display: flex; align-items: center; gap: 1rem; }
-.header-title .logo { width: 45px; height: 45px; border-radius: 8px; }
-.header-title .subtitle { font-size: 0.9rem; color: var(--text-secondary); }
-.header-title h1 { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
-.header-controls { display: flex; align-items: center; gap: 1.5rem; }
+
+
+
+.header-container {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 1rem;
+
+}
+
+
+
+.header-title {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+}
+
+
+
+.header-title .logo {
+
+    width: 45px;
+
+    height: 45px;
+
+    border-radius: 8px;
+
+}
+
+
+
+.header-title .subtitle {
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.header-title h1 {
+
+    font-size: 1.5rem;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+}
+
+
+
+.header-controls {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1.5rem;
+
+}
+
+
 
 .main-navigation {
+
     background-color: var(--bg-card);
+
     border-bottom: 1px solid var(--border-color);
+
     box-shadow: var(--shadow-sm);
+
 }
-.main-navigation .container { display: flex; justify-content: space-between; align-items: center; }
-.main-navigation ul { list-style: none; display: flex; }
+
+
+
+.main-navigation .container {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+
+.main-navigation ul {
+
+    list-style: none;
+
+    display: flex;
+
+}
+
+
+
 .main-navigation ul a {
+
     display: block;
+
     padding: 0.9rem 1.2rem;
+
     text-decoration: none;
+
     color: var(--text-secondary);
+
     font-weight: 600;
+
     border-bottom: 3px solid transparent;
+
     transition: var(--transition);
+
 }
-.main-navigation ul a:hover { color: var(--primary-accent); background-color: var(--bg-hover); }
-.main-navigation ul a.active { color: var(--primary-accent); border-bottom-color: var(--primary-accent); }
-.nav-extra { display: flex; align-items: center; gap: 1.5rem; font-size: 0.9rem; color: var(--text-secondary); }
+
+
+
+.main-navigation ul a:hover {
+
+    color: var(--primary-accent);
+
+    background-color: var(--bg-hover);
+
+}
+
+
+
+.main-navigation ul a.active {
+
+    color: var(--primary-accent);
+
+    border-bottom-color: var(--primary-accent);
+
+}
+
+
+
+.nav-extra {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1.5rem;
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+}
+
+
 
 @media (min-width: 769px) {
+
+
+
+    /* Header khÃ´ng cÃ²n bÃ¡m dÃ­nh theo yÃªu cáº§u */
+
     .app-header {
-        position: sticky;
-        top: 0;
-        z-index: 998;
+
+        position: relative;
+
     }
+
+
+
     .main-navigation {
-        position: sticky;
-        top: var(--header-height);
-        z-index: 997;
+
+        position: relative;
+
+        top: 0;
+
     }
+
 }
 
-.main-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-top: 1.5rem; align-items: start; }
-.main-column { display: flex; flex-direction: column; gap: 1.5rem; }
+
+
+.main-grid {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1.2fr;
+
+    gap: 1.5rem;
+
+    margin-top: 1.5rem;
+
+    align-items: start;
+
+}
+
+
+
+.main-column {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1.5rem;
+
+}
+
+
 
 .view-switcher-container {
+
     position: relative;
+
     display: grid;
-}
-.view-content {
-    grid-area: 1 / 1;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-}
-.view-content.is-hidden {
-    opacity: 0;
-    transform: scale(0.95);
-    pointer-events: none;
+
 }
 
-.app-footer { border-top: 1px solid var(--border-color); margin-top: 3rem; padding: 2rem 0; text-align: center; color: var(--text-secondary); font-size: 0.9rem; }
+
+
+.view-content {
+
+    grid-area: 1 / 1;
+
+    transition: opacity 0.4s ease, transform 0.4s ease;
+
+}
+
+
+
+.view-content.is-hidden {
+
+    opacity: 0;
+
+    transform: scale(0.95);
+
+    pointer-events: none;
+
+}
+
+
+
+.app-footer {
+
+    border-top: 1px solid var(--border-color);
+
+    margin-top: 3rem;
+
+    padding: 2rem 0;
+
+    text-align: center;
+
+    color: var(--text-secondary);
+
+    font-size: 0.9rem;
+
+}
+
+
 
 /* ==========================================================================
-   3. CÁC THÀNH PHẦN CHUNG (COMPONENTS)
+
+   3. CÃC THÃ€NH PHáº¦N CHUNG (COMPONENTS)
+
    ========================================================================== */
+
 .card {
+
     background-color: var(--bg-card);
+
     border: 1px solid var(--border-color);
+
     border-radius: var(--radius-lg);
+
     box-shadow: var(--shadow-sm);
+
     transition: var(--transition);
+
     display: flex;
+
     flex-direction: column;
+
 }
-.card:hover { box-shadow: var(--shadow-md); transform: translateY(-3px); }
-.card__header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color-light); font-size: 1.1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-.card__body { padding: 1.5rem; flex-grow: 1; }
-.card__footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    background-color: var(--bg-hover);
+
+
+
+.card:hover {
+
+    box-shadow: var(--shadow-md);
+
+    transform: translateY(-3px);
+
+}
+
+
+
+.card__header {
+
+    padding: 1.25rem 1.5rem;
+
+    border-bottom: 1px solid var(--border-color-light);
+
+    font-size: 1.1rem;
+
+    font-weight: 700;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
     flex-shrink: 0;
+
 }
 
-.input-wrapper { position: relative; }
-.input-wrapper input, .input-wrapper select, .input-wrapper textarea {
-    width: 100%; padding: 0.8rem 1rem; font-size: 1rem;
-    background-color: var(--bg-input); border: 1px solid var(--border-color);
-    border-radius: var(--radius-md); color: var(--text-primary);
+
+
+.card__body {
+
+    padding: 1.5rem;
+
+    flex-grow: 1;
+
+}
+
+
+
+.card__footer {
+
+    padding: 1rem 1.5rem;
+
+    border-top: 1px solid var(--border-color);
+
+    background-color: var(--bg-hover);
+
+    flex-shrink: 0;
+
+}
+
+
+
+.input-wrapper {
+
+    position: relative;
+
+}
+
+
+
+.input-wrapper input,
+
+.input-wrapper select,
+
+.input-wrapper textarea {
+
+    width: 100%;
+
+    padding: 0.8rem 1rem;
+
+    font-size: 1rem;
+
+    background-color: var(--bg-input);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-md);
+
+    color: var(--text-primary);
+
     transition: var(--transition);
-    font-family: var(--font-main);
-}
-.input-wrapper input::placeholder, .input-wrapper textarea::placeholder { color: var(--text-placeholder); }
-.input-wrapper textarea { resize: vertical; min-height: 60px; }
-.input-wrapper input:focus, .input-wrapper textarea:focus { outline: none; border-color: var(--primary-accent); box-shadow: 0 0 0 4px var(--primary-accent-light); }
 
-/* NÂNG CẤP: Thay đổi placeholder cho ô lọc danh sách */
-#filter-input::placeholder {
-    font-style: italic;
+    font-family: var(--font-main);
+
 }
+
+
+
+.input-wrapper input::placeholder,
+
+.input-wrapper textarea::placeholder {
+
+    color: var(--text-placeholder);
+
+}
+
+
+
+.input-wrapper textarea {
+
+    resize: vertical;
+
+    min-height: 60px;
+
+}
+
+
+
+.input-wrapper input:focus,
+
+.input-wrapper textarea:focus {
+
+    outline: none;
+
+    border-color: var(--primary-accent);
+
+    box-shadow: 0 0 0 4px var(--primary-accent-light);
+
+}
+
+
+
+/* NÃ‚NG Cáº¤P: Thay Ä‘á»•i placeholder cho Ã´ lá»c danh sÃ¡ch */
+
+#filter-input::placeholder {
+
+    font-style: italic;
+
+}
+
+
 
 .icon-btn {
-    flex-shrink: 0; width: 48px; height: 48px; border-radius: var(--radius-md);
-    border: 1px solid var(--border-color); background-color: var(--bg-card);
-    color: var(--text-secondary); cursor: pointer; transition: var(--transition);
-    display: flex; align-items: center; justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 48px;
+
+    height: 48px;
+
+    border-radius: var(--radius-md);
+
+    border: 1px solid var(--border-color);
+
+    background-color: var(--bg-card);
+
+    color: var(--text-secondary);
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
 }
-.icon-btn:hover:not(:disabled) { background-color: var(--primary-accent-light); color: var(--primary-accent); border-color: var(--primary-accent); }
-.icon-btn.active { color: var(--danger-color); background-color: var(--danger-light); border-color: var(--danger-color); animation: pulse-mic 1.5s infinite; }
-@keyframes pulse-mic { 0%, 100% { box-shadow: 0 0 0 0 var(--danger-light); } 50% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); } }
+
+
+
+.icon-btn:hover:not(:disabled) {
+
+    background-color: var(--primary-accent-light);
+
+    color: var(--primary-accent);
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+.icon-btn.active {
+
+    color: var(--danger-color);
+
+    background-color: var(--danger-light);
+
+    border-color: var(--danger-color);
+
+    animation: pulse-mic 1.5s infinite;
+
+}
+
+
+
+@keyframes pulse-mic {
+
+
+
+    0%,
+
+    100% {
+
+        box-shadow: 0 0 0 0 var(--danger-light);
+
+    }
+
+
+
+    50% {
+
+        box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
+
+    }
+
+}
+
+
 
 .action-button {
-    width: 100%; padding: 1rem; border: none; border-radius: var(--radius-md);
-    color: white; font-size: 1rem; font-weight: 600; cursor: pointer;
+
+    width: 100%;
+
+    padding: 1rem;
+
+    border: none;
+
+    border-radius: var(--radius-md);
+
+    color: white;
+
+    font-size: 1rem;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
     transition: var(--transition);
-    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
-    text-transform: uppercase; letter-spacing: 0.05em;
-    position: relative; overflow: hidden;
-}
-.action-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-.action-button:active:not(:disabled) { transform: translateY(0); box-shadow: var(--shadow-md); }
-.action-button:disabled { background: var(--border-color) !important; color: var(--text-secondary) !important; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* Hiệu ứng vệt sáng khi hover (Chuyển từ index.html vào) */
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 0.75rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.05em;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+
+.action-button:hover:not(:disabled) {
+
+    transform: translateY(-2px);
+
+    box-shadow: var(--shadow-lg);
+
+}
+
+
+
+.action-button:active:not(:disabled) {
+
+    transform: translateY(0);
+
+    box-shadow: var(--shadow-md);
+
+}
+
+
+
+.action-button:disabled {
+
+    background: var(--border-color) !important;
+
+    color: var(--text-secondary) !important;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
+
+}
+
+
+
+/* Hiá»‡u á»©ng vá»‡t sÃ¡ng khi hover (Chuyá»ƒn tá»« index.html vÃ o) */
+
 .action-button::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -150%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
-    transform: skewX(-25deg);
-    pointer-events: none; /* Quan trọng: không để hiệu ứng chặn click */
-}
-.action-button:hover::after {
-    animation: shine-effect 0.8s ease-out;
-}
-@keyframes shine-effect { from { left: -150%; } to { left: 150%; } }
 
-.action-button:active:not(:disabled) { transform: translateY(0); box-shadow: var(--shadow-md); }
-.action-button:disabled { background: var(--border-color) !important; color: var(--text-secondary) !important; cursor: not-allowed; transform: none; box-shadow: none; }
+    content: '';
+
+    position: absolute;
+
+    top: 0;
+
+    left: -150%;
+
+    width: 50%;
+
+    height: 100%;
+
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
+
+    transform: skewX(-25deg);
+
+    pointer-events: none;
+
+    /* Quan trá»ng: khÃ´ng Ä‘á»ƒ hiá»‡u á»©ng cháº·n click */
+
+}
+
+
+
+.action-button:hover::after {
+
+    animation: shine-effect 0.8s ease-out;
+
+}
+
+
+
+@keyframes shine-effect {
+
+    from {
+
+        left: -150%;
+
+    }
+
+
+
+    to {
+
+        left: 150%;
+
+    }
+
+}
+
+
+
+.action-button:active:not(:disabled) {
+
+    transform: translateY(0);
+
+    box-shadow: var(--shadow-md);
+
+}
+
+
+
+.action-button:disabled {
+
+    background: var(--border-color) !important;
+
+    color: var(--text-secondary) !important;
+
+    cursor: not-allowed;
+
+    transform: none;
+
+    box-shadow: none;
+
+}
+
+
 
 .btn-icon-wrapper {
+
     position: relative;
+
     width: 20px;
+
     height: 20px;
+
     transition: var(--transition);
-}
-.btn-icon {
-    position: absolute;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    transform: translateY(10px) scale(0.8);
-    transition: var(--transition);
-}
-.btn--check-in .icon--check-in,
-.btn--check-out .icon--check-out,
-.btn--reprint .icon--reprint,
-.btn--view-ticket .icon--view-ticket {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+
 }
 
-.secondary-action-wrapper { margin-top: 1rem; margin-bottom: 1rem; text-align: center; }
-.secondary-action-btn {
-    background: none; border: none;
-    color: var(--text-secondary); font-weight: 600;
-    cursor: pointer;
-    border-bottom: 1px dashed var(--text-secondary);
+
+
+.btn-icon {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    opacity: 0;
+
+    transform: translateY(10px) scale(0.8);
+
     transition: var(--transition);
+
 }
-.secondary-action-btn:hover { color: var(--primary-accent); border-bottom-color: var(--primary-accent); }
+
+
+
+.btn--check-in .icon--check-in,
+
+.btn--check-out .icon--check-out,
+
+.btn--reprint .icon--reprint,
+
+.btn--view-ticket .icon--view-ticket {
+
+    opacity: 1;
+
+    transform: translateY(0) scale(1);
+
+}
+
+
+
+.secondary-action-wrapper {
+
+    margin-top: 1rem;
+
+    margin-bottom: 1rem;
+
+    text-align: center;
+
+}
+
+
+
+.secondary-action-btn {
+
+    background: none;
+
+    border: none;
+
+    color: var(--text-secondary);
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    border-bottom: 1px dashed var(--text-secondary);
+
+    transition: var(--transition);
+
+}
+
+
+
+.secondary-action-btn:hover {
+
+    color: var(--primary-accent);
+
+    border-bottom-color: var(--primary-accent);
+
+}
+
+
 
 .action-alert-box {
-    padding: 1rem; margin-bottom: 1rem;
-    border-radius: var(--radius-md); border-left: 4px solid;
+
+    padding: 1rem;
+
+    margin-bottom: 1rem;
+
+    border-radius: var(--radius-md);
+
+    border-left: 4px solid;
+
     animation: fadeIn 0.3s ease-out;
+
 }
-.action-alert-box.alert-warning { background-color: var(--warning-light); border-color: var(--warning-color); color: var(--warning-color); }
-.action-alert-box.alert-block { background-color: var(--danger-light); border-color: var(--danger-color); color: var(--danger-color); }
-.action-alert-header { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem; }
-.action-alert-reason { font-weight: 500; color: var(--text-primary); }
+
+
+
+.action-alert-box.alert-warning {
+
+    background-color: var(--warning-light);
+
+    border-color: var(--warning-color);
+
+    color: var(--warning-color);
+
+}
+
+
+
+.action-alert-box.alert-block {
+
+    background-color: var(--danger-light);
+
+    border-color: var(--danger-color);
+
+    color: var(--danger-color);
+
+}
+
+
+
+.action-alert-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.5rem;
+
+    font-weight: 700;
+
+    font-size: 1rem;
+
+    margin-bottom: 0.25rem;
+
+}
+
+
+
+.action-alert-reason {
+
+    font-weight: 500;
+
+    color: var(--text-primary);
+
+}
+
+
 
 .plate-suggestions {
-    position: absolute; background-color: var(--bg-card);
-    border: 1px solid var(--border-color); border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg); margin-top: 0.5rem;
-    width: 100%; z-index: 1000;
-    max-height: 200px; overflow-y: auto;
-    opacity: 0; transform: translateY(-10px);
+
+    /* Sá»¬A Lá»–I: Chuyá»ƒn sang position relative Ä‘á»ƒ khÃ´ng che cÃ¡c pháº§n tá»­ khÃ¡c */
+
+    position: relative;
+
+    background-color: var(--bg-card);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-md);
+
+    box-shadow: var(--shadow-lg);
+
+    margin-top: 0.5rem;
+
+    width: 100%;
+
+    z-index: 1000;
+
+    max-height: 200px;
+
+    overflow-y: auto;
+
+    opacity: 0;
+
+    transform: translateY(-10px);
+
     transition: opacity 0.2s ease, transform 0.2s ease;
-    pointer-events: none;
+
+    display: none;
+
+    /* DÃ¹ng display none Ä‘á»ƒ khÃ´ng chiáº¿m khÃ´ng gian khi áº©n */
+
 }
-.plate-suggestions.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.suggestion-item { padding: 0.75rem 1.2rem; cursor: pointer; transition: var(--transition); }
-.suggestion-item:hover { background-color: var(--primary-accent-light); }
+
+
+
+.plate-suggestions.visible {
+
+    opacity: 1;
+
+    transform: translateY(0);
+
+    display: block;
+
+}
+
+
+
+.suggestion-item {
+
+    padding: 0.75rem 1.2rem;
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+
+.suggestion-item:hover {
+
+    background-color: var(--primary-accent-light);
+
+}
+
+
+
+.suggestion-item .vip-star {
+
+    color: var(--vip-gold);
+
+    font-size: 1.2rem;
+
+}
+
+
 
 /* Button Variants */
-.btn--check-in { background-color: var(--primary-accent); }
-.btn--check-out { background-color: var(--danger-color); }
-.btn--view-ticket, .btn--reprint { background-color: #4b5563; }
-.btn--secondary { background-color: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-color); }
-.btn--secondary:hover { background-color: var(--bg-hover); }
 
-.vip-checkbox-wrapper { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background-color: var(--vip-gold-light); border: 1px solid var(--vip-gold); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
-.vip-checkbox-wrapper:hover { background-color: var(--vip-gold); color: white; }
-.vip-checkbox-wrapper:hover label { color: white; }
-.vip-checkbox-wrapper input { width: 16px; height: 16px; accent-color: var(--vip-gold); }
-.vip-checkbox-wrapper label { font-weight: 600; color: var(--vip-gold); transition: var(--transition); }
+.btn--check-in {
+
+    background-color: var(--primary-accent);
+
+}
+
+
+
+.btn--check-out {
+
+    background-color: var(--danger-color);
+
+}
+
+
+
+.btn--view-ticket,
+
+.btn--reprint {
+
+    background-color: #4b5563;
+
+}
+
+
+
+.btn--secondary {
+
+    background-color: var(--bg-main);
+
+    color: var(--text-primary);
+
+    border: 1px solid var(--border-color);
+
+}
+
+
+
+.btn--secondary:hover {
+
+    background-color: var(--bg-hover);
+
+}
+
+
+
+.vip-checkbox-wrapper {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.75rem;
+
+    padding: 0.75rem;
+
+    background-color: var(--vip-gold-light);
+
+    border: 1px solid var(--vip-gold);
+
+    border-radius: var(--radius-md);
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+}
+
+
+
+.vip-checkbox-wrapper:hover {
+
+    background-color: var(--vip-gold);
+
+    color: white;
+
+}
+
+
+
+.vip-checkbox-wrapper:hover label {
+
+    color: white;
+
+}
+
+
+
+.vip-checkbox-wrapper input {
+
+    width: 16px;
+
+    height: 16px;
+
+    accent-color: var(--vip-gold);
+
+}
+
+
+
+.vip-checkbox-wrapper label {
+
+    font-weight: 600;
+
+    color: var(--vip-gold);
+
+    transition: var(--transition);
+
+}
+
+
 
 .change-location-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    background-color: transparent; border: 1px solid transparent;
-    padding: 4px 10px; border-radius: 20px;
-    font-size: 0.85rem; font-weight: 600;
-    color: var(--text-secondary); cursor: pointer;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    background-color: transparent;
+
+    border: 1px solid transparent;
+
+    padding: 4px 10px;
+
+    border-radius: 20px;
+
+    font-size: 0.85rem;
+
+    font-weight: 600;
+
+    color: var(--text-secondary);
+
+    cursor: pointer;
+
     transition: var(--transition);
+
 }
-.change-location-btn:hover { background-color: var(--bg-hover); border-color: var(--border-color); color: var(--text-primary); }
 
-.status-badge { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; color: white; }
-.status-badge.parking { background-color: var(--success-color); }
-.status-badge.departed { background-color: var(--text-secondary); }
 
-/* Huy hiệu trạng thái thu phí */
+
+.change-location-btn:hover {
+
+    background-color: var(--bg-hover);
+
+    border-color: var(--border-color);
+
+    color: var(--text-primary);
+
+}
+
+
+
+.status-badge {
+
+    font-size: 0.8rem;
+
+    font-weight: 600;
+
+    padding: 4px 10px;
+
+    border-radius: 20px;
+
+    color: white;
+
+}
+
+
+
+.status-badge.parking {
+
+    background-color: var(--success-color);
+
+}
+
+
+
+.status-badge.departed {
+
+    background-color: var(--text-secondary);
+
+}
+
+
+
+/* Huy hiá»‡u tráº¡ng thÃ¡i thu phÃ­ */
+
 .fee-status-badge {
-    font-size: 0.8rem; font-weight: 700;
-    padding: 3px 10px; border-radius: 20px;
-    margin-left: 8px; vertical-align: middle;
+
+    font-size: 0.8rem;
+
+    font-weight: 700;
+
+    padding: 3px 10px;
+
+    border-radius: 20px;
+
+    margin-left: 8px;
+
+    vertical-align: middle;
+
 }
-.fee-status-badge.free { background-color: var(--success-light); color: var(--success-color); }
-.fee-status-badge.paid { background-color: var(--warning-light); color: var(--warning-color); }
+
+
+
+.fee-status-badge.free {
+
+    background-color: var(--success-light);
+
+    color: var(--success-color);
+
+}
+
+
+
+.fee-status-badge.paid {
+
+    background-color: var(--warning-light);
+
+    color: var(--warning-color);
+
+}
+
+
 
 /* ==========================================================================
-   4. CÁC THÀNH PHẦN CỤ THỂ (SPECIFIC COMPONENTS)
+
+   4. CÃC THÃ€NH PHáº¦N Cá»¤ THá»‚ (SPECIFIC COMPONENTS)
+
    ========================================================================== */
-.date-selector { display: flex; align-items: center; gap: 0.5rem; background-color: var(--bg-hover); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
-.date-selector input { padding: 0.25rem; border: none; background: transparent; color: var(--text-primary); }
-body[data-theme="dark"] .date-selector input::-webkit-calendar-picker-indicator { filter: invert(1); }
 
-.theme-switch input { display: none; }
-.theme-switch .slider { background-color: var(--border-color); cursor: pointer; height: 24px; width: 44px; position: relative; transition: .4s; border-radius: 24px; }
-.theme-switch .slider:before { background-color: #fff; content: ""; height: 16px; width: 16px; position: absolute; left: 4px; bottom: 4px; transition: .4s; border-radius: 50%; box-shadow: var(--shadow-sm); }
-input:checked + .slider { background-color: var(--primary-accent); }
-input:checked + .slider:before { transform: translateX(20px); }
+.date-selector {
 
-.history-list { list-style: none; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
-.history-item { background-color: var(--bg-hover); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color-light); }
-.history-details { display: flex; flex-direction: column; gap: 0.25rem; }
-.history-time, .history-duration { font-size: 0.9rem; }
-.history-location { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
+    display: flex;
 
-.list-filter { max-width: 300px; flex-grow: 1; }
+    align-items: center;
 
-/* ==========================================================================
-   GIAO DIỆN DANH SÁCH XE (VEHICLE LIST V6)
-   ========================================================================== */
-/* NÂNG CẤP: Chuyển sang bố cục Grid để các thẻ tự động sắp xếp và có kích thước hợp lý */
-.vehicle-list-container {
-    max-height: 55vh;
-    overflow-y: auto;
-    padding-right: 8px;
-    display: grid; /* Chuyển sang Grid */
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Bố cục lưới tự động */
+    gap: 0.5rem;
+
+    background-color: var(--bg-hover);
+
+    padding: 0.5rem 0.75rem;
+
+    border-radius: var(--radius-md);
+
+    border: 1px solid var(--border-color);
+
+}
+
+
+
+.date-selector input {
+
+    padding: 0.25rem;
+
+    border: none;
+
+    background: transparent;
+
+    color: var(--text-primary);
+
+}
+
+
+
+body[data-theme="dark"] .date-selector input::-webkit-calendar-picker-indicator {
+
+    filter: invert(1);
+
+}
+
+
+
+.theme-switch input {
+
+    display: none;
+
+}
+
+
+
+.theme-switch .slider {
+
+    background-color: var(--border-color);
+
+    cursor: pointer;
+
+    height: 24px;
+
+    width: 44px;
+
+    position: relative;
+
+    transition: .4s;
+
+    border-radius: 24px;
+
+}
+
+
+
+.theme-switch .slider:before {
+
+    background-color: #fff;
+
+    content: "";
+
+    height: 16px;
+
+    width: 16px;
+
+    position: absolute;
+
+    left: 4px;
+
+    bottom: 4px;
+
+    transition: .4s;
+
+    border-radius: 50%;
+
+    box-shadow: var(--shadow-sm);
+
+}
+
+
+
+input:checked+.slider {
+
+    background-color: var(--primary-accent);
+
+}
+
+
+
+input:checked+.slider:before {
+
+    transform: translateX(20px);
+
+}
+
+
+
+.history-list {
+
+    list-style: none;
+
+    margin-top: 1rem;
+
+    display: flex;
+
+    flex-direction: column;
+
     gap: 0.75rem;
+
 }
+
+
+
+.history-item {
+
+    background-color: var(--bg-hover);
+
+    padding: 0.85rem 1.25rem;
+
+    border-radius: var(--radius-md);
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    border: 1px solid var(--border-color-light);
+
+}
+
+
+
+.history-details {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 0.25rem;
+
+}
+
+
+
+.history-time,
+
+.history-duration {
+
+    font-size: 0.9rem;
+
+}
+
+
+
+.history-location {
+
+    font-size: 0.9rem;
+
+    font-weight: 600;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.list-filter {
+
+    max-width: 300px;
+
+    flex-grow: 1;
+
+}
+
+
+
+/* ==========================================================================
+
+   GIAO DIá»†N DANH SÃCH XE (VEHICLE LIST V6)
+
+   ========================================================================== */
+
+/* NÃ‚NG Cáº¤P: Chuyá»ƒn sang bá»‘ cá»¥c Grid Ä‘á»ƒ cÃ¡c tháº» tá»± Ä‘á»™ng sáº¯p xáº¿p vÃ  cÃ³ kÃ­ch thÆ°á»›c há»£p lÃ½ */
+
+.vehicle-list-container {
+
+    max-height: 55vh;
+
+    overflow-y: auto;
+
+    padding-right: 8px;
+
+    display: grid;
+
+    /* Chuyá»ƒn sang Grid */
+
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+
+    /* Bá»‘ cá»¥c lÆ°á»›i tá»± Ä‘á»™ng */
+
+    gap: 0.75rem;
+
+}
+
+
 
 .vehicle-item-v5 {
+
     display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr 1fr; /* Plate, Status, Time, Duration */
+
+    grid-template-columns: 2fr 1fr 1.5fr 1fr;
+
+    /* Plate, Status, Time, Duration */
+
     align-items: center;
+
     gap: 1rem;
+
     padding: 1rem 1.25rem;
+
     border: 1px solid var(--border-color);
+
     border-radius: var(--radius-md);
+
     background-color: var(--bg-card);
+
     cursor: pointer;
+
     transition: all 0.2s ease-out;
+
     animation: fadeIn 0.4s ease-out;
+
 }
 
-/* TỐI ƯU HÓA: Thay thế box-shadow bằng outline để cuộn mượt hơn */
+
+
+/* Tá»I Æ¯U HÃ“A: Thay tháº¿ box-shadow báº±ng outline Ä‘á»ƒ cuá»™n mÆ°á»£t hÆ¡n */
+
 .vehicle-item-v5:hover {
+
     transform: translateY(-3px) scale(1.01);
+
     outline: 2px solid var(--primary-accent);
+
     outline-offset: -2px;
+
     border-color: var(--primary-accent);
+
     background-color: var(--primary-accent-light);
+
 }
+
+
+
 .vehicle-v5__cell {
+
     display: flex;
+
     flex-direction: column;
-    min-width: 0; /* Ngăn chặn co giãn ngoài ý muốn */
+
+    min-width: 0;
+
+    /* NgÄƒn cháº·n co giÃ£n ngoÃ i Ã½ muá»‘n */
+
 }
+
+
+
 .vehicle-v5__plate {
+
     flex-direction: row;
+
     align-items: center;
+
     gap: 0.5rem;
+
 }
+
+
+
 .vehicle-v5__plate-text {
+
     font-size: 1.2rem;
+
     font-weight: 700;
+
     color: var(--text-primary);
+
     white-space: nowrap;
+
 }
+
+
+
 .vehicle-v5__icons {
+
     display: flex;
+
     align-items: center;
+
     gap: 0.5rem;
+
 }
 
-.vehicle-v5__time, .vehicle-v5__duration {
+
+
+.vehicle-v5__time,
+
+.vehicle-v5__duration {
+
     text-align: right;
+
 }
-.time-label { font-size: 0.8rem; color: var(--text-secondary); }
-.time-value { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
 
-/* KHÔI PHỤC: Trạng thái rời bãi của V5 */
-.vehicle-item-v5.departed { opacity: 0.65; background-color: var(--bg-hover); }
-.vehicle-item-v5.departed:hover { opacity: 1; }
 
-/* Badge trạng thái V5 */
-.status-badge-v5 {
+
+.time-label {
+
     font-size: 0.8rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.time-value {
+
+    font-size: 0.9rem;
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+}
+
+
+
+/* KHÃ”I PHá»¤C: Tráº¡ng thÃ¡i rá»i bÃ£i cá»§a V5 */
+
+.vehicle-item-v5.departed {
+
+    opacity: 0.65;
+
+    background-color: var(--bg-hover);
+
+}
+
+
+
+.vehicle-item-v5.departed:hover {
+
+    opacity: 1;
+
+}
+
+
+
+/* Badge tráº¡ng thÃ¡i V5 */
+
+.status-badge-v5 {
+
+    font-size: 0.8rem;
+
     font-weight: 700;
+
     padding: 5px 12px;
+
     border-radius: 20px;
+
     text-align: center;
+
     white-space: nowrap;
+
 }
-.status--parking { background-color: var(--success-light); color: var(--success-color); }
-.status--departed { background-color: var(--bg-hover); color: var(--text-secondary); }
 
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-.skeleton-item { background-color: var(--bg-hover); border-radius: var(--radius-md); height: 70px; margin-bottom: 0.75rem; animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-@keyframes pulse-skeleton { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-secondary); }
 
-/* KHÔI PHỤC: Hiệu ứng pháo hoa cho modal xác nhận */
+
+.status--parking {
+
+    background-color: var(--success-light);
+
+    color: var(--success-color);
+
+}
+
+
+
+.status--departed {
+
+    background-color: var(--bg-hover);
+
+    color: var(--text-secondary);
+
+}
+
+
+
+@keyframes blink {
+
+
+
+    0%,
+
+    100% {
+
+        opacity: 1;
+
+    }
+
+
+
+    50% {
+
+        opacity: 0.3;
+
+    }
+
+}
+
+
+
+.skeleton-item {
+
+    background-color: var(--bg-hover);
+
+    border-radius: var(--radius-md);
+
+    height: 70px;
+
+    margin-bottom: 0.75rem;
+
+    animation: pulse-skeleton 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+}
+
+
+
+@keyframes pulse-skeleton {
+
+
+
+    0%,
+
+    100% {
+
+        opacity: 1;
+
+    }
+
+
+
+    50% {
+
+        opacity: 0.5;
+
+    }
+
+}
+
+
+
+.empty-state {
+
+    text-align: center;
+
+    padding: 4rem 1rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+/* KHÃ”I PHá»¤C: Hiá»‡u á»©ng phÃ¡o hoa cho modal xÃ¡c nháº­n */
+
 .confetti {
+
     position: absolute;
+
     width: 10px;
+
     height: 10px;
+
     background-color: #f00;
+
     opacity: 0;
+
     animation: confetti-fall 3s ease-out forwards;
+
 }
+
+
+
 @keyframes confetti-fall {
-    0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+
+    0% {
+
+        transform: translateY(-10vh) rotate(0deg);
+
+        opacity: 1;
+
+    }
+
+
+
+    100% {
+
+        transform: translateY(100vh) rotate(720deg);
+
+        opacity: 0;
+
+    }
+
 }
+
+
 
 /* ==========================================================================
+
    5. MODALS, TOASTS & OVERLAYS
+
    ========================================================================== */
+
 .modal-overlay {
+
     position: fixed;
+
     z-index: 1000;
+
     top: 0;
+
     left: 0;
+
     width: 100%;
+
     height: 100%;
+
     background-color: rgba(15, 23, 42, 0.6);
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
     backdrop-filter: blur(5px);
+
     opacity: 0;
+
     transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
     pointer-events: none;
+
 }
+
+
+
 .modal-overlay.active {
+
     opacity: 1;
+
     pointer-events: auto;
+
 }
+
+
+
 .modal-content {
+
     background-color: var(--bg-card);
+
     border-radius: var(--radius-lg);
+
     box-shadow: var(--shadow-lg);
+
     max-width: 90vw;
-    transform: scale(0.95);
+
+    /* YÃŠU Cáº¦U Má»šI: Thay Ä‘á»•i hiá»‡u á»©ng xuáº¥t hiá»‡n */
+
+    transform: translateY(30px);
+
     opacity: 0;
+
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    display: flex;
+
+    flex-direction: column;
+
+    max-height: 90vh;
+
+    overflow: hidden;
+
+}
+
+
+
+.modal-overlay.active .modal-content {
+
+    /* YÃŠU Cáº¦U Má»šI: Thay Ä‘á»•i hiá»‡u á»©ng xuáº¥t hiá»‡n */
+
+    transform: translateY(0);
+
+    opacity: 1;
+
+}
+
+
+
+.modal-header {
+
+    padding: 1.25rem 1.5rem;
+
+    border-bottom: 1px solid var(--border-color);
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    flex-shrink: 0;
+
+    position: relative;
+
+    overflow: hidden;
+
+    background-color: var(--bg-hover);
+
+}
+
+
+
+.modal-header::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    right: 0;
+
+    height: 100%;
+
+    background: linear-gradient(120deg, var(--primary-accent), var(--youth-union-blue), var(--success-color));
+
+    background-size: 200% 200%;
+
+    opacity: 0.1;
+
+    animation: aurora-flow 10s ease infinite;
+
+    z-index: 0;
+
+}
+
+
+
+.modal-header h2 {
+
+    font-size: 1.25rem;
+
+    font-weight: 600;
+
+    margin: 0;
+
+}
+
+
+
+.modal-header>* {
+
+    position: relative;
+
+    z-index: 1;
+
+}
+
+
+
+.modal-close-btn {
+
+    background: none;
+
+    border: none;
+
+    font-size: 1.8rem;
+
+    cursor: pointer;
+
+    color: var(--text-secondary);
+
+    line-height: 1;
+
+    transition: var(--transition);
+
+    border-radius: 50%;
+
+    width: 36px;
+
+    height: 36px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+
+.modal-close-btn:hover {
+
+    background-color: var(--border-color);
+
+    transform: rotate(90deg);
+
+}
+
+
+
+.modal-body {
+
+    padding: 1.5rem;
+
+    overflow: auto;
+
+    flex: 1 1 auto;
+
+}
+
+
+
+.modal-footer {
+
+    padding: 1rem 1.5rem;
+
+    border-top: 1px solid var(--border-color);
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 0.75rem;
+
+    background-color: var(--bg-hover);
+
+    flex-shrink: 0;
+
+}
+
+
+
+@keyframes aurora-flow {
+
+    0% {
+
+        background-position: 0% 50%
+    }
+
+
+
+    50% {
+
+        background-position: 100% 50%
+    }
+
+
+
+    100% {
+
+        background-position: 0% 50%
+    }
+
+}
+
+
+
+/* Global Alert (in modal) */
+
+.global-alert-wrapper {
+
+    text-align: center;
+
+}
+
+
+
+.global-alert-plate-box {
+
+    padding: 1.5rem 1rem;
+
+    border-radius: var(--radius-md);
+
+    margin-bottom: 1.5rem;
+
+    display: inline-block;
+
+    width: 100%;
+
+}
+
+
+
+.alert-bg-warning {
+
+    background-color: var(--warning-light);
+
+}
+
+
+
+.alert-bg-block {
+
+    background-color: var(--danger-light);
+
+}
+
+
+
+.global-alert-plate {
+
+    font-family: monospace;
+
+    font-size: 3rem;
+
+    font-weight: 700;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.global-alert-reason {
+
+    font-size: 1.1rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+/* Image Viewer Modal */
+
+.image-viewer-modal .modal-content {
+
+    max-width: 90vw;
+
+    max-height: 95vh;
+
+    background-color: transparent;
+
+    box-shadow: none;
+
+    overflow: visible;
+
+    width: auto;
+
+    /* Sá»­a lá»—i: Äá»ƒ modal co giÃ£n theo áº£nh */
+
+}
+
+
+
+.image-viewer-container {
+
+    position: relative;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    width: 100%;
+
+    height: 100%;
+
+    /* Sá»­a lá»—i: Äáº£m báº£o container chiáº¿m háº¿t khÃ´ng gian */
+
+}
+
+
+
+.image-viewer-container img {
+
+    max-width: 90vw;
+
+    /* Sá»­a lá»—i: Giá»›i háº¡n chiá»u rá»™ng tá»‘i Ä‘a */
+
+    max-height: 85vh;
+
+    /* Sá»­a lá»—i: Giá»›i háº¡n chiá»u cao tá»‘i Ä‘a */
+
+    border-radius: var(--radius-md);
+
+    box-shadow: var(--shadow-lg);
+
+    object-fit: contain;
+
+}
+
+
+
+/* ==========================================================================
+
+   GIAO DIá»†N DANH SÃCH XE (VEHICLE LIST V7 - "INFO CARD")
+
+   ========================================================================== */
+
+.vehicle-item-v7 {
+
+    display: flex;
+
+    flex-direction: column;
+
+    padding: 1rem 1.25rem;
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-md);
+
+    background-color: var(--bg-card);
+
+    cursor: pointer;
+
+    transition: all 0.2s ease-out;
+
+    animation: fadeIn 0.4s ease-out;
+
+    position: relative;
+
+    overflow: hidden;
+
+    padding-left: calc(1.25rem + 8px);
+
+    /* Táº¡o khoáº£ng trá»‘ng cho váº¡ch mÃ u */
+
+}
+
+
+
+.vehicle-item-v7:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: var(--shadow-md);
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+.vehicle-item-v7::before {
+
+    content: '';
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 5px;
+
+    height: 100%;
+
+    background-color: var(--success-color);
+
+    transition: var(--transition);
+
+    border-top-left-radius: var(--radius-md);
+
+    border-bottom-left-radius: var(--radius-md);
+
+}
+
+
+
+.vehicle-item-v7.departed::before {
+
+    background-color: var(--text-secondary);
+
+}
+
+
+
+.vehicle-item-v7.departed {
+
+    opacity: 0.7;
+
+}
+
+
+
+.v7-main {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 0.75rem;
+
+}
+
+
+
+.v7-plate {
+
+    font-family: var(--font-mono);
+
+    font-size: 1.5rem;
+
+    font-weight: 700;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.v7-status-icons {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.75rem;
+
+}
+
+
+
+.v7-icon {
+
+    display: flex;
+
+}
+
+
+
+.v7-alert-icon.alert-warning {
+
+    color: var(--warning-color);
+
+}
+
+
+
+.v7-alert-icon.alert-block {
+
+    color: var(--danger-color);
+
+}
+
+
+
+.v7-vip-icon {
+
+    color: var(--vip-gold);
+
+}
+
+
+
+.v7-meta {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.v7-meta-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.5rem;
+
+}
+
+
+
+/* ==========================================================================
+
+   GIAO DIá»†N DANH SÃCH XE (VEHICLE LIST V7 - "INFO CARD")
+
+   ========================================================================== */
+
+
+
+
+
+#toast-container {
+
+    position: fixed;
+
+    bottom: 1.5rem;
+
+    right: 1.5rem;
+
+    z-index: 9999;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+}
+
+
+
+.toast {
+
+    padding: 1rem 1.5rem;
+
+    border-radius: var(--radius-md);
+
+    color: white;
+
+    box-shadow: var(--shadow-lg);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+    font-weight: 600;
+
+    animation: slideUpToast 0.4s ease, fadeOutToast 0.5s ease 3.5s forwards;
+
+}
+
+
+
+.toast--success {
+
+    background-color: var(--success-color);
+
+}
+
+
+
+.toast--error {
+
+    background-color: var(--danger-color);
+
+}
+
+
+
+.toast--info {
+
+    background-color: var(--primary-accent);
+
+}
+
+
+
+@keyframes slideUpToast {
+
+    from {
+
+        transform: translateY(100%);
+
+        opacity: 0;
+
+    }
+
+
+
+    to {
+
+        transform: translateY(0);
+
+        opacity: 1;
+
+    }
+
+}
+
+
+
+@keyframes fadeOutToast {
+
+    from {
+
+        opacity: 1;
+
+    }
+
+
+
+    to {
+
+        opacity: 0;
+
+    }
+
+}
+
+
+
+/* Location Modal */
+
+.modal-subtitle {
+
+    font-size: 1rem;
+
+    color: var(--text-secondary);
+
+    margin-bottom: 1.5rem;
+
+    text-align: center;
+
+}
+
+
+
+.location-card-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+}
+
+
+
+.location-card {
+
+    background-color: var(--bg-hover);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-md);
+
+    padding: 1.25rem;
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+
+.location-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+.location-card.recommended {
+
+    border-color: var(--primary-accent);
+
+    background-color: var(--primary-accent-light);
+
+}
+
+
+
+.recommended-badge {
+
+    position: absolute;
+
+    top: 0;
+
+    right: 0;
+
+    background-color: var(--primary-accent);
+
+    color: white;
+
+    padding: 3px 15px;
+
+    font-size: 0.8rem;
+
+    font-weight: 700;
+
+    border-bottom-left-radius: var(--radius-md);
+
+}
+
+
+
+.location-card-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 1rem;
+
+}
+
+
+
+.location-card-header h3 {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    margin: 0;
+
+}
+
+
+
+.distance-tag {
+
+    background-color: var(--bg-card);
+
+    color: var(--text-secondary);
+
+    font-size: 0.85rem;
+
+    font-weight: 600;
+
+    padding: 4px 10px;
+
+    border-radius: 20px;
+
+}
+
+
+
+.location-card-body {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 0.5rem;
+
+}
+
+
+
+.location-detail {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.75rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.location-detail svg {
+
+    flex-shrink: 0;
+
+}
+
+
+
+/* ==========================================================================
+
+   6. MODAL THANH TOÃN (PAYMENT FLOW)
+
+   ========================================================================== */
+
+.payment-flow-v4 {
+
+    position: relative;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1.5rem;
+
+}
+
+
+
+.payment-header-info {
+
+    background-color: var(--bg-hover);
+
+    border-radius: var(--radius-lg);
+
+    padding: 1.5rem;
+
+    text-align: center;
+
+    border: 1px solid var(--border-color);
+
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.05);
+
+    margin: -0.5rem -0.5rem 0;
+
+    /* KÃ©o nháº¹ ra ngoÃ i Ä‘á»ƒ táº¡o cáº£m giÃ¡c ná»•i khá»‘i */
+
+}
+
+
+
+.payment-header-info .summary-label {
+
+    font-size: 1rem;
+
+    color: var(--text-secondary);
+
+    font-weight: 500;
+
+}
+
+
+
+.payment-total {
+
+    margin-top: 0.5rem;
+
+}
+
+
+
+.fee-label {
+
+    font-size: 1rem;
+
+    color: var(--text-secondary);
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+}
+
+
+
+.fee-display {
+
+    font-family: var(--font-mono);
+
+    font-size: 3.5rem;
+
+    font-weight: 800;
+
+    color: var(--danger-color);
+
+    line-height: 1;
+
+    animation: floatUp 0.5s ease-out;
+
+}
+
+
+
+.fee-display span {
+
+    font-size: 1.8rem;
+
+    vertical-align: super;
+
+    margin-left: 4px;
+
+}
+
+
+
+.payment-step {
+
+    display: none;
+
+    /* áº¨n táº¥t cáº£ cÃ¡c bÆ°á»›c theo máº·c Ä‘á»‹nh */
+
+    flex-direction: column;
+
+    gap: 1.5rem;
+
+    animation: fadeIn 0.4s ease-out;
+
+}
+
+
+
+.payment-step.active {
+
+    display: flex;
+
+    /* Chá»‰ hiá»‡n bÆ°á»›c active */
+
+}
+
+
+
+.action-prompt {
+
+    font-size: 1.1rem;
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+    text-align: center;
+
+}
+
+
+
+.payment-method-options {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 1rem;
+
+    width: 100%;
+
+}
+
+
+
+.payment-method-btn {
+
+    background-color: var(--bg-hover);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-lg);
+
+    padding: 1.5rem 1rem;
+
+    font-size: 1.1rem;
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 1rem;
+
+    box-shadow: var(--shadow-sm);
+
+}
+
+
+
+.payment-method-btn:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: var(--shadow-lg);
+
+}
+
+
+
+.payment-method-btn.method-cash:hover {
+
+    background-color: var(--success-light);
+
+    border-color: var(--success-color);
+
+    color: var(--success-color);
+
+}
+
+
+
+.payment-method-btn.method-qr:hover {
+
+    background-color: var(--primary-accent-light);
+
+    border-color: var(--primary-accent);
+
+    color: var(--primary-accent);
+
+}
+
+
+
+.payment-method-icon-wrapper {
+
+    width: 48px;
+
+    height: 48px;
+
+    position: relative;
+
+}
+
+
+
+.payment-method-icon {
+
+    width: 100%;
+
+    height: 100%;
+
+    fill: none;
+
+    stroke: currentColor;
+
+    stroke-width: 1.5;
+
+    stroke-linecap: round;
+
+    stroke-linejoin: round;
+
+    transition: var(--transition);
+
+}
+
+
+
+.payment-method-btn:hover .payment-method-icon {
+
+    fill: var(--primary-accent);
+
+}
+
+
+
+.payment-method-btn.method-cash:hover .payment-method-icon {
+
+    fill: var(--success-color);
+
+}
+
+
+
+/* ==========================================================================
+
+   ICON Äá»˜NG V5 - Tá»I GIáº¢N & TINH Táº¾
+
+   ========================================================================== */
+
+
+
+/* Icon QR Ä‘á»™ng: ÄÆ°á»ng quÃ©t mÆ°á»£t mÃ  */
+
+.icon-qr-animated::after {
+
+    content: '';
+
+    position: absolute;
+
+    left: 15%;
+
+    right: 15%;
+
+    top: 15%;
+
+    height: 2px;
+
+    background: var(--primary-accent);
+
+    box-shadow: 0 0 5px var(--primary-accent);
+
+    border-radius: 2px;
+
+    animation: qr-scan-line 2.5s ease-in-out infinite;
+
+}
+
+
+
+@keyframes qr-scan-line {
+
+
+
+    0%,
+
+    100% {
+
+        transform: translateY(0);
+
+    }
+
+
+
+    50% {
+
+        transform: translateY(16px);
+
+    }
+
+}
+
+
+
+/* Icon Tiá»n máº·t Ä‘á»™ng: Hiá»‡u á»©ng "con máº¯t" nhÃ¬n */
+
+.icon-cash-animated path:last-child {
+
+    animation: cash-pupil-look 4s ease-in-out infinite;
+
+    transform-origin: center;
+
+}
+
+
+
+@keyframes cash-pupil-look {
+
+
+
+    0%,
+
+    100% {
+
+        transform: translate(0, 0);
+
+    }
+
+
+
+    25% {
+
+        transform: translate(-2px, -1px);
+
+    }
+
+
+
+    50% {
+
+        transform: translate(0, 0);
+
+    }
+
+
+
+    75% {
+
+        transform: translate(2px, 1px);
+
+    }
+
+}
+
+
+
+.payment-display-area {
+
+    display: none;
+
+    /* áº¨n cÃ¡c vÃ¹ng hiá»ƒn thá»‹ chi tiáº¿t */
+
+    text-align: center;
+
+    animation: fadeIn 0.4s ease-out;
+
+}
+
+
+
+.display-instruction {
+
+    font-size: 1rem;
+
+    font-weight: 500;
+
+    color: var(--text-secondary);
+
+    margin-bottom: 1.5rem;
+
+}
+
+
+
+.payment-qr-section {
+
+    text-align: center;
+
+}
+
+
+
+.qr-wrapper {
+
+    display: inline-block;
+
+}
+
+
+
+.qr-wrapper img {
+
+    max-width: 250px;
+
+    width: 100%;
+
+    height: auto;
+
+    border-radius: var(--radius-md);
+
+    border: 1px solid var(--border-color);
+
+    padding: 0.5rem;
+
+    background-color: white;
+
+    box-shadow: var(--shadow-sm);
+
+}
+
+
+
+.qr-memo {
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+    margin-top: 1rem;
+
+}
+
+
+
+.cash-animation-wrapper {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    height: 250px;
+
+    /* Äáº£m báº£o chiá»u cao tÆ°Æ¡ng Ä‘Æ°Æ¡ng vÃ¹ng QR */
+
+    overflow: hidden;
+
+}
+
+
+
+.cash-stack-icon {
+
+    width: 180px;
+
+    height: auto;
+
+}
+
+
+
+.cash-stack-icon .cash-stack-bill {
+
+    fill: var(--success-light);
+
+    stroke: var(--success-color);
+
+    stroke-width: 2;
+
+    animation: cash-stack-shuffle 3s ease-in-out infinite;
+
+}
+
+
+
+.cash-stack-icon .cash-stack-bill:nth-child(2) {
+
+    animation-delay: -0.1s;
+
+}
+
+
+
+.cash-stack-icon .cash-stack-bill:nth-child(1) {
+
+    animation-delay: -0.2s;
+
+}
+
+
+
+@keyframes cash-stack-shuffle {
+
+
+
+    0%,
+
+    100% {
+
+        transform: translateY(0);
+
+    }
+
+
+
+    25% {
+
+        transform: translateY(-3px);
+
+    }
+
+
+
+    50% {
+
+        transform: translateY(0);
+
+    }
+
+
+
+    75% {
+
+        transform: translateY(3px);
+
+    }
+
+}
+
+
+
+/* Payment Confirmation */
+
+.payment-confirmation-overlay {
+
+    position: relative;
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background-color: var(--bg-card);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    opacity: 0;
+
+    transition: opacity 0.2s ease;
+
+    z-index: 10;
+
+    pointer-events: none;
+
+}
+
+
+
+.payment-confirmation-overlay.active {
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+}
+
+
+
+.confirmation-text {
+
+    font-size: 1.5rem;
+
+    font-weight: 700;
+
+    margin-top: 1rem;
+
+    animation: fade-in-text 0.4s ease-in 0.5s forwards;
+
+    opacity: 0;
+
+}
+
+
+
+@keyframes fade-in-text {
+
+    to {
+
+        opacity: 1;
+
+    }
+
+}
+
+
+
+.confirmation-icon-wrapper {
+
+    width: 100px;
+
+    height: 100px;
+
+    display: none;
+
+}
+
+
+
+.confirmation-icon-wrapper.active {
+
+    display: block;
+
+    animation: scale-up 0.4s ease-in-out;
+
+}
+
+
+
+.checkmark__circle {
+
+    stroke-dasharray: 166;
+
+    stroke-dashoffset: 166;
+
+    stroke-width: 3;
+
+    stroke: var(--success-color);
+
+    fill: none;
+
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+
+}
+
+
+
+.checkmark__check {
+
+    transform-origin: 50% 50%;
+
+    stroke-dasharray: 48;
+
+    stroke-dashoffset: 48;
+
+    stroke-width: 3;
+
+    stroke: var(--success-color);
+
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards;
+
+}
+
+
+
+.cross__circle {
+
+    stroke-dasharray: 166;
+
+    stroke-dashoffset: 166;
+
+    stroke-width: 3;
+
+    stroke: var(--danger-color);
+
+    fill: none;
+
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+
+}
+
+
+
+.cross__path {
+
+    transform-origin: 50% 50%;
+
+    stroke-dasharray: 48;
+
+    stroke-dashoffset: 48;
+
+    stroke-width: 4;
+
+    stroke: var(--danger-color);
+
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards;
+
+}
+
+
+
+@keyframes scale-up {
+
+    0% {
+
+        transform: scale(0.7);
+
+    }
+
+
+
+    45% {
+
+        transform: scale(1.05);
+
+    }
+
+
+
+    80% {
+
+        transform: scale(0.95);
+
+    }
+
+
+
+    100% {
+
+        transform: scale(1);
+
+    }
+
+}
+
+
+
+@keyframes stroke {
+
+    100% {
+
+        stroke-dashoffset: 0;
+
+    }
+
+}
+
+
+
+/* QR Scanner */
+
+.qr-scanner-body {
+
+    position: relative;
+
+    width: 100%;
+
+    height: auto;
+
+    overflow: hidden;
+
+    border-radius: var(--radius-md);
+
+    background-color: #000;
+
+}
+
+
+
+#camera-feed {
+
+    width: 100%;
+
+    height: auto;
+
+    display: block;
+
+}
+
+
+
+.scanner-overlay {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    box-shadow: inset 0 0 0 500px rgba(0, 0, 0, 0.5);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+
+.scanner-viewfinder {
+
+    width: 65%;
+
+    height: 65%;
+
+    position: relative;
+
+    border: 2px solid rgba(255, 255, 255, 0.5);
+
+    border-radius: var(--radius-md);
+
+    --corner-size: 30px;
+
+    --corner-thickness: 4px;
+
+}
+
+
+
+.scanner-viewfinder .corner {
+
+    position: absolute;
+
+    width: var(--corner-size);
+
+    height: var(--corner-size);
+
+    border-color: var(--primary-accent);
+
+    border-style: solid;
+
+    animation: pulse-corners 2s infinite ease-in-out;
+
+}
+
+
+
+.scanner-viewfinder .corner-tl {
+
+    top: -2px;
+
+    left: -2px;
+
+    border-width: var(--corner-thickness) 0 0 var(--corner-thickness);
+
+    border-top-left-radius: var(--radius-md);
+
+}
+
+
+
+.scanner-viewfinder .corner-tr {
+
+    top: -2px;
+
+    right: -2px;
+
+    border-width: var(--corner-thickness) var(--corner-thickness) 0 0;
+
+    border-top-right-radius: var(--radius-md);
+
+}
+
+
+
+.scanner-viewfinder .corner-bl {
+
+    bottom: -2px;
+
+    left: -2px;
+
+    border-width: 0 0 var(--corner-thickness) var(--corner-thickness);
+
+    border-bottom-left-radius: var(--radius-md);
+
+}
+
+
+
+.scanner-viewfinder .corner-br {
+
+    bottom: -2px;
+
+    right: -2px;
+
+    border-width: 0 var(--corner-thickness) var(--corner-thickness) 0;
+
+    border-bottom-right-radius: var(--radius-md);
+
+}
+
+
+
+@keyframes pulse-corners {
+
+
+
+    0%,
+
+    100% {
+
+        transform: scale(1);
+
+        opacity: 1;
+
+    }
+
+
+
+    50% {
+
+        transform: scale(0.9);
+
+        opacity: 0.7;
+
+    }
+
+}
+
+
+
+.scanner-feedback-overlay {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background-color: rgba(22, 163, 74, 0.85);
+
+    backdrop-filter: blur(3px);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: white;
+
+    text-align: center;
+
+    z-index: 20;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition: opacity 0.4s ease;
+
+}
+
+
+
+.scanner-feedback-overlay.active {
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+}
+
+
+
+.feedback-icon {
+
+    width: 60px;
+
+    height: 60px;
+
+    margin-bottom: 1rem;
+
+}
+
+
+
+.feedback-icon .checkmark__circle {
+
+    stroke: white;
+
+    stroke-width: 3;
+
+}
+
+
+
+.feedback-icon .checkmark__check {
+
+    stroke: white;
+
+    stroke-width: 4;
+
+}
+
+
+
+.feedback-plate {
+
+    font-family: monospace;
+
+    font-size: 2rem;
+
+    font-weight: 700;
+
+}
+
+
+
+/* Fireworks Effect */
+
+.fireworks-container {
+
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    pointer-events: none;
+
+    z-index: 9999;
+
+    opacity: 1;
+
+    /* Hiá»‡u á»©ng phÃ¡o hoa sáº½ tá»± biáº¿n máº¥t */
+
+}
+
+
+
+.fireworks-container.active {
+
+    opacity: 1;
+
+}
+
+
+
+.firework {
+
+    position: absolute;
+
+    /* Sá»­a lá»—i: ThÃªm thuá»™c tÃ­nh transform-origin */
+
+    width: 6px;
+
+    height: 6px;
+
+    background-color: #fff;
+
+    border-radius: 50%;
+
+    opacity: 0;
+
+}
+
+
+
+.fireworks-container.active .firework {
+
+    animation: firework-explode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+
+    /* Sá»­a lá»—i: cÃº phÃ¡p animation */
+
+}
+
+
+
+.firework:nth-child(1) {
+
+    top: 50%;
+
+    left: 50%;
+
+    animation-delay: 0s;
+
+    background-color: #38bdf8;
+
+}
+
+
+
+.firework:nth-child(2) {
+
+    top: 40%;
+
+    left: 30%;
+
+    animation-delay: 0.3s;
+
+    background-color: #34d399;
+
+}
+
+
+
+.firework:nth-child(3) {
+
+    top: 60%;
+
+    left: 70%;
+
+    animation-delay: 0.6s;
+
+    background-color: #facc15;
+
+}
+
+
+
+@keyframes firework-explode {
+
+    0% {
+
+        transform: scale(0);
+
+        opacity: 1;
+
+    }
+
+
+
+    100% {
+
+        transform: scale(30);
+
+        opacity: 0;
+
+    }
+
+}
+
+
+
+@media print {
+
+    body * {
+
+        visibility: hidden;
+
+    }
+
+
+
+    #printable-area,
+
+    #printable-area * {
+
+        visibility: visible;
+
+    }
+
+
+
+    #printable-area {
+
+        position: absolute;
+
+        left: 0;
+
+        top: 0;
+
+        width: 100%;
+
+    }
+
+}
+
+
+
+/* ==========================================================================
+
+   7. GIAO DIá»†N ÄÃP á»¨NG (RESPONSIVE)
+
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+
+    .main-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+
+
+@media (max-width: 768px) {
+
+    .container {
+
+        padding: 0 1rem;
+
+    }
+
+
+
+    .header-container {
+
+        flex-wrap: wrap;
+
+    }
+
+
+
+    .header-controls {
+
+        width: 100%;
+
+        justify-content: space-between;
+
+        margin-top: 1rem;
+
+    }
+
+
+
+    .card__header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 0.5rem;
+
+    }
+
+
+
+    .main-navigation .container {
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 0.5rem;
+
+        padding-bottom: 0.5rem;
+
+    }
+
+
+
+    .main-navigation ul {
+
+        justify-content: center;
+
+    }
+
+
+
+    .nav-extra {
+
+        display: none;
+
+    }
+
+}
+
+
+
+@media (max-width: 600px) {
+
+    .container {
+
+        padding: 0 0.75rem;
+
+    }
+
+
+
+    .modal-body,
+
+    .modal-header,
+
+    .modal-footer {
+
+        padding: 1rem;
+
+    }
+
+
+
+    .main-input-group {
+
+        flex-direction: column;
+
+    }
+
+
+
+    .main-input-group #search-term {
+
+        text-align: left;
+
+    }
+
+
+
+    .vehicle-item-v6 {
+
+        grid-template-columns: auto 1fr;
+
+        gap: 0.75rem;
+
+    }
+
+
+
+    .v6-meta {
+
+        grid-column: 2 / 3;
+
+        justify-self: end;
+
+        margin-top: 0.25rem;
+
+    }
+
+
+
+    .v6-time {
+
+        display: none;
+
+    }
+
+
+
+    /* áº¨n bá»›t trÃªn mÃ n hÃ¬nh ráº¥t nhá» */
+
+}
+
+
+
+@media (max-width: 480px) {
+
+    .modal-content {
+
+        max-width: 98vw;
+
+    }
+
+
+
+    .modal-header,
+
+    .modal-footer,
+
+    .modal-body {
+
+        padding: 0.75rem;
+
+    }
+
+
+
+    .digital-pass__main-info {
+
+        flex-direction: column;
+
+        align-items: center;
+
+        gap: 1.5rem;
+
+    }
+
+
+
+    .digital-pass__plate-section {
+
+        text-align: center;
+
+    }
+
+
+
+    .digital-pass__plate {
+
+        font-size: 2.2rem;
+
+    }
+
+
+
+    .digital-pass__qr-instruction {
+
+        text-align: center;
+
+        margin-top: 0.5rem;
+
+    }
+
+}
+
+
+
+/* ==========================================================================
+
+   8. MÃ€N HÃŒNH CHá»œ (IDLE SCREEN)
+
+   ========================================================================== */
+
+.idle-screen {
+
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background-color: #000;
+
+    z-index: 10010;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition: opacity 0.7s ease;
+
+}
+
+
+
+.idle-screen.active {
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+}
+
+
+
+.ad-video-player {
+
+    position: absolute;
+
+    top: 50%;
+
+    left: 50%;
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+    transform: translate(-50%, -50%);
+
+}
+
+
+
+.idle-overlay-content {
+
+    position: absolute;
+
+    bottom: 5%;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    color: white;
+
+    text-align: center;
+
+    background-color: rgba(0, 0, 0, 0.4);
+
+    padding: 1rem 2rem;
+
+    border-radius: var(--radius-lg);
+
+    backdrop-filter: blur(8px);
+
+}
+
+
+
+.idle-message {
+
+    font-size: 1.5rem;
+
+    font-weight: 600;
+
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+
+}
+
+
+
+/* ==========================================================================
+
+   9. PHÃ‚N TRANG (PAGINATION)
+
+   ========================================================================== */
+
+.pagination-controls {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 0.5rem;
+
+    margin-top: 1.5rem;
+
+    padding-top: 1rem;
+
+    border-top: 1px solid var(--border-color);
+
+}
+
+
+
+.pagination-btn {
+
+    padding: 0.5rem 1rem;
+
+    border: 1px solid var(--border-color);
+
+    background-color: var(--bg-card);
+
+    color: var(--text-secondary);
+
+    border-radius: var(--radius-md);
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    font-weight: 600;
+
+}
+
+
+
+.pagination-btn:hover:not(:disabled) {
+
+    background-color: var(--primary-accent-light);
+
+    color: var(--primary-accent);
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+.pagination-btn:disabled {
+
+    opacity: 0.5;
+
+    cursor: not-allowed;
+
+}
+
+
+
+.pagination-btn.active {
+
+    background-color: var(--primary-accent);
+
+    color: white;
+
+    border-color: var(--primary-accent);
+
+    font-weight: 700;
+
+}
+
+
+
+/* ==========================================================================
+
+   10. CHá»ˆ BÃO TRáº NG THÃI (INDICATORS)
+
+   ========================================================================== */
+
+#offline-indicator {
+
+    position: fixed;
+
+    bottom: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    background-color: var(--warning-color);
+
+    color: var(--text-primary);
+
+    text-align: center;
+
+    padding: 0.5rem;
+
+    font-weight: 600;
+
+    z-index: 10001;
+
+    transform: translateY(100%);
+
+    transition: transform 0.4s ease;
+
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+
+}
+
+
+
+#offline-indicator.active {
+
+    transform: translateY(0);
+
+}
+
+
+
+/* ==========================================================================
+
+   11. MÃ€N HÃŒNH ÄÄ‚NG NHáº¬P (LOGIN SCREEN)
+
+   ========================================================================== */
+
+.login-container {
+
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    z-index: 10002;
+
+    transition: opacity 0.5s ease;
+
+}
+
+
+
+.login-branding-panel {
+
+    width: 55%;
+
+    height: 100%;
+
+    background-image: linear-gradient(to bottom right, var(--youth-union-blue), #153a73);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: white;
+
+    padding: 3rem;
+
+    text-align: center;
+
+}
+
+
+
+.branding-content {
+
+    max-width: 500px;
+
+    animation: floatUp 0.8s ease-out;
+
+}
+
+
+
+@keyframes floatUp {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(20px);
+
+    }
+
+
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+
+
+.branding-logo {
+
+    width: 80px;
+
+    height: 80px;
+
+    margin-bottom: 1rem;
+
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+
+}
+
+
+
+.branding-content h1 {
+
+    font-size: 2.2rem;
+
+    font-weight: 700;
+
+    margin-bottom: 0.5rem;
+
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+}
+
+
+
+.branding-content p {
+
+    font-size: 1.1rem;
+
+    opacity: 0.8;
+
+}
+
+
+
+.login-form-panel {
+
+    width: 45%;
+
+    height: 100%;
+
+    background-color: var(--bg-card);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 3rem;
+
+}
+
+
+
+.login-form-wrapper {
+
+    width: 100%;
+
+    max-width: 400px;
+
+}
+
+
+
+.login-form-wrapper h2 {
+
+    font-size: 2rem;
+
+    font-weight: 700;
+
+    margin-bottom: 0.5rem;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.form-subtitle {
+
+    color: var(--text-secondary);
+
+    margin-bottom: 2.5rem;
+
+}
+
+
+
+.form-group {
+
+    margin-bottom: 1.25rem;
+
+}
+
+
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 0.5rem;
+
+    font-weight: 600;
+
+    font-size: 0.9rem;
+
+}
+
+
+
+.input-with-icon {
+
+    position: relative;
+
+}
+
+
+
+.input-with-icon svg {
+
+    position: absolute;
+
+    left: 1rem;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: var(--text-secondary);
+
+    pointer-events: none;
+
+    transition: var(--transition);
+
+}
+
+
+
+.input-with-icon input {
+
+    padding-left: 3rem;
+
+}
+
+
+
+.input-with-icon input:focus+svg {
+
+    color: var(--primary-accent);
+
+}
+
+
+
+.staff-info-display {
+
+    background-color: var(--bg-hover);
+
+    border-radius: var(--radius-md);
+
+    padding: 1rem;
+
+    margin-top: -0.5rem;
+
+    margin-bottom: 1.25rem;
+
+    border: 1px solid var(--border-color);
+
+    max-height: 0;
+
+    opacity: 0;
+
+    overflow: hidden;
+
+    transition: all 0.4s ease-out;
+
+}
+
+
+
+.staff-info-display.visible {
+
+    max-height: 200px;
+
+    opacity: 1;
+
+}
+
+
+
+.staff-info-display p {
+
+    margin: 0;
+
+    line-height: 1.4;
+
+}
+
+
+
+.staff-info-display .staff-name {
+
+    font-weight: 700;
+
+    font-size: 1.1rem;
+
+}
+
+
+
+.staff-info-display .staff-location {
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.form-error-message {
+
+    color: var(--danger-color);
+
+    margin-top: 1rem;
+
+    text-align: center;
+
+    font-weight: 500;
+
+    min-height: 1.2em;
+
+}
+
+
+
+@media (max-width: 900px) {
+
+    .login-branding-panel {
+
+        display: none;
+
+    }
+
+
+
+    .login-form-panel {
+
+        width: 100%;
+
+    }
+
+}
+
+
+
+/* ==========================================================================
+
+   12. WIDGET TIá»†N ÃCH (WIDGETS)
+
+   ========================================================================== */
+
+.user-profile-widget {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 0.5rem 1rem;
+
+    background-color: var(--bg-hover);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: 30px;
+
+}
+
+
+
+.user-profile-widget .user-icon {
+
+    color: var(--primary-accent);
+
+}
+
+
+
+.user-profile-widget .user-name {
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.user-profile-widget .logout-btn {
+
+    background: none;
+
+    border: none;
+
+    cursor: pointer;
+
+    color: var(--text-secondary);
+
+    padding: 4px;
+
+    display: flex;
+
+    align-items: center;
+
+    border-radius: 50%;
+
+    transition: var(--transition);
+
+}
+
+
+
+.user-profile-widget .logout-btn:hover {
+
+    background-color: var(--danger-light);
+
+    color: var(--danger-color);
+
+}
+
+
+
+.user-profile-widget .admin-login-link {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    text-decoration: none;
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+    transition: var(--transition);
+
+}
+
+
+
+.user-profile-widget .admin-login-link:hover {
+
+    color: var(--primary-accent);
+
+}
+
+
+
+.clock-widget,
+
+.weather-widget {
+
+    font-size: 0.9rem;
+
+    font-weight: 500;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+/* ==========================================================================
+
+   12. Báº¢NG TIN NHANH (DASHBOARD)
+
+   ========================================================================== */
+
+.dashboard-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+
+    gap: 1.5rem;
+
+}
+
+
+
+.gemini-stat-card {
+
+    background-color: var(--bg-card);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-lg);
+
+    padding: 1.5rem;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+    position: relative;
+
+    overflow: hidden;
+
+    transition: var(--transition);
+
+    box-shadow: var(--shadow-sm);
+
+}
+
+
+
+.gemini-stat-card:hover {
+
+    transform: translateY(-5px);
+
+    box-shadow: var(--shadow-md);
+
+}
+
+
+
+.gemini-stat-card__header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.75rem;
+
+    width: 100%;
+
+}
+
+
+
+.gemini-stat-card__icon {
+
+    background-color: var(--primary-accent-light);
+
+    color: var(--primary-accent);
+
+    border-radius: 12px;
+
+    width: 44px;
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+}
+
+
+
+.gemini-stat-card__icon svg {
+
+    width: 24px;
+
+    height: 24px;
+
+}
+
+
+
+.gemini-stat-card__label {
+
+    font-size: 1rem;
+
+    color: var(--text-primary);
+
+    font-weight: 600;
+
+}
+
+
+
+.gemini-stat-card__value-wrapper {
+
+    display: flex;
+
+    align-items: baseline;
+
+    line-height: 1;
+
+    flex-grow: 1;
+
+    padding-top: 1rem;
+
+}
+
+
+
+.gemini-stat-card__value {
+
+    font-size: 3rem;
+
+    font-weight: 700;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.gemini-stat-card__unit {
+
+    font-size: 1.5rem;
+
+    font-weight: 600;
+
+    color: var(--text-secondary);
+
+    margin-left: 0.5rem;
+
+}
+
+
+
+/* TÃ¹y chá»‰nh mÃ u sáº¯c cho tá»«ng tháº» */
+
+.gemini-stat-card[data-stat-id="vehicles"] .gemini-stat-card__icon {
+
+    background-color: var(--primary-accent-light);
+
+    color: var(--primary-accent);
+
+}
+
+
+
+.gemini-stat-card[data-stat-id="revenue"] .gemini-stat-card__icon {
+
+    background-color: var(--success-light);
+
+    color: var(--success-color);
+
+}
+
+
+
+.gemini-stat-card[data-stat-id="total"] .gemini-stat-card__icon {
+
+    background-color: #eef2ff;
+
+    color: #4f46e5;
+
+}
+
+
+
+.gemini-stat-card[data-stat-id="vip"] .gemini-stat-card__icon {
+
+    background-color: var(--vip-gold-light);
+
+    color: var(--vip-gold);
+
+}
+
+
+
+[data-theme="dark"] .gemini-stat-card[data-stat-id="vehicles"] .gemini-stat-card__icon {
+
+    background-color: #1e3a8a;
+
+    color: #60a5fa;
+
+}
+
+
+
+[data-theme="dark"] .gemini-stat-card[data-stat-id="revenue"] .gemini-stat-card__icon {
+
+    background-color: #166534;
+
+    color: #4ade80;
+
+}
+
+
+
+[data-theme="dark"] .gemini-stat-card[data-stat-id="total"] .gemini-stat-card__icon {
+
+    background-color: #312e81;
+
+    color: #818cf8;
+
+}
+
+
+
+[data-theme="dark"] .gemini-stat-card[data-stat-id="vip"] .gemini-stat-card__icon {
+
+    background-color: #713f12;
+
+    color: #fcd34d;
+
+}
+
+
+
+/* Hiá»‡u á»©ng icon Ä‘á»™ng khi hover */
+
+.gemini-stat-card:hover .animated-icon {
+
+    animation: icon-bounce 0.6s cubic-bezier(0.5, 0, 0.1, 1);
+
+}
+
+
+
+@keyframes icon-bounce {
+
+
+
+    0%,
+
+    100% {
+
+        transform: translateY(0);
+
+    }
+
+
+
+    50% {
+
+        transform: translateY(-4px);
+
+    }
+
+}
+
+
+
+.gemini-stat-card:hover .vip-icon {
+
+    animation: icon-spin 0.8s cubic-bezier(0.5, 0, 0.1, 1);
+
+}
+
+
+
+@keyframes icon-spin {
+
+    from {
+
+        transform: rotate(0deg);
+
+    }
+
+
+
+    to {
+
+        transform: rotate(360deg);
+
+    }
+
+}
+
+
+
+.gemini-stat-card:hover .revenue-icon path {
+
+    animation: revenue-wave 1.5s ease-in-out infinite;
+
+}
+
+
+
+@keyframes revenue-wave {
+
+
+
+    0%,
+
+    100% {
+
+        transform: translateY(0);
+
+    }
+
+
+
+    50% {
+
+        transform: translateY(-2px) scaleY(1.05);
+
+    }
+
+}
+
+
+
+/* ==========================================================================
+
+   14. FORM CHÃNH (MAIN FORM)
+
+   ========================================================================== */
+
+.action-hub-v1 {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+    position: relative;
+
+}
+
+
+
+.input-with-button-wrapper {
+
+    position: relative;
+
+    flex-grow: 1;
+
+}
+
+
+
+.input-with-button-wrapper #search-term {
+
+    padding-right: 60px;
+
+    /* Táº¡o khoáº£ng trá»‘ng cho nÃºt QR */
+
+}
+
+
+
+.input-with-button-wrapper #scan-qr-btn {
+
+    position: absolute;
+
+    top: 50%;
+
+    right: 6px;
+
+    transform: translateY(-50%);
+
+    height: calc(100% - 12px);
+
+    width: 48px;
+
+}
+
+
+
+.main-input-group {
+
+    display: flex;
+
+    gap: 0.75rem;
+
+}
+
+
+
+.main-input-group #search-term {
+
+    flex-grow: 1;
+
+}
+
+
+
+.main-input-group .icon-btn {
+
+    height: auto;
+
+    /* Äá»ƒ nÃºt co giÃ£n theo chiá»u cao cá»§a input */
+
+}
+
+
+
+.action-hub-v1 #search-term {
+
+    font-size: 1.5rem;
+
+    padding: 1.25rem;
+
+    text-align: center;
+
+    text-transform: uppercase;
+
+    font-family: var(--font-mono);
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+}
+
+
+
+.action-hub-prompt {
+
+    text-align: center;
+
+    font-weight: 600;
+
+    color: var(--text-secondary);
+
+    font-size: 0.9rem;
+
+    text-transform: uppercase;
+
+    margin-top: 0.5rem;
+
+}
+
+
+
+.action-hub-buttons {
+
+    position: relative;
+
+    height: 62px;
+
+    /* Chiá»u cao cá»§a nÃºt Ä‘á»ƒ khÃ´ng bá»‹ nháº£y layout */
+
+    overflow: hidden;
+
+}
+
+
+
+.action-hub-buttons .action-button {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s ease;
+
+}
+
+
+
+/* Tráº¡ng thÃ¡i máº·c Ä‘á»‹nh: Hiá»‡n nÃºt Gá»­i xe */
+
+.action-hub-buttons .btn--check-in {
+
+    transform: scale(1);
+
+    opacity: 1;
+
+}
+
+
+
+.action-hub-buttons .btn--check-out {
+
+    transform: scale(0.8) translate(50%, -50%);
+
+    /* Di chuyá»ƒn ra gÃ³c trÃªn pháº£i */
+
+    opacity: 0;
+
+    pointer-events: none;
+
+}
+
+
+
+/* Khi cÃ³ class 'show-check-out': Hiá»‡n nÃºt Láº¥y xe */
+
+.action-hub-buttons.show-check-out .btn--check-in {
+
+    transform: scale(0.8) translate(-50%, 50%);
+
+    /* Di chuyá»ƒn ra gÃ³c dÆ°á»›i trÃ¡i */
+
+    opacity: 0;
+
+    pointer-events: none;
+
+}
+
+
+
+.action-hub-buttons.show-check-out .btn--check-out {
+
+    transform: scale(1);
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+}
+
+
+
+.action-hub-buttons .action-button {
+
+    padding: 1.25rem;
+
+    font-size: 1.1rem;
+
+}
+
+
+
+.action-hub-details {
+
+    transition: all 0.4s ease;
+
+    overflow: hidden;
+
+}
+
+
+
+.action-hub-details>div {
+
+    animation: fadeIn 0.5s ease-out;
+
+}
+
+
+
+.form-details-wrapper {
+
+    margin-top: 1.5rem;
+
+    animation: fadeIn 0.4s ease-out;
+
+}
+
+
+
+.form-section-v2 {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+}
+
+
+
+#info-display-section {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 0.75rem;
+
+    margin-bottom: 1rem;
+
+}
+
+
+
+.info-display-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    background-color: var(--bg-hover);
+
+    padding: 0.85rem 1.25rem;
+
+    border-radius: var(--radius-md);
+
+    border: 1px solid var(--border-color);
+
+}
+
+
+
+.info-display-item .label {
+
+    color: var(--text-secondary);
+
+    font-weight: 500;
+
+}
+
+
+
+.info-display-item .value {
+
+    font-weight: 600;
+
+    text-align: right;
+
+}
+
+
+
+.additional-info-group {
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-md);
+
+    transition: var(--transition);
+
+}
+
+
+
+.additional-info-group[open] {
+
+    border-color: var(--primary-accent);
+
+    box-shadow: 0 0 0 4px var(--primary-accent-light);
+
+}
+
+
+
+.additional-info-group summary {
+
+    padding: 0.75rem 1rem;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    list-style: none;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    transition: var(--transition);
+
+    user-select: none;
+
+}
+
+
+
+.additional-info-group summary:hover {
+
+    background-color: var(--bg-hover);
+
+}
+
+
+
+.additional-info-group summary::after {
+
+    content: 'â–¼';
+
+    font-size: 0.8rem;
+
+    transform: rotate(0deg);
+
+    transition: transform 0.3s ease;
+
+}
+
+
+
+.additional-info-group[open] summary::after {
+
+    transform: rotate(-180deg);
+
+}
+
+
+
+.additional-info-content {
+
+    overflow: hidden;
+
+    padding: 0 1rem;
+
+    display: grid;
+
+    grid-template-rows: 0fr;
+
+    transition: grid-template-rows 0.4s ease, padding 0.4s ease;
+
+}
+
+
+
+.additional-info-group[open] .additional-info-content {
+
+    grid-template-rows: 1fr;
+
+    padding-top: 0.5rem;
+
+    padding-bottom: 1rem;
+
+}
+
+
+
+.additional-info-content>div {
+
+    min-height: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+}
+
+
+
+/* ==========================================================================
+
+   14.1. CÃC THÃ€NH PHáº¦N Bá»” SUNG TRONG ACTION HUB (CHO THÃ”NG TIN CHI TIáº¾T)
+
+   ========================================================================== */
+
+.history-title {
+
+    font-size: 1rem;
+
+    font-weight: 600;
+
+    color: var(--text-secondary);
+
+    margin-top: 1.5rem;
+
+    padding-bottom: 0.5rem;
+
+    border-bottom: 1px solid var(--border-color-light);
+
+}
+
+
+
+/* ==========================================================================
+
+   14.2. THáºº THÃ”NG TIN CÃ“ THá»‚ THU Gá»ŒN (COLLAPSIBLE CARD)
+
+   ========================================================================== */
+
+.collapsible-card {
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-md);
+
+    margin-top: 1rem;
+
+    overflow: hidden;
+
+    /* Ráº¥t quan trá»ng: áº¨n ná»™i dung trÃ n ra ngoÃ i */
+
+    transition: var(--transition);
+
+}
+
+
+
+.collapsible-card:hover {
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+.collapsible-card__header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 12px 16px;
+
+    cursor: pointer;
+
+    background-color: var(--bg-hover);
+
+    transition: background-color 0.2s ease;
+
+    user-select: none;
+
+    /* TrÃ¡nh chá»n text khi nháº¥n Ä‘Ãºp */
+
+}
+
+
+
+.collapsible-card__header:hover {
+
+    background-color: var(--border-color-light);
+
+}
+
+
+
+.collapsible-card__title {
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.collapsible-card__chevron {
+
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.collapsible-card__body {
+
+    max-height: 0;
+
+    /* Tráº¡ng thÃ¡i máº·c Ä‘á»‹nh: thu gá»n */
+
+    padding: 0 16px;
+
+    /* XÃ³a padding dá»c khi thu gá»n */
+
+    overflow: hidden;
+
+    /* Äáº£m báº£o ná»™i dung con khÃ´ng bá»‹ lá»™ ra */
+
+    transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+
+    background-color: var(--bg-card);
+
+}
+
+
+
+/* Tráº¡ng thÃ¡i khi tháº» Ä‘Æ°á»£c má»Ÿ rá»™ng (cÃ³ class 'expanded') */
+
+.collapsible-card.expanded .collapsible-card__chevron {
+
+    transform: rotate(180deg);
+
+}
+
+
+
+.collapsible-card.expanded .collapsible-card__body {
+
+    max-height: 40vh;
+
+    /* Giá»›i háº¡n chiá»u cao Ä‘á»ƒ ná»™i dung bÃªn trong cÃ³ thá»ƒ cuá»™n */
+
+    overflow-y: auto;
+
+    /* Cho phÃ©p cuá»™n dá»c khi ná»™i dung dÃ i hÆ¡n */
+
+    padding: 16px;
+
+    border-top: 1px solid var(--border-color);
+
+}
+
+
+
+/* ==========================================================================
+
+   15. VÃ‰ XE ÄIá»†N Tá»¬ "THáºº THANH NIÃŠN" - THIáº¾T Káº¾ Má»šI
+
+   ========================================================================== */
+
+.youth-pass {
+
+    background-color: var(--bg-card);
+
+    border-radius: var(--radius-lg);
+
+    box-shadow: var(--shadow-lg);
+
+    overflow: hidden;
+
+    display: flex;
+
+    flex-direction: column;
+
+    animation: floatUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) 0.1s backwards;
+
+    position: relative;
+
+    border: 1px solid var(--border-color);
+
+}
+
+
+
+.youth-pass__header {
+
+    background-color: var(--youth-union-blue);
+
+    color: white;
+
+    padding: 1.25rem 1.5rem;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+    border-bottom: 3px solid #0d6efd;
+
+    position: relative;
+
+}
+
+
+
+/* Hiá»‡u á»©ng sÃ³ng */
+
+.youth-pass__header::after {
+
+    content: '';
+
+    position: absolute;
+
+    bottom: -1px;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 20px;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+
+    background-repeat: no-repeat;
+
+    background-size: cover;
+
+    transform: translateY(100%);
+
+}
+
+
+
+body[data-theme="dark"] .youth-pass__header::after {
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%231e293b' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+
+}
+
+
+
+.youth-pass__logo {
+
+    width: 50px;
+
+    height: 50px;
+
+    background: white;
+
+    border-radius: 50%;
+
+    padding: 4px;
+
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+}
+
+
+
+.youth-pass__titles {
+
+    line-height: 1.2;
+
+}
+
+
+
+.youth-pass__org-name {
+
+    font-weight: 800;
+
+    font-size: 1.1rem;
+
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+
+}
+
+
+
+.youth-pass__event-name {
+
+    font-weight: 500;
+
+    font-size: 0.9rem;
+
+    opacity: 0.9;
+
+}
+
+
+
+.youth-pass__body {
+
+    padding: 2.5rem 1.5rem 1.5rem;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 1.5rem;
+
+    text-align: center;
+
+}
+
+
+
+.youth-pass__plate-section {
+
+    line-height: 1.1;
+
+}
+
+
+
+.youth-pass__label {
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+    font-weight: 500;
+
+}
+
+
+
+.youth-pass__plate {
+
+    font-family: var(--font-mono);
+
+    font-size: 2.75rem;
+
+    font-weight: 800;
+
+    color: var(--primary-accent);
+
+    letter-spacing: 2px;
+
+    margin-top: 0.25rem;
+
+}
+
+
+
+.youth-pass__qr-section {
+
+    text-align: center;
+
+}
+
+
+
+.youth-pass__qr-section canvas {
+
+    display: inline-block;
+
+    border-radius: var(--radius-md);
+
+    padding: 8px;
+
+    background-color: white;
+
+    border: 1px solid var(--border-color);
+
+    box-shadow: var(--shadow-md);
+
+}
+
+
+
+.youth-pass__qr-instruction {
+
+    display: block;
+
+    font-size: 0.85rem;
+
+    color: var(--text-secondary);
+
+    font-weight: 500;
+
+    margin-top: 0.75rem;
+
+}
+
+
+
+.youth-pass__details {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 0.75rem;
+
+    background-color: var(--bg-hover);
+
+    padding: 0.75rem 1rem 0.75rem !important;
+
+    border-radius: var(--radius-md);
+
+    width: 100%;
+
+    border: 1px solid var(--border-color-light);
+
+}
+
+
+
+.detail-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.75rem;
+
+    font-size: 0.95rem;
+
+    text-align: left;
+
+}
+
+
+
+.detail-item svg {
+
+    color: var(--text-secondary);
+
+    flex-shrink: 0;
+
+}
+
+
+
+.detail-item span {
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.detail-item strong {
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.youth-pass__footer {
+
+    background-color: var(--bg-hover);
+
+    padding: 0.25rem 1.5rem 0.25rem !important;
+
+    margin-top: auto;
+
+    position: relative;
+
+}
+
+
+
+/* Hiá»‡u á»©ng sÃ³ng ngÆ°á»£c */
+
+.youth-pass__footer::before {
+
+    content: '';
+
+    position: absolute;
+
+    top: -1px;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 20px;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23f1f5f9' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+
+    background-repeat: no-repeat;
+
+    background-size: cover;
+
+    transform: translateY(-100%);
+
+}
+
+
+
+body[data-theme="dark"] .youth-pass__footer::before {
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23334155' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+
+}
+
+
+
+.youth-pass__id {
+
+    font-family: var(--font-mono);
+
+    font-size: 0.8rem;
+
+    color: var(--text-secondary);
+
+    text-align: center;
+
+    position: relative;
+
+}
+
+
+
+/* VIP Variant */
+
+.youth-pass.is-vip .youth-pass__plate {
+
+    color: var(--vip-gold);
+
+}
+
+
+
+.youth-pass__vip-banner {
+
+    position: absolute;
+
+    top: 25px;
+
+    right: -35px;
+
+    background-color: var(--vip-gold);
+
+    color: white;
+
+    padding: 8px 40px;
+
+    font-weight: 700;
+
+    font-size: 0.8rem;
+
+    text-transform: uppercase;
+
+    transform: rotate(45deg);
+
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+    z-index: 2;
+
+}
+
+
+
+/* ==========================================================================
+
+   16. CÃC THÃ€NH PHáº¦N KHÃC (MISCELLANEOUS)
+
+   ========================================================================== */
+
+/* Tháº» xÃ¡c nháº­n cho xe ra (VIP/Miá»…n phÃ­) */
+
+.confirm-card-v1 {
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-lg);
+
+    overflow: hidden;
+
+    text-align: center;
+
+    position: relative;
+
+}
+
+
+
+.confirm-card__header {
+
+    padding: 0.75rem 1rem;
+
+    color: white;
+
+}
+
+
+
+.confirm-card-v1.is-vip .confirm-card__header {
+
+    background-color: var(--vip-gold);
+
+}
+
+
+
+.confirm-card-v1.is-free .confirm-card__header {
+
+    background-color: var(--success-color);
+
+}
+
+
+
+.confirm-card__title {
+
+    font-size: 1rem;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+}
+
+
+
+.confirm-card__body {
+
+    padding: 2rem 1.5rem;
+
+}
+
+
+
+.confirm-card__plate {
+
+    font-family: var(--font-mono);
+
+    font-size: 3rem;
+
+    font-weight: 800;
+
+    color: var(--text-primary);
+
+    margin-bottom: 0.5rem;
+
+}
+
+
+
+.confirm-card__reason {
+
+    font-size: 1rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.confirm-card__success-overlay {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background-color: var(--bg-card);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    opacity: 0;
+
+    transition: opacity 0.3s ease;
+
+    z-index: 10;
+
+    pointer-events: none;
+
+}
+
+
+
+.confirm-card__success-overlay.active {
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+}
+
+
+
+.confirm-card__success-overlay .checkmark {
+
+    width: 80px;
+
+    height: 80px;
+
+}
+
+
+
+.confirm-card__success-overlay p {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    margin-top: 1rem;
+
+}
+
+
+
+/* ==========================================================================
+
+   17. MODAL THANH TOÃN V9 (PAYMENT FLOW V9) - PREMIUM SELECTION
+
+   ========================================================================== */
+
+.payment-flow-v9 {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1.25rem;
+
+    position: relative;
+
+    /* For the confirmation overlay */
+
+}
+
+
+
+.payment-v9__vehicle-card {
+
+    background-color: var(--bg-hover);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-md);
+
+    padding: 1rem 1.25rem;
+
+    animation: floatUp 0.5s ease-out 0.1s backwards;
+
+}
+
+
+
+.payment-v9__fee-display {
+
+    text-align: center;
+
+    padding: 1.5rem;
+
+    background-color: var(--bg-main);
+
+    border-radius: var(--radius-lg);
+
+    animation: floatUp 0.5s ease-out 0.2s backwards;
+
+}
+
+
+
+.payment-v9__fee-display .fee-label {
+
+    font-size: 1rem;
+
+    color: var(--text-secondary);
+
+    font-weight: 600;
+
+    display: block;
+
+}
+
+
+
+.payment-v9__fee-display .fee-amount {
+
+    font-family: var(--font-mono);
+
+    font-size: 4.5rem;
+
+    font-weight: 800;
+
+    color: var(--danger-color);
+
+    line-height: 1;
+
+}
+
+
+
+.payment-v9__fee-display .fee-amount span {
+
+    font-size: 2.2rem;
+
+    vertical-align: text-top;
+
+    margin-left: 4px;
+
+}
+
+
+
+#payment-step-1-v9 {
+
+    animation: floatUp 0.5s ease-out 0.3s backwards;
+
+}
+
+
+
+.payment-v9__methods {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+}
+
+
+
+.payment-v9__method-card {
+
+    background-color: var(--bg-card);
+
+    border: 2px solid var(--border-color);
+
+    border-radius: var(--radius-lg);
+
+    padding: 1.25rem;
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+    box-shadow: var(--shadow-sm);
+
+}
+
+
+
+.payment-v9__method-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: var(--shadow-md);
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+.payment-v9__method-card.active {
+
+    border-color: var(--primary-accent);
+
+    background-color: var(--primary-accent-light);
+
+    box-shadow: 0 0 0 4px var(--primary-accent-light);
+
+}
+
+
+
+.method-card__icon {
+
+    background-color: var(--bg-hover);
+
+    color: var(--text-secondary);
+
+    border-radius: 12px;
+
+    width: 48px;
+
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    transition: var(--transition);
+
+}
+
+
+
+.payment-v9__method-card:hover .method-card__icon,
+
+.payment-v9__method-card.active .method-card__icon {
+
+    background-color: var(--primary-accent);
+
+    color: white;
+
+}
+
+
+
+.method-card__text {
+
+    line-height: 1.3;
+
+    flex-grow: 1;
+
+}
+
+
+
+.method-card__title {
+
+    font-size: 1.1rem;
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.method-card__subtitle {
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.method-card__chevron {
+
+    color: var(--text-secondary);
+
+    transition: var(--transition);
+
+}
+
+
+
+.payment-v9__method-card:hover .method-card__chevron,
+
+.payment-v9__method-card.active .method-card__chevron {
+
+    transform: translateX(5px);
+
+    color: var(--primary-accent);
+
+}
+
+
+
+.payment-step-details {
+
+    display: none;
+
+    /* Hidden by default */
+
+    animation: fadeIn 0.4s ease-out;
+
+}
+
+
+
+/* Glowing QR border effect */
+
+.qr-scanner-effect {
+
+    position: relative;
+
+    display: inline-block;
+
+    padding: 8px;
+
+    border-radius: calc(var(--radius-md) + 8px);
+
+    background: var(--bg-card);
+
+}
+
+
+
+.qr-scanner-effect::before {
+
+    content: '';
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: inherit;
+
+    padding: 2px;
+
+    /* border thickness */
+
+    background: conic-gradient(from 0deg, var(--primary-accent), var(--success-color), var(--vip-gold), var(--primary-accent));
+
+    -webkit-mask:
+
+        linear-gradient(#fff 0 0) content-box,
+
+        linear-gradient(#fff 0 0);
+
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+
+    -webkit-mask-composite: xor;
+
+    mask-composite: exclude;
+
+    animation: spin 4s linear infinite;
+
+}
+
+
+
+@keyframes spin {
+
+    to {
+
+        transform: rotate(360deg);
+
+    }
+
+}
+
+
+
+/* QR Image Pulse Effect */
+
+.qr-image-pulse {
+
+    animation: qr-pulse 2s infinite ease-in-out;
+
+}
+
+
+
+@keyframes qr-pulse {
+
+    0% {
+
+        transform: scale(1);
+
+    }
+
+
+
+    50% {
+
+        transform: scale(1.02);
+
+    }
+
+
+
+    100% {
+
+        transform: scale(1);
+
+    }
+
+}
+
+
+
+/* Enhanced Cash Stack Animation */
+
+.cash-stack-icon .cash-stack-bill {
+
+    fill: var(--success-light);
+
+    stroke: var(--success-color);
+
+    stroke-width: 2;
+
+    animation: cash-stack-shuffle 3s ease-in-out infinite;
+
+    transform-origin: center bottom;
+
+    /* Bills shuffle from bottom */
+
+}
+
+
+
+.cash-stack-icon .bill-1 {
+
+    animation-delay: -0.1s;
+
+}
+
+
+
+.cash-stack-icon .bill-2 {
+
+    animation-delay: -0.2s;
+
+}
+
+
+
+.cash-stack-icon .bill-3 {
+
+    animation-delay: -0.3s;
+
+}
+
+
+
+@keyframes cash-stack-shuffle {
+
+
+
+    0%,
+
+    100% {
+
+        transform: translateY(0) rotate(0deg);
+
+    }
+
+
+
+    25% {
+
+        transform: translateY(-5px) rotate(-2deg);
+
+    }
+
+
+
+    50% {
+
+        transform: translateY(0) rotate(0deg);
+
+    }
+
+
+
+    75% {
+
+        transform: translateY(5px) rotate(2deg);
+
+    }
+
+}
+
+
+
+.cash-stack-icon .cash-stack-coin {
+
+    fill: var(--vip-gold);
+
+    stroke: var(--vip-gold-light);
+
+    stroke-width: 1.5;
+
+    animation: coin-jiggle 2s ease-in-out infinite;
+
+    transform-origin: center;
+
+}
+
+
+
+.cash-stack-icon .coin-1 {
+
+    animation-delay: -0.5s;
+
+}
+
+
+
+.cash-stack-icon .coin-2 {
+
+    animation-delay: -0.2s;
+
+}
+
+
+
+.cash-stack-icon .coin-3 {
+
+    animation-delay: -0.8s;
+
+}
+
+
+
+@keyframes coin-jiggle {
+
+
+
+    0%,
+
+    100% {
+
+        transform: translateY(0) rotate(0deg);
+
+    }
+
+
+
+    30% {
+
+        transform: translateY(-3px) rotate(5deg);
+
+    }
+
+
+
+    70% {
+
+        transform: translateY(3px) rotate(-5deg);
+
+    }
+
+}
+
+
+
+/* ==========================================================================
+
+   18. MODAL THÃ€NH CÃ”NG V6 (CHECKOUT SUCCESS V6) - DIGITAL RECEIPT
+
+   ========================================================================== */
+
+.checkout-success-v6 {
+
+    text-align: center;
+
+    padding: 1.5rem;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+
+.checkout-success-v6 .confetti-container {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    pointer-events: none;
+
+    overflow: hidden;
+
+}
+
+
+
+.success-v6__header {
+
+    animation: floatUp 0.5s ease-out 0.8s backwards;
+
+    margin-bottom: 1.5rem;
+
+}
+
+
+
+.success-v6__icon {
+
+    width: 60px;
+
+    height: 60px;
+
+    margin: 0 auto 1rem auto;
+
+}
+
+
+
+.success-v6__icon .checkmark__circle {
+
+    stroke-dasharray: 166;
+
+    stroke-dashoffset: 166;
+
+    stroke-width: 3;
+
+    stroke: var(--success-color);
+
+    fill: none;
+
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+
+}
+
+
+
+.success-v6__icon .checkmark__check {
+
+    transform-origin: 50% 50%;
+
+    stroke-dasharray: 48;
+
+    stroke-dashoffset: 48;
+
+    stroke-width: 4;
+
+    stroke: var(--success-color);
+
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards;
+
+}
+
+
+
+.success-v6__title {
+
+    font-size: 1.75rem;
+
+    font-weight: 700;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.success-v6__body {
+
+    background-color: var(--bg-hover);
+
+    border-radius: var(--radius-lg);
+
+    padding: 1.5rem;
+
+    animation: floatUp 0.5s ease-out 1.0s backwards;
+
+}
+
+
+
+.success-v6__amount-paid {
+
+    text-align: center;
+
+}
+
+
+
+.success-v6__amount-paid .amount-label {
+
+    font-size: 1rem;
+
+    color: var(--text-secondary);
+
+    font-weight: 500;
+
+}
+
+
+
+.success-v6__amount-paid .amount-value {
+
+    display: block;
+
+    font-family: var(--font-mono);
+
+    font-size: 2.5rem;
+
+    font-weight: 700;
+
+    color: var(--text-primary);
+
+    line-height: 1.2;
+
+}
+
+
+
+.success-v6__divider {
+
+    height: 1px;
+
+    background-image: linear-gradient(to right, transparent, var(--border-color), transparent);
+
+    margin: 1.25rem 0;
+
+}
+
+
+
+.success-v6__details-list {
+
+    list-style: none;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 0.75rem;
+
+    text-align: left;
+
+    font-size: 0.95rem;
+
+}
+
+
+
+.success-v6__details-list li {
+
+    display: flex;
+
+    justify-content: space-between;
+
+}
+
+
+
+.success-v6__details-list li span {
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.success-v6__details-list li strong {
+
+    color: var(--text-primary);
+
+    font-weight: 600;
+
+}
+
+
+
+/* ==========================================================================
+
+   7. MODAL THANH TOÃN "PREMIUM" (PAYMENT FLOW V9)
+
+   ========================================================================== */
+
+.payment-flow-v9 {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1.5rem;
+
+    padding: 0.5rem;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+
+/* Hiá»‡u á»©ng ná»n má» Gradient nháº¹ nhÃ ng */
+
+.payment-flow-v9::before {
+
+    content: '';
+
+    position: absolute;
+
+    top: -50%;
+
+    left: -50%;
+
+    width: 200%;
+
+    height: 200%;
+
+    background: radial-gradient(circle at center, rgba(37, 99, 235, 0.03) 0%, rgba(255, 255, 255, 0) 70%);
+
+    animation: rotate-bg 20s linear infinite;
+
+    z-index: -1;
+
+    pointer-events: none;
+
+}
+
+
+
+@keyframes rotate-bg {
+
+    from {
+
+        transform: rotate(0deg);
+
+    }
+
+
+
+    to {
+
+        transform: rotate(360deg);
+
+    }
+
+}
+
+
+
+/* 1. Tháº» thÃ´ng tin xe (Premium Card) */
+
+.payment-v9__vehicle-card {
+
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-hover) 100%);
+
+    border: 1px solid var(--border-color);
+
+    border-radius: var(--radius-lg);
+
+    padding: 1.25rem;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1rem;
+
+    box-shadow: var(--shadow-sm);
+
+    position: relative;
+
+    overflow: hidden;
+
+    transition: var(--transition);
+
+}
+
+
+
+.payment-v9__vehicle-card:hover {
+
+    box-shadow: var(--shadow-md);
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+/* Dáº£i mÃ u trang trÃ­ */
+
+.payment-v9__vehicle-card::after {
+
+    content: '';
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 4px;
+
+    height: 100%;
+
+    background: var(--primary-accent);
+
+}
+
+
+
+.vehicle-card__plate {
+
+    font-size: 1.8rem;
+
+    font-weight: 800;
+
+    color: var(--text-primary);
+
+    letter-spacing: 1px;
+
+    text-align: center;
+
+    font-family: var(--font-mono);
+
+    padding-bottom: 0.75rem;
+
+    border-bottom: 1px dashed var(--border-color);
+
+}
+
+
+
+.vehicle-card__details {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 1rem;
+
+}
+
+
+
+.vehicle-card__detail-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 0.75rem;
+
+    flex: 1;
+
+    background-color: rgba(255, 255, 255, 0.5);
+
+    padding: 0.5rem;
+
+    border-radius: var(--radius-md);
+
+}
+
+
+
+.vehicle-card__detail-item svg {
+
+    color: var(--text-secondary);
+
+    flex-shrink: 0;
+
+}
+
+
+
+.detail-text {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+
+.detail-label {
+
+    font-size: 0.8rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.detail-value {
+
+    font-size: 0.95rem;
+
+    font-weight: 600;
+
+    color: var(--text-primary);
+
+}
+
+
+
+/* 2. Hiá»ƒn thá»‹ phÃ­ (Ná»•i báº­t) */
+
+.payment-v9__fee-display {
+
+    text-align: center;
+
+    margin: 0.5rem 0;
+
+    animation: floatUp 0.5s ease-out;
+
+}
+
+
+
+.payment-v9__fee-display .fee-label {
+
+    display: block;
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+    margin-bottom: 0.25rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.5px;
+
+}
+
+
+
+.payment-v9__fee-display .fee-amount {
+
+    font-family: var(--font-mono);
+
+    font-size: 3rem;
+
+    font-weight: 800;
+
+    color: var(--danger-color);
+
+    line-height: 1;
+
+    text-shadow: 0 4px 10px rgba(220, 38, 38, 0.15);
+
+}
+
+
+
+.payment-v9__fee-display .fee-amount span {
+
+    font-size: 1.5rem;
+
+    vertical-align: super;
+
+    margin-left: 4px;
+
+    color: var(--text-secondary);
+
+    font-weight: 600;
+
+}
+
+
+
+/* 3. Chá»n phÆ°Æ¡ng thá»©c thanh toÃ¡n (Grid Cards) */
+
+.payment-v9__methods {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 1rem;
+
+}
+
+
+
+.payment-v9__method-card {
+
+    background-color: var(--bg-card);
+
+    border: 2px solid var(--border-color);
+
+    border-radius: var(--radius-lg);
+
+    padding: 1.25rem 1rem;
+
+    cursor: pointer;
+
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    text-align: center;
+
+    gap: 0.75rem;
+
+    position: relative;
+
+    /* transition: var(--transition); */
+
+}
+
+
+
+.payment-v9__method-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+
+    border-color: var(--primary-accent);
+
+}
+
+
+
+.payment-v9__method-card.selected {
+
+    background-color: var(--primary-accent-light);
+
+    border-color: var(--primary-accent);
+
+    box-shadow: 0 0 0 2px var(--primary-accent-light);
+
+}
+
+
+
+.method-card__icon {
+
+    width: 56px;
+
+    height: 56px;
+
+    background-color: var(--bg-hover);
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: var(--text-secondary);
+
+    transition: var(--transition);
+
+}
+
+
+
+.payment-v9__method-card:hover .method-card__icon,
+
+.payment-v9__method-card.selected .method-card__icon {
+
+    background-color: white;
+
+    color: var(--primary-accent);
+
+    transform: scale(1.1);
+
+}
+
+
+
+.method-card__title {
+
+    font-weight: 700;
+
+    font-size: 1.05rem;
+
+    color: var(--text-primary);
+
+}
+
+
+
+.method-card__subtitle {
+
+    font-size: 0.8rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.method-card__chevron {
+
+    position: absolute;
+
+    top: 50%;
+
+    right: 1rem;
+
+    transform: translateY(-50%);
+
+    opacity: 0;
+
+    transition: var(--transition);
+
+    color: var(--primary-accent);
+
+}
+
+
+
+.payment-v9__method-card.selected .method-card__chevron {
+
+    opacity: 1;
+
+    right: 0.75rem;
+
+}
+
+
+
+/* 4. Chi tiáº¿t thanh toÃ¡n (QR & Cash) */
+
+.payment-step-details {
+
+    overflow: hidden;
+
+    max-height: 0;
+
+    opacity: 0;
+
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+}
+
+
+
+.payment-step-details.active {
+
+    max-height: 500px;
+
+    opacity: 1;
+
+    margin-top: 1rem;
+
+    border-top: 1px dashed var(--border-color);
+
+    padding-top: 1.5rem;
+
+}
+
+
+
+/* QR Code Section */
+
+.payment-qr-section {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 1rem;
+
+}
+
+
+
+.qr-scanner-effect {
+
+    position: relative;
+
+    padding: 10px;
+
+    border-radius: var(--radius-lg);
+
+    background: white;
+
+    box-shadow: var(--shadow-lg);
+
+}
+
+
+
+.qr-scanner-effect::before,
+
+.qr-scanner-effect::after {
+
+    content: '';
+
+    position: absolute;
+
+    width: 20px;
+
+    height: 20px;
+
+    border-color: var(--primary-accent);
+
+    border-style: solid;
+
+    transition: all 0.3s ease;
+
+}
+
+
+
+.qr-scanner-effect::before {
+
+    top: -2px;
+
+    left: -2px;
+
+    border-width: 3px 0 0 3px;
+
+    border-top-left-radius: 8px;
+
+}
+
+
+
+.qr-scanner-effect::after {
+
+    bottom: -2px;
+
+    right: -2px;
+
+    border-width: 0 3px 3px 0;
+
+    border-bottom-right-radius: 8px;
+
+}
+
+
+
+.qr-wrapper img {
+
+    width: 220px;
+
+    height: 220px;
+
+    display: block;
+
+    border-radius: var(--radius-md);
+
+}
+
+
+
+.qr-memo {
+
+    font-size: 0.9rem;
+
+    color: var(--text-secondary);
+
+    background-color: var(--bg-hover);
+
+    padding: 0.5rem 1rem;
+
+    border-radius: 20px;
+
+    border: 1px solid var(--border-color);
+
+}
+
+
+
+/* Cash Animation Wrapper */
+
+.cash-animation-wrapper {
+
+    display: flex;
+
+    justify-content: center;
+
+    padding: 2rem;
+
+}
+
+
+
+.cash-stack-icon {
+
+    width: 120px;
+
+    height: 120px;
+
+    fill: var(--success-color);
+
+}
+
+
+
+.cash-stack-bill {
+
+    opacity: 0;
+
+    animation: cash-drop 2s infinite;
+
+}
+
+
+
+.cash-stack-bill:nth-child(1) {
+
+    animation-delay: 0s;
+
+}
+
+
+
+.cash-stack-bill:nth-child(2) {
+
+    animation-delay: 0.3s;
+
+    fill: #15803d;
+
+}
+
+
+
+.cash-stack-bill:nth-child(3) {
+
+    animation-delay: 0.6s;
+
+    fill: #14532d;
+
+}
+
+
+
+@keyframes cash-drop {
+
+    0% {
+
+        transform: translateY(-20px);
+
+        opacity: 0;
+
+    }
+
+
+
+    20% {
+
+        opacity: 1;
+
+    }
+
+
+
+    50% {
+
+        transform: translateY(0);
+
+        opacity: 1;
+
+    }
+
+
+
+    80% {
+
+        opacity: 1;
+
+    }
+
+
+
+    100% {
+
+        transform: translateY(10px);
+
+        opacity: 0;
+
+    }
+
+}
+
+
+
+/* ==========================================================================
+
+   MOBILE OPTIMIZATION (COMPACT DESIGN)
+
+   ========================================================================== */
+
+@media (max-width: 600px) {
+
+    .payment-flow-v9 {
+
+        gap: 0.75rem;
+
+        padding: 0;
+
+    }
+
+
+
+    /* 1. Tháº» xe thu gá»n ngang */
+
+    .payment-v9__vehicle-card {
+
+        padding: 0.75rem;
+
+        flex-direction: row;
+
+        align-items: center;
+
+        gap: 0.75rem;
+
+    }
+
+
+
+    .payment-v9__vehicle-card::after {
+
+        height: 4px;
+
+        width: 100%;
+
+        top: auto;
+
+        bottom: 0;
+
+        left: 0;
+
+    }
+
+
+
+    .vehicle-card__plate {
+
+        font-size: 1.25rem;
+
+        padding-bottom: 0;
+
+        border-bottom: none;
+
+        border-right: 1px dashed var(--border-color);
+
+        padding-right: 0.75rem;
+
+        margin-right: 0;
+
+        flex-shrink: 0;
+
+    }
+
+
+
+    .vehicle-card__details {
+
+        flex-direction: column;
+
+        gap: 0.5rem;
+
+        width: 100%;
+
+    }
+
+
+
+    .vehicle-card__detail-item {
+
+        padding: 0.25rem 0.5rem;
+
+        font-size: 0.85rem;
+
+    }
+
+
+
+    .detail-label {
+
+        display: none;
+
+    }
+
+
+
+    /* áº¨n nhÃ£n Ä‘á»ƒ tiáº¿t kiá»‡m chá»— */
+
+
+
+    /* 2. GiÃ¡ tiá»n thu gá»n */
+
+    .payment-v9__fee-display {
+
+        margin: 0;
+
+        display: flex;
+
+        justify-content: center;
+
+        align-items: baseline;
+
+        gap: 0.5rem;
+
+        background: var(--bg-hover);
+
+        padding: 0.5rem;
+
+        border-radius: var(--radius-md);
+
+    }
+
+
+
+    .payment-v9__fee-display .fee-label {
+
+        margin-bottom: 0;
+
+        font-size: 0.8rem;
+
+    }
+
+
+
+    .payment-v9__fee-display .fee-amount {
+
+        font-size: 1.75rem;
+
+    }
+
+
+
+    /* 3. Chá»n phÆ°Æ¡ng thá»©c nhá» gá»n hÆ¡n */
+
+    .payment-v9__methods {
+
+        gap: 0.5rem;
+
+    }
+
+
+
+    .payment-v9__method-card {
+
+        padding: 0.75rem 0.5rem;
+
+        gap: 0.5rem;
+
+    }
+
+
+
+    .method-card__icon {
+
+        width: 36px;
+
+        height: 36px;
+
+    }
+
+
+
+    .method-card__title {
+
+        font-size: 0.9rem;
+
+    }
+
+
+
+    .method-card__subtitle {
+
+        display: none;
+
+    }
+
+
+
+    /* áº¨n mÃ´ táº£ phá»¥ */
+
+    .method-card__chevron {
+
+        display: none;
+
+    }
+
+
+
+    /* 4. Chi tiáº¿t QR/Tiá»n máº·t thu gá»n */
+
+    .payment-step-details.active {
+
+        margin-top: 0.5rem;
+
+        padding-top: 0.5rem;
+
+    }
+
+
+
+    .display-instruction {
+
+        font-size: 0.9rem;
+
+        margin-bottom: 0.75rem;
+
+    }
+
+
+
+    .qr-wrapper img {
+
+        width: 160px;
+
+        /* Nhá» hÆ¡n */
+
+        height: 160px;
+
+    }
+
+
+
+    .cash-animation-wrapper {
+
+        padding: 1rem;
+
+        height: auto;
+
+    }
+
+
+
+    .cash-stack-icon {
+
+        width: 80px;
+
+        height: 80px;
+
+    }
+
+
+
+    /* Footer xÃ¡c nháº­n dÃ­nh dÆ°á»›i cÃ¹ng nhÆ°ng khÃ´ng che ná»™i dung */
+
+    /* (ÄÃ£ Ä‘Æ°á»£c xá»­ lÃ½ bá»Ÿi cáº¥u trÃºc modal hiá»‡n táº¡i) */
+
+}
+
+
+
+/* Overlay xÃ¡c nháº­n */
+
+.payment-confirmation-overlay {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background: rgba(255, 255, 255, 0.95);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    z-index: 10;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition: opacity 0.3s ease;
+
+    backdrop-filter: blur(5px);
+
+}
+
+
+
+/* ==========================================================================
+
+   20. PAYMENT FLOW V10: "THE DIGITAL TICKET" (NEO-TICKET STYLE)
+
+   ========================================================================== */
+
+.payment-flow-v10 {
+
+    font-family: 'Roboto Mono', var(--font-mono), monospace;
+
+    background-color: #f8f8f8;
+
+    color: #1a1a1a;
+
+    width: 100%;
+
+    max-width: 400px;
+
+    margin: 0 auto;
+
+    position: relative;
+
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+
+    transform-style: preserve-3d;
+
+}
+
+
+
+/* Paper Texture & Shadow */
+
+.ticket-paper {
+
+    background: #fff;
+
+    position: relative;
+
+    padding: 1.5rem;
+
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
+
+    /* Zig-zag edge at bottom via radial gradient or clip-path */
+
+    mask-image:
+
+        radial-gradient(circle at bottom, transparent 6px, black 6.5px),
+
+        linear-gradient(black, black);
+
+    mask-size:
+
+        20px 20px,
+
+        100% calc(100% - 20px);
+
+    mask-position:
+
+        bottom,
+
+        top;
+
+    mask-repeat:
+
+        repeat-x,
+
+        no-repeat;
+
+    padding-bottom: 2rem;
+
+    border-top: 5px solid var(--primary-accent);
+
+}
+
+
+
+.ticket-header {
+
+    text-align: center;
+
+    border-bottom: 2px dashed #ddd;
+
+    padding-bottom: 1rem;
+
+    margin-bottom: 1.5rem;
+
+}
+
+
+
+.ticket-brand {
+
+    font-family: var(--font-main);
+
+    font-weight: 900;
+
+    font-size: 1.2rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: 2px;
+
+    color: #000;
+
+    display: block;
+
+}
+
+
+
+.ticket-id {
+
+    font-size: 0.8rem;
+
+    color: #666;
+
+    margin-top: 0.25rem;
+
+    display: block;
+
+}
+
+
+
+/* Info Grid */
+
+.ticket-info-grid {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 1rem 0.5rem;
+
+    margin-bottom: 1.5rem;
+
+}
+
+
+
+.ticket-info-item {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+
+.info-label {
+
+    font-size: 0.75rem;
+
+    text-transform: uppercase;
+
+    color: #888;
+
+    margin-bottom: 0.25rem;
+
+}
+
+
+
+.info-value {
+
+    font-size: 1rem;
+
+    font-weight: 700;
+
+    color: #000;
+
+}
+
+
+
+.info-value.plate {
+
+    font-size: 1.25rem;
+
+    letter-spacing: 1px;
+
+}
+
+
+
+/* Fee Section - Ink Stamp Look */
+
+.ticket-fee-section {
+
+    text-align: right;
+
+    margin: 1.5rem 0;
+
+    padding: 1rem;
+
+    background: #f1f5f9;
+
+    border-radius: 4px;
+
+    border: 1px dashed #cbd5e1;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+
+.ticket-fee-label {
+
+    font-weight: 700;
+
+    font-size: 1rem;
+
+    text-transform: uppercase;
+
+}
+
+
+
+.ticket-fee-amount {
+
+    font-size: 2rem;
+
+    font-weight: 900;
+
+    color: #000;
+
+}
+
+
+
+/* Method Tabs */
+
+.ticket-payment-method {
+
+    margin-top: 1rem;
+
+}
+
+
+
+.method-tabs {
+
+    display: flex;
+
+    background: #eee;
+
+    padding: 4px;
+
+    border-radius: 8px;
+
+    gap: 4px;
+
+}
+
+
+
+.method-tab {
+
+    flex: 1;
+
+    padding: 0.75rem;
+
+    text-align: center;
+
+    border: none;
+
+    background: transparent;
+
+    font-family: var(--font-main);
+
+    font-weight: 600;
+
+    font-size: 0.9rem;
+
+    cursor: pointer;
+
+    border-radius: 6px;
+
+    transition: all 0.2s;
+
+    color: #666;
+
+}
+
+
+
+.method-tab.active {
+
+    background: #fff;
+
+    color: #000;
+
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+}
+
+
+
+/* Details Expansion */
+
+.ticket-details-area {
+
+    margin-top: 1rem;
+
+    border-top: 2px dashed #ddd;
+
+    padding-top: 1rem;
+
+    display: none;
+
+    animation: unfold 0.5s ease-out;
+
+}
+
+
+
+.ticket-details-area.active {
+
+    display: block;
+
+}
+
+
+
+@keyframes unfold {
+
+    from {
+
+        opacity: 0;
+
+        transform: perspective(1000px) rotateX(-20deg);
+
+        transform-origin: top;
+
+    }
+
+
+
+    to {
+
+        opacity: 1;
+
+        transform: perspective(1000px) rotateX(0);
+
+    }
+
+}
+
+
+
+/* QR & Cash Override for Ticket Look */
+
+.ticket-details-area .qr-wrapper img {
+
+    width: 150px;
+
+    height: 150px;
+
+    border: 4px solid #000;
+
+    border-radius: 0;
+
+    padding: 4px;
+
+}
+
+
+
+.ticket-details-area .display-instruction {
+
+    font-family: var(--font-mono);
+
+    font-size: 0.85rem;
+
+    color: #444;
+
+}
+
+
+
+/* Success Stamp */
+
+.paid-stamp {
+
+    position: absolute;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform: translate(-50%, -50%) rotate(-15deg) scale(0);
+
+    border: 4px solid var(--success-color);
+
+    color: var(--success-color);
+
+    font-size: 2rem;
+
+    font-weight: 900;
+
+    padding: 0.5rem 1rem;
+
+    text-transform: uppercase;
+
+    border-radius: 8px;
+
+    opacity: 0;
+
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    pointer-events: none;
+
+    z-index: 20;
+
+    background: rgba(255, 255, 255, 0.9);
+
+}
+
+
+
+.payment-flow-v10.paid .paid-stamp {
+
+    opacity: 1;
+
+    transform: translate(-50%, -50%) rotate(-15deg) scale(1);
+
+}
+
+
+
+.confirmation-icon-wrapper {
+
+    width: 80px;
+
+    height: 80px;
+
+    margin-bottom: 1rem;
+
+    display: none;
+
+}
+
+
+
+.confirmation-icon-wrapper.active {
+
+    display: block;
+
+}
+
+
+
+.confirmation-text {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    color: var(--text-primary);
+
+    animation: fadeInUp 0.5s ease-out;
+
+}
+
+
+
+/* NÃºt xÃ¡c nháº­n cuá»‘i cÃ¹ng */
+
+[data-action="complete-payment"] {
+
+    position: relative;
+
+    overflow: hidden;
+
+    background: linear-gradient(90deg, var(--primary-accent), #4f46e5);
+
+}
+
+
+
+[data-action="complete-payment"]:not(:disabled):hover {
+
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
+
+}
+
+
+
+/* Hiá»‡u á»©ng load khi click */
+
+[data-action="complete-payment"].loading span {
+
+    opacity: 0;
+
+}
+
+
+
+[data-action="complete-payment"].loading::after {
+
+    content: '';
+
+    position: absolute;
+
+    width: 20px;
+
+    height: 20px;
+
+    border: 2px solid rgba(255, 255, 255, 0.3);
+
+    border-top-color: white;
+
+    border-radius: 50%;
+
+    animation: spin 0.8s linear infinite;
+
+    top: 50%;
+
+    left: 50%;
+
+    margin: -10px 0 0 -10px;
+
+}
+
+
+
+/* ==========================================================================
+
+   19. MODAL THÃ€NH CÃ”NG & XÃC NHáº¬N "PREMIUM" (UPGRADE)
+
+   ========================================================================== */
+
+
+
+/* --- Checkout Success V6 Upgrade --- */
+
+.checkout-success-v6 {
+
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-hover));
+
+    padding: 1rem !important;
+
+    /* Override layout */
+
+    border-radius: var(--radius-lg);
+
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.02);
+
+}
+
+
+
+.success-v6__icon .checkmark__circle {
+
+    stroke: var(--success-color);
+
+    filter: drop-shadow(0 0 5px var(--success-light));
+
+}
+
+
+
+.success-v6__title {
+
+    font-size: 2rem;
+
+    background: linear-gradient(to right, var(--text-primary), var(--primary-accent));
+
+    -webkit-background-clip: text;
+
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+
+    margin-bottom: 0.5rem;
+
+}
+
+
+
+.success-v6__body {
+
+    background: white;
+
+    border: 1px solid var(--border-color);
+
+    box-shadow: var(--shadow-sm);
+
+}
+
+
+
+.success-v6__amount-paid .amount-value {
+
+    color: var(--primary-accent);
+
+    text-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+
+}
+
+
+
+/* --- Confirmation Modal (Confirm Card V1) --- */
+
+.confirm-card-v1 {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1.5rem;
+
+    padding: 0.5rem;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+
+.confirm-card-v1.is-vip .confirm-card__header h3 {
+
+    color: var(--warning-color);
+
+}
+
+
+
+.confirm-card-v1.is-free .confirm-card__header h3 {
+
+    color: var(--success-color);
+
+}
+
+
+
+.confirm-card__body {
+
+    background: var(--bg-hover);
+
+    padding: 1.5rem;
+
+    border-radius: var(--radius-lg);
+
+    text-align: center;
+
+    border: 1px dashed var(--border-color);
+
+}
+
+
+
+.confirm-card__plate {
+
+    font-family: var(--font-mono);
+
+    font-size: 2.5rem;
+
+    font-weight: 800;
+
+    color: var(--text-primary);
+
+    margin-bottom: 0.5rem;
+
+}
+
+
+
+.confirm-card__reason {
+
+    font-size: 1.1rem;
+
+    color: var(--text-secondary);
+
+}
+
+
+
+.confirm-card__success-overlay {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background: rgba(255, 255, 255, 0.95);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition: all 0.3s ease;
+
+    backdrop-filter: blur(4px);
+
+}
+
+
+
+.confirm-card__success-overlay.active {
+
+    opacity: 1;
+
+    pointer-events: auto;
+
+}
+
+
+
+.confirm-card__success-overlay p {
+
+    font-weight: 800;
+
+    font-size: 1.5rem;
+
+    color: var(--success-color);
+
+    margin-top: 1rem;
+
+    animation: floatUp 0.5s ease-out;
+
+}
+
+
+
+/* ==========================================================================
+
+   100. MODAL SYSTEM (RESTORED)
+
+   ========================================================================== */
+
+#modal-container {
+
+    position: relative;
+
+    z-index: 9999;
+
+}
+
+
+
+.modal-overlay {
+
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background-color: rgba(0, 0, 0, 0.6);
+
+    backdrop-filter: blur(4px);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    z-index: 10000;
+
+}
+
+
+
+.modal-overlay.active {
+
+    opacity: 1;
+
+    visibility: visible;
+
+}
+
+
+
+.modal-content {
+
+    background-color: var(--bg-card);
+
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
-    max-height: 90vh;
-    overflow: hidden;
+    transform: scale(0.95) translateY(10px);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    border: 1px solid var(--border-color);
 }
+
 .modal-overlay.active .modal-content {
-    transform: scale(1);
-    opacity: 1;
+    transform: scale(1) translateY(0);
 }
+
 .modal-header {
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0;
-    position: relative;
-    overflow: hidden;
-    background-color: var(--bg-hover);
 }
-.modal-header::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    background: linear-gradient(120deg, var(--primary-accent), var(--youth-union-blue), var(--success-color));
-    background-size: 200% 200%;
-    opacity: 0.1;
-    animation: aurora-flow 10s ease infinite;
-    z-index: 0;
-}
+
 .modal-header h2 {
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--text-primary);
     margin: 0;
 }
-.modal-header > * {
-    position: relative;
-    z-index: 1;
-}
+
 .modal-close-btn {
     background: none;
     border: none;
-    font-size: 1.8rem;
-    cursor: pointer;
+    font-size: 1.5rem;
     color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
     line-height: 1;
     transition: var(--transition);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
+
 .modal-close-btn:hover {
-    background-color: var(--border-color);
+    color: var(--danger-color);
     transform: rotate(90deg);
 }
+
 .modal-body {
     padding: 1.5rem;
-    overflow: auto;
-    flex: 1 1 auto;
+    overflow-y: auto;
+    flex-grow: 1;
 }
+
 .modal-footer {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: flex-end;
-    gap: 0.75rem;
-    background-color: var(--bg-hover);
-    flex-shrink: 0;
-}
-@keyframes aurora-flow {
-    0% { background-position: 0% 50% }
-    50% { background-position: 100% 50% }
-    100% { background-position: 0% 50% }
-}
-
-/* Global Alert (in modal) */
-.global-alert-wrapper { text-align: center; }
-.global-alert-plate-box { padding: 1.5rem 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; display: inline-block; width: 100%; }
-.alert-bg-warning { background-color: var(--warning-light); }
-.alert-bg-block { background-color: var(--danger-light); }
-.global-alert-plate { font-family: monospace; font-size: 3rem; font-weight: 700; color: var(--text-primary); }
-.global-alert-reason { font-size: 1.1rem; color: var(--text-secondary); }
-
-/* Image Viewer Modal */
-.image-viewer-modal .modal-content {
-    max-width: 90vw;
-    max-height: 95vh;
-    background-color: transparent;
-    box-shadow: none;
-    overflow: visible;
-    width: auto; /* Sửa lỗi: Để modal co giãn theo ảnh */
-}
-.image-viewer-container {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%; /* Sửa lỗi: Đảm bảo container chiếm hết không gian */
-}
-.image-viewer-container img {
-    max-width: 90vw; /* Sửa lỗi: Giới hạn chiều rộng tối đa */
-    max-height: 85vh; /* Sửa lỗi: Giới hạn chiều cao tối đa */
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    object-fit: contain;
-}
-
-/* ==========================================================================
-   GIAO DIỆN DANH SÁCH XE (VEHICLE LIST V7 - "INFO CARD")
-   ========================================================================== */
-.vehicle-item-v7 {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem 1.25rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background-color: var(--bg-card);
-    cursor: pointer;
-    transition: all 0.2s ease-out;
-    animation: fadeIn 0.4s ease-out;
-    position: relative;
-    overflow: hidden;
-    padding-left: calc(1.25rem + 8px); /* Tạo khoảng trống cho vạch màu */
-}
-.vehicle-item-v7:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-accent);
-}
-.vehicle-item-v7::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 5px;
-    height: 100%;
-    background-color: var(--success-color);
-    transition: var(--transition);
-    border-top-left-radius: var(--radius-md);
-    border-bottom-left-radius: var(--radius-md);
-}
-.vehicle-item-v7.departed::before {
-    background-color: var(--text-secondary);
-}
-.vehicle-item-v7.departed {
-    opacity: 0.7;
-}
-.v7-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-.v7-plate { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
-.v7-status-icons { display: flex; align-items: center; gap: 0.75rem; }
-.v7-icon { display: flex; }
-.v7-alert-icon.alert-warning { color: var(--warning-color); }
-.v7-alert-icon.alert-block { color: var(--danger-color); }
-.v7-vip-icon { color: var(--vip-gold); }
-.v7-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--text-secondary); }
-.v7-meta-item { display: flex; align-items: center; gap: 0.5rem; }
-/* ==========================================================================
-   GIAO DIỆN DANH SÁCH XE (VEHICLE LIST V7 - "INFO CARD")
-   ========================================================================== */
-
-
-#toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 1rem; }
-.toast { padding: 1rem 1.5rem; border-radius: var(--radius-md); color: white; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 1rem; font-weight: 600; animation: slideUpToast 0.4s ease, fadeOutToast 0.5s ease 3.5s forwards; }
-.toast--success { background-color: var(--success-color); }
-.toast--error { background-color: var(--danger-color); }
-.toast--info { background-color: var(--primary-accent); }
-@keyframes slideUpToast { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes fadeOutToast { from { opacity: 1; } to { opacity: 0; } }
-/* Location Modal */
-.modal-subtitle { font-size: 1rem; color: var(--text-secondary); margin-bottom: 1.5rem; text-align: center; }
-.location-card-list { display: flex; flex-direction: column; gap: 1rem; }
-.location-card { background-color: var(--bg-hover); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; cursor: pointer; transition: var(--transition); position: relative; overflow: hidden; }
-.location-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); border-color: var(--primary-accent); }
-.location-card.recommended { border-color: var(--primary-accent); background-color: var(--primary-accent-light); }
-.recommended-badge { position: absolute; top: 0; right: 0; background-color: var(--primary-accent); color: white; padding: 3px 15px; font-size: 0.8rem; font-weight: 700; border-bottom-left-radius: var(--radius-md); }
-.location-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.location-card-header h3 { font-size: 1.2rem; font-weight: 700; margin: 0; }
-.distance-tag { background-color: var(--bg-card); color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
-.location-card-body { display: flex; flex-direction: column; gap: 0.5rem; }
-.location-detail { display: flex; align-items: center; gap: 0.75rem; color: var(--text-secondary); }
-.location-detail svg { flex-shrink: 0; }
-
-/* ==========================================================================
-   6. MODAL THANH TOÁN (PAYMENT FLOW)
-   ========================================================================== */
-.payment-flow-v4 {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.payment-header-info {
-    background-color: var(--bg-hover);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    text-align: center;
-    border: 1px solid var(--border-color);
-    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.05);
-    margin: -0.5rem -0.5rem 0; /* Kéo nhẹ ra ngoài để tạo cảm giác nổi khối */
-}
-
-.payment-header-info .summary-label {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.payment-total {
-    margin-top: 0.5rem;
-}
-
-.fee-label { font-size: 1rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; }
-.fee-display { font-family: var(--font-mono); font-size: 3.5rem; font-weight: 800; color: var(--danger-color); line-height: 1; animation: floatUp 0.5s ease-out; }
-.fee-display span { font-size: 1.8rem; vertical-align: super; margin-left: 4px; }
-
-.payment-step {
-    display: none; /* Ẩn tất cả các bước theo mặc định */
-    flex-direction: column;
-    gap: 1.5rem;
-    animation: fadeIn 0.4s ease-out;
-}
-.payment-step.active {
-    display: flex; /* Chỉ hiện bước active */
-}
-
-.action-prompt {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    text-align: center;
-}
-
-.payment-method-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    width: 100%;
-}
-
-.payment-method-btn {
     background-color: var(--bg-hover);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem 1rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: var(--shadow-sm);
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
 }
-.payment-method-btn:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
-}
-.payment-method-btn.method-cash:hover { background-color: var(--success-light); border-color: var(--success-color); color: var(--success-color); }
-.payment-method-btn.method-qr:hover { background-color: var(--primary-accent-light); border-color: var(--primary-accent); color: var(--primary-accent); }
 
-.payment-method-icon-wrapper { width: 48px; height: 48px; position: relative; }
-.payment-method-icon { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: var(--transition); }
-.payment-method-btn:hover .payment-method-icon { fill: var(--primary-accent); }
-.payment-method-btn.method-cash:hover .payment-method-icon { fill: var(--success-color); }
+/* Modal Variants */
+.modal-content.large {
+    max-width: 800px;
+}
+
+.modal-content.full-screen {
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+}
 
 /* ==========================================================================
-   ICON ĐỘNG V5 - TỐI GIẢN & TINH TẾ
+   5. PAYMENT MODAL STYLES (NEW)
    ========================================================================== */
-
-/* Icon QR động: Đường quét mượt mà */
-.icon-qr-animated::after {
-    content: '';
-    position: absolute;
-    left: 15%; right: 15%; top: 15%;
-    height: 2px;
-    background: var(--primary-accent);
-    box-shadow: 0 0 5px var(--primary-accent);
-    border-radius: 2px;
-    animation: qr-scan-line 2.5s ease-in-out infinite;
-}
-@keyframes qr-scan-line { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(16px); } }
-
-/* Icon Tiền mặt động: Hiệu ứng "con mắt" nhìn */
-.icon-cash-animated path:last-child { animation: cash-pupil-look 4s ease-in-out infinite; transform-origin: center; }
-@keyframes cash-pupil-look { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-2px, -1px); } 50% { transform: translate(0, 0); } 75% { transform: translate(2px, 1px); } }
-
-.payment-display-area {
-    display: none; /* Ẩn các vùng hiển thị chi tiết */
-    text-align: center;
-    animation: fadeIn 0.4s ease-out;
-}
-.display-instruction {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
+.method-tabs {
+    display: flex;
+    gap: 1rem;
     margin-bottom: 1.5rem;
 }
 
-.payment-qr-section { text-align: center; }
-.qr-wrapper { display: inline-block; }
-.qr-wrapper img { max-width: 250px; width: 100%; height: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 0.5rem; background-color: white; box-shadow: var(--shadow-sm); }
-.qr-memo { font-size: 0.9rem; color: var(--text-secondary); margin-top: 1rem; }
-
-.cash-animation-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 250px; /* Đảm bảo chiều cao tương đương vùng QR */
-    overflow: hidden;
-}
-.cash-stack-icon { width: 180px; height: auto; }
-.cash-stack-icon .cash-stack-bill {
-    fill: var(--success-light);
-    stroke: var(--success-color);
-    stroke-width: 2;
-    animation: cash-stack-shuffle 3s ease-in-out infinite;
-}
-.cash-stack-icon .cash-stack-bill:nth-child(2) { animation-delay: -0.1s; }
-.cash-stack-icon .cash-stack-bill:nth-child(1) { animation-delay: -0.2s; }
-.cash-stack-icon .cash-stack-coin { fill: var(--vip-gold); stroke: #ca8a04; stroke-width: 2; animation: cash-stack-shuffle 3s ease-in-out infinite 0.3s; }
-@keyframes cash-stack-shuffle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-
-/* Payment Confirmation */
-.payment-confirmation-overlay {
-    position: relative;
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease; z-index: 10; pointer-events: none;
-}
-.payment-confirmation-overlay.active { opacity: 1; pointer-events: auto; }
-.confirmation-text { font-size: 1.5rem; font-weight: 700; margin-top: 1rem; animation: fade-in-text 0.4s ease-in 0.5s forwards; opacity: 0; }
-@keyframes fade-in-text { to { opacity: 1; } }
-.confirmation-icon-wrapper { width: 100px; height: 100px; display: none; }
-.confirmation-icon-wrapper.active { display: block; animation: scale-up 0.4s ease-in-out; }
-.checkmark__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 3; stroke: var(--success-color); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
-.checkmark__check { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 3; stroke: var(--success-color); animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards; }
-.cross__circle { stroke-dasharray: 166; stroke-dashoffset: 166; stroke-width: 3; stroke: var(--danger-color); fill: none; animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
-.cross__path { transform-origin: 50% 50%; stroke-dasharray: 48; stroke-dashoffset: 48; stroke-width: 4; stroke: var(--danger-color); animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.7s forwards; }
-@keyframes scale-up { 0% { transform: scale(0.7); } 45% { transform: scale(1.05); } 80% { transform: scale(0.95); } 100% { transform: scale(1); } }
-@keyframes stroke { 100% { stroke-dashoffset: 0; } }
-
-/* QR Scanner */
-.qr-scanner-body { position: relative; width: 100%; height: auto; overflow: hidden; border-radius: var(--radius-md); background-color: #000; }
-#camera-feed { width: 100%; height: auto; display: block; }
-.scanner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-shadow: inset 0 0 0 500px rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; }
-.scanner-viewfinder { width: 65%; height: 65%; position: relative; border: 2px solid rgba(255, 255, 255, 0.5); border-radius: var(--radius-md); --corner-size: 30px; --corner-thickness: 4px; }
-.scanner-viewfinder .corner { position: absolute; width: var(--corner-size); height: var(--corner-size); border-color: var(--primary-accent); border-style: solid; animation: pulse-corners 2s infinite ease-in-out; }
-.scanner-viewfinder .corner-tl { top: -2px; left: -2px; border-width: var(--corner-thickness) 0 0 var(--corner-thickness); border-top-left-radius: var(--radius-md); }
-.scanner-viewfinder .corner-tr { top: -2px; right: -2px; border-width: var(--corner-thickness) var(--corner-thickness) 0 0; border-top-right-radius: var(--radius-md); }
-.scanner-viewfinder .corner-bl { bottom: -2px; left: -2px; border-width: 0 0 var(--corner-thickness) var(--corner-thickness); border-bottom-left-radius: var(--radius-md); }
-.scanner-viewfinder .corner-br { bottom: -2px; right: -2px; border-width: 0 var(--corner-thickness) var(--corner-thickness) 0; border-bottom-right-radius: var(--radius-md); }
-@keyframes pulse-corners { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.9); opacity: 0.7; } }
-
-.scanner-feedback-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(22, 163, 74, 0.85); backdrop-filter: blur(3px); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
-.scanner-feedback-overlay.active { opacity: 1; pointer-events: auto; }
-.feedback-icon { width: 60px; height: 60px; margin-bottom: 1rem; }
-.feedback-icon .checkmark__circle { stroke: white; stroke-width: 3; }
-.feedback-icon .checkmark__check { stroke: white; stroke-width: 4; }
-.feedback-plate { font-family: monospace; font-size: 2rem; font-weight: 700; }
-
-/* Fireworks Effect */
-.fireworks-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 1; /* Hiệu ứng pháo hoa sẽ tự biến mất */
-}
-.fireworks-container.active {
-    opacity: 1;
-}
-.firework {
-    position: absolute;
-    /* Sửa lỗi: Thêm thuộc tính transform-origin */
-    width: 6px;
-    height: 6px;
-    background-color: #fff;
-    border-radius: 50%;
-    opacity: 0;
-}
-.fireworks-container.active .firework {
-    animation: firework-explode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; /* Sửa lỗi: cú pháp animation */
-}
-.firework:nth-child(1) { top: 50%; left: 50%; animation-delay: 0s; background-color: #38bdf8; }
-.firework:nth-child(2) { top: 40%; left: 30%; animation-delay: 0.3s; background-color: #34d399; }
-.firework:nth-child(3) { top: 60%; left: 70%; animation-delay: 0.6s; background-color: #facc15; }
-@keyframes firework-explode { 0% { transform: scale(0); opacity: 1; } 100% { transform: scale(30); opacity: 0; } }
-
-@media print { body * { visibility: hidden; } #printable-area, #printable-area * { visibility: visible; } #printable-area { position: absolute; left: 0; top: 0; width: 100%; } }
-
-/* ==========================================================================
-   7. GIAO DIỆN ĐÁP ỨNG (RESPONSIVE)
-   ========================================================================== */
-@media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } }
-@media (max-width: 768px) {
-    .container { padding: 0 1rem; }
-    .header-container { flex-wrap: wrap; }
-    .header-controls { width: 100%; justify-content: space-between; margin-top: 1rem; }
-    .card__header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-    .main-navigation .container { flex-direction: column; align-items: stretch; gap: 0.5rem; padding-bottom: 0.5rem; }
-    .main-navigation ul { justify-content: center; }
-    .nav-extra { display: none; }
-}
-@media (max-width: 600px) { .container { padding: 0 0.75rem; } .modal-body, .modal-header, .modal-footer { padding: 1rem; } .main-input-group { flex-direction: column; }
-    .main-input-group #search-term { text-align: left; }
-    .payment-method-options { grid-template-columns: 1fr; }
-    .vehicle-item-v6 { grid-template-columns: auto 1fr; gap: 0.75rem; }
-    .v6-meta { grid-column: 2 / 3; justify-self: end; margin-top: 0.25rem; }
-    .v6-time { display: none; } /* Ẩn bớt trên màn hình rất nhỏ */
-}
-@media (max-width: 480px) {
-    .modal-content { max-width: 98vw; }
-    .modal-header, .modal-footer, .modal-body { padding: 0.75rem; }
-    .digital-pass__main-info { flex-direction: column; align-items: center; gap: 1.5rem; }
-    .digital-pass__plate-section { text-align: center; }
-    .digital-pass__plate { font-size: 2.2rem; }
-    .digital-pass__qr-instruction { text-align: center; margin-top: 0.5rem; }
-}
-
-/* ==========================================================================
-   8. MÀN HÌNH CHỜ (IDLE SCREEN)
-   ========================================================================== */
-.idle-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 10010; opacity: 0; pointer-events: none; transition: opacity 0.7s ease; }
-.idle-screen.active { opacity: 1; pointer-events: auto; }
-.ad-video-player { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; object-fit: cover; transform: translate(-50%, -50%); }
-.idle-overlay-content { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); color: white; text-align: center; background-color: rgba(0, 0, 0, 0.4); padding: 1rem 2rem; border-radius: var(--radius-lg); backdrop-filter: blur(8px); }
-.idle-message { font-size: 1.5rem; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-
-/* ==========================================================================
-   9. PHÂN TRANG (PAGINATION)
-   ========================================================================== */
-.pagination-controls { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
-.pagination-btn { padding: 0.5rem 1rem; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); font-weight: 600; }
-.pagination-btn:hover:not(:disabled) { background-color: var(--primary-accent-light); color: var(--primary-accent); border-color: var(--primary-accent); }
-.pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.pagination-btn.active { background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); font-weight: 700; }
-
-/* ==========================================================================
-   10. CHỈ BÁO TRẠNG THÁI (INDICATORS)
-   ========================================================================== */
-#offline-indicator { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--warning-color); color: var(--text-primary); text-align: center; padding: 0.5rem; font-weight: 600; z-index: 10001; transform: translateY(100%); transition: transform 0.4s ease; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
-#offline-indicator.active { transform: translateY(0); }
-
-/* ==========================================================================
-   11. MÀN HÌNH ĐĂNG NHẬP (LOGIN SCREEN)
-   ========================================================================== */
-.login-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; z-index: 10002; transition: opacity 0.5s ease; }
-.login-branding-panel { width: 55%; height: 100%; background-image: linear-gradient(to bottom right, var(--youth-union-blue), #153a73); display: flex; align-items: center; justify-content: center; color: white; padding: 3rem; text-align: center; }
-.branding-content { max-width: 500px; animation: floatUp 0.8s ease-out; }
-@keyframes floatUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.branding-logo { width: 80px; height: 80px; margin-bottom: 1rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
-.branding-content h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-.branding-content p { font-size: 1.1rem; opacity: 0.8; }
-.login-form-panel { width: 45%; height: 100%; background-color: var(--bg-card); display: flex; align-items: center; justify-content: center; padding: 3rem; }
-.login-form-wrapper { width: 100%; max-width: 400px; }
-.login-form-wrapper h2 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary); }
-.form-subtitle { color: var(--text-secondary); margin-bottom: 2.5rem; }
-.form-group { margin-bottom: 1.25rem; }
-.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
-.input-with-icon { position: relative; }
-.input-with-icon svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; transition: var(--transition); }
-.input-with-icon input { padding-left: 3rem; }
-.input-with-icon input:focus + svg { color: var(--primary-accent); }
-.staff-info-display { background-color: var(--bg-hover); border-radius: var(--radius-md); padding: 1rem; margin-top: -0.5rem; margin-bottom: 1.25rem; border: 1px solid var(--border-color); max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease-out; }
-.staff-info-display.visible { max-height: 200px; opacity: 1; }
-.staff-info-display p { margin: 0; line-height: 1.4; }
-.staff-info-display .staff-name { font-weight: 700; font-size: 1.1rem; }
-.staff-info-display .staff-location { font-size: 0.9rem; color: var(--text-secondary); }
-.form-error-message { color: var(--danger-color); margin-top: 1rem; text-align: center; font-weight: 500; min-height: 1.2em; }
-@media (max-width: 900px) { .login-branding-panel { display: none; } .login-form-panel { width: 100%; } }
-
-/* ==========================================================================
-   12. WIDGET TIỆN ÍCH (WIDGETS)
-   ========================================================================== */
-.user-profile-widget { display: flex; align-items: center; gap: 12px; padding: 0.5rem 1rem; background-color: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 30px; }
-.user-profile-widget .user-icon { color: var(--primary-accent); }
-.user-profile-widget .user-name { font-weight: 600; color: var(--text-primary); }
-.user-profile-widget .logout-btn { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 4px; display: flex; align-items: center; border-radius: 50%; transition: var(--transition); }
-.user-profile-widget .logout-btn:hover { background-color: var(--danger-light); color: var(--danger-color); }
-.user-profile-widget .admin-login-link { display: flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 600; color: var(--text-primary); transition: var(--transition); }
-.user-profile-widget .admin-login-link:hover { color: var(--primary-accent); }
-.clock-widget, .weather-widget { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
-
-/* ==========================================================================
-   12. BẢNG TIN NHANH (DASHBOARD)
-   ========================================================================== */
-.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
-
-.gemini-stat-card {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    position: relative;
-    overflow: hidden;
-    transition: var(--transition);
-    box-shadow: var(--shadow-sm);
-}
-.gemini-stat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
-
-.gemini-stat-card__header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-}
-.gemini-stat-card__icon {
-    background-color: var(--primary-accent-light);
-    color: var(--primary-accent);
-    border-radius: 12px;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-.gemini-stat-card__icon svg { width: 24px; height: 24px; }
-.gemini-stat-card__label { font-size: 1rem; color: var(--text-primary); font-weight: 600; }
-
-.gemini-stat-card__value-wrapper {
-    display: flex;
-    align-items: baseline;
-    line-height: 1;
-    flex-grow: 1;
-    padding-top: 1rem;
-}
-.gemini-stat-card__value { font-size: 3rem; font-weight: 700; color: var(--text-primary); }
-.gemini-stat-card__unit { font-size: 1.5rem; font-weight: 600; color: var(--text-secondary); margin-left: 0.5rem; }
-
-/* Tùy chỉnh màu sắc cho từng thẻ */
-.gemini-stat-card[data-stat-id="vehicles"] .gemini-stat-card__icon { background-color: var(--primary-accent-light); color: var(--primary-accent); }
-.gemini-stat-card[data-stat-id="revenue"] .gemini-stat-card__icon { background-color: var(--success-light); color: var(--success-color); }
-.gemini-stat-card[data-stat-id="total"] .gemini-stat-card__icon { background-color: #eef2ff; color: #4f46e5; }
-.gemini-stat-card[data-stat-id="vip"] .gemini-stat-card__icon { background-color: var(--vip-gold-light); color: var(--vip-gold); }
-
-[data-theme="dark"] .gemini-stat-card[data-stat-id="vehicles"] .gemini-stat-card__icon { background-color: #1e3a8a; color: #60a5fa; }
-[data-theme="dark"] .gemini-stat-card[data-stat-id="revenue"] .gemini-stat-card__icon { background-color: #166534; color: #4ade80; }
-[data-theme="dark"] .gemini-stat-card[data-stat-id="total"] .gemini-stat-card__icon { background-color: #312e81; color: #818cf8; }
-[data-theme="dark"] .gemini-stat-card[data-stat-id="vip"] .gemini-stat-card__icon { background-color: #713f12; color: #fcd34d; }
-
-/* Hiệu ứng icon động khi hover */
-.gemini-stat-card:hover .animated-icon {
-    animation: icon-bounce 0.6s cubic-bezier(0.5, 0, 0.1, 1);
-}
-@keyframes icon-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
-
-.gemini-stat-card:hover .vip-icon {
-    animation: icon-spin 0.8s cubic-bezier(0.5, 0, 0.1, 1);
-}
-@keyframes icon-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.gemini-stat-card:hover .revenue-icon path {
-    animation: revenue-wave 1.5s ease-in-out infinite;
-}
-@keyframes revenue-wave {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-2px) scaleY(1.05); }
-}
-
-/* ==========================================================================
-   14. FORM CHÍNH (MAIN FORM)
-   ========================================================================== */
-.action-hub-v1 {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    position: relative;
-}
-.input-with-button-wrapper {
-    position: relative;
-    flex-grow: 1;
-}
-.input-with-button-wrapper #search-term {
-    padding-right: 60px; /* Tạo khoảng trống cho nút QR */
-}
-.input-with-button-wrapper #scan-qr-btn {
-    position: absolute;
-    top: 50%;
-    right: 6px;
-    transform: translateY(-50%);
-    height: calc(100% - 12px);
-    width: 48px;
-}
-.main-input-group {
-    display: flex;
-    gap: 0.75rem;
-}
-.main-input-group #search-term {
-    flex-grow: 1;
-}
-.main-input-group .icon-btn {
-    height: auto; /* Để nút co giãn theo chiều cao của input */
-}
-.action-hub-v1 #search-term {
-    font-size: 1.5rem;
-    padding: 1.25rem;
-    text-align: center;
-    text-transform: uppercase;
-    font-family: var(--font-mono);
-    font-weight: 700;
-    letter-spacing: 2px;
-}
-.action-hub-prompt {
-    text-align: center;
+.method-tab {
+    flex: 1;
     font-weight: 600;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    margin-top: 0.5rem;
-}
-.action-hub-buttons {
-    position: relative;
-    height: 62px; /* Chiều cao của nút để không bị nhảy layout */
-    overflow: hidden;
-}
-
-.action-hub-buttons .action-button {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.4s ease;
-}
-
-/* Trạng thái mặc định: Hiện nút Gửi xe */
-.action-hub-buttons .btn--check-in {
-    transform: scale(1);
-    opacity: 1;
-}
-.action-hub-buttons .btn--check-out {
-    transform: scale(0.8) translate(50%, -50%); /* Di chuyển ra góc trên phải */
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Khi có class 'show-check-out': Hiện nút Lấy xe */
-.action-hub-buttons.show-check-out .btn--check-in {
-    transform: scale(0.8) translate(-50%, 50%); /* Di chuyển ra góc dưới trái */
-    opacity: 0;
-    pointer-events: none;
-}
-.action-hub-buttons.show-check-out .btn--check-out {
-    transform: scale(1);
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.action-hub-buttons .action-button {
-    padding: 1.25rem;
-    font-size: 1.1rem;
-}
-.action-hub-details {
-    transition: all 0.4s ease;
-    overflow: hidden;
-}
-.action-hub-details > div {
-    animation: fadeIn 0.5s ease-out;
-}
-
-.form-details-wrapper {
-    margin-top: 1.5rem;
-    animation: fadeIn 0.4s ease-out;
-}
-.form-section-v2 { 
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-#info-display-section { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
-.info-display-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-hover); padding: 0.85rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
-.info-display-item .label { color: var(--text-secondary); font-weight: 500; }
-.info-display-item .value { font-weight: 600; text-align: right; }
-
-.additional-info-group { border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: var(--transition); }
-.additional-info-group[open] { border-color: var(--primary-accent); box-shadow: 0 0 0 4px var(--primary-accent-light); }
-.additional-info-group summary { padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; transition: var(--transition); user-select: none; }
-.additional-info-group summary:hover { background-color: var(--bg-hover); }
-.additional-info-group summary::after { content: '▼'; font-size: 0.8rem; transform: rotate(0deg); transition: transform 0.3s ease; }
-.additional-info-group[open] summary::after { transform: rotate(-180deg); }
-.additional-info-content { overflow: hidden; padding: 0 1rem; display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease, padding 0.4s ease; }
-.additional-info-group[open] .additional-info-content { grid-template-rows: 1fr; padding-top: 0.5rem; padding-bottom: 1rem; }
-.additional-info-content > div { min-height: 0; display: flex; flex-direction: column; gap: 1rem; }
-
-/* ==========================================================================
-   15. VÉ XE ĐIỆN TỬ "THẺ THANH NIÊN" - THIẾT KẾ MỚI
-   ========================================================================== */
-.youth-pass {
-    background-color: var(--bg-card);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    animation: floatUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) 0.1s backwards;
-    position: relative;
-    border: 1px solid var(--border-color);
-}
-
-.youth-pass__header {
-    background-color: var(--youth-union-blue);
-    color: white;
-    padding: 1.25rem 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    border-bottom: 3px solid #0d6efd;
-    position: relative;
-}
-/* Hiệu ứng sóng */
-.youth-pass__header::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    width: 100%;
-    height: 20px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-size: cover;
-    transform: translateY(100%);
-}
-body[data-theme="dark"] .youth-pass__header::after {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%231e293b' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
-}
-
-.youth-pass__logo {
-    width: 50px;
-    height: 50px;
-    background: white;
-    border-radius: 50%;
-    padding: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-.youth-pass__titles { line-height: 1.2; }
-.youth-pass__org-name { font-weight: 800; font-size: 1.1rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
-.youth-pass__event-name { font-weight: 500; font-size: 0.9rem; opacity: 0.9; }
-
-.youth-pass__body {
-    padding: 2.5rem 1.5rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    text-align: center;
-}
-
-.youth-pass__plate-section { line-height: 1.1; }
-.youth-pass__label { font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
-.youth-pass__plate {
-    font-family: var(--font-mono);
-    font-size: 2.75rem;
-    font-weight: 800;
-    color: var(--primary-accent);
-    letter-spacing: 2px;
-    margin-top: 0.25rem;
-}
-
-.youth-pass__qr-section { text-align: center; }
-.youth-pass__qr-section canvas {
-    display: inline-block;
+    padding: 0.75rem 1.5rem;
     border-radius: var(--radius-md);
-    padding: 8px;
-    background-color: white;
     border: 1px solid var(--border-color);
+    background-color: var(--bg-main);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.method-tab:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-color-light);
+}
+
+.method-tab.active {
+    background-color: var(--primary-accent);
+    color: white;
+    border-color: transparent;
     box-shadow: var(--shadow-md);
 }
-.youth-pass__qr-instruction {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-    margin-top: 0.75rem;
-}
 
-.youth-pass__details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    background-color: var(--bg-hover);
-    padding: 1rem;
-    border-radius: var(--radius-md);
-    width: 100%;
-    border: 1px solid var(--border-color-light);
-}
-.detail-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.95rem;
-    text-align: left;
-}
-.detail-item svg { color: var(--text-secondary); flex-shrink: 0; }
-.detail-item span { color: var(--text-secondary); }
-.detail-item strong { font-weight: 600; color: var(--text-primary); }
-
-.youth-pass__footer {
-    background-color: var(--bg-hover);
-    padding: 1.5rem 1.5rem 1rem;
-    margin-top: auto;
-    position: relative;
-}
-/* Hiệu ứng sóng ngược */
-.youth-pass__footer::before {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: 0;
-    width: 100%;
-    height: 20px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23f1f5f9' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-size: cover;
-    transform: translateY(-100%);
-}
-body[data-theme="dark"] .youth-pass__footer::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23334155' fill-opacity='1' d='M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,186.7C960,213,1056,235,1152,218.7C1248,203,1344,149,1392,122.7L1440,96L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
-}
-
-.youth-pass__id {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    text-align: center;
-    position: relative;
-}
-
-/* VIP Variant */
-.youth-pass.is-vip .youth-pass__plate { color: var(--vip-gold); }
-.youth-pass__vip-banner {
-    position: absolute;
-    top: 25px;
-    right: -35px;
-    background-color: var(--vip-gold);
-    color: white;
-    padding: 8px 40px;
-    font-weight: 700;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    transform: rotate(45deg);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 2;
-}
 
 /* ==========================================================================
-   16. CÁC THÀNH PHẦN KHÁC (MISCELLANEOUS)
+   6. TICKET FEE SECTION STYLES (NEW)
    ========================================================================== */
-/* Thẻ xác nhận cho xe ra (VIP/Miễn phí) */
-.confirm-card-v1 {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
+.ticket-fee-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    margin: 1rem 0;
+    border-top: 1px dashed var(--border-color);
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.ticket-fee-label {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.ticket-fee-amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-accent);
+}
+
+
+/* ==========================================================================
+   7. TOTAL AMOUNT CARD REDESIGN (FINAL V2)
+   ========================================================================== */
+.ticket-fee-section {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 1.5rem !important;
+    margin: 1.5rem 0 !important;
+    background-color: var(--primary-accent-light) !important;
+    border: 2px dashed var(--primary-accent) !important;
+    border-radius: var(--radius-lg) !important;
+    text-align: center !important;
+}
+
+.ticket-fee-label {
+    font-size: 0.9rem !important;
+    color: var(--text-secondary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    font-weight: 600 !important;
+}
+
+.ticket-fee-amount {
+    font-size: 2.5rem !important;
+    font-weight: 900 !important;
+    color: var(--primary-accent) !important;
+    line-height: 1 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ticket-fee-amount small {
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    opacity: 0.7 !important;
+    vertical-align: super !important;
+}
+
+
+/* ==========================================================================
+   8. ACTION BUTTONS LAYOUT FIX
+   ========================================================================== */
+.action-hub-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    margin-top: 1rem;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 16px !important;
+}
+
+/* Ensure buttons take full width and stack properly */
+.action-hub-buttons .action-button {
+    width: 100% !important;
+    flex: auto !important;
+    /* Reset any flex-grow/shrink */
+    margin: 0 !important;
+    max-width: none !important;
+    /* Remove max-width constraints if any */
+    position: relative !important;
+    /* Override absolute positioning */
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    /* Disable conflicting transforms */
+}
+
+/* Ensure container grows with content */
+.action-hub-buttons {
+    height: auto !important;
+    min-height: 60px;
+    /* Preserve minimum height */
+    overflow: visible !important;
+}
+
+/* Specific styling for the 'View Ticket' button to make it distinct but secondary if needed, 
+   or just ensure it follows the same sizing */
+.action-button[data-action="view-ticket"] {
+    margin-top: 0 !important;
+    /* Handled by gap */
+}
+
+/* Override any potential desktop media queries that force row direction */
+@media (min-width: 768px) {
+    .action-hub-buttons {
+        flex-direction: row;
+        flex-direction: column !important;
+        /* KEEP COLUMNS ON DESKTOP */
+        align-items: stretch !important;
+    }
+
+    .action-hub-buttons .action-button {
+        .action-hub-buttons {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+            margin-top: 16px !important;
+        }
+
+        /* Ensure buttons take full width */
+        .action-hub-buttons .action-button {
+            width: 100% !important;
+            flex: auto !important;
+            /* Reset any flex-grow/shrink */
+            margin: 0 !important;
+            max-width: none !important;
+            /* Remove max-width constraints if any */
+        }
+
+        /* Specific styling for the 'View Ticket' button to make it distinct but secondary if needed, 
+   or just ensure it follows the same sizing */
+        .action-button[data-action="view-ticket"] {
+            margin-top: 0 !important;
+            /* Handled by gap */
+        }
+
+        /* Override any potential desktop media queries that force row direction */
+        @media (min-width: 768px) {
+            .action-hub-buttons {
+                flex-direction: column !important;
+                /* KEEP COLUMNS ON DESKTOP */
+                align-items: stretch !important;
+            }
+
+            .action-hub-buttons .action-button {
+                width: 100% !important;
+            }
+        }
+
+        width: 100% !important;
+    }
+}
+
+
+/* ==========================================================================
+   17. GIAO DIỆN VÉ XE V2 (NEW REDESIGN) - PREMIUM CARD STYLE
+   ========================================================================== */
+.ticket-v2 {
+    background-color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     overflow: hidden;
+    position: relative;
+    font-family: var(--font-main);
+    max-width: 400px;
+    margin: 0 auto;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Header Xanh Gradient */
+.ticket-v2__header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    padding: 1.5rem;
     text-align: center;
+    color: #fff;
+    position: relative;
+    border-bottom: 4px solid #fbbf24;
+    /* Gold accent line */
+}
+
+/* Logo & Branding */
+.ticket-v2__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ticket-v2__logo {
+    width: 60px;
+    height: 60px;
+    background: #fff;
+    border-radius: 50%;
+    padding: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ticket-v2__title-main {
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ticket-v2__title-sub {
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* VIP Badge */
+.ticket-v2__vip {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #fbbf24;
+    color: #92400e;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Body Content */
+.ticket-v2__body {
+    padding: 2rem 1.5rem;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
     position: relative;
 }
-.confirm-card__header {
-    padding: 0.75rem 1rem;
-    color: white;
+
+/* Notch Effect (Pure CSS Decoration) */
+.ticket-v2__body::before,
+.ticket-v2__body::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    background-color: var(--bg-main, #f8fafc);
+    /* Match modal bg */
+    border-radius: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
 }
-.confirm-card-v1.is-vip .confirm-card__header { background-color: var(--vip-gold); }
-.confirm-card-v1.is-free .confirm-card__header { background-color: var(--success-color); }
-.confirm-card__title { font-size: 1rem; font-weight: 700; text-transform: uppercase; }
-.confirm-card__body { padding: 2rem 1.5rem; }
-.confirm-card__plate {
+
+.ticket-v2__body::before {
+    left: -10px;
+}
+
+.ticket-v2__body::after {
+    right: -10px;
+}
+
+
+/* Plate Number Section */
+.ticket-v2__plate-box {
+    text-align: center;
+}
+
+.ticket-v2__plate-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.ticket-v2__plate-number {
     font-family: var(--font-mono);
     font-size: 3rem;
     font-weight: 800;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
+    color: #1e293b;
+    line-height: 1.1;
+    letter-spacing: -1px;
 }
-.confirm-card__reason { font-size: 1rem; color: var(--text-secondary); }
-.confirm-card__success-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; z-index: 10; pointer-events: none; }
-.confirm-card__success-overlay.active { opacity: 1; pointer-events: auto; }
-.confirm-card__success-overlay .checkmark { width: 80px; height: 80px; }
-.confirm-card__success-overlay p { font-size: 1.2rem; font-weight: 700; margin-top: 1rem; }
+
+/* QR Code Section - Centered & Prominent */
+.ticket-v2__qr-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+    margin: 0 auto;
+    /* Center horizontally */
+    width: fit-content;
+}
+
+.ticket-v2__qr-canvas {
+    border-radius: 8px;
+    mix-blend-mode: multiply;
+    /* Better blending */
+}
+
+.ticket-v2__qr-hint {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Details Grid */
+.ticket-v2__details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    background: #f1f5f9;
+    padding: 1rem;
+    border-radius: 12px;
+    border-left: 4px solid #3b82f6;
+}
+
+.ticket-v2__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.ticket-v2__label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.ticket-v2__value {
+    color: #0f172a;
+    font-weight: 700;
+    text-align: right;
+}
+
+/* Footer ID */
+.ticket-v2__footer {
+    text-align: center;
+    padding: 1rem;
+    background: #f8fafc;
+    border-top: 1px dashed #e2e8f0;
+}
+
+.ticket-v2__id {
+    font-family: var(--font-mono);
+    color: #94a3b8;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    background: #e2e8f0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}

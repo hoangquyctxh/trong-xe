@@ -68,7 +68,12 @@ const fetchAndMergeSettings = async () => {
 
         // TÁI CẤU TRÚC: "Bơm" cấu hình phí vào module FeeCalculator
         if (typeof FeeCalculator !== 'undefined' && FeeCalculator.updateConfig) {
-            FeeCalculator.updateConfig(APP_CONFIG.fee);
+            // SỬA LỖI: Chuyển đổi chuỗi JSON từ DB thành đối tượng JavaScript trước khi cập nhật
+            let feeConfig = APP_CONFIG.fee;
+            if (typeof feeConfig === 'string') {
+                feeConfig = JSON.parse(feeConfig);
+            }
+            FeeCalculator.updateConfig(feeConfig);
         }
 
         console.log('✅ Cấu hình ứng dụng đã được tải và hợp nhất thành công:', APP_CONFIG);
