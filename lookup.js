@@ -369,17 +369,19 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.verifyPhoneInput.focus();
     };
 
-    const closeVerifyModal = () => {
+    const closeVerifyModal = (resetUI = true) => {
         elements.phoneVerificationModal.style.display = 'none';
         pendingPlateSearch = null;
-        showLoading(); // Reset lại trạng thái loading nếu hủy
-        setTimeout(() => {
-            elements.messageBox.style.display = 'none'; // Ẩn loading
-            elements.resultsSection.style.display = 'none'; // Đảm bảo không hiện kết quả
-        }, 300);
+        if (resetUI) {
+            showLoading(); // Reset lại trạng thái loading nếu hủy
+            setTimeout(() => {
+                elements.messageBox.style.display = 'none'; // Ẩn loading
+                elements.resultsSection.style.display = 'none'; // Đảm bảo không hiện kết quả
+            }, 300);
+        }
     };
 
-    elements.closeVerifyBtn.addEventListener('click', closeVerifyModal);
+    elements.closeVerifyBtn.addEventListener('click', () => closeVerifyModal(true));
 
     elements.phoneVerifyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -410,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (verifyData && verifyData.length > 0) {
             // Xác thực thành công -> Tiến hành hiển thị kết quả
-            closeVerifyModal(); // Đóng modal trc
+            closeVerifyModal(false); // Đóng modal nhưng KHÔNG reset UI
             // Gọi lại search nhưng "bypass" bước verify bằng cách dùng function nội bộ hoặc
             // gọi lại searchByTerm nhưng ta cần refactor searchByTerm một chút để hỗ trợ "đã verify".
             // Đơn giản nhất: Thực hiện query lấy full history cho plate này và render luôn.
