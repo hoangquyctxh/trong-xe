@@ -156,14 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         else dayMinutes++;
                         cursor = cursor.add(1, 'minute');
                     }
-                    const dayFee = Math.ceil(dayMinutes / 60) * (policy.hourly_day || 0);
-                    const nightFee = Math.ceil(nightMinutes / 60) * (policy.hourly_night || 0);
+                    const dayFee = Math.floor(dayMinutes / 60) * (policy.hourly_day || 0);
+                    const nightFee = Math.floor(nightMinutes / 60) * (policy.hourly_night || 0);
 
                     if (dayMinutes > 0) {
                         breakdownHTML += `
                             <div class="fee-row">
                                 <span class="fee-label">Ban ngày (${(policy.hourly_day || 0).toLocaleString('vi-VN')}đ/h)</span>
-                                <span class="fee-time">${Math.ceil(dayMinutes / 60)} giờ</span>
+                                <span class="fee-time">${Math.floor(dayMinutes / 60)} giờ</span>
                                 <span class="fee-amount">${dayFee.toLocaleString('vi-VN')}đ</span>
                             </div>`;
                     }
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         breakdownHTML += `
                             <div class="fee-row">
                                 <span class="fee-label">Ban đêm (${(policy.hourly_night || 0).toLocaleString('vi-VN')}đ/h)</span>
-                                <span class="fee-time">${Math.ceil(nightMinutes / 60)} giờ</span>
+                                <span class="fee-time">${Math.floor(nightMinutes / 60)} giờ</span>
                                 <span class="fee-amount">${nightFee.toLocaleString('vi-VN')}đ</span>
                             </div>`;
                     }

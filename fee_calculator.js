@@ -117,7 +117,7 @@ const FeeCalculator = {
                 const totalChargeableMinutes = Math.max(0, (end - chargeableStartTime) / 60000);
                 if (totalChargeableMinutes === 0) return 0;
 
-                const totalBlocks = Math.ceil(totalChargeableMinutes / 60);
+                const totalBlocks = Math.floor(totalChargeableMinutes / 60);
                 let totalFee = 0;
                 let cursor = new Date(chargeableStartTime);
 
