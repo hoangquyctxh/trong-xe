@@ -1,26 +1,86 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biên lai Dịch vụ</title>
+
+    <!-- LOAD SCRIPTS IN CORRECT ORDER -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
-      body { font-family: 'Be Vietnam Pro', sans-serif; margin: 0; padding: 20px; color: #333; font-size: 12px; display: flex; flex-direction: column; align-items: center; background-color: #e9ebee; }
-      .container { width: 100%; max-width: 700px; border: 1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1); background-color: white; }
-      .actions { text-align: center; padding: 20px; background-color: white; border: 1px solid #ccc; border-top: none; max-width: 700px; width: 100%; }
-      .btn-action { background-image: linear-gradient(to bottom, #1565c0, #0d47a1); color: white; border: none; padding: 12px 25px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-      .btn-action:disabled { background: #ccc; cursor: not-allowed; }
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #e9ebee;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+
+        .actions {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .btn-action {
+            background-image: linear-gradient(to bottom, #1565c0, #0d47a1);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-action:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
         @media print {
-          body { background-color: white; padding: 0; }
-          .actions { display: none; }
-          .container { box-shadow: none; border: none; max-width: 100%; padding: 0; }
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .actions {
+                display: none;
+            }
+
+            .container {
+                box-shadow: none;
+                border: none;
+                max-width: 100%;
+                padding: 0;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container" id="receipt-container"></div>
 
@@ -28,11 +88,22 @@
         <button id="download-pdf-btn" class="btn-action">Tải PDF & In</button>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+    <!-- MAIN LOGIC SCRIPT -->
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
+            const ticketId = params.get('ticketId');
+
+            console.log("🚀 Receipt Page Loaded. TicketId:", ticketId);
+
+            // Wait for a moment to ensure config.js has initialized global variables if needed
+            // (Though script tag order in head usually guarantees execution order)
+            if (!window.SUPABASE_DB && window.supabase && APP_CONFIG) {
+                console.log("Attempting manual init of SUPABASE_DB");
+                window.SUPABASE_DB = supabase.createClient(APP_CONFIG.supabase.url, APP_CONFIG.supabase.anonKey);
+            }
+
+            console.log("Checking Supabase connection:", !!window.SUPABASE_DB);
 
             // 1. Lấy mẫu biên lai từ file
             let templateHtml = '';
@@ -41,11 +112,12 @@
                 if (!response.ok) throw new Error('Không thể tải mẫu biên lai.');
                 templateHtml = await response.text();
             } catch (error) {
-                document.body.innerHTML = `<p style="color: red; text-align: center;">${error.message}</p>`;
+                console.error("Template load error:", error);
+                document.body.innerHTML = `<p style="color: red; text-align: center;">Lỗi tải mẫu: ${error.message}</p>`;
                 return;
             }
 
-            // 2. Chuẩn bị dữ liệu để điền vào mẫu
+            // 2. Chuẩn bị dữ liệu
             const formatDateTime = (d) => d ? new Date(d).toLocaleString('vi-VN') : '--';
             const formatCurrency = (n) => new Intl.NumberFormat('vi-VN').format(n || 0);
             const calculateDuration = (start, end) => {
@@ -58,81 +130,163 @@
                 return [d > 0 ? `${d}d` : '', h > 0 ? `${h}h` : '', `${m}m`].filter(Boolean).join(' ') || '0m';
             };
 
-            const exitTimeParam = params.get('exitTime');
-            const exitDate = exitTimeParam ? new Date(exitTimeParam) : new Date();
+            let data = {};
 
-            const data = {
-                orgName: APP_CONFIG.organizationName || 'ĐOÀN THANH NIÊN',
-                orgAddress: 'Đang cập nhật',
-                taxId: 'Đang cập nhật',
-                orgHotline: 'Đang cập nhật',
-                exitDate: exitDate.getDate(),
-                exitMonth: exitDate.getMonth() + 1,
-                exitYear: exitDate.getFullYear(),
-                uniqueID: params.get('uniqueID'),
-                plate: params.get('plate'),
-                vehicleType: 'Xe máy',
-                entryTimeDisplay: formatDateTime(params.get('entryTime')),
-                exitTimeDisplay: formatDateTime(params.get('exitTime')),
-                duration: calculateDuration(params.get('entryTime'), params.get('exitTime')),
-                feeDisplay: formatCurrency(params.get('fee')),
-                paymentMethod: params.get('paymentMethod'),
-                isVip: params.get('isVip') === 'true',
-                freeMinutes: APP_CONFIG.fee.freeMinutes,
-                dayHours: 0,
-                nightHours: 0,
-                dayRateFormatted: formatCurrency(APP_CONFIG.fee.dayRate),
-                nightRateFormatted: formatCurrency(APP_CONFIG.fee.nightRate),
-                feeInWords: 'Không'
-            };
+            // --- LOGIC MỚI: Tải dữ liệu từ DB nếu có ticketId ---
+            if (ticketId) {
+                if (!window.SUPABASE_DB) {
+                    console.error("❌ CRITICAL: Supabase DB not initialized.");
+                    document.getElementById('receipt-container').innerHTML = `<p style="color: red; text-align: center; padding: 20px;">Lỗi kết nối cơ sở dữ liệu. Vui lòng tải lại trang.</p>`;
+                    return;
+                }
+
+                try {
+                    document.getElementById('receipt-container').innerHTML = '<p style="text-align:center; padding: 20px;">Đang tìm dữ liệu hóa đơn...</p>';
+
+                    console.log("Fetching transaction for unique_id:", ticketId);
+                    const { data: transaction, error } = await window.SUPABASE_DB
+                        .from('transactions')
+                        .select('*')
+                        .eq('unique_id', ticketId)
+                        .single();
+
+                    if (error) {
+                        console.error("Supabase Error:", error);
+                        throw error;
+                    }
+
+                    if (!transaction) {
+                        console.warn("No transaction found for ID:", ticketId);
+                        throw new Error("Không tìm thấy giao dịch với mã này. Có thể mã không đúng hoặc đã bị xóa.");
+                    }
+
+                    console.log("✅ Transaction found:", transaction);
+
+                    const exitDate = transaction.exit_time ? new Date(transaction.exit_time) : new Date();
+
+                    data = {
+                        orgName: APP_CONFIG.organizationName || 'ĐOÀN THANH NIÊN',
+                        orgAddress: APP_CONFIG.orgAddress || 'Đang cập nhật',
+                        taxId: APP_CONFIG.taxId || 'Đang cập nhật',
+                        orgHotline: APP_CONFIG.orgHotline || 'Đang cập nhật',
+                        exitDate: exitDate.getDate(),
+                        exitMonth: exitDate.getMonth() + 1,
+                        exitYear: exitDate.getFullYear(),
+                        uniqueID: transaction.unique_id,
+                        plate: transaction.plate,
+                        vehicleType: transaction.vehicle_type || 'Xe máy',
+                        entryTimeDisplay: formatDateTime(transaction.entry_time),
+                        exitTimeDisplay: formatDateTime(transaction.exit_time),
+                        duration: calculateDuration(transaction.entry_time, transaction.exit_time),
+                        feeDisplay: formatCurrency(transaction.fee),
+                        paymentMethod: transaction.payment_method || 'Tiền mặt',
+                        isVip: transaction.is_vip,
+                        freeMinutes: APP_CONFIG.fee?.freeMinutes || 15,
+                        dayHours: 0,
+                        nightHours: 0,
+                        dayRateFormatted: formatCurrency(APP_CONFIG.fee?.dayRate || 0),
+                        nightRateFormatted: formatCurrency(APP_CONFIG.fee?.nightRate || 0),
+                        feeInWords: 'Không'
+                    };
+
+                } catch (err) {
+                    document.getElementById('receipt-container').innerHTML = `<div style="padding: 20px; text-align: center; color: red;"><h3>Lỗi tải dữ liệu</h3><p>${err.message}</p></div>`;
+                    return;
+                }
+
+            } else {
+                console.log("Legacy Mode: Reading params from URL");
+                // --- LOGIC CŨ (Legacy URL params) ---
+                const exitTimeParam = params.get('exitTime');
+                const exitDate = exitTimeParam ? new Date(exitTimeParam) : new Date();
+
+                data = {
+                    orgName: APP_CONFIG.organizationName || 'ĐOÀN THANH NIÊN',
+                    orgAddress: 'Đang cập nhật',
+                    taxId: 'Đang cập nhật',
+                    orgHotline: 'Đang cập nhật',
+                    exitDate: exitDate.getDate(),
+                    exitMonth: exitDate.getMonth() + 1,
+                    exitYear: exitDate.getFullYear(),
+                    uniqueID: params.get('uniqueID'),
+                    plate: params.get('plate'),
+                    vehicleType: params.get('vehicleType') || 'Xe máy',
+                    entryTimeDisplay: formatDateTime(params.get('entryTime')),
+                    exitTimeDisplay: formatDateTime(params.get('exitTime')),
+                    duration: calculateDuration(params.get('entryTime'), params.get('exitTime')),
+                    feeDisplay: formatCurrency(params.get('fee')),
+                    paymentMethod: params.get('paymentMethod'),
+                    isVip: params.get('isVip') === 'true',
+                    freeMinutes: APP_CONFIG.fee?.freeMinutes || 15,
+                    dayHours: 0,
+                    nightHours: 0,
+                    dayRateFormatted: formatCurrency(APP_CONFIG.fee?.dayRate || 0),
+                    nightRateFormatted: formatCurrency(APP_CONFIG.fee?.nightRate || 0),
+                    feeInWords: 'Không'
+                };
+            }
+
+            console.log("Applying data to template:", data);
 
             // 3. Điền dữ liệu vào mẫu
             let finalHtml = templateHtml;
             for (const key in data) {
+                // Ensure value is safe string and not undefined
+                const value = (data[key] === null || data[key] === undefined) ? '' : data[key];
                 const regex = new RegExp(`<?= ${key} ?>`, 'g');
-                finalHtml = finalHtml.replace(regex, data[key]);
+                finalHtml = finalHtml.replace(regex, value);
             }
 
             // 4. Xử lý logic điều kiện cho phương thức thanh toán
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = finalHtml;
-            const paymentDisplay = tempDiv.querySelector('#payment-method-display');
-            if (paymentDisplay) {
-                if (data.paymentMethod === 'VIP' || data.isVip) {
-                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-vip').innerHTML;
-                } else if (data.paymentMethod === 'Miễn phí') {
-                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-free').innerHTML;
-                } else {
-                    paymentDisplay.innerHTML = tempDiv.querySelector('#payment-normal').innerHTML;
+            try {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = finalHtml;
+                const paymentDisplay = tempDiv.querySelector('#payment-method-display');
+
+                // Only process if the template actually has this ID and templates
+                if (paymentDisplay && tempDiv.querySelector('#payment-vip')) {
+                    if (data.paymentMethod === 'VIP' || data.isVip) {
+                        paymentDisplay.innerHTML = tempDiv.querySelector('#payment-vip').innerHTML;
+                    } else if (data.paymentMethod === 'Miễn phí') {
+                        paymentDisplay.innerHTML = tempDiv.querySelector('#payment-free').innerHTML;
+                    } else {
+                        paymentDisplay.innerHTML = tempDiv.querySelector('#payment-normal').innerHTML;
+                    }
                 }
+                finalHtml = tempDiv.innerHTML;
+            } catch (e) {
+                console.warn("Error processing payment display logic:", e);
+                // Continue with raw HTML if specific logic fails
             }
-            finalHtml = tempDiv.innerHTML;
 
             // 5. Hiển thị biên lai đã hoàn chỉnh
             document.getElementById('receipt-container').innerHTML = finalHtml;
 
             // 6. Gắn sự kiện cho nút tải PDF
             const downloadBtn = document.getElementById('download-pdf-btn');
-            downloadBtn.addEventListener('click', () => {
-                downloadBtn.disabled = true;
-                downloadBtn.textContent = 'Đang xử lý...';
-                const element = document.getElementById('receipt-container');
-                document.querySelector('.actions').style.display = 'none';
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', () => {
+                    downloadBtn.disabled = true;
+                    downloadBtn.textContent = 'Đang xử lý...';
+                    const element = document.getElementById('receipt-container');
+                    document.querySelector('.actions').style.display = 'none';
 
-                const opt = {
-                    margin: [0.3, 0.2, 0.3, 0.2],
-                    filename: `BienLai_${params.get('plate') || 'xe'}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-                };
-                html2pdf().from(element).set(opt).save().then(() => {
-                    document.querySelector('.actions').style.display = 'block';
-                    downloadBtn.disabled = false;
-                    downloadBtn.textContent = 'Tải PDF & In';
+                    const opt = {
+                        margin: [0.3, 0.2, 0.3, 0.2],
+                        filename: `BienLai_${data.plate || 'xe'}_${data.uniqueID || 'id'}.pdf`,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true },
+                        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+                    };
+                    html2pdf().from(element).set(opt).save().then(() => {
+                        document.querySelector('.actions').style.display = 'block';
+                        downloadBtn.disabled = false;
+                        downloadBtn.textContent = 'Tải PDF & In';
+                    });
                 });
-            });
+            }
         });
     </script>
 </body>
+
 </html>

@@ -529,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${state.locations.find(l => l.id === t.location_id)?.name || 'Không xác định'}</td>
                     <td style="text-align: center;"><span class="status-badge ${t.status === 'Đang gửi' ? 'parking' : 'departed'}">${t.status}</span></td>
                     <td style="text-align: center;">
+
                         <button class="action-button btn-secondary btn-small" data-action="edit-transaction">Sửa</button>
                     </td>
                 </tr>

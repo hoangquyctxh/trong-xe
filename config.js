@@ -22,6 +22,10 @@ const STATIC_CONFIG = {
     organizationName: "ĐOÀN TNCS HỒ CHÍ MINH P.BA ĐÌNH",
     weatherApiKey: "c9b24c823032912293817419cb0cd2dc",
     autoRefreshInterval: 5000,
+
+    // URL Google Apps Script (Sẽ được người dùng cập nhật sau)
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycbw8qXAs6iyZ-MGK3jTO475p6fzCiu-sgq6OGzVzhFdt9-7deI8pWyAD48_5R6RQ7-v9/exec",
+
     payment: {
         imageUrlBase: "https://qr.sepay.vn/img?bank=MSB&acc=968866975500&template=qronly&amount=0&des=0",
         getQrUrl: function (fee, memo) {
@@ -82,18 +86,13 @@ const fetchAndMergeSettings = async () => {
         // 4. Hợp nhất cài đặt động vào APP_CONFIG
         APP_CONFIG = { ...APP_CONFIG, ...dynamicConfig };
 
-        // Cập nhật các cấu trúc lồng nhau nếu có giá trị từ DB
-        // TẠM THỜI VÔ HIỆU HÓA: Ưu tiên mã SePay mới từ code cứng (vì DB vẫn đang lưu mã cũ)
-        // if (APP_CONFIG.payment_qr_url) {
-        //     APP_CONFIG.payment.imageUrlBase = APP_CONFIG.payment_qr_url;
-        // }
-
         // TÁI CẤU TRÚC: "Bơm" cấu hình phí vào module FeeCalculator
         if (typeof FeeCalculator !== 'undefined' && FeeCalculator.updateConfig) {
-            // SỬA LỖI: Chuyển đổi chuỗi JSON từ DB thành đối tượng JavaScript trước khi cập nhật
             let feeConfig = APP_CONFIG.fee;
             if (typeof feeConfig === 'string') {
-                feeConfig = JSON.parse(feeConfig);
+                try {
+                    feeConfig = JSON.parse(feeConfig);
+                } catch (e) { }
             }
             FeeCalculator.updateConfig(feeConfig);
         }

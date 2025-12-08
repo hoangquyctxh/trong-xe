@@ -19,6 +19,9 @@
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/duration.js"></script>
 
     <link rel="stylesheet" href="lookup.css"> <!-- Đảm bảo dòng này vẫn còn -->
+    <link rel="stylesheet" href="christmas.css"> <!-- Thêm CSS Giáng sinh -->
+    <link rel="stylesheet" href="smart_features.css"> <!-- Thêm CSS Tính năng thông minh -->
+    <script src="christmas.js" defer></script> <!-- Thêm JS Giáng sinh -->
 </head>
 
 <body>
@@ -46,6 +49,15 @@
                 <div class="input-group">
                     <input type="text" id="plate-input" placeholder="Nhập biển số hoặc mã vé..." required
                         autocapitalize="characters" autocorrect="off">
+                    <button type="button" id="voice-search-btn" class="btn-voice" title="Tìm bằng giọng nói">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </button>
                     <button type="submit" class="btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -56,6 +68,67 @@
                     </button>
                 </div>
             </form>
+
+            <!-- Modal Chia sẻ lấy xe -->
+            <!-- MODERN SHARE MODAL -->
+            <!-- MODERN SHARE MODAL (REFINE) -->
+            <div id="share-modal" class="modal center-modal">
+                <div class="modal-clean">
+                    <div class="modal-header-clean">
+                        <div class="icon-shield-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <path d="M12 8v4"></path>
+                                <path d="M12 16h.01"></path>
+                            </svg>
+                        </div>
+                        <h3 class="modal-title-clean">Nhờ người lấy hộ</h3>
+                        <p class="modal-subtitle-clean">Chia sẻ phiếu giữ xe này để nhờ người khác đến lấy xe giúp bạn.
+                        </p>
+                    </div>
+
+                    <div class="security-warning">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                            </path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <span>
+                            <strong>Cảnh báo an toàn:</strong> Bất kỳ ai có mã QR hoặc liên kết này đều có thể lấy xe
+                            của
+                            bạn. Chỉ chia sẻ với người mà bạn tin tưởng.
+                        </span>
+                    </div>
+
+                    <div class="qr-section-clean">
+                        <div id="share-qr-code"></div>
+                        <span class="qr-helper-text">Quét mã để xem vé chi tiết</span>
+                    </div>
+
+                    <div class="copy-link-section">
+                        <div class="share-input-wrapper-clean">
+                            <input type="text" id="share-link-input" readonly onclick="this.select()"
+                                class="input-share-clean">
+                            <button type="button" id="copy-share-link" class="btn-copy-clean">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy Link
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" id="close-share-modal" class="btn-close-clean">Đóng cửa sổ</button>
+                </div>
+            </div>
 
             <div class="divider">
                 <span>HOẶC</span>
@@ -108,6 +181,71 @@
                 <button type="button" id="close-verify-btn" class="btn-secondary btn-full"
                     style="margin-top: 0.5rem;">Hủy bỏ</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal nhập Email nhận biên lai -->
+    <div id="email-receipt-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon-wrapper">
+                <svg class="modal-icon-svg" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <!-- Receipt Paper -->
+                    <path class="receipt-paper" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <!-- Folded Corner -->
+                    <polyline class="receipt-corner" points="14 2 14 8 20 8"></polyline>
+                    <!-- Content Lines -->
+                    <line class="receipt-line line-1" x1="16" y1="13" x2="8" y2="13"></line>
+                    <line class="receipt-line line-2" x1="16" y1="17" x2="8" y2="17"></line>
+                    <line class="receipt-line line-3" x1="10" y1="9" x2="8" y2="9"></line>
+                </svg>
+            </div>
+            <h3 class="modal-title">Nhận Biên Lai</h3>
+
+            <p style="text-align: center; color: var(--text-sub); margin-bottom: 1.5rem;">
+                Nhập địa chỉ email của bạn để hệ thống gửi biên lai chi tiết (PDF).
+            </p>
+            <form id="email-receipt-form">
+                <input type="hidden" id="email-ticket-id">
+                <div class="input-group">
+                    <input type="email" id="email-input" class="input-rounded"
+                        placeholder="nhap-email-cua-ban@gmail.com" required>
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </div>
+                <button type="submit" class="btn-primary btn-full">Gửi Ngay</button>
+                <button type="button" id="close-email-btn" class="btn-secondary btn-full">Đóng</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal thông báo thành công -->
+    <div id="email-success-modal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <div class="success-icon-wrapper">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <h3 class="modal-title" style="color: #10b981;">Gửi Thành Công!</h3>
+            <p style="color: var(--text-main); margin-bottom: 0.5rem;">
+                Biên lai đã được gửi tới email của bạn.
+            </p>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Tự động quay lại sau <span id="success-countdown"
+                    style="font-weight: bold; color: var(--brand-blue);">15</span>s
+            </p>
+            <button type="button" id="close-success-btn" class="btn-primary btn-full"
+                style="background: #10b981; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);">
+                Hoàn tất
+            </button>
         </div>
     </div>
 

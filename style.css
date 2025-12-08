@@ -1,14 +1,14 @@
-﻿/*
+/*
 
  * =========================================================================
 
- * Há»† THá»NG GIAO DIá»†N "AETHER SUITE" - PHIÃŠN Báº¢N 12.0 (REFINED)
+ * HỆ THỐNG GIAO DIỆN "AETHER SUITE" - PHIÊN BẢN 12.0 (REFINED)
 
- * TÃ¡c giáº£: Gemini Code Assist
+ * Tác giả: Gemini Code Assist
 
- * Má»¥c tiÃªu: TÃ¡i cáº¥u trÃºc, tá»‘i Æ°u hÃ³a, Ä‘áº£m báº£o tÃ­nh nháº¥t quÃ¡n vÃ  dá»… báº£o trÃ¬,
+ * Mục tiêu: Tái cấu trúc, tối ưu hóa, đảm bảo tính nhất quán và dễ bảo trì,
 
- *          mang láº¡i tráº£i nghiá»‡m ngÆ°á»i dÃ¹ng Ä‘áº³ng cáº¥p.
+ *          mang lại trải nghiệm người dùng đẳng cấp.
 
  * =========================================================================
 
@@ -18,13 +18,13 @@
 
 /* ==========================================================================
 
-   1. BIáº¾N VÃ€ THIáº¾T Láº¬P CÆ  Báº¢N (VARIABLES & BASE SETUP)
+   1. BIẾN VÀ THIẾT LẬP CƠ BẢN (VARIABLES & BASE SETUP)
 
    ========================================================================== */
 
 :root {
 
-    /* Báº£ng mÃ u "Aetherial Light" */
+    /* Bảng màu "Aetherial Light" */
 
     --bg-main: #f8fafc;
 
@@ -48,7 +48,7 @@
 
 
 
-    /* MÃ u sáº¯c thÆ°Æ¡ng hiá»‡u & nháº¥n */
+    /* Màu sắc thương hiệu & nhấn */
 
     --primary-accent: #2563eb;
 
@@ -58,7 +58,7 @@
 
 
 
-    /* MÃ u tráº¡ng thÃ¡i */
+    /* Màu trạng thái */
 
     --danger-color: #dc2626;
 
@@ -112,7 +112,7 @@
 
 body[data-theme="dark"] {
 
-    /* Báº£ng mÃ u "Midnight Slate" */
+    /* Bảng màu "Midnight Slate" */
 
     --bg-main: #0f172a;
 
@@ -234,7 +234,7 @@ a:hover {
 
 /* ==========================================================================
 
-   2. Bá» Cá»¤C CHÃNH (LAYOUT)
+   2. BỐ CỤC CHÍNH (LAYOUT)
 
    ========================================================================== */
 
@@ -422,7 +422,7 @@ a:hover {
 
 
 
-    /* Header khÃ´ng cÃ²n bÃ¡m dÃ­nh theo yÃªu cáº§u */
+    /* Header không còn bám dính theo yêu cầu */
 
     .app-header {
 
@@ -524,7 +524,7 @@ a:hover {
 
 /* ==========================================================================
 
-   3. CÃC THÃ€NH PHáº¦N CHUNG (COMPONENTS)
+   3. CÁC THÀNH PHẦN CHUNG (COMPONENTS)
 
    ========================================================================== */
 
@@ -674,7 +674,7 @@ a:hover {
 
 
 
-/* NÃ‚NG Cáº¤P: Thay Ä‘á»•i placeholder cho Ã´ lá»c danh sÃ¡ch */
+/* NÂNG CẤP: Thay đổi placeholder cho ô lọc danh sách */
 
 #filter-input::placeholder {
 
@@ -840,7 +840,7 @@ a:hover {
 
 
 
-/* Hiá»‡u á»©ng vá»‡t sÃ¡ng khi hover (Chuyá»ƒn tá»« index.html vÃ o) */
+/* Hiệu ứng vệt sáng khi hover (Chuyển từ index.html vào) */
 
 .action-button::after {
 
@@ -862,7 +862,7 @@ a:hover {
 
     pointer-events: none;
 
-    /* Quan trá»ng: khÃ´ng Ä‘á»ƒ hiá»‡u á»©ng cháº·n click */
+    /* Quan trọng: không để hiệu ứng chặn click */
 
 }
 
@@ -1082,7 +1082,7 @@ a:hover {
 
 .plate-suggestions {
 
-    /* Sá»¬A Lá»–I: Chuyá»ƒn sang position relative Ä‘á»ƒ khÃ´ng che cÃ¡c pháº§n tá»­ khÃ¡c */
+    /* SỬA LỖI: Chuyển sang position relative để không che các phần tử khác */
 
     position: relative;
 
@@ -1112,7 +1112,7 @@ a:hover {
 
     display: none;
 
-    /* DÃ¹ng display none Ä‘á»ƒ khÃ´ng chiáº¿m khÃ´ng gian khi áº©n */
+    /* Dùng display none để không chiếm không gian khi ẩn */
 
 }
 
@@ -1354,7 +1354,7 @@ a:hover {
 
 
 
-/* Huy hiá»‡u tráº¡ng thÃ¡i thu phÃ­ */
+/* Huy hiệu trạng thái thu phí */
 
 .fee-status-badge {
 
@@ -1396,7 +1396,7 @@ a:hover {
 
 /* ==========================================================================
 
-   4. CÃC THÃ€NH PHáº¦N Cá»¤ THá»‚ (SPECIFIC COMPONENTS)
+   4. CÁC THÀNH PHẦN CỤ THỂ (SPECIFIC COMPONENTS)
 
    ========================================================================== */
 
@@ -1594,11 +1594,11 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   GIAO DIá»†N DANH SÃCH XE (VEHICLE LIST V6)
+   GIAO DIỆN DANH SÁCH XE (VEHICLE LIST V6)
 
    ========================================================================== */
 
-/* NÃ‚NG Cáº¤P: Chuyá»ƒn sang bá»‘ cá»¥c Grid Ä‘á»ƒ cÃ¡c tháº» tá»± Ä‘á»™ng sáº¯p xáº¿p vÃ  cÃ³ kÃ­ch thÆ°á»›c há»£p lÃ½ */
+/* NÂNG CẤP: Chuyển sang bố cục Grid để các thẻ tự động sắp xếp và có kích thước hợp lý */
 
 .vehicle-list-container {
 
@@ -1610,11 +1610,11 @@ input:checked+.slider:before {
 
     display: grid;
 
-    /* Chuyá»ƒn sang Grid */
+    /* Chuyển sang Grid */
 
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 
-    /* Bá»‘ cá»¥c lÆ°á»›i tá»± Ä‘á»™ng */
+    /* Bố cục lưới tự động */
 
     gap: 0.75rem;
 
@@ -1652,7 +1652,7 @@ input:checked+.slider:before {
 
 
 
-/* Tá»I Æ¯U HÃ“A: Thay tháº¿ box-shadow báº±ng outline Ä‘á»ƒ cuá»™n mÆ°á»£t hÆ¡n */
+/* TỐI ƯU HÓA: Thay thế box-shadow bằng outline để cuộn mượt hơn */
 
 .vehicle-item-v5:hover {
 
@@ -1678,7 +1678,7 @@ input:checked+.slider:before {
 
     min-width: 0;
 
-    /* NgÄƒn cháº·n co giÃ£n ngoÃ i Ã½ muá»‘n */
+    /* Ngăn chặn co giãn ngoài ý muốn */
 
 }
 
@@ -1754,7 +1754,7 @@ input:checked+.slider:before {
 
 
 
-/* KHÃ”I PHá»¤C: Tráº¡ng thÃ¡i rá»i bÃ£i cá»§a V5 */
+/* KHÔI PHỤC: Trạng thái rời bãi của V5 */
 
 .vehicle-item-v5.departed {
 
@@ -1774,7 +1774,7 @@ input:checked+.slider:before {
 
 
 
-/* Badge tráº¡ng thÃ¡i V5 */
+/* Badge trạng thái V5 */
 
 .status-badge-v5 {
 
@@ -1890,7 +1890,7 @@ input:checked+.slider:before {
 
 
 
-/* KHÃ”I PHá»¤C: Hiá»‡u á»©ng phÃ¡o hoa cho modal xÃ¡c nháº­n */
+/* KHÔI PHỤC: Hiệu ứng pháo hoa cho modal xác nhận */
 
 .confetti {
 
@@ -1994,7 +1994,7 @@ input:checked+.slider:before {
 
     max-width: 90vw;
 
-    /* YÃŠU Cáº¦U Má»šI: Thay Ä‘á»•i hiá»‡u á»©ng xuáº¥t hiá»‡n */
+    /* YÊU CẦU MỚI: Thay đổi hiệu ứng xuất hiện */
 
     transform: translateY(30px);
 
@@ -2016,7 +2016,7 @@ input:checked+.slider:before {
 
 .modal-overlay.active .modal-content {
 
-    /* YÃŠU Cáº¦U Má»šI: Thay Ä‘á»•i hiá»‡u á»©ng xuáº¥t hiá»‡n */
+    /* YÊU CẦU MỚI: Thay đổi hiệu ứng xuất hiện */
 
     transform: translateY(0);
 
@@ -2281,7 +2281,7 @@ input:checked+.slider:before {
 
     width: auto;
 
-    /* Sá»­a lá»—i: Äá»ƒ modal co giÃ£n theo áº£nh */
+    /* Sửa lỗi: Để modal co giãn theo ảnh */
 
 }
 
@@ -2301,7 +2301,7 @@ input:checked+.slider:before {
 
     height: 100%;
 
-    /* Sá»­a lá»—i: Äáº£m báº£o container chiáº¿m háº¿t khÃ´ng gian */
+    /* Sửa lỗi: Đảm bảo container chiếm hết không gian */
 
 }
 
@@ -2311,11 +2311,11 @@ input:checked+.slider:before {
 
     max-width: 90vw;
 
-    /* Sá»­a lá»—i: Giá»›i háº¡n chiá»u rá»™ng tá»‘i Ä‘a */
+    /* Sửa lỗi: Giới hạn chiều rộng tối đa */
 
     max-height: 85vh;
 
-    /* Sá»­a lá»—i: Giá»›i háº¡n chiá»u cao tá»‘i Ä‘a */
+    /* Sửa lỗi: Giới hạn chiều cao tối đa */
 
     border-radius: var(--radius-md);
 
@@ -2329,7 +2329,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   GIAO DIá»†N DANH SÃCH XE (VEHICLE LIST V7 - "INFO CARD")
+   GIAO DIỆN DANH SÁCH XE (VEHICLE LIST V7 - "INFO CARD")
 
    ========================================================================== */
 
@@ -2359,7 +2359,7 @@ input:checked+.slider:before {
 
     padding-left: calc(1.25rem + 8px);
 
-    /* Táº¡o khoáº£ng trá»‘ng cho váº¡ch mÃ u */
+    /* Tạo khoảng trống cho vạch màu */
 
 }
 
@@ -2521,7 +2521,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   GIAO DIá»†N DANH SÃCH XE (VEHICLE LIST V7 - "INFO CARD")
+   GIAO DIỆN DANH SÁCH XE (VEHICLE LIST V7 - "INFO CARD")
 
    ========================================================================== */
 
@@ -2817,7 +2817,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   6. MODAL THANH TOÃN (PAYMENT FLOW)
+   6. MODAL THANH TOÁN (PAYMENT FLOW)
 
    ========================================================================== */
 
@@ -2851,7 +2851,7 @@ input:checked+.slider:before {
 
     margin: -0.5rem -0.5rem 0;
 
-    /* KÃ©o nháº¹ ra ngoÃ i Ä‘á»ƒ táº¡o cáº£m giÃ¡c ná»•i khá»‘i */
+    /* Kéo nhẹ ra ngoài để tạo cảm giác nổi khối */
 
 }
 
@@ -2925,7 +2925,7 @@ input:checked+.slider:before {
 
     display: none;
 
-    /* áº¨n táº¥t cáº£ cÃ¡c bÆ°á»›c theo máº·c Ä‘á»‹nh */
+    /* Ẩn tất cả các bước theo mặc định */
 
     flex-direction: column;
 
@@ -2941,7 +2941,7 @@ input:checked+.slider:before {
 
     display: flex;
 
-    /* Chá»‰ hiá»‡n bÆ°á»›c active */
+    /* Chỉ hiện bước active */
 
 }
 
@@ -3095,13 +3095,13 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   ICON Äá»˜NG V5 - Tá»I GIáº¢N & TINH Táº¾
+   ICON ĐỘNG V5 - TỐI GIẢN & TINH TẾ
 
    ========================================================================== */
 
 
 
-/* Icon QR Ä‘á»™ng: ÄÆ°á»ng quÃ©t mÆ°á»£t mÃ  */
+/* Icon QR động: Đường quét mượt mà */
 
 .icon-qr-animated::after {
 
@@ -3153,7 +3153,7 @@ input:checked+.slider:before {
 
 
 
-/* Icon Tiá»n máº·t Ä‘á»™ng: Hiá»‡u á»©ng "con máº¯t" nhÃ¬n */
+/* Icon Tiền mặt động: Hiệu ứng "con mắt" nhìn */
 
 .icon-cash-animated path:last-child {
 
@@ -3209,7 +3209,7 @@ input:checked+.slider:before {
 
     display: none;
 
-    /* áº¨n cÃ¡c vÃ¹ng hiá»ƒn thá»‹ chi tiáº¿t */
+    /* Ẩn các vùng hiển thị chi tiết */
 
     text-align: center;
 
@@ -3293,7 +3293,7 @@ input:checked+.slider:before {
 
     height: 250px;
 
-    /* Äáº£m báº£o chiá»u cao tÆ°Æ¡ng Ä‘Æ°Æ¡ng vÃ¹ng QR */
+    /* Đảm bảo chiều cao tương đương vùng QR */
 
     overflow: hidden;
 
@@ -3891,7 +3891,7 @@ input:checked+.slider:before {
 
     opacity: 1;
 
-    /* Hiá»‡u á»©ng phÃ¡o hoa sáº½ tá»± biáº¿n máº¥t */
+    /* Hiệu ứng pháo hoa sẽ tự biến mất */
 
 }
 
@@ -3909,7 +3909,7 @@ input:checked+.slider:before {
 
     position: absolute;
 
-    /* Sá»­a lá»—i: ThÃªm thuá»™c tÃ­nh transform-origin */
+    /* Sửa lỗi: Thêm thuộc tính transform-origin */
 
     width: 6px;
 
@@ -3929,7 +3929,7 @@ input:checked+.slider:before {
 
     animation: firework-explode 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 
-    /* Sá»­a lá»—i: cÃº phÃ¡p animation */
+    /* Sửa lỗi: cú pháp animation */
 
 }
 
@@ -4039,7 +4039,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   7. GIAO DIá»†N ÄÃP á»¨NG (RESPONSIVE)
+   7. GIAO DIỆN ĐÁP ỨNG (RESPONSIVE)
 
    ========================================================================== */
 
@@ -4197,7 +4197,7 @@ input:checked+.slider:before {
 
 
 
-    /* áº¨n bá»›t trÃªn mÃ n hÃ¬nh ráº¥t nhá» */
+    /* Ẩn bớt trên màn hình rất nhỏ */
 
 }
 
@@ -4267,7 +4267,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   8. MÃ€N HÃŒNH CHá»œ (IDLE SCREEN)
+   8. MÀN HÌNH CHỜ (IDLE SCREEN)
 
    ========================================================================== */
 
@@ -4367,7 +4367,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   9. PHÃ‚N TRANG (PAGINATION)
+   9. PHÂN TRANG (PAGINATION)
 
    ========================================================================== */
 
@@ -4451,7 +4451,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   10. CHá»ˆ BÃO TRáº NG THÃI (INDICATORS)
+   10. CHỈ BÁO TRẠNG THÁI (INDICATORS)
 
    ========================================================================== */
 
@@ -4497,7 +4497,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   11. MÃ€N HÃŒNH ÄÄ‚NG NHáº¬P (LOGIN SCREEN)
+   11. MÀN HÌNH ĐĂNG NHẬP (LOGIN SCREEN)
 
    ========================================================================== */
 
@@ -4843,7 +4843,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   12. WIDGET TIá»†N ÃCH (WIDGETS)
+   12. WIDGET TIỆN ÍCH (WIDGETS)
 
    ========================================================================== */
 
@@ -4963,7 +4963,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   12. Báº¢NG TIN NHANH (DASHBOARD)
+   12. BẢNG TIN NHANH (DASHBOARD)
 
    ========================================================================== */
 
@@ -5119,7 +5119,7 @@ input:checked+.slider:before {
 
 
 
-/* TÃ¹y chá»‰nh mÃ u sáº¯c cho tá»«ng tháº» */
+/* Tùy chỉnh màu sắc cho từng thẻ */
 
 .gemini-stat-card[data-stat-id="vehicles"] .gemini-stat-card__icon {
 
@@ -5201,7 +5201,7 @@ input:checked+.slider:before {
 
 
 
-/* Hiá»‡u á»©ng icon Ä‘á»™ng khi hover */
+/* Hiệu ứng icon động khi hover */
 
 .gemini-stat-card:hover .animated-icon {
 
@@ -5297,7 +5297,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   14. FORM CHÃNH (MAIN FORM)
+   14. FORM CHÍNH (MAIN FORM)
 
    ========================================================================== */
 
@@ -5329,7 +5329,7 @@ input:checked+.slider:before {
 
     padding-right: 60px;
 
-    /* Táº¡o khoáº£ng trá»‘ng cho nÃºt QR */
+    /* Tạo khoảng trống cho nút QR */
 
 }
 
@@ -5375,7 +5375,7 @@ input:checked+.slider:before {
 
     height: auto;
 
-    /* Äá»ƒ nÃºt co giÃ£n theo chiá»u cao cá»§a input */
+    /* Để nút co giãn theo chiều cao của input */
 
 }
 
@@ -5425,7 +5425,7 @@ input:checked+.slider:before {
 
     height: 62px;
 
-    /* Chiá»u cao cá»§a nÃºt Ä‘á»ƒ khÃ´ng bá»‹ nháº£y layout */
+    /* Chiều cao của nút để không bị nhảy layout */
 
     overflow: hidden;
 
@@ -5449,7 +5449,7 @@ input:checked+.slider:before {
 
 
 
-/* Tráº¡ng thÃ¡i máº·c Ä‘á»‹nh: Hiá»‡n nÃºt Gá»­i xe */
+/* Trạng thái mặc định: Hiện nút Gửi xe */
 
 .action-hub-buttons .btn--check-in {
 
@@ -5465,7 +5465,7 @@ input:checked+.slider:before {
 
     transform: scale(0.8) translate(50%, -50%);
 
-    /* Di chuyá»ƒn ra gÃ³c trÃªn pháº£i */
+    /* Di chuyển ra góc trên phải */
 
     opacity: 0;
 
@@ -5475,13 +5475,13 @@ input:checked+.slider:before {
 
 
 
-/* Khi cÃ³ class 'show-check-out': Hiá»‡n nÃºt Láº¥y xe */
+/* Khi có class 'show-check-out': Hiện nút Lấy xe */
 
 .action-hub-buttons.show-check-out .btn--check-in {
 
     transform: scale(0.8) translate(-50%, 50%);
 
-    /* Di chuyá»ƒn ra gÃ³c dÆ°á»›i trÃ¡i */
+    /* Di chuyển ra góc dưới trái */
 
     opacity: 0;
 
@@ -5663,7 +5663,7 @@ input:checked+.slider:before {
 
 .additional-info-group summary::after {
 
-    content: 'â–¼';
+    content: '▼';
 
     font-size: 0.8rem;
 
@@ -5727,7 +5727,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   14.1. CÃC THÃ€NH PHáº¦N Bá»” SUNG TRONG ACTION HUB (CHO THÃ”NG TIN CHI TIáº¾T)
+   14.1. CÁC THÀNH PHẦN BỔ SUNG TRONG ACTION HUB (CHO THÔNG TIN CHI TIẾT)
 
    ========================================================================== */
 
@@ -5751,7 +5751,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   14.2. THáºº THÃ”NG TIN CÃ“ THá»‚ THU Gá»ŒN (COLLAPSIBLE CARD)
+   14.2. THẺ THÔNG TIN CÓ THỂ THU GỌN (COLLAPSIBLE CARD)
 
    ========================================================================== */
 
@@ -5765,7 +5765,7 @@ input:checked+.slider:before {
 
     overflow: hidden;
 
-    /* Ráº¥t quan trá»ng: áº¨n ná»™i dung trÃ n ra ngoÃ i */
+    /* Rất quan trọng: Ẩn nội dung tràn ra ngoài */
 
     transition: var(--transition);
 
@@ -5799,7 +5799,7 @@ input:checked+.slider:before {
 
     user-select: none;
 
-    /* TrÃ¡nh chá»n text khi nháº¥n Ä‘Ãºp */
+    /* Tránh chọn text khi nhấn đúp */
 
 }
 
@@ -5837,15 +5837,15 @@ input:checked+.slider:before {
 
     max-height: 0;
 
-    /* Tráº¡ng thÃ¡i máº·c Ä‘á»‹nh: thu gá»n */
+    /* Trạng thái mặc định: thu gọn */
 
     padding: 0 16px;
 
-    /* XÃ³a padding dá»c khi thu gá»n */
+    /* Xóa padding dọc khi thu gọn */
 
     overflow: hidden;
 
-    /* Äáº£m báº£o ná»™i dung con khÃ´ng bá»‹ lá»™ ra */
+    /* Đảm bảo nội dung con không bị lộ ra */
 
     transition: max-height 0.4s ease-out, padding 0.4s ease-out;
 
@@ -5855,7 +5855,7 @@ input:checked+.slider:before {
 
 
 
-/* Tráº¡ng thÃ¡i khi tháº» Ä‘Æ°á»£c má»Ÿ rá»™ng (cÃ³ class 'expanded') */
+/* Trạng thái khi thẻ được mở rộng (có class 'expanded') */
 
 .collapsible-card.expanded .collapsible-card__chevron {
 
@@ -5869,11 +5869,11 @@ input:checked+.slider:before {
 
     max-height: 40vh;
 
-    /* Giá»›i háº¡n chiá»u cao Ä‘á»ƒ ná»™i dung bÃªn trong cÃ³ thá»ƒ cuá»™n */
+    /* Giới hạn chiều cao để nội dung bên trong có thể cuộn */
 
     overflow-y: auto;
 
-    /* Cho phÃ©p cuá»™n dá»c khi ná»™i dung dÃ i hÆ¡n */
+    /* Cho phép cuộn dọc khi nội dung dài hơn */
 
     padding: 16px;
 
@@ -5885,7 +5885,7 @@ input:checked+.slider:before {
 
 /* ==========================================================================
 
-   15. VÃ‰ XE ÄIá»†N Tá»¬ "THáºº THANH NIÃŠN" - THIáº¾T Káº¾ Má»šI
+   15. VÉ XE ĐIỆN TỬ "THẺ THANH NIÊN" - THIẾT KẾ MỚI
 
    ========================================================================== */
 
@@ -5935,7 +5935,7 @@ input:checked+.slider:before {
 
 
 
-/* Hiá»‡u á»©ng sÃ³ng */
+/* Hiệu ứng sóng */
 
 .youth-pass__header::after {
 
@@ -6199,7 +6199,7 @@ body[data-theme="dark"] .youth-pass__header::after {
 
 
 
-/* Hiá»‡u á»©ng sÃ³ng ngÆ°á»£c */
+/* Hiệu ứng sóng ngược */
 
 .youth-pass__footer::before {
 
@@ -6293,11 +6293,11 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 /* ==========================================================================
 
-   16. CÃC THÃ€NH PHáº¦N KHÃC (MISCELLANEOUS)
+   16. CÁC THÀNH PHẦN KHÁC (MISCELLANEOUS)
 
    ========================================================================== */
 
-/* Tháº» xÃ¡c nháº­n cho xe ra (VIP/Miá»…n phÃ­) */
+/* Thẻ xác nhận cho xe ra (VIP/Miễn phí) */
 
 .confirm-card-v1 {
 
@@ -6455,7 +6455,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 /* ==========================================================================
 
-   17. MODAL THANH TOÃN V9 (PAYMENT FLOW V9) - PREMIUM SELECTION
+   17. MODAL THANH TOÁN V9 (PAYMENT FLOW V9) - PREMIUM SELECTION
 
    ========================================================================== */
 
@@ -6983,7 +6983,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 /* ==========================================================================
 
-   18. MODAL THÃ€NH CÃ”NG V6 (CHECKOUT SUCCESS V6) - DIGITAL RECEIPT
+   18. MODAL THÀNH CÔNG V6 (CHECKOUT SUCCESS V6) - DIGITAL RECEIPT
 
    ========================================================================== */
 
@@ -7203,7 +7203,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 /* ==========================================================================
 
-   7. MODAL THANH TOÃN "PREMIUM" (PAYMENT FLOW V9)
+   7. MODAL THANH TOÁN "PREMIUM" (PAYMENT FLOW V9)
 
    ========================================================================== */
 
@@ -7225,7 +7225,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* Hiá»‡u á»©ng ná»n má» Gradient nháº¹ nhÃ ng */
+/* Hiệu ứng nền mờ Gradient nhẹ nhàng */
 
 .payment-flow-v9::before {
 
@@ -7273,7 +7273,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* 1. Tháº» thÃ´ng tin xe (Premium Card) */
+/* 1. Thẻ thông tin xe (Premium Card) */
 
 .payment-v9__vehicle-card {
 
@@ -7313,7 +7313,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* Dáº£i mÃ u trang trÃ­ */
+/* Dải màu trang trí */
 
 .payment-v9__vehicle-card::after {
 
@@ -7431,7 +7431,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* 2. Hiá»ƒn thá»‹ phÃ­ (Ná»•i báº­t) */
+/* 2. Hiển thị phí (Nổi bật) */
 
 .payment-v9__fee-display {
 
@@ -7497,7 +7497,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* 3. Chá»n phÆ°Æ¡ng thá»©c thanh toÃ¡n (Grid Cards) */
+/* 3. Chọn phương thức thanh toán (Grid Cards) */
 
 .payment-v9__methods {
 
@@ -7657,7 +7657,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* 4. Chi tiáº¿t thanh toÃ¡n (QR & Cash) */
+/* 4. Chi tiết thanh toán (QR & Cash) */
 
 .payment-step-details {
 
@@ -7935,7 +7935,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-    /* 1. Tháº» xe thu gá»n ngang */
+    /* 1. Thẻ xe thu gọn ngang */
 
     .payment-v9__vehicle-card {
 
@@ -8017,11 +8017,11 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-    /* áº¨n nhÃ£n Ä‘á»ƒ tiáº¿t kiá»‡m chá»— */
+    /* Ẩn nhãn để tiết kiệm chỗ */
 
 
 
-    /* 2. GiÃ¡ tiá»n thu gá»n */
+    /* 2. Giá tiền thu gọn */
 
     .payment-v9__fee-display {
 
@@ -8063,7 +8063,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-    /* 3. Chá»n phÆ°Æ¡ng thá»©c nhá» gá»n hÆ¡n */
+    /* 3. Chọn phương thức nhỏ gọn hơn */
 
     .payment-v9__methods {
 
@@ -8109,7 +8109,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-    /* áº¨n mÃ´ táº£ phá»¥ */
+    /* Ẩn mô tả phụ */
 
     .method-card__chevron {
 
@@ -8119,7 +8119,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-    /* 4. Chi tiáº¿t QR/Tiá»n máº·t thu gá»n */
+    /* 4. Chi tiết QR/Tiền mặt thu gọn */
 
     .payment-step-details.active {
 
@@ -8145,7 +8145,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
         width: 160px;
 
-        /* Nhá» hÆ¡n */
+        /* Nhỏ hơn */
 
         height: 160px;
 
@@ -8173,15 +8173,15 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-    /* Footer xÃ¡c nháº­n dÃ­nh dÆ°á»›i cÃ¹ng nhÆ°ng khÃ´ng che ná»™i dung */
+    /* Footer xác nhận dính dưới cùng nhưng không che nội dung */
 
-    /* (ÄÃ£ Ä‘Æ°á»£c xá»­ lÃ½ bá»Ÿi cáº¥u trÃºc modal hiá»‡n táº¡i) */
+    /* (Đã được xử lý bởi cấu trúc modal hiện tại) */
 
 }
 
 
 
-/* Overlay xÃ¡c nháº­n */
+/* Overlay xác nhận */
 
 .payment-confirmation-overlay {
 
@@ -8691,7 +8691,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* NÃºt xÃ¡c nháº­n cuá»‘i cÃ¹ng */
+/* Nút xác nhận cuối cùng */
 
 [data-action="complete-payment"] {
 
@@ -8713,7 +8713,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 
-/* Hiá»‡u á»©ng load khi click */
+/* Hiệu ứng load khi click */
 
 [data-action="complete-payment"].loading span {
 
@@ -8753,7 +8753,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 /* ==========================================================================
 
-   19. MODAL THÃ€NH CÃ”NG & XÃC NHáº¬N "PREMIUM" (UPGRADE)
+   19. MODAL THÀNH CÔNG & XÁC NHẬN "PREMIUM" (UPGRADE)
 
    ========================================================================== */
 
@@ -9308,7 +9308,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 
 /* ==========================================================================
-   17. GIAO DIỆN VÉ XE V2 (NEW REDESIGN) - PREMIUM CARD STYLE
+   17. GIAO DI?N V� XE V2 (NEW REDESIGN) - PREMIUM CARD STYLE
    ========================================================================== */
 .ticket-v2 {
     background-color: #fff;
@@ -9517,7 +9517,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 }
 
 /* ==========================================================================
-   3. ACTION HUB V2 (GIAO DIỆN PREMIUM) - FIX MISSING STYLES
+   3. ACTION HUB V2 (GIAO DI?N PREMIUM) - FIX MISSING STYLES
    ========================================================================== */
 .action-hub-wrapper {
     display: flex;
@@ -9637,3 +9637,837 @@ body[data-theme="dark"] .youth-pass__footer::before {
     border: 1px dashed #E2E8F0;
     font-size: 0.9rem;
 }
+
+/* ==========================================================================
+   4. PAYMENT MODAL ANIMATIONS (CASH)
+   ========================================================================== */
+.cash-animation-container {
+    position: relative;
+    width: 200px;
+    height: 140px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.cash-hand-wrapper {
+    position: absolute;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 120px;
+    animation: hand-enter 3s infinite ease-in-out;
+}
+
+.cash-hand {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #FFCCBC;
+    /* Skin tone */
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+}
+
+.cash-hand .finger {
+    width: 22px;
+    height: 40px;
+    background: #FFAB91;
+    /* Darker skin tone for fingers */
+    border-radius: 10px;
+    margin: 0 2px;
+    margin-top: -15px;
+    position: relative;
+    z-index: 3;
+    box-shadow: 0 -2px 2px rgba(0, 0, 0, 0.05);
+}
+
+.cash-hand .finger.main-hand {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #FFCCBC;
+    border-radius: 12px;
+    margin: 0;
+    z-index: 2;
+    box-shadow: none;
+}
+
+.cash-bill {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-10deg);
+    width: 100px;
+    height: 50px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border: 1px solid #047857;
+    border-radius: 4px;
+    z-index: 1;
+    /* Behind fingers */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    animation: bill-waving 3s infinite ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bill-content {
+    width: 85%;
+    height: 80%;
+    border: 1px dashed rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+}
+
+.bill-mark {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.bill-line {
+    flex: 1;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.4);
+    margin-left: 8px;
+}
+
+.cash-shadow {
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 15px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    animation: shadow-pulse 3s infinite ease-in-out;
+    z-index: 0;
+}
+
+@keyframes hand-enter {
+
+    0%,
+    100% {
+        bottom: -60px;
+        transform: translateX(-50%) rotate(0deg);
+    }
+
+    50% {
+        bottom: -30px;
+        transform: translateX(-50%) rotate(2deg);
+    }
+}
+
+@keyframes bill-waving {
+
+    0%,
+    100% {
+        transform: translateX(-50%) rotate(-10deg) translateY(0);
+    }
+
+    50% {
+        transform: translateX(-50%) rotate(-5deg) translateY(-5px);
+    }
+}
+
+@keyframes shadow-pulse {
+
+    0%,
+    100% {
+        width: 100px;
+        opacity: 0.1;
+    }
+
+    50% {
+        width: 80px;
+        opacity: 0.2;
+    }
+}
+
+    /* ==========================================================================
+   5. SUCCESS MODAL ANIMATION (DYNAMIC CHECKMARK)
+   ========================================================================== */
+    .success-checkmark-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+    }
+
+    .checkmark {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 2;
+        stroke: #fff;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #10B981;
+        animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        margin: 0 auto;
+    }
+
+    .checkmark__circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke-width: 2;
+        stroke-miterlimit: 10;
+        stroke: #10B981;
+        fill: none;
+        animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+
+    .checkmark__check {
+        transform-origin: 50% 50%;
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+
+    @keyframes stroke {
+        100% {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @keyframes scale {
+
+        0%,
+        100% {
+            transform: none;
+        }
+
+        50% {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+    }
+
+    @keyframes fill {
+        100% {
+            box-shadow: inset 0px 0px 0px 30px #10B981;
+        }
+    }
+
+    /* ==========================================================================
+   6. PREMIUM SUCCESS MODAL (V2) - RECOVERY
+   ========================================================================== */
+    .success-modal-v2 {
+        padding: 1rem 0.5rem;
+        text-align: center;
+    }
+
+    .success-header-v2 {
+        margin-bottom: 2rem;
+    }
+
+    .success-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem auto;
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 50%;
+        padding: 12px;
+        position: relative;
+    }
+
+    .success-icon-wrapper svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .success-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--success-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .success-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    /* Receipt Card Style */
+    .success-receipt-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+
+    .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .receipt-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .receipt-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .receipt-value {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 1rem;
+    }
+
+    .receipt-value.plate-number {
+        font-family: var(--font-mono);
+        background: #E2E8F0;
+        padding: 4px 8px;
+        border-radius: 6px;
+        letter-spacing: 1px;
+        color: #1E293B;
+    }
+
+    .receipt-divider {
+        height: 1px;
+        background-image: linear-gradient(to right, #CBD5E1 50%, transparent 50%);
+        background-size: 8px 1px;
+        background-repeat: repeat-x;
+        margin: 1rem 0;
+        opacity: 0.6;
+    }
+
+    .receipt-total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.5rem;
+    }
+
+    .receipt-total-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary-accent);
+    }
+
+    .btn--primary.full-width {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0;
+        padding: 0.875rem;
+        font-size: 1rem;
+        background: var(--text-primary);
+        /* Dark button for contrast */
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn--primary.full-width:hover {
+        background: #000;
+        transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+   7. GALAXY SUCCESS MODAL (V3) - "BREAKING THE MOLD"
+   ========================================================================== */
+    .success-modal-v3 {
+        position: relative;
+        padding: 2rem 1rem;
+        overflow: hidden;
+        text-align: center;
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        border-radius: 20px;
+        color: white;
+        margin: -1.5rem;
+        /* Override modal padding */
+    }
+
+    .success-bg-glow {
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+        animation: rotate 10s linear infinite;
+        z-index: 0;
+    }
+
+    .success-content-wrapper {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Modal Overlay Override for V3 */
+    .modal-content:has(.success-modal-v3) {
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    .modal-content:has(.success-modal-v3) .modal-header,
+    .modal-content:has(.success-modal-v3) .modal-footer {
+        display: none;
+        /* Hide default header/footer */
+    }
+
+    /* Custom Icon V3 */
+    .success-icon-v3 {
+        width: 90px;
+        height: 90px;
+        margin: 0 auto 1.5rem auto;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+    }
+
+    .checkmark-v3 {
+        width: 60px;
+        height: 60px;
+        display: block;
+        stroke-width: 3;
+        stroke: #4ade80;
+        /* Neon Green */
+        stroke-miterlimit: 10;
+        box-shadow: inset 0px 0px 0px #4ade80;
+        animation: scale .3s ease-in-out .9s both;
+    }
+
+    .success-title-v3 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 2rem;
+        background: linear-gradient(to right, #ffffff, #a5b4fc);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Glass Receipt Card */
+    .receipt-card-v3 {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .receipt-header-v3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .plate-badge-v3 {
+        font-family: var(--font-mono);
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #fbbf24;
+        /* Amber Gold */
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        letter-spacing: 2px;
+    }
+
+    .receipt-body-v3 {
+        text-align: left;
+    }
+
+    .receipt-info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        color: #e2e8f0;
+    }
+
+    .receipt-divider-v3 {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+        margin: 1rem 0;
+    }
+
+    .receipt-total-v3 {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.2rem;
+    }
+
+    .receipt-total-v3 .amount {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #4ade80;
+        /* Neon Green */
+        text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+    }
+
+    /* Custom Glowing Button */
+    .btn--v3-glow {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(to right, #4338ca, #6366f1);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        transition: all 0.3s;
+    }
+
+    .btn--v3-glow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+    }
+
+    @keyframes rotate {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* ==========================================================================
+   8. V4 FULL SCREEN SUCCESS OVERLAY - "ESCAPE THE MODAL"
+   ========================================================================== */
+    .success-overlay-v4 {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.95);
+        /* Deep dark overlay */
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+    }
+
+    .success-v4-container {
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+        padding: 2rem;
+        animation: zoomInSuccess 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes zoomInSuccess {
+        from {
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .success-v4-animation {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1.5rem;
+    }
+
+    .checkmark-v4 {
+        width: 100px;
+        height: 100px;
+        stroke: #22c55e;
+        stroke-width: 4;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.5));
+    }
+
+    .success-v4-title {
+        color: white;
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .success-v4-subtitle {
+        color: #94a3b8;
+        font-size: 1.1rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .success-v4-ticket {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: rotate(-2deg);
+        transition: transform 0.3s;
+    }
+
+    .success-v4-ticket:hover {
+        transform: rotate(0deg) scale(1.02);
+    }
+
+    .v4-ticket-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+
+    .v4-ticket-row .label {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .v4-ticket-row .value {
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    .v4-ticket-row .value.plate {
+        font-family: var(--font-mono);
+        font-size: 1.2rem;
+        background: #f1f5f9;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    .v4-ticket-row .value.money {
+        font-size: 1.5rem;
+        color: #16a34a;
+        font-weight: 800;
+    }
+
+    .v4-ticket-divider {
+        border-top: 2px dashed #e2e8f0;
+        margin: 1rem 0;
+        position: relative;
+    }
+
+    .v4-ticket-divider::before,
+    .v4-ticket-divider::after {
+        content: '';
+        position: absolute;
+        top: -10px;
+        width: 20px;
+        height: 20px;
+        background: #0f172a;
+        /* Match overlay bg */
+        border-radius: 50%;
+    }
+
+    .v4-ticket-divider::before {
+        left: -32px;
+    }
+
+    .v4-ticket-divider::after {
+        right: -32px;
+    }
+
+    .btn--v4-finish {
+        background: #22c55e;
+        color: white;
+        border: none;
+        width: 80%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        transition: all 0.2s;
+    }
+
+    .btn--v4-finish:hover {
+        background: #16a34a;
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+    }
+
+/* ==========================================================================
+   PAYMENT SUCCESS V6 (Standard Modal)
+   ========================================================================== */
+
+/* The Modal Box */
+.success-v6-modal {
+    background: white;
+    width: 90%;
+    max-width: 400px; /* Constrained width */
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: modal-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 10001; /* Above confetti */
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes modal-pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Header */
+.success-v6-header {
+    background: linear-gradient(135deg, #1488DB 0%, #0056b3 100%);
+    padding: 1.5rem 1rem 1rem;
+    text-align: center;
+    color: white;
+}
+
+.success-v6-logo-wrapper {
+    background: white;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.success-v6-logo {
+    width: 60px !important;
+    height: 60px !important;
+    max-width: 60px !important;
+    object-fit: contain;
+}
+
+.success-v6-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Body */
+.success-v6-body {
+    padding: 1.5rem;
+}
+
+/* Checkmark Box */
+.success-v6-icon-box {
+    margin: 0 auto 1.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-v6-checkmark {
+    width: 52px;
+    height: 52px;
+}
+
+.success-v6-circle {
+    stroke: #16a34a;
+    stroke-width: 2;
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-v6-check {
+    stroke: #16a34a;
+    stroke-width: 4;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.4s 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@keyframes stroke {
+    100% { stroke-dashoffset: 0; }
+}
+
+/* Details Table */
+.success-v6-details {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.success-v6-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.success-v6-row:last-child {
+    margin-bottom: 0;
+}
+
+.success-v6-row .label {
+    color: #64748b;
+}
+
+.success-v6-row .value {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.success-v6-row .plate-badge {
+    background: #fbbf24;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #d97706;
+}
+
+.success-v6-row.total {
+    border-top: 1px dashed #cbd5e1;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+}
+
+.success-v6-row.total .value {
+    color: #dc2626;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+/* Button */
+.btn--success-v6 {
+    width: 100%;
+    background: #1488DB;
+    color: white;
+    border: none;
+    padding: 0.875rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn--success-v6:hover {
+    background: #0d6efd;
+}
+

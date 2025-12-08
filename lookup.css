@@ -663,10 +663,331 @@ body {
     border-top-color: var(--brand-blue);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 @keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* === NEW UI ENHANCEMENTS (REVISED & FIXED) === */
+
+/* 1. TOAST NOTIFICATIONS */
+#toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.toast {
+    background: white;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 320px;
+    max-width: 400px;
+    animation: toastSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+    border-left: 5px solid var(--brand-blue);
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes toastSlideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.success {
+    border-left-color: #10b981;
+}
+
+.toast.error {
+    border-left-color: #ef4444;
+}
+
+.toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toast.success .toast-icon {
+    color: #10b981;
+}
+
+.toast.error .toast-icon {
+    color: #ef4444;
+}
+
+.toast-message {
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* 2. PREMIUM EMAIL BUTTON (GLOBAL) */
+.btn-email {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.btn-email:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);
+    filter: brightness(1.05);
+}
+
+/* 3. MODAL & FORM STYLING (FIXED) */
+.modal-icon-wrapper {
+    width: 72px;
+    height: 72px;
+    background: rgba(0, 101, 189, 0.08);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: var(--brand-blue);
+}
+
+.modal-icon-wrapper svg {
+    width: 36px;
+    height: 36px;
+    stroke-width: 1.5px;
+}
+
+/* FIX FLEX CONFLICT */
+/* FIX FLEX CONFLICT */
+#email-receipt-form .input-group {
+    display: block !important;
+    position: relative !important;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Icon positioning */
+#email-receipt-form .input-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    z-index: 10;
+    width: 20px;
+    height: 20px;
+    transition: color 0.3s;
+}
+
+
+
+/* Modern Input Field */
+#email-receipt-form .input-rounded {
+    width: 100%;
+    padding: 16px 20px 16px 52px !important;
+    /* Left padding for icon */
+    font-size: 1rem;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px;
+    /* Not pill, modern rounded rect */
+    background: #ffffff;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-main);
+    font-weight: 500;
+    text-align: left !important;
+    /* Left align is better for typing */
+}
+
+#email-receipt-form .input-rounded:focus {
+    border-color: var(--brand-blue) !important;
+    box-shadow: 0 0 0 4px rgba(0, 101, 189, 0.1);
+    outline: none;
+}
+
+#email-receipt-form .input-rounded::placeholder {
+    color: #cbd5e1;
+    font-weight: 400;
+}
+
+/* ENVELOPE ANIMATION */
+#email-receipt-form .input-icon {
+    overflow: visible;
+    /* Allow flap to go outside */
+    pointer-events: none;
+    /* Click through to input */
+}
+
+#email-receipt-form .input-icon polyline {
+    transform-origin: 12px 6px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Trigger animation when adjacent input is focused */
+#email-receipt-form input:focus+.input-icon polyline {
+    transform: scaleY(-1);
+}
+
+#email-receipt-form input:focus+.input-icon {
+    color: var(--brand-blue);
+    filter: drop-shadow(0 2px 3px rgba(0, 101, 189, 0.2));
+}
+
+/* Premium Primary Button in Modal */
+#email-receipt-form .btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, #0065BD 0%, #00509d 100%);
+    padding: 16px;
+    font-size: 1.1rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px -6px rgba(0, 101, 189, 0.4);
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#email-receipt-form .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -8px rgba(0, 101, 189, 0.5);
+    background: linear-gradient(135deg, #0074d9 0%, #005bb5 100%);
+}
+
+#email-receipt-form .btn-secondary {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 12px;
+    margin-top: 4px;
+    width: 100%;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#email-receipt-form .btn-secondary:hover {
+    color: var(--text-main);
+    text-decoration: underline;
+    background: transparent;
+}
+
+/* SUCCESS MODAL STYLES */
+.success-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #10b981;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.success-icon-wrapper svg {
+    width: 40px;
+    height: 40px;
+    stroke-width: 3px;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Specific Premium Button for Success Modal */
+#email-success-modal .btn-primary {
+    width: 100% !important;
+    /* Forces full width */
+    padding: 16px 24px !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    border-radius: 16px !important;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.5) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: block !important;
+    margin-top: 1rem;
+}
+
+#email-success-modal .btn-primary:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 25px -8px rgba(16, 185, 129, 0.7) !important;
+    filter: brightness(1.1);
+}
+
+#email-success-modal .btn-primary:active {
+    transform: translateY(-1px) !important;
+}
+
+/* Button Loading State */
+.btn-loading {
+    color: transparent !important;
+    position: relative;
+    pointer-events: none;
+    cursor: wait;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    top: 50%;
+    left: 50%;
+    margin-top: -12px;
+    margin-left: -12px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: btnSpin 0.8s linear infinite;
+}
+
+@keyframes btnSpin {
     to {
         transform: rotate(360deg);
     }

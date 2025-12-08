@@ -1164,14 +1164,24 @@ const Templates = {
                             </div>
                          </div>
                          <div class="payment-display-area" id="cash-display-area-v10" style="display:none; text-align:center">
-                            <p class="display-instruction">Thu tiền mặt từ khách</p>
-                            <div class="cash-animation-wrapper" style="height:150px">
-                                 <svg class="cash-stack-icon" viewBox="0 0 64 64" style="width:80px; height:80px">
-                                    <path class="cash-stack-bill" d="M55.5 32.8H8.5c-1.7 0-3-1.3-3-3V17.2c0-1.7 1.3-3 3-3h47c1.7 0 3 1.3 3 3v12.5c0 1.7-1.3 3.1-3 3.1z"/>
-                                    <path class="cash-stack-bill" d="M55.5 40.8H8.5c-1.7 0-3-1.3-3-3V25.2c0-1.7 1.3-3 3-3h47c1.7 0 3 1.3 3 3v12.5c0 1.7-1.3 3.1-3 3.1z"/>
-                                    <path class="cash-stack-bill" d="M55.5 48.8H8.5c-1.7 0-3-1.3-3-3V33.2c0-1.7 1.3-3 3-3h47c1.7 0 3 1.3 3 3v12.5c0 1.7-1.3 3.1-3 3.1z"/>
-                                </svg>
+                            <div class="cash-animation-container">
+                                <div class="cash-shadow"></div>
+                                <div class="cash-hand-wrapper">
+                                    <div class="cash-bill">
+                                        <div class="bill-content">
+                                            <span class="bill-mark">$</span>
+                                            <span class="bill-line"></span>
+                                        </div>
+                                    </div>
+                                    <div class="cash-hand">
+                                        <div class="finger"></div>
+                                        <div class="finger"></div>
+                                        <div class="finger"></div>
+                                        <div class="finger main-hand"></div>
+                                    </div>
+                                </div>
                             </div>
+                            <p class="display-instruction" style="margin-top: 1rem; font-weight: 500; color: var(--text-secondary)">Thu tiền mặt từ khách</p>
                          </div>
                     </div>
                     <div class="paid-stamp">ĐÃ THANH TOÁN</div>
@@ -1304,6 +1314,61 @@ const Templates = {
                     </button>
                 </div>
                 ${ticketContent}`;
+    },
+
+    checkoutSuccessModal(data) {
+        // ====================================================================================================
+        // THIẾT KẾ MỚI: GIAO DIỆN "PAYMENT SUCCESS V6" (STANDARD MODAL)
+        // Phong cách: Box Modal truyền thống, gọn gàng, an toàn.
+        // ====================================================================================================
+        const vehicle = data.vehicle || {};
+        const plate = vehicle.plate || '---';
+        const entryTime = vehicle.entry_time;
+        const exitTime = vehicle.exit_time || new Date();
+        const duration = Utils.calculateDuration(entryTime, exitTime);
+        const fee = data.fee || 0;
+
+        // Sử dụng cấu trúc modal chuẩn của app nếu có, hoặc tự định nghĩa wrapper an toàn
+        return `
+            <div class="modal-overlay active">
+                <div class="modal-content success-v6-modal">
+                    <div class="success-v6-header">
+                        <div class="success-v6-logo-wrapper">
+                             <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn" class="success-v6-logo">
+                        </div>
+                        <h3 class="success-v6-title">Thanh toán thành công</h3>
+                    </div>
+
+                    <div class="success-v6-body">
+                        <div class="success-v6-icon-box">
+                             <svg class="success-v6-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                <circle class="success-v6-circle" cx="26" cy="26" r="25" fill="none"/>
+                                <path class="success-v6-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            </svg>
+                        </div>
+
+                        <div class="success-v6-details">
+                            <div class="success-v6-row">
+                                <span class="label">Biển số:</span>
+                                <span class="value plate-badge">${plate}</span>
+                            </div>
+                            <div class="success-v6-row">
+                                <span class="label">Thời gian:</span>
+                                <span class="value">${duration}</span>
+                            </div>
+                            <div class="success-v6-row total">
+                                <span class="label">Thanh toán:</span>
+                                <span class="value money">${Utils.formatCurrency(fee)}đ</span>
+                            </div>
+                        </div>
+
+                        <button class="btn--success-v6" data-action="close-modal">Hoàn tất</button>
+                    </div>
+                </div>
+                <!-- Confetti -->
+                <div id="checkout-success-confetti"></div>
+            </div>
+        `;
     }
 };
 
@@ -1707,14 +1772,10 @@ const Handlers = {
                 }
                 else if (action === 'complete-payment') {
                     if (!selectedMethod) return;
-                    // V10: Show Stamp Animation
-                    if (flowContainer) flowContainer.classList.add('paid');
 
-                    // Delay slightly to show animation
-                    setTimeout(() => {
-                        dom.modalContainer.removeEventListener('click', handleClick);
-                        resolve({ fee, method: selectedMethod });
-                    }, 800);
+                    // NÂNG CẤP: Bỏ hiệu ứng đóng dấu cũ, chuyển sang resolve ngay để hiện modal thành công
+                    dom.modalContainer.removeEventListener('click', handleClick);
+                    resolve({ fee, method: selectedMethod });
                 } else if (action === 'close-modal') {
                     dom.modalContainer.removeEventListener('click', handleClick);
                     resolve(null);
@@ -1848,11 +1909,8 @@ const Handlers = {
         try {
             await Api.checkOut(vehicle.unique_id, 0, reason, staffUsername);
             this.showConfirmationSuccess();
-            // SỬA LỖI: Sau khi xác nhận thành công, chờ một chút rồi reset form và tải lại dữ liệu
-            // để giao diện được cập nhật ngay lập tức.
-            setTimeout(() => {
-                App.resetFormAndFetchData();
-            }, 1500); // Chờ 1.5s để người dùng thấy thông báo thành công
+            // SỬA LỖI: Không tự động reset form nữa, để người dùng tự đóng modal
+            // App.resetFormAndFetchData();
         } catch (error) {
             UI.showToast(`Lỗi xác nhận: ${error.message}`, 'error');
             UI.closeModal();
@@ -1868,17 +1926,23 @@ const Handlers = {
 
         try {
             await Api.checkOut(vehicle.unique_id, fee, paymentMethod, staffUsername);
-            UI.showPaymentConfirmation('success', 'Thành công!');
 
-            setTimeout(async () => {
-                // NÂNG CẤP: Hiển thị modal thành công cuối cùng với hiệu ứng pháo hoa
-                UI.closeModal();
-                UI.showModal('checkoutSuccess', { vehicle: vehicle, fee: fee, method: paymentMethod });
-                await App.resetFormAndFetchData();
-            }, 2500);
+            await Api.checkOut(vehicle.unique_id, fee, paymentMethod, staffUsername);
+
+            // FIX: Hiển thị ngay modal thành công.
+            // QUAN TRỌNG: KHÔNG gọi UI.closeModal() ở đây. 
+            // processPayment đang ở trong tính huống đã có modal.
+            // Gọi closeModal() sẽ kích hoạt timeout cleanup DOM, làm mất modal success mới.
+            // Chỉ cần gọi showModal đè lên là được.
+            UI.showModal('checkoutSuccess', { vehicle: vehicle, fee: fee, method: paymentMethod });
+
+            // Xóa dữ liệu xe đã chọn khỏi state để tránh lỗi logic, nhưng chưa reset UI
+            state.selectedVehicle = null;
+            state.selectedPlate = '';
+
         } catch (error) {
             UI.showToast(`Lỗi checkout: ${error.message}`, 'error');
-            UI.closeModal();
+            // UI.closeModal(); // Giữ modal để người dùng thử lại nếu muốn
         }
     },
 
