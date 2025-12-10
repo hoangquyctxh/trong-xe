@@ -557,288 +557,38 @@ body {
     }
 }
 
-/* --- IMMERSIVE SCANNING MODE (Global Overrides) --- */
-body.scanning-mode {
-    background: black;
-    overflow: hidden;
-    /* Lock scroll */
+/* --- Animations --- */
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* Hide Header & Idle */
-body.scanning-mode .sec-header,
-body.scanning-mode .idle-state {
-    display: none !important;
+@keyframes slideUpSpring {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
-/* Base Layout Reset */
-body.scanning-mode .dashboard-grid {
-    display: block;
-    height: 100dvh;
-    /* Force full viewport height */
-    position: relative;
-    padding: 0;
-    margin: 0;
-}
-
-/* Camera Layer (Bottom) */
-body.scanning-mode .camera-zone {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    background: black;
-    z-index: 10;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-body.scanning-mode .camera-viewport {
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-}
-
-body.scanning-mode #camera-feed {
-    object-fit: cover;
-}
-
-/* HUD Adjustment - Shifted UP */
-body.scanning-mode .hud-overlay {
-    top: 35% !important;
-    /* Move reticle up to avoid card overlap */
-    width: 260px;
-    height: 260px;
-}
-
-/* Result Layer (Top Overlay) */
-body.scanning-mode .result-console {
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    /* Above camera */
-    pointer-events: none;
-    /* Pass clicks to camera */
-    background: transparent;
-    border: none;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    /* Push card to bottom */
-}
-
-body.scanning-mode .result-card-container {
-    pointer-events: auto;
-    /* Card actionable */
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-    padding: 1rem;
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-/* Floating Controls */
-body.scanning-mode .camera-controls {
-    position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    bottom: auto;
-    z-index: 30;
-    display: flex;
-    gap: 12px;
-}
-
-body.scanning-mode .control-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 0;
-    justify-content: center;
-    font-size: 0;
-    /* Hide text */
-}
-
-body.scanning-mode .control-btn svg {
-    margin: 0;
-    width: 24px;
-    height: 24px;
-}
-
-/* COMPACT PREMIUM CARD */
-body.scanning-mode .verification-card,
-body.scanning-mode .cccd-card {
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
-    border-radius: 20px;
-    margin: 0;
-    border: none;
-    animation: slideUpSpring 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-body.scanning-mode .v-header {
-    padding: 1rem 1.5rem;
-    min-height: auto;
-}
-
-body.scanning-mode .plate-number {
-    font-size: 1.5rem;
-}
-
-body.scanning-mode .v-status {
-    font-size: 0.85rem;
-    padding: 4px 12px;
-}
-
-body.scanning-mode .v-body {
-    padding: 1rem 1.5rem;
-    gap: 0.75rem;
-}
-
-body.scanning-mode .v-row {
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #eee;
-}
-
-body.scanning-mode .v-row:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-body.scanning-mode .v-label {
-    font-size: 0.85rem;
-}
-
-body.scanning-mode .v-value {
-    font-size: 1rem;
-}
-
-body.scanning-mode .v-footer {
-    display: none;
-}
-
-/* Hide redundant location icon in compact mode */
-body.scanning-mode .loc-icon-group {
-    display: none;
-}
-
-/* RESPONSIVE FALLBACKS */
-/* --- RESPONSIVE MOBILE LAYOUT (Force Overlay) --- */
+/* (Global Immersive styles removed to preserve Desktop Grid) */
+/* Mobile Immersive styles are handled in the media query below */
+/* --- RESPONSIVE MOBILE LAYOUT (Scoped to Scanning Mode) --- */
 @media (max-width: 768px) {
 
-    /* 1. Layout Base */
-    .dashboard-grid {
-        display: block !important;
-        height: 100dvh !important;
-        position: relative;
-        overflow: hidden;
-    }
-
-    /* 2. Camera: Always Full Screen & Absolute */
-    .camera-zone {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-        background: #000;
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .camera-viewport {
-        border-radius: 0;
-        height: 100%;
-    }
-
-    #camera-feed {
-        object-fit: cover;
-    }
-
-    /* 3. Result Console: Overlay on Top */
-    .result-console {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 20;
-
-        background: transparent !important;
-        border: none;
-        padding: 0;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        /* Card at bottom */
-        pointer-events: none;
-    }
-
-    /* 4. The Card itself */
-    .result-card-container {
-        pointer-events: auto;
-        width: 100%;
-        padding: 1rem;
-        padding-bottom: max(1rem, env(safe-area-inset-bottom));
-        background: transparent;
-        position: relative;
-    }
-
-    /* Close Button Styling */
-    .btn-close-card {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 32px;
-        height: 32px;
-        background: rgba(0, 0, 0, 0.1);
-        border: none;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: #64748b;
-        z-index: 99;
-        transition: background 0.2s;
-    }
-
-    .btn-close-card:active {
-        background: rgba(0, 0, 0, 0.2);
-    }
-
-    /* Force specific card styling on mobile */
-    .verification-card,
-    .cccd-card {
-        background: rgba(255, 255, 255, 0.96) !important;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2) !important;
-        border-radius: 24px !important;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        margin: 0 !important;
-        position: relative;
-    }
-
-    /* Move HUD up */
-    .hud-overlay {
-        top: 35%;
-        width: 260px;
-        height: 260px;
-    }
-
-    /* Hide Idle State on Mobile to show Camera */
-    .idle-state {
-        display: none !important;
-    }
-
-    /* Header Overlay */
+    /* 1. Header Handling */
+    /* By default on mobile, we want the header to be visible but overlay-ready */
     .sec-header {
         position: absolute;
         top: 0;
@@ -849,6 +599,14 @@ body.scanning-mode .loc-icon-group {
         color: white;
         border-bottom: none;
         box-shadow: none;
+        pointer-events: none;
+        /* Let clicks pass through empty header space */
+    }
+
+    .brand-info,
+    .header-controls {
+        pointer-events: auto;
+        /* Re-enable buttons */
     }
 
     .brand-info h1 {
@@ -863,23 +621,133 @@ body.scanning-mode .loc-icon-group {
         display: none;
     }
 
-    /* Fix Overlapping Controls */
+    /* 2. BASE LAYOUT (Idle State) */
+    .dashboard-grid {
+        display: block !important;
+        height: 100dvh !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Idle State: MUST BE VISIBLE when not scanning */
+    .idle-state {
+        display: flex !important;
+        position: absolute;
+        inset: 0;
+        z-index: 25;
+        /* Higher than camera, lower than header */
+        background: #f8f9fa;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* 3. SCANNING MODE OVERRIDES */
+
+    /* When scanning, hide the idle state */
+    body.scanning-mode .idle-state {
+        display: none !important;
+    }
+
+    /* Camera: Only visible when scanning */
+    body.scanning-mode .camera-zone {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        background: #000;
+        display: flex !important;
+    }
+
+    .camera-viewport {
+        border-radius: 0;
+        height: 100%;
+    }
+
+    #camera-feed {
+        object-fit: cover;
+    }
+
+    /* Result Console */
+    .result-console {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 20;
+        background: transparent !important;
+        border: none;
+        padding: 0;
+        display: flex;
+        /* Always flex to allow showing results if present */
+        flex-direction: column;
+        justify-content: flex-end;
+        pointer-events: none;
+    }
+
+    /* Card Styling */
+    .result-card-container {
+        pointer-events: auto;
+        width: 100%;
+        padding: 1rem;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        background: transparent;
+        position: relative;
+    }
+
+    .verification-card,
+    .cccd-card {
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2) !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        margin: 0 !important;
+        position: relative;
+    }
+
+    .btn-close-card {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 50%;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* HUD */
+    .hud-overlay {
+        top: 35%;
+        width: 260px;
+        height: 260px;
+    }
+
+    /* Camera Controls: Only visible when scanning */
     .camera-controls {
         position: absolute;
-        /* Re-affirm absolute */
         top: 1.5rem;
         right: 1.5rem;
         bottom: auto;
-        display: flex;
+        display: none;
+        /* Hidden by default */
         flex-direction: row;
-        /* Force Row */
         gap: 16px;
-        /* Space between buttons */
         z-index: 999;
-        /* Top most, even above header */
     }
 
-    /* Force circle buttons */
+    body.scanning-mode .camera-controls {
+        display: flex !important;
+    }
+
     .control-btn {
         width: 48px;
         height: 48px;
