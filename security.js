@@ -1,5 +1,5 @@
 /* ================================================================= */
-/* SECURITY DASHBOARD V5.5 - LOGIC CONTROLLER + 2-LEVEL ADDRESS */
+/* SECURITY DASHBOARD V5.5 - LOGIC CONTROLLER */
 /* ================================================================= */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -58,18 +58,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- FORCED GOOGLE TTS ---
     const speak = (text) => {
         window.speechSynthesis?.cancel();
-
         try {
-            // Use googleapis.com endpoint
             const url = `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=vi&dt=t&q=${encodeURIComponent(text)}`;
             const audio = new Audio(url);
-
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.error('Audio Play Error', error);
-                });
-            }
+            audio.play().catch(e => console.error('Audio Play Error', e));
         } catch (e) {
             console.error('TTS Error', e);
         }
@@ -108,6 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // --- 4. SCANNER LOGIC ---
+    let barcodeDetector = null;
+
     const startScanner = async () => {
         try { await configPromise; } catch (e) { alert('Lỗi kết nối Config'); return; }
 
@@ -120,20 +114,42 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // Initialize Native Detector if supported
+        if ('BarcodeDetector' in window) {
+            try {
+                const formats = await BarcodeDetector.getSupportedFormats();
+                if (formats.includes('qr_code')) {
+                    barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+                }
+            } catch (e) { console.warn('Native Detector Failed', e); }
+        }
+
         try {
-            cameraStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-            });
+            // Prefer Environment camera, HD resolution
+            // 'continuous' focus is KEY for QR scanning
+            const constraints = {
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1920 }, // Try 1080p for better range
+                    height: { ideal: 1080 },
+                    focusMode: 'continuous'
+                }
+            };
+
+            cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
             DOM.cameraFeed.srcObject = cameraStream;
+
+            // Wait for video to actually play to get dimensions
             await DOM.cameraFeed.play();
 
             const track = cameraStream.getVideoTracks()[0];
             const caps = track.getCapabilities();
-            if (caps.torch) DOM.btnFlash.style.display = 'flex';
 
+            // Re-apply focus mode if capabilities allow (crucial for macro)
             if (caps.focusMode && caps.focusMode.includes('continuous')) {
                 track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => { });
             }
+            if (caps.torch) DOM.btnFlash.style.display = 'flex';
 
             scanAnimation = requestAnimationFrame(tick);
         } catch (err) {
@@ -152,6 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             cameraStream = null;
         }
 
+        barcodeDetector = null;
         DOM.cameraZone.style.display = 'none';
         DOM.startScreen.style.display = 'flex';
         DOM.btnFlash.style.display = 'none';
@@ -168,60 +185,93 @@ document.addEventListener('DOMContentLoaded', async () => {
         DOM.btnFlash.classList.toggle('active', isFlashOn);
     };
 
-    const tick = () => {
-        if (isProcessing || !qrWorker) {
-            if (scanAnimation) scanAnimation = requestAnimationFrame(tick);
+    const tick = async () => {
+        if (!DOM.cameraFeed.videoWidth) {
+            scanAnimation = requestAnimationFrame(tick);
             return;
         }
 
+        if (isProcessing) {
+            scanAnimation = requestAnimationFrame(tick);
+            return;
+        }
+
+        // Throttle: Max 15 scans/sec (approx 66ms)
+        // High enough for speed, low enough to save CPU
         const now = Date.now();
-        if (now - lastScanTime < 50) {
+        if (now - lastScanTime < 66) {
             scanAnimation = requestAnimationFrame(tick);
             return;
         }
         lastScanTime = now;
 
-        if (DOM.cameraFeed.readyState === DOM.cameraFeed.HAVE_ENOUGH_DATA) {
-            // ROI: 480px
-            const videoW = DOM.cameraFeed.videoWidth;
-            const videoH = DOM.cameraFeed.videoHeight;
-            const scanSize = 480;
+        try {
+            // OPTION A: NATIVE BARCODE DETECTOR (FASTEST)
+            if (barcodeDetector) {
+                try {
+                    const barcodes = await barcodeDetector.detect(DOM.cameraFeed);
+                    if (barcodes.length > 0) {
+                        const rawVal = barcodes[0].rawValue;
+                        handleScanResult({ data: rawVal }); // Mimic worker message format
+                    }
+                } catch (e) { /* Detect error, ignore frame */ }
+            }
 
-            const sx = Math.max(0, (videoW - scanSize) / 2);
-            const sy = Math.max(0, (videoH - scanSize) / 2);
-            const sw = Math.min(scanSize, videoW);
-            const sh = Math.min(scanSize, videoH);
+            // OPTION B: WEB WORKER FALLBACK (COMPATIBILITY)
+            else if (qrWorker && DOM.cameraFeed.readyState === DOM.cameraFeed.HAVE_ENOUGH_DATA) {
+                const videoW = DOM.cameraFeed.videoWidth;
+                const videoH = DOM.cameraFeed.videoHeight;
 
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            canvas.width = sw;
-            canvas.height = sh;
+                // Crop Center Square (matches CSS guide)
+                const scanSize = Math.min(videoW, videoH, 640); // Cap at 640px for worker perf
+                const sx = (videoW - scanSize) / 2;
+                const sy = (videoH - scanSize) / 2;
 
-            ctx.drawImage(DOM.cameraFeed, sx, sy, sw, sh, 0, 0, sw, sh);
+                // reusable canvas? Creating new one every frame is GC heavy.
+                // Optim: check if we can reuse a global canvas, but for now keeps it safe.
+                const canvas = document.createElement('canvas'); // TODO: Optimise this if needed
+                canvas.width = scanSize;
+                canvas.height = scanSize;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-            const imageData = ctx.getImageData(0, 0, sw, sh);
-            qrWorker.postMessage(imageData, [imageData.data.buffer]);
+                ctx.drawImage(DOM.cameraFeed, sx, sy, scanSize, scanSize, 0, 0, scanSize, scanSize);
+                const imageData = ctx.getImageData(0, 0, scanSize, scanSize);
+
+                // Transfer buffer to worker (Zero-Copy)
+                qrWorker.postMessage(imageData, [imageData.data.buffer]);
+            }
+        } catch (e) {
+            console.error('Scan Loop Error', e);
         }
 
         scanAnimation = requestAnimationFrame(tick);
     };
 
     // --- 5. RESULT HANDLING ---
+    let lastScannedData = null; // Track full data string to avoid repetition
+    const SCAN_COOLDOWN = 3000;
+
     const handleScanResult = (code) => {
         if (!code || !code.data) return;
+
+        const currentData = code.data;
+        const isDuplicate = (currentData === lastScannedData);
+
+        // Update last scanned data immediately to block rapid fire
+        lastScannedData = currentData;
 
         isProcessing = true;
         navigator.vibrate?.(100);
 
-        const data = code.data;
-        if ((data.match(/\|/g) || []).length >= (MIN_CCCD_PARTS - 1)) {
-            processCCCD(data);
-        } else if (data.startsWith('_') || data.includes('ticketId=')) {
-            processTicket(data);
+        if ((currentData.match(/\|/g) || []).length >= (MIN_CCCD_PARTS - 1)) {
+            processCCCD(currentData, isDuplicate);
+        } else if (currentData.startsWith('_') || currentData.includes('ticketId=')) {
+            processTicket(currentData, isDuplicate);
         } else {
             handleError();
         }
 
+        // Reset processing flag after delay
         setTimeout(() => isProcessing = false, 2500);
     };
 
@@ -231,8 +281,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => DOM.viewport.classList.remove('error'), 500);
     };
 
-    const processCCCD = (raw) => {
-        sounds.beep.play();
+    const processCCCD = (raw, isDuplicate) => {
+        // Visual feedback always triggers to show system is alive
+        if (!isDuplicate) sounds.beep.play();
+
+        DOM.viewport.classList.remove('scanned');
+        void DOM.viewport.offsetWidth; // Force reflow
         DOM.viewport.classList.add('scanned');
         setTimeout(() => DOM.viewport.classList.remove('scanned'), 300);
 
@@ -246,10 +300,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         renderCCCD(d);
-        speak(`Đã quét Căn cước: ${d.name}`);
+
+        // Audio Logic: Speak ONLY if not duplicate
+        if (!isDuplicate) {
+            speak(`Đã quét Căn cước: ${d.name}`);
+        } else {
+            // Optional: Subtle cue for duplicate?
+            // console.log('Duplicate scan ignored for audio');
+        }
     };
 
-    const processTicket = async (raw) => {
+    const processTicket = async (raw, isDuplicate) => {
         let id = raw;
         try { id = new URL(raw).searchParams.get('ticketId') || raw; } catch (e) { }
         id = id.trim();
@@ -261,19 +322,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (error) throw error;
 
             if (data?.security_alert) {
-                sounds.alert.play();
+                if (!isDuplicate) sounds.alert.play();
                 DOM.viewport.classList.add('error');
-                speak('Cảnh báo an ninh! Phát hiện cảnh báo.');
+
+                if (!isDuplicate) speak('Cảnh báo an ninh! Phát hiện cảnh báo.');
             } else {
-                sounds.beep.play();
+                if (!isDuplicate) sounds.beep.play();
                 DOM.viewport.classList.add('scanned');
                 setTimeout(() => DOM.viewport.classList.remove('scanned'), 300);
 
                 const plate = data.transaction?.plate || 'xe';
-                if (data.transaction?.status === 'Đang gửi') {
-                    speak(`Vé hợp lệ. Xe ${plate}`);
-                } else {
-                    speak(`Vé đã thanh toán. Xe ${plate}`);
+
+                // Speak only if new
+                if (!isDuplicate) {
+                    if (data.transaction?.status === 'Đang gửi') {
+                        speak(`Vé hợp lệ. Xe ${plate}`);
+                    } else {
+                        speak(`Vé đã thanh toán. Xe ${plate}`);
+                    }
                 }
             }
 
@@ -360,52 +426,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         DOM.cGender.textContent = d.gender;
 
-        // Show raw address first
+        // DISPLAY RAW ADDRESS DIRECTLY
         DOM.cAddress.textContent = d.address;
-        DOM.cAddress.style.opacity = '0.7';
-
-        // Trigger 2-Level Conversion
-        convertAddressToTwoLevel(d.address).then(newAddr => {
-            if (newAddr && newAddr !== d.address) {
-                DOM.cAddress.textContent = newAddr;
-                DOM.cAddress.style.opacity = '1';
-                DOM.cAddress.style.color = '#0f766e'; // Highlight
-                DOM.cAddress.style.fontWeight = '700';
-            }
-        });
-    };
-
-    // --- 7. ADDRESS CONVERSION ---
-    const convertAddressToTwoLevel = async (rawAddress) => {
-        try {
-            const parts = rawAddress.split(',').map(s => s.trim());
-            if (parts.length < 3) return rawAddress;
-
-            // Classic: [Street], [Ward], [District], [Province]
-            // We want [Street], [Ward], [Province]
-
-            const rawProvince = parts[parts.length - 1];
-            // Skip District (n-2)
-            const rawWard = parts[parts.length - 3] || parts[parts.length - 2] || '';
-            const detail = parts.slice(0, parts.length - 3).join(', ');
-
-            // 1. Search Province
-            const pRes = await fetch(`https://provinces.open-api.vn/api/p/search/?q=${encodeURIComponent(rawProvince)}`);
-            const pData = await pRes.json();
-            const officialProvince = pData.length > 0 ? pData[0].name : rawProvince;
-
-            // 2. Search Ward (Fuzzy)
-            const wRes = await fetch(`https://provinces.open-api.vn/api/w/search/?q=${encodeURIComponent(rawWard)}`);
-            const wData = await wRes.json();
-            const officialWard = wData.length > 0 ? wData[0].name : rawWard;
-
-            // Construct 2-Level Address (Street, Ward, Province)
-            return `${detail}, ${officialWard}, ${officialProvince}`;
-
-        } catch (e) {
-            console.error('Addr Convert Error', e);
-            return rawAddress;
-        }
+        DOM.cAddress.style.opacity = '1';
+        DOM.cAddress.style.color = '#374151';
+        DOM.cAddress.style.fontWeight = '500';
     };
 
     init();

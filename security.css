@@ -547,18 +547,69 @@ body {
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
+
+    /* 1. Reset Grid to Single Stack */
     .dashboard-grid {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
+        display: block;
+        position: relative;
     }
 
+    /* 2. Camera takes full height */
+    .camera-zone {
+        height: 100%;
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+    }
+
+    /* 3. Console becomes Overlay */
+    .result-console {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: auto;
+        min-height: 0;
+        max-height: 80vh;
+        /* Allow more space */
+        z-index: 10;
+        background: transparent;
+        /* Remove solid background container */
+        border: none;
+        padding: 1rem;
+        pointer-events: none;
+        /* Pass touches through empty space */
+        justify-content: flex-end;
+        /* Align bottom */
+    }
+
+    /* 4. Hide unnecessary elements */
+    .console-header,
+    .idle-state {
+        display: none !important;
+    }
+
+    /* 5. Active Cards styling */
+    .result-card-container {
+        pointer-events: auto;
+        /* Enable interaction on card */
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+        /* Center if tablet */
+    }
+
+    .verification-card,
+    .cccd-card {
+        box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.25);
+        margin-bottom: 1rem;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    /* Adjust HUD size */
     .hud-overlay {
         width: 250px;
         height: 250px;
-    }
-
-    .result-console {
-        border-left: none;
-        border-top: 1px solid #e2e8f0;
     }
 }
