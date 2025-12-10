@@ -687,6 +687,11 @@ body {
         pointer-events: none;
     }
 
+    /* Hide the 'Dữ liệu Xác minh' text on mobile since we have the cards */
+    .result-console .console-header {
+        display: none !important;
+    }
+
     /* Card Styling */
     .result-card-container {
         pointer-events: auto;
