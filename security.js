@@ -85,6 +85,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         DOM.btnStop.addEventListener('click', stopScanner);
         DOM.btnFlash.addEventListener('click', toggleFlash);
 
+        // Handle Close Card Event
+        document.addEventListener('close-card', () => {
+            resetUI();
+            sounds.beep.play(); // Feedback
+        });
+
         // TEST VOICE BUTTON
         const btnTestVoice = document.getElementById('btn-test-voice');
         if (btnTestVoice) {

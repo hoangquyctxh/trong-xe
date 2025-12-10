@@ -746,7 +746,6 @@ body.scanning-mode .loc-icon-group {
         height: 100%;
         z-index: 1;
         background: #000;
-        /* Ensure flex is kept if inline style attempts to set it */
         display: flex !important;
         align-items: center;
         justify-content: center;
@@ -768,22 +767,17 @@ body.scanning-mode .loc-icon-group {
         left: 0;
         width: 100%;
         height: 100%;
-        /* Cover full screen to catch clicks if needed, but usually we just want bottom */
-        height: auto;
-        top: auto;
-        /* Unset top */
         z-index: 20;
 
         background: transparent !important;
-        /* CRITICAL: Transparent container */
         border: none;
         padding: 0;
 
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
+        /* Card at bottom */
         pointer-events: none;
-        /* Click-through to camera */
     }
 
     /* 4. The Card itself */
@@ -793,6 +787,30 @@ body.scanning-mode .loc-icon-group {
         padding: 1rem;
         padding-bottom: max(1rem, env(safe-area-inset-bottom));
         background: transparent;
+        position: relative;
+    }
+
+    /* Close Button Styling */
+    .btn-close-card {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        z-index: 99;
+        transition: background 0.2s;
+    }
+
+    .btn-close-card:active {
+        background: rgba(0, 0, 0, 0.2);
     }
 
     /* Force specific card styling on mobile */
@@ -805,6 +823,7 @@ body.scanning-mode .loc-icon-group {
         border-radius: 24px !important;
         border: 1px solid rgba(255, 255, 255, 0.5);
         margin: 0 !important;
+        position: relative;
     }
 
     /* Move HUD up */
@@ -819,9 +838,7 @@ body.scanning-mode .loc-icon-group {
         display: none !important;
     }
 
-    /* Header: Make it float or hide? 
-       User wants immersion. Let's make it absolute top so it overlays camera 
-       instead of pushing it down. */
+    /* Header Overlay */
     .sec-header {
         position: absolute;
         top: 0;
@@ -834,7 +851,6 @@ body.scanning-mode .loc-icon-group {
         box-shadow: none;
     }
 
-    /* Adjust header text colors for dark overlay */
     .brand-info h1 {
         color: white !important;
     }
@@ -847,5 +863,34 @@ body.scanning-mode .loc-icon-group {
         display: none;
     }
 
-    /* Simplify header */
+    /* Fix Overlapping Controls */
+    .camera-controls {
+        position: absolute;
+        /* Re-affirm absolute */
+        top: 1.5rem;
+        right: 1.5rem;
+        bottom: auto;
+        display: flex;
+        flex-direction: row;
+        /* Force Row */
+        gap: 16px;
+        /* Space between buttons */
+        z-index: 999;
+        /* Top most, even above header */
+    }
+
+    /* Force circle buttons */
+    .control-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        padding: 0;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .control-btn svg {
+        margin: 0;
+    }
 }
