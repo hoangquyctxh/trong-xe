@@ -727,14 +727,125 @@ body.scanning-mode .loc-icon-group {
 }
 
 /* RESPONSIVE FALLBACKS */
+/* --- RESPONSIVE MOBILE LAYOUT (Force Overlay) --- */
 @media (max-width: 768px) {
+
+    /* 1. Layout Base */
     .dashboard-grid {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
+        display: block !important;
+        height: 100dvh !important;
+        position: relative;
+        overflow: hidden;
     }
 
-    .hud-overlay {
-        width: 240px;
-        height: 240px;
+    /* 2. Camera: Always Full Screen & Absolute */
+    .camera-zone {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        background: #000;
+        /* Ensure flex is kept if inline style attempts to set it */
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
     }
+
+    .camera-viewport {
+        border-radius: 0;
+        height: 100%;
+    }
+
+    #camera-feed {
+        object-fit: cover;
+    }
+
+    /* 3. Result Console: Overlay on Top */
+    .result-console {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* Cover full screen to catch clicks if needed, but usually we just want bottom */
+        height: auto;
+        top: auto;
+        /* Unset top */
+        z-index: 20;
+
+        background: transparent !important;
+        /* CRITICAL: Transparent container */
+        border: none;
+        padding: 0;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        pointer-events: none;
+        /* Click-through to camera */
+    }
+
+    /* 4. The Card itself */
+    .result-card-container {
+        pointer-events: auto;
+        width: 100%;
+        padding: 1rem;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        background: transparent;
+    }
+
+    /* Force specific card styling on mobile */
+    .verification-card,
+    .cccd-card {
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2) !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        margin: 0 !important;
+    }
+
+    /* Move HUD up */
+    .hud-overlay {
+        top: 35%;
+        width: 260px;
+        height: 260px;
+    }
+
+    /* Hide Idle State on Mobile to show Camera */
+    .idle-state {
+        display: none !important;
+    }
+
+    /* Header: Make it float or hide? 
+       User wants immersion. Let's make it absolute top so it overlays camera 
+       instead of pushing it down. */
+    .sec-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 30;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent) !important;
+        color: white;
+        border-bottom: none;
+        box-shadow: none;
+    }
+
+    /* Adjust header text colors for dark overlay */
+    .brand-info h1 {
+        color: white !important;
+    }
+
+    .brand-info p {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .system-status {
+        display: none;
+    }
+
+    /* Simplify header */
 }
