@@ -333,3 +333,84 @@
 .btn-share-premium:hover svg {
     transform: rotate(15deg) scale(1.1);
 }
+
+/* 5. RESPONSIVE MOBILE MODAL */
+@media (max-width: 480px) {
+    .modal-clean {
+        width: 95%;
+        padding: 1.5rem 1rem !important;
+        border-radius: 20px !important;
+        margin-top: 20px;
+        /* Ensure spacing from top */
+    }
+
+    .modal-header-clean {
+        margin-bottom: 1rem;
+    }
+
+    .icon-shield-wrapper {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 1rem;
+    }
+
+    .icon-shield-wrapper svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .modal-title-clean {
+        font-size: 1.25rem;
+    }
+
+    .modal-subtitle-clean {
+        font-size: 0.85rem;
+    }
+
+    .security-warning {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .qr-section-clean {
+        margin-bottom: 1.5rem;
+    }
+
+    #share-qr-code {
+        max-width: 140px;
+        /* Limit QR size */
+    }
+
+    #share-qr-code img {
+        width: 100% !important;
+        height: auto !important;
+    }
+
+    .share-input-wrapper-clean {
+        flex-direction: column;
+        padding: 0.5rem;
+        gap: 8px;
+    }
+
+    .input-share-clean {
+        width: 100%;
+        text-align: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+
+    .btn-copy-clean {
+        width: 100%;
+        justify-content: center;
+        padding: 0.8rem;
+    }
+
+    .btn-close-clean {
+        padding: 0.75rem 1.5rem;
+        width: 100%;
+        /* Full width close button for easier tapping */
+        background: #f1f5f9;
+        /* Subtle background for better visibility */
+    }
+}

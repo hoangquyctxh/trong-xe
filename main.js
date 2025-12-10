@@ -336,6 +336,8 @@ const Api = {
 // MODULE 3: UI RENDERING - "VẼ" LẠI GIAO DIỆN TỪ STATE
 // =========================================================================
 const UI = {
+    closeModalTimer: null, // Timer quản lý việc đóng modal
+
     showToast(message, type = 'success') {
         const toast = document.createElement('div');
         toast.className = `toast toast--${type}`;
@@ -794,6 +796,23 @@ const UI = {
 
     // NÂNG CẤP: Quản lý modal tập trung
     showModal(modalName, data = {}) {
+        // NÂNG CẤP: Hủy timer đóng modal cũ nếu có (để tránh xóa nhầm modal mới)
+        if (this.closeModalTimer) {
+            clearTimeout(this.closeModalTimer);
+            this.closeModalTimer = null;
+        }
+
+        // NÂNG CẤP: Dọn dẹp tài nguyên scanner cũ ngay lập tức khi mở modal mới
+        // Điều này đảm bảo camera không chạy ngầm nếu chuyển từ scanner sang modal khác
+        if (state.cameraStream) {
+            state.cameraStream.getTracks().forEach(track => track.stop());
+            state.cameraStream = null;
+        }
+        if (state.scanAnimation) {
+            cancelAnimationFrame(state.scanAnimation);
+            state.scanAnimation = null;
+        }
+
         state.activeModal = modalName;
         let modalHtml = '';
         switch (modalName) {
@@ -854,9 +873,17 @@ const UI = {
         // NÂNG CẤP: Thêm hiệu ứng "thu nhỏ" khi đóng
         if (overlay) {
             overlay.classList.remove('active');
-            setTimeout(() => {
+
+            // Xóa timer cũ nếu có
+            if (this.closeModalTimer) clearTimeout(this.closeModalTimer);
+
+            // Tạo timer mới để dọn dẹp sau animation
+            this.closeModalTimer = setTimeout(() => {
                 dom.modalContainer.innerHTML = '';
                 state.activeModal = null;
+
+                // Các tài nguyên này thực ra đã được dọn ở showModal nếu chuyển tiếp
+                // Nhưng ta vẫn giữ lại để đảm bảo nếu chỉ đóng mà không mở gì mới
                 if (state.cameraStream) {
                     state.cameraStream.getTracks().forEach(track => track.stop());
                     state.cameraStream = null;
@@ -865,10 +892,13 @@ const UI = {
                     cancelAnimationFrame(state.scanAnimation);
                     state.scanAnimation = null;
                 }
+
                 if (state.isProcessing) {
                     state.isProcessing = false;
                     this.renderActionButtons();
                 }
+
+                this.closeModalTimer = null; // Reset biến timer
             }, 300);
         }
     },

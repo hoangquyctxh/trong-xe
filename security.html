@@ -1,687 +1,203 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trạm Kiểm soát An ninh - 4.0</title>
+    <meta name="referrer" content="no-referrer">
+    <title>An ninh 4.0 - Trạm Kiểm Soát</title>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Core Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
-    <style>
-        /* ================================================================= */
-        /* GIAO DIỆN KIỂM SOÁT AN NINH - PHIÊN BẢN 4.0 (ADAPTIVE) */
-        /* ================================================================= */
-        :root {
-            --bg-main: #f4f5f7;
-            --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-            --text-dark: #1f2937;
-            --text-primary: #374151;
-            --text-secondary: #6b7280;
-            --accent-blue: #3b82f6;
-            --accent-green: #22c55e;
-            --accent-red: #ef4444;
-            --accent-yellow: #eab308;
-            --accent-vip: #f59e0b;
-            --info-color: #0ea5e9;
-            --border-radius-md: 0.5rem;
-            --border-radius-lg: 0.75rem;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --font-main: 'Be Vietnam Pro', sans-serif;
-            --font-mono: 'Roboto Mono', monospace;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: var(--font-main);
-            background-color: var(--bg-main); color: var(--text-primary);
-            margin: 0;
-            line-height: 1.6;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        header {
-            background: var(--bg-card); padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color);
-            display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm);
-        }
-        .header-title { display: flex; align-items: center; gap: 1rem; }
-        .logo img { width: 40px; height: 40px; }
-        .title-group .subtitle { font-size: 0.8rem; color: var(--text-secondary); }
-        .title-group h1 { font-size: 1.2rem; font-weight: 700; color: var(--text-dark); }
 
-        .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-
-        #scan-prompt-view { text-align: center; padding: 4rem 0; }
-        .btn-scan-qr {
-            background-color: var(--accent-blue); color: white;
-            border: none; border-radius: var(--border-radius-lg);
-            padding: 1.25rem 2.5rem; font-size: 1.2rem; font-weight: 600;
-            cursor: pointer; transition: all 0.2s ease;
-            display: inline-flex; align-items: center; gap: 0.75rem;
-            box-shadow: var(--shadow-md);
-        }
-        .btn-scan-qr:hover { background-color: #2563eb; box-shadow: var(--shadow-lg); }
-        .btn-scan-qr svg { width: 24px; height: 24px; }
-
-        #scan-active-view { display: none; flex-direction: column; gap: 1.5rem; }
-        #scan-active-view.active { display: flex; }
-
-        .scan-camera-panel {
-            position: relative; width: 100%;
-            background-color: #000; border-radius: var(--border-radius-lg);
-            overflow: hidden; box-shadow: var(--shadow-md);
-            height: 400px; /* Chiều cao cố định cho mobile */
-        }
-        #camera-feed { width: 100%; height: 100%; object-fit: cover; }
-        .scanner-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .scanner-viewfinder {
-            width: 240px; height: 240px;
-            border: 3px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-        }
-        .scanner-viewfinder.scanned { border-color: var(--accent-green); }
-        .scanner-viewfinder.error { border-color: var(--accent-red); animation: shake 0.5s; }
-
-        #toggle-flash-btn {
-            position: absolute; top: 1rem; right: 1rem;
-            width: 44px; height: 44px; border-radius: 50%;
-            background: rgba(0,0,0,0.5); color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            display: none; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s ease;
-        }
-        #toggle-flash-btn.active { background: var(--accent-yellow); }
-
-        .scan-result-panel {
-            background: var(--bg-card); border-radius: var(--border-radius-lg);
-            padding: 1.5rem; box-shadow: var(--shadow-md);
-            min-height: 300px;
-        }
-        .result-placeholder {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%; color: var(--text-secondary); text-align: center;
-        }
-        .result-placeholder svg { width: 48px; height: 48px; margin-bottom: 1rem; }
-        .result-placeholder.error-message { color: var(--accent-red); }
-
-        #verification-card, #citizen-id-card { display: none; }
-        #verification-card.visible, #citizen-id-card.visible { display: block; animation: fadeIn 0.5s; }
-
-        .verification-content { padding: 1.5rem; }
-        #verification-card {
-            border: 1px solid var(--border-color); border-radius: var(--border-radius-md);
-            transition: all 0.3s ease;
-        }
-        #verification-card.parking-card { border-left: 5px solid var(--accent-green); }
-        #verification-card.departed-card { border-left: 5px solid var(--accent-yellow); }
-        #verification-card.alert-block { border-left: 5px solid var(--accent-red); }
-
-        .verification-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 1.5rem; padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .verification-header .plate {
-            font-family: var(--font-mono); font-size: 2.5rem; font-weight: 700;
-            color: var(--text-dark);
-        }
-        .status-badge {
-            padding: 0.25rem 0.75rem; border-radius: 99px; font-weight: 600;
-            font-size: 0.9rem;
-        }
-        .status-badge.parking { background-color: #dcfce7; color: #166534; }
-        .status-badge.departed { background-color: #fef9c3; color: #854d0e; }
-
-        .security-alert-info {
-            background: #fee2e2; color: #991b1b;
-            padding: 1rem; border-radius: var(--border-radius-md);
-            display: flex; align-items: center; gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        .security-alert-info svg { flex-shrink: 0; }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; 
-            gap: 1.25rem;
-        }
-        .info-item .label { 
-            color: var(--text-secondary); 
-            display: flex; 
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-        }
-        .info-item .label svg {
-            width: 16px; height: 16px;
-        }
-        .info-item .value { font-weight: 600; font-size: 1.1rem; } 
-        
-        .message-box {
-            text-align: center; padding: 3em; background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); border-radius: var(--border-radius-md);
-        }
-        .message-box.error {
-            background-color: #fff1f2;
-            border-color: #ffdde0;
-            color: #be123c;
-        }
-
-        #citizen-id-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-lg);
-            border-radius: var(--border-radius-md);
-            padding: 0;
-            overflow: hidden; 
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-        #citizen-id-card::before {
-            content: '';
-            display: block;
-            height: 8px; 
-            background-color: var(--info-color);
-        }
-        .citizen-header {
-            text-align: center;
-            padding-bottom: 1.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .citizen-header .fullname { font-size: 2rem; font-weight: 800; color: var(--text-dark); }
-        .citizen-header .cccd-number { font-size: 1.2rem; font-family: monospace; color: var(--text-secondary); }
-        
-    </style>
-    <style>
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            20%, 80% { transform: translate3d(2px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
-        }
- 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        @media (min-width: 992px) {
-            #scan-active-view.active {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-            }
-            .scan-camera-panel {
-                height: auto; 
-            }
-            .verification-header .plate {
-                font-size: 3.2rem;
-            }
-            .citizen-header .fullname {
-                font-size: 2.2rem;
-            }
-        }
-    </style>
+    <!-- Styles -->
+    <link rel="stylesheet" href="security.css">
 </head>
+
 <body>
-    <header>
-        <div class="header-title">
-            <div class="logo">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn"> 
+
+    <!-- 1. Header -->
+    <header class="sec-header">
+        <div class="brand">
+            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                alt="Logo" class="brand-logo">
+            <div class="brand-info">
+                <h1>AN NINH TRUNG TÂM</h1>
+                <p>Hệ thống Quản lý xe Tình nguyện</p>
             </div>
-            <div class="title-group"> 
-                <p class="subtitle">Hệ thống Quản lý xe Tình nguyện</p>
-                <h1>Kiểm soát An ninh</h1>
-            </div> 
+        </div>
+        <div class="system-status">
+            <span class="status-dot"></span>
+            <span>Hệ thống sẵn sàng</span>
         </div>
     </header>
- 
-    <div class="container">
-        <div id="scan-prompt-view">
-            <button id="scan-qr-btn" type="button" class="btn-scan-qr">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                Bắt đầu quét
-            </button>
-        </div>
- 
-        <div id="scan-active-view">
-            <div class="scan-camera-panel">
-                <video id="camera-feed" playsinline></video>
-                <button id="toggle-flash-btn" title="Bật/Tắt đèn flash">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+
+    <!-- 2. Main Dashboard -->
+    <main class="dashboard-grid">
+
+        <!-- START SCREEN (Overlay) -->
+        <div id="start-screen">
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-start-scan" class="btn-large-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Kích hoạt Máy quét
                 </button>
-                <div class="scanner-overlay">
-                    <div id="scanner-viewfinder" class="scanner-viewfinder"></div>
-                </div>
-            </div>
-            <div class="scan-result-panel">
-                <div id="result-placeholder" class="result-placeholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg>
-                    <p>Di chuyển mã QR vào vùng quét</p>
-                </div>
-                <div id="verification-card"> 
-                    <div class="verification-content">
-                        <div class="verification-header">
-                            <div id="verified-plate" class="plate"></div>
-                            <div id="verified-status" class="status-badge"></div>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>Giờ vào</span><span id="verified-entry-time" class="value"></span></div>
-                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Giờ ra</span><span id="verified-exit-time" class="value"></span></div>
-                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Bãi đỗ</span><span id="verified-location" class="value"></span></div>
-                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Phí</span><span id="verified-fee" class="value"></span></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="citizen-id-card">
-                    <div class="verification-content">
-                        <div class="citizen-header">
-                            <div id="citizen-fullname" class="fullname"></div>
-                            <div id="citizen-cccd-number" class="cccd-number"></div>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>Ngày sinh</span><span id="citizen-dob" class="value"></span></div>
-                            <div class="info-item"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Giới tính</span><span id="citizen-gender" class="value"></span></div>
-                            <div class="info-item" style="grid-column: 1 / -1;"><span class="label"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>Địa chỉ thường trú</span><span id="citizen-address" class="value"></span></div>
-                        </div>
-                    </div>
-                </div>
-                <button id="stop-scan-btn" style="width: 100%; margin-top: 20px; background: var(--text-secondary);" class="btn-scan-qr">Dừng quét</button> 
+                <button id="btn-test-voice" class="btn-large-start"
+                    style="background: white; color: var(--sec-primary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                </button>
             </div>
         </div>
- 
-        <div id="message-box" class="message-box" style="display: none;"></div>
-    </div><script>
-        // =================================================================
-        // PHIÊN BẢN VIẾT LẠI HOÀN CHỈNH - ĐẢM BẢO ỔN ĐỊNH
-        // =================================================================
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            // =================================================================
-            // KHU VỰC 1: THAM CHIẾU DOM & BIẾN
-            // =================================================================
-            const elements = {
-                scanPromptView: document.getElementById('scan-prompt-view'),
-                scanActiveView: document.getElementById('scan-active-view'),
-                messageBox: document.getElementById('message-box'),
-                scanQrBtn: document.getElementById('scan-qr-btn'),
-                stopScanBtn: document.getElementById('stop-scan-btn'),
-                cameraFeed: document.getElementById('camera-feed'),
-                toggleFlashBtn: document.getElementById('toggle-flash-btn'),
-                scannerViewfinder: document.getElementById('scanner-viewfinder'),
-                citizenIdCard: document.getElementById('citizen-id-card'),
-                verificationCard: document.getElementById('verification-card'),
-                verifiedPlate: document.getElementById('verified-plate'),
-                verifiedStatus: document.getElementById('verified-status'),
-                verifiedEntryTime: document.getElementById('verified-entry-time'),
-                verifiedExitTime: document.getElementById('verified-exit-time'),
-                verifiedLocation: document.getElementById('verified-location'),
-                verifiedFee: document.getElementById('verified-fee'),
-            };
+        <!-- LEFT: Camera & Controls -->
+        <section class="camera-zone" id="camera-active-zone" style="display: none;">
+            <div class="camera-header">
+                <div class="camera-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Camera Trực tiếp
+                </div>
+                <!-- Flash Button (Dynamic) -->
+                <button class="control-btn" id="btn-toggle-flash" style="display: none; padding: 0.5rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z" />
+                        <polyline points="13 2 13 9 20 9" />
+                    </svg>
+                </button>
+            </div>
 
-            let cameraStream = null;
-            let scanAnimation = null;
-            let isProcessingCode = false;
-            let isFlashOn = false;
-            let LOCATIONS_DATA = [];
-            const MIN_CCCD_PARTS = 6; // Số phần tối thiểu cho một mã QR CCCD hợp lệ
+            <div class="camera-viewport">
+                <video id="camera-feed" playsinline muted autoplay></video>
+                <div class="hud-overlay">
+                    <div class="hud-corner hud-tl"></div>
+                    <div class="hud-corner hud-tr"></div>
+                    <div class="hud-corner hud-bl"></div>
+                    <div class="hud-corner hud-br"></div>
+                    <div class="hud-scanner-line"></div>
+                </div>
+            </div>
 
-            let qrWorker = null;
-            try {
-                qrWorker = new Worker('qr-worker.js');
-            } catch (e) {
-                // Lỗi nghiêm trọng: Nếu Worker không thể tạo, ứng dụng không thể quét.
-                // Hiển thị lỗi và vô hiệu hóa nút bấm.
-                showMessage('Lỗi nghiêm trọng: Không thể khởi tạo bộ quét QR. Vui lòng tải lại trang hoặc sử dụng trình duyệt khác.', true);
-                elements.scanQrBtn.disabled = true;
-                console.error('Không thể khởi tạo QR Worker.', e);
-            }
+            <div class="camera-controls">
+                <button class="control-btn btn-stop" id="btn-stop-scan">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <rect x="6" y="4" width="4" height="16" />
+                        <rect x="14" y="4" width="4" height="16" />
+                    </svg>
+                    Dừng quét
+                </button>
+            </div>
+        </section>
 
-            const beepSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/beep.mp3');
-            const errorSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/error.mp3');
-            const alertSound = new Audio('https://cdn.jsdelivr.net/gh/pixelastic/sounds-of-the-universe/sounds/warning.mp3');
+        <!-- RIGHT: Result Console -->
+        <section class="result-console">
+            <div class="console-header">
+                <h2>Dữ liệu Xác minh</h2>
+            </div>
 
-            // =================================================================
-            // KHU VỰC 2: CÁC HÀM TIỆN ÍCH VÀ GIAO DIỆN
-            // =================================================================
-            const showMessage = (message, isError = false) => {
-                elements.messageBox.style.display = 'block';
-                elements.messageBox.className = `message-box ${isError ? 'error' : ''}`;
-                elements.messageBox.innerHTML = `<p style="font-weight: bold;">${message}</p><button onclick="this.parentElement.style.display='none'" style="margin-top: 1rem; padding: 0.5rem 1rem; border: 1px solid; border-radius: 6px; cursor: pointer;">Đã hiểu</button>`;
-            };
+            <div class="result-card-container">
 
-            const showInlineError = (message) => {
-                const placeholder = document.getElementById('result-placeholder');
-                resetResultPanel(false);
-                placeholder.style.display = 'flex';
-                placeholder.classList.add('error-message');
-                placeholder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p>${message}</p>`;
-                setTimeout(resetResultPanel, 2000);
-            };
+                <!-- Idle State -->
+                <div id="idle-panel" class="idle-state">
+                    <svg class="radar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
+                        <path d="M8.5 8.5a4 4 0 0 1 7 7" />
+                        <path d="M12 12h.01" />
+                    </svg>
+                    <p>Đang chờ tín hiệu quét...</p>
+                </div>
 
-            const showLoading = () => {
-                const placeholder = document.getElementById('result-placeholder');
-                resetResultPanel(false);
-                placeholder.style.display = 'flex';
-                placeholder.innerHTML = `<svg style="animation: spin 1s linear infinite;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><p>Đang xử lý...</p>`;
-            };
+                <!-- 1. Parking Ticket Card -->
+                <div id="verification-card" class="verification-card">
+                    <div class="v-header">
+                        <div class="plate-number" id="v-plate">--</div>
+                        <span class="v-status" id="v-status">--</span>
+                    </div>
 
-            const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
-            const getLocationName = (locationId) => (LOCATIONS_DATA.find(loc => loc.id === locationId) || { name: 'Không xác định' }).name;
+                    <div class="v-body">
+                        <!-- Security Alert Injection Point -->
+                        <div id="v-alert-container"></div>
 
-            const renderVerificationCard = (tx) => {
-                if (!tx) {
-                    showInlineError('Không tìm thấy giao dịch cho mã này.');
-                    return;
-                }
+                        <div class="v-row special-location">
+                            <div class="loc-icon-group">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-10a8 8 0 0 1 16 0Z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                                <span class="v-label">Vị trí</span>
+                            </div>
+                            <span class="v-value" id="v-location">--</span>
+                        </div>
+                        <div class="v-row">
+                            <span class="v-label">Giờ vào</span>
+                            <span class="v-value" id="v-entry">--</span>
+                        </div>
+                        <div class="v-row">
+                            <span class="v-label">Giờ ra</span>
+                            <span class="v-value" id="v-exit">--</span>
+                        </div>
+                        <div class="v-row">
+                            <span class="v-label">Phí</span>
+                            <span class="v-value" id="v-fee" style="color: var(--sec-accent);">--</span>
+                        </div>
+                    </div>
+                    <div class="v-footer">ID VÉ: XÁC THỰC QUA HỆ THỐNG</div>
+                </div>
 
-                document.getElementById('result-placeholder').style.display = 'none';
-                elements.citizenIdCard.classList.remove('visible');
-                elements.verificationCard.classList.add('visible');
+                <!-- 2. Citizen ID Card (CCCD) -->
+                <div id="cccd-card" class="verification-card cccd-card">
+                    <div class="v-header">
+                        <div class="plate-number" id="c-name">NGUYEN VAN A</div>
+                        <span class="v-status" id="c-number">001099000000</span>
+                    </div>
+                    <div class="v-body">
+                        <div class="v-row">
+                            <span class="v-label">Ngày sinh</span>
+                            <span class="v-value" id="c-dob">01/01/1990</span>
+                        </div>
+                        <div class="v-row">
+                            <span class="v-label">Giới tính</span>
+                            <span class="v-value" id="c-gender">Nam</span>
+                        </div>
+                        <div class="v-row">
+                            <span class="v-label">Địa chỉ</span>
+                            <span class="v-value" id="c-address">--</span>
+                        </div>
+                    </div>
+                </div>
 
-                const isDeparted = tx.status !== 'Đang gửi';
-                const cardElement = elements.verificationCard;
-                const statusClass = isDeparted ? 'departed' : 'parking';
+            </div>
+        </section>
 
-                cardElement.classList.remove('alert-block', 'departed-card', 'parking-card');
-                if (isDeparted) cardElement.classList.add('departed-card');
-                else cardElement.classList.add('parking-card');
+    </main>
 
-                elements.verifiedPlate.textContent = tx.plate || '???';
-                elements.verifiedStatus.className = `status-badge ${statusClass}`;
-                elements.verifiedStatus.textContent = tx.status;
+    <!-- Logic Script -->
+    <script src="security.js"></script>
 
-                elements.verifiedEntryTime.textContent = formatDateTime(tx.entry_time);
-                elements.verifiedExitTime.textContent = formatDateTime(tx.exit_time);
-                elements.verifiedLocation.textContent = getLocationName(tx.location_id);
-                elements.verifiedFee.textContent = (tx.fee === null || tx.fee === undefined) ? '--' : `${tx.fee.toLocaleString('vi-VN')}đ`;
-
-                const existingAlertInfo = cardElement.querySelector('.security-alert-info');
-                if (existingAlertInfo) existingAlertInfo.remove();
-
-                if (tx.security_alert) {
-                    cardElement.classList.remove('departed-card', 'parking-card');
-                    cardElement.classList.add('alert-block');
-                    const alertInfoHtml = `<div class="verification-content" style="padding-top: 0; padding-bottom: 0;"><div class="security-alert-info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><div><strong>CẢNH BÁO AN NINH:</strong> <span class="reason">${tx.security_alert.reason || 'Không có lý do cụ thể.'}</span></div></div></div>`;
-                    cardElement.querySelector('.verification-content').insertAdjacentHTML('beforebegin', alertInfoHtml);
-                }
-            };
-
-            const renderPartialVerificationCard = (uniqueId) => {
-                document.getElementById('result-placeholder').style.display = 'none';
-                elements.citizenIdCard.classList.remove('visible');
-                elements.verificationCard.classList.add('visible', 'parking-card');
-                elements.verifiedPlate.textContent = uniqueId.startsWith('_') ? uniqueId.substring(1, 9) : uniqueId;
-                elements.verifiedStatus.textContent = "Đang tải...";
-                elements.verifiedEntryTime.textContent = "Đang tải...";
-                elements.verifiedExitTime.textContent = "--";
-                elements.verifiedLocation.textContent = "Đang tải...";
-                elements.verifiedFee.textContent = "Đang tải...";
-
-                const existingAlertInfo = elements.verificationCard.querySelector('.security-alert-info');
-                if (existingAlertInfo) existingAlertInfo.remove();
-
-                if (tx.security_alert) {
-                    cardElement.classList.remove('departed-card', 'parking-card');
-                    cardElement.classList.add('alert-block');
-                    const alertInfoHtml = `<div class="verification-content" style="padding-top: 0; padding-bottom: 0;"><div class="security-alert-info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><div><strong>CẢNH BÁO AN NINH:</strong> <span class="reason">${tx.security_alert.reason || 'Không có lý do cụ thể.'}</span></div></div></div>`;
-                    cardElement.querySelector('.verification-content').insertAdjacentHTML('beforebegin', alertInfoHtml);
-                }
-            };
-
-            const renderCitizenIdCard = (citizenData) => {
-                if (!citizenData) {
-                    showInlineError('Mã QR CCCD không hợp lệ.');
-                    return;
-                }
-
-                document.getElementById('result-placeholder').style.display = 'none';
-                elements.verificationCard.classList.remove('visible');
-                elements.citizenIdCard.classList.add('visible');
-
-                const dobRaw = citizenData.dob;
-                const formattedDob = `${dobRaw.substring(0, 2)}/${dobRaw.substring(2, 4)}/${dobRaw.substring(4)}`;
-                const cccd = citizenData.cccdNumber;
-                const maskedCccd = cccd && cccd.length === 12 ? `${cccd.substring(0, 2)}********${cccd.substring(10)}` : cccd;
-
-                document.getElementById('citizen-fullname').textContent = citizenData.fullName;
-                document.getElementById('citizen-cccd-number').textContent = `CCCD: ${maskedCccd}`;
-                document.getElementById('citizen-dob').textContent = formattedDob;
-                document.getElementById('citizen-gender').textContent = citizenData.gender;
-                document.getElementById('citizen-address').textContent = citizenData.address;
-            };
-
-            const resetResultPanel = (resetPlaceholder = true) => {
-                if (resetPlaceholder) {
-                    const placeholder = document.getElementById('result-placeholder');
-                    placeholder.style.display = 'flex';
-                    placeholder.classList.remove('error-message');
-                    placeholder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"/></svg><p>Di chuyển mã QR vào vùng quét</p>`;
-                }
-                elements.verificationCard.classList.remove('visible');
-                elements.citizenIdCard.classList.remove('visible');
-            };
-
-            // =================================================================
-            // KHU VỰC 3: LOGIC CHÍNH VÀ SỰ KIỆN
-            // =================================================================
-            const openQrScanner = async () => {
-                // KIỂM TRA CẤU HÌNH TRƯỚC KHI QUÉT
-                try {
-                    // Chờ cấu hình sẵn sàng khi người dùng thực sự muốn quét
-                    await configPromise;
-                } catch (configError) {
-                    console.error("Lỗi tải cấu hình:", configError);
-                    showMessage("Không thể tải cấu hình cần thiết để bắt đầu quét. Vui lòng kiểm tra kết nối mạng và thử lại.", true);
-                    return; // Dừng lại nếu cấu hình lỗi
-                }
-
-                elements.scanPromptView.style.display = 'none';
-                elements.scanActiveView.classList.add('active');
-
-                if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
-                    return showMessage('Trình duyệt không hỗ trợ camera.', true);
-                }
-                try {
-                    const constraints = { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } };
-                    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    elements.cameraFeed.srcObject = cameraStream;
-                    await elements.cameraFeed.play();
-
-                    if (cameraStream.getVideoTracks().length > 0) {
-                        const videoTrack = cameraStream.getVideoTracks()[0];
-                        const capabilities = videoTrack.getCapabilities();
-                        if (capabilities && capabilities.torch) {
-                            elements.toggleFlashBtn.style.display = 'flex';
-                            elements.toggleFlashBtn.onclick = () => {
-                                isFlashOn = !isFlashOn;
-                                videoTrack.applyConstraints({ advanced: [{ torch: isFlashOn }] }).catch(e => console.error('Lỗi bật đèn flash:', e));
-                                elements.toggleFlashBtn.classList.toggle('active', isFlashOn);
-                            };
-                        }
-                    }
-
-                    scanAnimation = requestAnimationFrame(tickQrScanner);
-                } catch (err) {
-                    // SỬA LỖI: Dọn dẹp trước khi hiển thị lỗi để tránh xung đột giao diện.
-                    stopQrScanner();
-                    showMessage(`Lỗi Camera: ${err.message}. Vui lòng cấp quyền truy cập camera và thử lại.`, true);
-                }
-            };
-
-            const stopQrScanner = () => {
-                if (scanAnimation) cancelAnimationFrame(scanAnimation);
-                scanAnimation = null;
-
-                if (cameraStream) {
-                    if (isFlashOn) {
-                        const videoTrack = cameraStream.getVideoTracks()[0];
-                        if (videoTrack && videoTrack.getCapabilities().torch) {
-                            videoTrack.applyConstraints({ advanced: [{ torch: false }] });
-                            isFlashOn = false;
-                            elements.toggleFlashBtn.classList.remove('active');
-                        }
-                    }
-                    cameraStream.getTracks().forEach(track => track.stop());
-                }
-
-                elements.toggleFlashBtn.style.display = 'none';
-                isProcessingCode = false;
-                elements.scanActiveView.classList.remove('active');
-                elements.scanPromptView.style.display = 'flex';
-                resetResultPanel();
-            };
-
-            const tickQrScanner = () => {
-                if (isProcessingCode || !qrWorker) {
-                    if (scanAnimation) {
-                        scanAnimation = requestAnimationFrame(tickQrScanner);
-                    }
-                    return;
-                }
-
-                const MAX_SCAN_WIDTH = 640; // Giới hạn chiều rộng để tăng tốc độ xử lý
-                if (elements.cameraFeed.readyState === elements.cameraFeed.HAVE_ENOUGH_DATA) {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    
-                    const videoWidth = elements.cameraFeed.videoWidth;
-                    const videoHeight = elements.cameraFeed.videoHeight;
-                    const scale = videoWidth > MAX_SCAN_WIDTH ? MAX_SCAN_WIDTH / videoWidth : 1;
-                    const canvasWidth = videoWidth * scale;
-                    const canvasHeight = videoHeight * scale;
-
-                    canvas.width = canvasWidth;
-                    canvas.height = canvasHeight;
-                    ctx.drawImage(elements.cameraFeed, 0, 0, canvasWidth, canvasHeight);
-                    const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
-                    qrWorker.postMessage(imageData, [imageData.data.buffer]);
-                }
-
-                if (scanAnimation) {
-                    scanAnimation = requestAnimationFrame(tickQrScanner);
-                }
-            };
-
-            const processCitizenIdQr = (qrData) => {
-                beepSound.play();
-                elements.scannerViewfinder.classList.add('scanned');
-                
-                const parts = qrData.split('|');
-                if (parts.length < MIN_CCCD_PARTS) {
-                    handleInvalidCode('Mã QR CCCD không đúng định dạng.');
-                    return;
-                }
-
-                const citizenData = { 
-                    cccdNumber: parts[0], 
-                    fullName: parts[2], 
-                    dob: parts[3], 
-                    gender: parts[4], 
-                    address: parts[5] 
-                };
-                renderCitizenIdCard(citizenData);
-                setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
-            };
-
-            const processParkingTicketQr = (qrData) => {
-                verifyTransaction(qrData);
-            };
-
-            const handleQrCodeResult = (code) => {
-                if (code && code.data) {
-                    isProcessingCode = true;
-                    navigator.vibrate(100);
-
-                    if ((code.data.match(/\|/g) || []).length >= (MIN_CCCD_PARTS - 1)) {
-                        processCitizenIdQr(code.data);
-                    } else if (code.data.startsWith('_') || code.data.includes('ticketId=')) { // Giả định mã vé xe có định dạng này
-                        processParkingTicketQr(code.data);
-                    } else {
-                        handleInvalidCode('Mã QR không hợp lệ hoặc không được hỗ trợ.');
-                    }
-
-                    setTimeout(() => { isProcessingCode = false; }, 1500);
-                }
-            };
-
-            const handleInvalidCode = (message) => {
-                errorSound.play();
-                elements.scannerViewfinder.classList.add('error');
-                setTimeout(() => elements.scannerViewfinder.classList.remove('error'), 500);
-                showInlineError(message);
-            };
-
-            const verifyTransaction = async (qrData) => {
-                let uniqueId = qrData;
-                try {
-                    const url = new URL(qrData);
-                    uniqueId = url.searchParams.get('ticketId') || qrData;
-                } catch (e) { /* Not a URL */ }
-
-                uniqueId = uniqueId.trim();
-
-                // Tối ưu UX: Hiển thị thông tin đã biết ngay lập tức
-                renderPartialVerificationCard(uniqueId);
-
-                try {
-                    const { data, error } = await db.rpc('get_security_check_data', { p_unique_id: uniqueId.trim() });
-                    if (error) throw error;
-
-                    if (data && data.security_alert) {
-                        alertSound.play();
-                        elements.scannerViewfinder.classList.add('error');
-                        setTimeout(() => elements.scannerViewfinder.classList.remove('error'), 500);
-                    } else if (data) {
-                        beepSound.play();
-                        elements.scannerViewfinder.classList.add('scanned');
-                        setTimeout(() => elements.scannerViewfinder.classList.remove('scanned'), 300);
-                    }
-
-                    // SỬA LỖI: Kiểm tra `data.transaction` trước khi dùng toán tử spread.
-                    // Nếu `data.transaction` là null, `combinedData` cũng sẽ là null.
-                    const combinedData = (data && data.transaction) 
-                        ? { ...data.transaction, security_alert: data.security_alert } 
-                        : null;
-
-                    renderVerificationCard(combinedData);
-                } catch (error) {
-                    showInlineError(`Lỗi: ${error.message}`);
-                    console.error("Lỗi xác minh:", error);
-                }
-            };
-
-            const init = async () => {
-                // Gán sự kiện cho các nút bấm ngay lập tức khi DOM sẵn sàng.
-                elements.scanQrBtn.addEventListener('click', openQrScanner);
-                elements.stopScanBtn.addEventListener('click', stopQrScanner);
-                if (qrWorker) {
-                    qrWorker.onmessage = (event) => handleQrCodeResult(event.data);
-                }
-                // Tải các dữ liệu phụ (không chặn giao diện người dùng).
-                try {
-                    const { data, error } = await db.from('locations').select('*');
-                    if (error) throw error;
-                    LOCATIONS_DATA = data || [];
-                } catch (error) {
-                    console.error("Lỗi tải danh sách bãi đỗ:", error);
-                    // Hiển thị lỗi để người dùng biết trạng thái của hệ thống.
-                    showMessage("Không thể tải danh sách bãi đỗ. Tên bãi đỗ có thể không hiển thị chính xác.", true);
-                }
-            };
-
-            init();
-        });
-    </script>
 </body>
+
 </html>
-             }
