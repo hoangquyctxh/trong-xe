@@ -105,6 +105,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const startScanner = async () => {
         try { await configPromise; } catch (e) { alert('Lỗi kết nối Config'); return; }
 
+        // Enter Immersive Mode
+        document.body.classList.add('scanning-mode');
+
         DOM.startScreen.style.display = 'none';
         DOM.cameraZone.style.display = 'flex';
         resetUI();
@@ -169,6 +172,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         barcodeDetector = null;
+
+        // Exit Immersive Mode
+        document.body.classList.remove('scanning-mode');
+
         DOM.cameraZone.style.display = 'none';
         DOM.startScreen.style.display = 'flex';
         DOM.btnFlash.style.display = 'none';
