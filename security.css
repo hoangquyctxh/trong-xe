@@ -603,6 +603,12 @@ body {
         /* Let clicks pass through empty header space */
     }
 
+    /* Force Start Screen to be above the Idle Panel on mobile */
+    #start-screen {
+        z-index: 50 !important;
+        /* Higher than idle-state (25) and header (30) */
+    }
+
     .brand-info,
     .header-controls {
         pointer-events: auto;
@@ -630,16 +636,23 @@ body {
     }
 
     /* Idle State: MUST BE VISIBLE when not scanning */
-    .idle-state {
+    /* HACK: Hide the generic idle-state on mobile because it conflicts with Start Screen */
+    /* We only want it inside the result tray if we had one, but on mobile we don't need the 'Waiting' text overlay */
+    .idle-state#idle-panel {
+        display: none !important;
+    }
+
+    #start-screen.idle-state {
         display: flex !important;
         position: absolute;
         inset: 0;
-        z-index: 25;
+        z-index: 50;
         /* Higher than camera, lower than header */
         background: #f8f9fa;
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        pointer-events: auto !important;
     }
 
     /* 3. SCANNING MODE OVERRIDES */
