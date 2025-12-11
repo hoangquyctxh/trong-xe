@@ -114,7 +114,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Enter Immersive Mode
         document.body.classList.add('scanning-mode');
 
+        // Explicitly update class state to ensure CSS hiding works
+        DOM.startScreen.classList.remove('idle-state');
         DOM.startScreen.style.display = 'none';
+
         DOM.cameraZone.style.display = 'flex';
         resetUI();
 
@@ -183,7 +186,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.classList.remove('scanning-mode');
 
         DOM.cameraZone.style.display = 'none';
+
+        // Restore Start Screen
+        DOM.startScreen.classList.add('idle-state');
         DOM.startScreen.style.display = 'flex';
+
         DOM.btnFlash.style.display = 'none';
         isFlashOn = false;
         resetUI();

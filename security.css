@@ -110,6 +110,38 @@ body {
     object-fit: cover;
 }
 
+.camera-viewport.scanned {
+    animation: flashSuccess 0.3s ease-out;
+}
+
+.camera-viewport.error {
+    animation: flashError 0.3s ease-out;
+}
+
+@keyframes flashSuccess {
+
+    0%,
+    100% {
+        box-shadow: none;
+    }
+
+    50% {
+        box-shadow: inset 0 0 50px rgba(16, 185, 129, 0.8);
+    }
+}
+
+@keyframes flashError {
+
+    0%,
+    100% {
+        box-shadow: none;
+    }
+
+    50% {
+        box-shadow: inset 0 0 50px rgba(239, 68, 68, 0.8);
+    }
+}
+
 .hud-overlay {
     position: absolute;
     top: 50%;
@@ -122,6 +154,8 @@ body {
     border-radius: 12px;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
     /* Dim outside */
+    pointer-events: none;
+    /* Allows clicking through the frame */
 }
 
 .hud-corner {
@@ -447,13 +481,19 @@ body {
 
 /* Start Screen */
 #start-screen {
-    position: absolute;
-    inset: 0;
-    background: #0f172a;
-    z-index: 20;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--sec-bg);
+    /* Light background instead of dark overlay */
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    grid-column: 1;
+    /* Ensure it stays in the left column */
+    border-right: 1px solid #e2e8f0;
+    /* Separator for right panel */
 }
 
 .btn-large-start {
@@ -473,6 +513,11 @@ body {
 
 .btn-large-start:hover {
     transform: scale(1.05);
+}
+
+#btn-test-voice {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 /* Common Buttons */
