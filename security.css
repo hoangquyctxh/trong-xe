@@ -794,6 +794,8 @@ body {
         font-size: 0;
         /* Hide text */
         padding: 0;
+        display: flex;
+        align-items: center;
         justify-content: center;
     }
 
@@ -818,8 +820,11 @@ body {
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.3);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
         justify-content: center;
         padding: 0;
+        color: white;
     }
 
     #btn-toggle-flash svg {
@@ -832,6 +837,7 @@ body {
         border-color: rgba(255, 255, 0, 0.6);
         color: #fef08a;
         /* Yellow text/icon */
+        box-shadow: 0 0 15px rgba(253, 224, 71, 0.5);
     }
 
     .camera-title {
@@ -855,6 +861,11 @@ body {
         /* Click-through empty space */
         justify-content: flex-end;
         /* Align cards to bottom */
+    }
+
+    /* Hide the 'Dữ liệu Xác minh' text */
+    .result-console .console-header {
+        display: none !important;
     }
 
     .result-card-container {
@@ -909,11 +920,31 @@ body {
         /* Larger for readability */
     }
 
+    /* Close Button (Designed) */
     .btn-close-card {
+        position: absolute;
         top: 20px;
         right: 20px;
-        background: rgba(0, 0, 0, 0.05);
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #e2e8f0;
+        border-radius: 50%;
+        color: #ef4444;
+        /* Red for close */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 10;
+        cursor: pointer;
+    }
+
+    .btn-close-card svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.5px;
     }
 }
+
+```
