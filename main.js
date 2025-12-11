@@ -227,15 +227,28 @@ const Api = {
 
         const uniqueID = providedUniqueID || ('_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
         const entryTime = Utils.getSyncedTime(); // SỬA LỖI: Dùng giờ chuẩn
+
+        // NÂNG CẤP: Tạo bản sao chính sách phí tại thời điểm vào bãi (Snapshot)
+        // Việc này đảm bảo khi Admin đổi giá, các xe cũ vẫn giữ giá cũ.
+        const policySnapshot = {
+            type: state.currentLocation.fee_policy_type || 'free',
+            collection: state.currentLocation.fee_collection_policy || 'post_paid',
+            per_entry: state.currentLocation.fee_per_entry,
+            daily: state.currentLocation.fee_daily,
+            hourly_day: state.currentLocation.fee_hourly_day,
+            hourly_night: state.currentLocation.fee_hourly_night,
+        };
+
         const transactionData = {
             plate, phone, is_vip: isVIP, notes,
             unique_id: uniqueID,
-            location_id: state.currentLocation.id,
             entry_time: entryTime.toISOString(),
             status: 'Đang gửi',
+            location_id: state.currentLocation.id,
+            vehicle_type: state.currentLocation.vehicle_type,
             fee: prePayment ? prePayment.fee : null,
             payment_method: prePayment ? prePayment.method : null,
-            // fee_policy_snapshot: prePayment ? prePayment.snapshot : null, // TẠM THỜI VÔ HIỆU HÓA
+            fee_policy_snapshot: policySnapshot, // Đã kích hoạt snapshot
             staff_username: staffUsername,
         };
         const { error } = await db.from('transactions').insert([transactionData]);
@@ -1189,8 +1202,8 @@ const Templates = {
                     <div id="payment-details-v10" class="ticket-details-area">
                          <div class="payment-display-area" id="qr-display-area-v10" style="text-align:center">
                             <p class="display-instruction">Quét mã để thanh toán</p>
-                            <div class="qr-wrapper" style="display:inline-block; margin-top:0.5rem">
-                                <img src="${qrUrl}" alt="QR Code">
+                            <div class="qr-wrapper" style="display:inline-flex; margin-top:0.5rem">
+                                <img src="${qrUrl}" class="qr-code-img" alt="QR Code">
                             </div>
                          </div>
                          <div class="payment-display-area" id="cash-display-area-v10" style="display:none; text-align:center">
@@ -1357,6 +1370,17 @@ const Templates = {
         const exitTime = vehicle.exit_time || new Date();
         const duration = Utils.calculateDuration(entryTime, exitTime);
         const fee = data.fee || 0;
+        const method = data.method || 'Tiền mặt';
+
+        // Xử lý hiển thị phí/trạng thái miễn phí
+        let paymentDisplay = '';
+        if (fee > 0) {
+            paymentDisplay = `<span class="value money">${Utils.formatCurrency(fee)}đ</span>`;
+        } else {
+            // Nếu miễn phí, hiển thị lý do (VIP, Miễn phí 15p, v.v.)
+            // data.method thường chứa lý do trong trường hợp free (xem processCheckOut)
+            paymentDisplay = `<span class="value free-badge">${method}</span>`;
+        }
 
         // Sử dụng cấu trúc modal chuẩn của app nếu có, hoặc tự định nghĩa wrapper an toàn
         return `
@@ -1387,8 +1411,8 @@ const Templates = {
                                 <span class="value">${duration}</span>
                             </div>
                             <div class="success-v6-row total">
-                                <span class="label">Thanh toán:</span>
-                                <span class="value money">${Utils.formatCurrency(fee)}đ</span>
+                                <span class="label">${fee > 0 ? 'Thanh toán:' : 'Trạng thái:'}</span>
+                                ${paymentDisplay}
                             </div>
                         </div>
 
@@ -2293,6 +2317,7 @@ const App = {
 
             UI.renderUserProfile();
             await this.fetchData();
+            this.migrateLegacyTransactions();
             this.fetchWeather();
             this.setupRealtimeListeners();
         } catch (error) {
@@ -2704,6 +2729,53 @@ const App = {
     }
 };
 
+// TỰ ĐỘNG CHUYỂN ĐỔI: Hàm xử lý các xe cũ chưa có "Price Snapshot"
+App.migrateLegacyTransactions = async function () {
+    if (!state.vehicles || state.vehicles.length === 0) return;
+
+    // Tìm các xe "Đang gửi" nhưng chưa có dữ liệu snapshot
+    const legacyVehicles = state.vehicles.filter(v =>
+        v.status === 'Đang gửi' && !v.fee_policy_snapshot
+    );
+
+    if (legacyVehicles.length > 0) {
+        console.log(`Phát hiện ${legacyVehicles.length} xe cũ cần cập nhật bảng giá cố định.`);
+
+        // Tạo bảng giá mặc định (Theo giờ) cho các xe đời cũ này
+        // Giả định: Trước khi đổi sang Free, bãi xe dùng chế độ tính giờ.
+        const defaultLegacyPolicy = {
+            type: 'hourly',
+            collection: 'post_paid',
+            per_entry: 10000,
+            daily: 30000,
+            hourly_day: 5000,
+            hourly_night: 8000
+        };
+
+        const updates = legacyVehicles.map(v => ({
+            unique_id: v.unique_id,
+            fee_policy_snapshot: defaultLegacyPolicy
+            // Lưu ý: Chỉ cần update trường này, Supabase sẽ merge
+        }));
+
+        // Thực hiện update hàng loạt (cần loop vì Supabase JS client bulk update hơi phức tạp với PK string)
+        // Để an toàn và đơn giản, ta update từng cái.
+        let successCount = 0;
+        for (const update of updates) {
+            const { error } = await db.from('transactions')
+                .update({ fee_policy_snapshot: defaultLegacyPolicy })
+                .eq('unique_id', update.unique_id);
+            if (!error) successCount++;
+        }
+
+        if (successCount > 0) {
+            console.log(`✅ Đã "đóng băng" giá thành công cho ${successCount}/${legacyVehicles.length} xe cũ.`);
+            // Refresh lại dữ liệu để UI cập nhật
+            await App.fetchData(true);
+        }
+    }
+};
+
 // =========================================================================
 // MODULE 8: MÀN HÌNH CHỜ (IDLE SCREEN)
 // =========================================================================
@@ -2713,8 +2785,7 @@ const IdleScreenManager = {
     init() {
         if (APP_CONFIG.adVideos && APP_CONFIG.adVideos.length > 0) {
             dom.adVideoPlayer.addEventListener('ended', this.playNextVideo.bind(this));
-            App.resetIdleTimer();
-            App.setupEventListeners();
+            App.initIdleScreen();
         }
     },
 

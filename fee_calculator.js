@@ -50,20 +50,33 @@ const FeeCalculator = {
     calculate(transaction, endTime, locationConfig) {
         const startTime = transaction.entry_time;
         const isVIP = transaction.is_vip;
-        const snapshot = transaction.fee_policy_snapshot;
+        let snapshot = transaction.fee_policy_snapshot;
+
+        // BẢO VỆ: Parse snapshot nếu là string (do lỗi DB hoặc định dạng)
+        if (snapshot && typeof snapshot === 'string') {
+            try {
+                snapshot = JSON.parse(snapshot);
+            } catch (e) {
+                console.error('Error parsing fee_policy_snapshot:', e);
+                snapshot = null;
+            }
+        }
 
         // =================================================================================
         // LOGIC "ĐÓNG BĂNG" QUY TẮC PHÍ:
         // 1. Ưu tiên sử dụng "ảnh chụp" quy tắc phí đã lưu cùng giao dịch.
         // 2. Nếu không có, sử dụng quy tắc hiện tại của bãi xe (để tương thích ngược).
         // =================================================================================
-        const policy = snapshot ? {
+        // KIỂM TRA HỢP LỆ: Snapshot phải có 'type' mới được coi là dùng được
+        const isSnapshotValid = snapshot && snapshot.type;
+
+        const policy = isSnapshotValid ? {
             type: snapshot.type,
-            collection: snapshot.collection,
-            per_entry: snapshot.per_entry,
-            daily: snapshot.daily,
-            hourly_day: snapshot.hourly_day,
-            hourly_night: snapshot.hourly_night,
+            collection: snapshot.collection || 'post_paid',
+            per_entry: Number(snapshot.per_entry || 0),
+            daily: Number(snapshot.daily || 0),
+            hourly_day: Number(snapshot.hourly_day || 0),
+            hourly_night: Number(snapshot.hourly_night || 0),
         } : {
             type: locationConfig?.fee_policy_type || 'free',
             collection: locationConfig?.fee_collection_policy || 'post_paid',
@@ -94,19 +107,23 @@ const FeeCalculator = {
 
         // 3. Kịch bản tính phí khi xe ra hoặc tính phí tạm tính (post-paid)
         const end = effectiveEndTime;
+        const durationMinutes = Math.max(0, (end - start) / 60000);
 
-        if (Math.floor((end - start) / 60000) <= this.config.freeMinutes) {
+        // Quy tắc: Trong vòng X phút đầu thì miễn phí (Grace Period)
+        if (durationMinutes <= this.config.freeMinutes) {
             return 0;
         }
 
-        const chargeableStartTime = new Date(start.getTime() + this.config.freeMinutes * 60000);
+        // Quy tắc THƯƠNG MẠI CHUẨN:
+        // Nếu đã lố giờ miễn phí, tính tiền TỪ ĐẦU (phút 0).
+        // Ví dụ: 16 phút -> tính tròn 1 tiếng.
+        const chargeableStartTime = start;
 
         switch (policyType) {
             case 'per_entry':
                 return policy.per_entry;
             case 'daily':
-                const totalChargeableMinutesDaily = Math.max(0, (end - chargeableStartTime) / 60000);
-                const totalDays = Math.ceil(totalChargeableMinutesDaily / (60 * 24));
+                const totalDays = Math.ceil(durationMinutes / (60 * 24));
                 return policy.daily * Math.max(1, totalDays);
             case 'hourly':
                 const dayRate = policy.hourly_day;
@@ -114,19 +131,39 @@ const FeeCalculator = {
                 const nightStart = this.config.nightStartHour;
                 const nightEnd = this.config.nightEndHour;
 
-                const totalChargeableMinutes = Math.max(0, (end - chargeableStartTime) / 60000);
-                if (totalChargeableMinutes === 0) return 0;
-
-                const totalBlocks = Math.floor(totalChargeableMinutes / 60);
                 let totalFee = 0;
                 let cursor = new Date(chargeableStartTime);
+                let minutesCovered = 0;
 
-                for (let i = 0; i < totalBlocks; i++) {
+                // Vòng lặp tính phí theo từng block thời gian (Hybrid)
+                while (minutesCovered < durationMinutes) {
+                    let blockSize; // Phút
+                    let feeRatio;  // Tỉ lệ giá (0.5 = 50%, 1.0 = 100%)
+
+                    // LOGIC LAI (HYBRID):
+                    // - Trong 60 phút đầu: Tính theo block 30 phút (50% giá).
+                    // - Sau 60 phút: Tính theo block 60 phút (100% giá).
+                    if (minutesCovered < 60) {
+                        blockSize = 30;
+                        feeRatio = 0.5;
+                    } else {
+                        blockSize = 60;
+                        feeRatio = 1.0;
+                    }
+
                     const hour = cursor.getHours();
                     const isNight = (hour >= nightStart || hour < nightEnd);
-                    totalFee += isNight ? nightRate : dayRate;
-                    cursor.setHours(cursor.getHours() + 1);
+
+                    // Tính phí cho block hiện tại
+                    // Giá = (Giá giờ) * (Tỉ lệ)
+                    const currentRate = isNight ? nightRate : dayRate;
+                    totalFee += currentRate * feeRatio;
+
+                    // Tăng con trỏ thời gian
+                    cursor.setMinutes(cursor.getMinutes() + blockSize);
+                    minutesCovered += blockSize;
                 }
+
                 return totalFee;
             default:
                 return 0;

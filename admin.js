@@ -152,7 +152,11 @@ document.addEventListener('DOMContentLoaded', () => {
         formatDateTime(d) {
             if (!d) return '';
             const date = new Date(d);
-            return date.toISOString().slice(0, 16);
+            // ADJUST: Convert to local time for datetime-local input (YYYY-MM-DDThh:mm)
+            // This ensures it shows GMT+7 (or user's local time) instead of UTC
+            const tzOffset = date.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(date - tzOffset)).toISOString().slice(0, 16);
+            return localISOTime;
         },
         formatCurrency(n) {
             return new Intl.NumberFormat('vi-VN').format(n || 0);
@@ -918,12 +922,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.transactionPaymentMethod.value = transaction.payment_method || '';
                 dom.transactionStatus.value = transaction.status;
                 dom.transactionNotes.value = transaction.notes || '';
+
+                // Reset checkbox state
+                const resetPolicyCheckbox = document.getElementById('transaction-reset-policy');
+                if (resetPolicyCheckbox) resetPolicyCheckbox.checked = false;
+
                 dom.transactionModal.style.display = 'flex';
             }
         },
 
         async handleSaveTransaction() {
             const id = dom.transactionUniqueId.value;
+            const resetPolicyCheckbox = document.getElementById('transaction-reset-policy');
+            const shouldResetPolicy = resetPolicyCheckbox ? resetPolicyCheckbox.checked : false;
+
             const updates = {
                 plate: dom.transactionPlate.value,
                 fee: dom.transactionFee.value ? parseFloat(dom.transactionFee.value) : null,
@@ -933,6 +945,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 status: dom.transactionStatus.value,
                 notes: dom.transactionNotes.value,
             };
+
+            // Nếu người dùng chọn reset, xóa snapshot để hệ thống dùng config hiện tại
+            if (shouldResetPolicy) {
+                updates.fee_policy_snapshot = null;
+                console.log("Admin requested fee policy reset for transaction:", id);
+            }
 
             try {
                 await Api.updateTransaction(id, updates);
