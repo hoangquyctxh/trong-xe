@@ -632,26 +632,36 @@ body {
 /* --- RESPONSIVE MOBILE LAYOUT (Scoped to Scanning Mode) --- */
 @media (max-width: 768px) {
 
-    /* 1. Header Handling */
-    /* By default on mobile, we want the header to be visible but overlay-ready */
+    /* 1. LAYOUT RESET & IMMERSIVE PREP */
+    body {
+        position: fixed;
+        /* Lock scroll on mobile */
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .dashboard-grid {
+        display: block !important;
+        height: 100dvh !important;
+        position: relative;
+    }
+
+    /* 2. HEADER (Floating Transparent Overlay) */
     .sec-header {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
+        height: auto;
+        min-height: 60px;
         z-index: 30;
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent) !important;
-        color: white;
-        border-bottom: none;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, transparent 100%) !important;
+        border: none;
         box-shadow: none;
+        padding-top: env(safe-area-inset-top);
         pointer-events: none;
-        /* Let clicks pass through empty header space */
-    }
-
-    /* Force Start Screen to be above the Idle Panel on mobile */
-    #start-screen {
-        z-index: 50 !important;
-        /* Higher than idle-state (25) and header (30) */
+        /* Let touches pass through open space */
     }
 
     .brand-info,
@@ -662,65 +672,82 @@ body {
 
     .brand-info h1 {
         color: white !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     }
 
     .brand-info p {
-        color: rgba(255, 255, 255, 0.8) !important;
+        color: rgba(255, 255, 255, 0.9) !important;
     }
 
     .system-status {
         display: none;
+        /* Hide status to save header space */
     }
 
-    /* 2. BASE LAYOUT (Idle State) */
-    .dashboard-grid {
-        display: block !important;
-        height: 100dvh !important;
-        position: relative;
-        overflow: hidden;
-    }
-
-    /* Idle State: MUST BE VISIBLE when not scanning */
-    /* HACK: Hide the generic idle-state on mobile because it conflicts with Start Screen */
-    /* We only want it inside the result tray if we had one, but on mobile we don't need the 'Waiting' text overlay */
-    .idle-state#idle-panel {
-        display: none !important;
-    }
-
-    #start-screen.idle-state {
-        display: flex !important;
+    /* 3. START SCREEN (Centered & Pulsing) */
+    #start-screen {
         position: absolute;
         inset: 0;
         z-index: 50;
-        /* Higher than camera, lower than header */
-        background: #f8f9fa;
+        background: #f8fafc;
+        display: flex !important;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        pointer-events: auto !important;
+        padding-bottom: 80px;
+        /* Visual offset */
     }
 
-    /* Force HIDE Start Screen when scanning (Overrides the rule above) */
+    /* Hide when scanning */
     body.scanning-mode #start-screen {
         display: none !important;
     }
 
-    /* 3. SCANNING MODE OVERRIDES */
-
-    /* When scanning, hide the idle state */
-    body.scanning-mode .idle-state {
-        display: none !important;
+    /* Large Pulse Button */
+    .btn-large-start {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        font-size: 1.25rem;
+        gap: 16px;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4), 0 0 0 0 rgba(37, 99, 235, 0.7);
+        animation: pulseShadow 2s infinite;
     }
 
-    /* Camera: Only visible when scanning */
-    body.scanning-mode .camera-zone {
-        position: absolute;
+    .btn-large-start svg {
+        width: 48px;
+        height: 48px;
+    }
+
+    @keyframes pulseShadow {
+        0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+        }
+
+        70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 30px rgba(37, 99, 235, 0);
+        }
+
+        100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+        }
+    }
+
+    /* 4. CAMERA ZONE (Fullscreen) */
+    .camera-zone {
+        position: fixed !important;
         inset: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 10;
-        background: #000;
-        display: flex !important;
+        z-index: 0;
+        background: black;
+        width: 100% !important;
+        height: 100% !important;
     }
 
     .camera-viewport {
@@ -728,105 +755,165 @@ body {
         height: 100%;
     }
 
-    #camera-feed {
-        object-fit: cover;
+    /* HUD Adjustments */
+    .hud-overlay {
+        width: 70vw;
+        height: 70vw;
+        max-width: 300px;
+        max-height: 300px;
+        border-color: rgba(255, 255, 255, 0.5);
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
     }
 
-    /* Result Console */
+    .hud-scanner-line {
+        box-shadow: 0 0 15px #3b82f6;
+        background: white;
+        height: 3px;
+    }
+
+    /* 5. THUMB CONTROLS (Floating Buttons) */
+
+    /* Stop Button (Bottom Left) */
+    .camera-controls {
+        position: fixed !important;
+        bottom: 32px;
+        left: 24px;
+        right: auto;
+        top: auto;
+        z-index: 60;
+        width: auto;
+    }
+
+    #btn-stop-scan {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.9);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        font-size: 0;
+        /* Hide text */
+        padding: 0;
+        justify-content: center;
+    }
+
+    #btn-stop-scan svg {
+        width: 28px;
+        height: 28px;
+        margin: 0;
+    }
+
+    /* Flash Button (Bottom Right) */
+    #btn-toggle-flash {
+        position: fixed !important;
+        bottom: 32px;
+        right: 24px;
+        top: auto;
+        z-index: 60;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        justify-content: center;
+        padding: 0;
+    }
+
+    #btn-toggle-flash svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    #btn-toggle-flash.active {
+        background: rgba(255, 255, 0, 0.3);
+        border-color: rgba(255, 255, 0, 0.6);
+        color: #fef08a;
+        /* Yellow text/icon */
+    }
+
+    .camera-title {
+        display: none;
+    }
+
+    /* Clean view */
+
+    /* 6. BOTTOM SHEET (Result Cards) */
     .result-console {
-        position: absolute;
+        position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 20;
+        z-index: 100;
         background: transparent !important;
         border: none;
         padding: 0;
-        display: flex;
-        /* Always flex to allow showing results if present */
-        flex-direction: column;
-        justify-content: flex-end;
         pointer-events: none;
+        /* Click-through empty space */
+        justify-content: flex-end;
+        /* Align cards to bottom */
     }
 
-    /* Hide the 'Dữ liệu Xác minh' text on mobile since we have the cards */
-    .result-console .console-header {
+    .result-card-container {
+        pointer-events: none;
+        padding: 0;
+        width: 100%;
+    }
+
+    .idle-state#idle-panel {
         display: none !important;
     }
 
-    /* Card Styling */
-    .result-card-container {
-        pointer-events: auto;
-        width: 100%;
-        padding: 1rem;
-        padding-bottom: max(1rem, env(safe-area-inset-bottom));
-        background: transparent;
-        position: relative;
-    }
-
+    /* The Cards */
     .verification-card,
     .cccd-card {
-        background: rgba(255, 255, 255, 0.96) !important;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.2) !important;
-        border-radius: 24px !important;
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        pointer-events: auto;
+        width: 100%;
         margin: 0 !important;
-        position: relative;
+        border-radius: 28px 28px 0 0 !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25) !important;
+        border: none;
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+
+        /* Slide Up Animation */
+        animation: slideUpSpring 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        transform-origin: bottom center;
+    }
+
+    /* Drag Handle (Visual) */
+    .verification-card::before,
+    .cccd-card::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 5px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        margin: 12px auto 0;
+        /* Top center */
+    }
+
+    .v-header,
+    .cccd-card .v-header {
+        border-radius: 20px 20px 0 0;
+        padding: 1rem 1.5rem;
+    }
+
+    .plate-number {
+        font-size: 2.2rem;
+        /* Larger for readability */
     }
 
     .btn-close-card {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 32px;
-        height: 32px;
-        background: rgba(0, 0, 0, 0.1);
-        border: none;
-        border-radius: 50%;
-        color: #64748b;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* HUD */
-    .hud-overlay {
-        top: 35%;
-        width: 260px;
-        height: 260px;
-    }
-
-    /* Camera Controls: Only visible when scanning */
-    .camera-controls {
-        position: absolute;
-        top: 1.5rem;
-        right: 1.5rem;
-        bottom: auto;
-        display: none;
-        /* Hidden by default */
-        flex-direction: row;
-        gap: 16px;
-        z-index: 999;
-    }
-
-    body.scanning-mode .camera-controls {
-        display: flex !important;
-    }
-
-    .control-btn {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        padding: 0;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.25);
-    }
-
-    .control-btn svg {
-        margin: 0;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.05);
+        width: 36px;
+        height: 36px;
     }
 }
