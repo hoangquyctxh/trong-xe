@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-    <meta charset="UTF-8"> 
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xác nhận xe ra</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com"> 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="config.js"></script> <!-- MỚI: Tải file cấu hình -->
     <style>
         :root {
@@ -27,6 +29,7 @@
             --border-radius-lg: 4px;
             --border-radius-md: 0.375rem;
         }
+
         body {
             font-family: 'Be Vietnam Pro', sans-serif;
             background-color: var(--bg-main);
@@ -34,49 +37,64 @@
             margin: 0;
             padding: 2em;
             display: flex;
-            align-items: center; 
+            align-items: center;
             justify-content: center;
             height: 100vh;
             box-sizing: border-box;
         }
+
         /* --- GIAO DIỆN CHUNG --- */
         .confirmation-card {
             background: var(--bg-card);
             border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-lg); border: 1px solid #999;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid #999;
             width: 100%;
-            max-width: 900px; /* Tăng độ rộng tối đa cho bố cục ngang */
+            max-width: 900px;
+            /* Tăng độ rộng tối đa cho bố cục ngang */
             padding: 2.5em;
             border: 1px solid var(--border-color);
             position: relative;
         }
+
         #success-view .confirmation-card::after {
             background: var(--success-color);
         }
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: scale(0.95); }
-            to   { opacity: 1; transform: scale(1); }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
+
         .card-title {
             color: var(--primary-accent);
             font-size: 1.8rem;
             margin-bottom: 0.5em;
             display: flex;
-            align-items: center; 
+            align-items: center;
             justify-content: center;
             gap: 15px;
             font-weight: 700;
         }
+
         .card-title.success {
             color: var(--success-color);
         }
- 
+
         /* --- HIỆU ỨNG CHO ICON THÀNH CÔNG --- */
         .success-icon-wrapper {
             width: 80px;
             height: 80px;
             margin: 0 auto 1em auto;
         }
+
         .success-checkmark {
             width: 80px;
             height: 80px;
@@ -88,6 +106,7 @@
             box-shadow: inset 0px 0px 0px var(--success-color);
             animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
         }
+
         .success-checkmark__circle {
             stroke-dasharray: 166;
             stroke-dashoffset: 166;
@@ -97,15 +116,40 @@
             fill: none;
             animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
         }
+
         .success-checkmark__check {
             transform-origin: 50% 50%;
             stroke-dasharray: 48;
-            stroke-dashoffset: 48; stroke-width: 3; /* SỬA LỖI: Giảm độ dày dấu tích */
+            stroke-dashoffset: 48;
+            stroke-width: 3;
+            /* SỬA LỖI: Giảm độ dày dấu tích */
             animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-        } 
-        @keyframes stroke {
-            100% { stroke-dashoffset: 0; } } @keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } } @keyframes fill { 100% { box-shadow: inset 0px 0px 0px 40px var(--success-color); }
         }
+
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes scale {
+
+            0%,
+            100% {
+                transform: none;
+            }
+
+            50% {
+                transform: scale3d(1.1, 1.1, 1);
+            }
+        }
+
+        @keyframes fill {
+            100% {
+                box-shadow: inset 0px 0px 0px 40px var(--success-color);
+            }
+        }
+
         .info-grid {
             margin-top: 2em;
             display: flex;
@@ -116,26 +160,36 @@
             border-top: 1px dashed var(--border-color);
             padding-top: 2em;
         }
+
         .info-item {
             display: flex;
-            justify-content: space-between; 
+            justify-content: space-between;
             align-items: center;
         }
+
         .info-item .label {
             color: var(--text-secondary);
         }
+
         .info-item .value {
             font-weight: 700;
         }
+
         .total-amount-value {
             color: var(--danger-color);
             font-size: 1.2em;
         }
-        .hidden { display: none !important; }
+
+        .hidden {
+            display: none !important;
+        }
+
         .total-fee-container .label {
             display: flex;
-            align-items: center; justify-content: center; gap: 10px;
-            font-size: 1.1rem; 
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.1rem;
             color: var(--text-secondary);
             font-weight: 500;
         }
@@ -147,8 +201,10 @@
             border-radius: var(--border-radius-md);
             padding: 1.5em 2em;
             margin-bottom: 2em;
-            text-align: center; /* CĂN GIỮA: Căn giữa nội dung bên trong */
+            text-align: center;
+            /* CĂN GIỮA: Căn giữa nội dung bên trong */
         }
+
         .total-fee-container .amount {
             font-size: 3.5rem;
             font-weight: 700;
@@ -156,33 +212,39 @@
             line-height: 1;
             margin-top: 0.2em;
         }
+
         .total-fee-container .amount sup {
             font-size: 2rem;
             font-weight: 700;
             vertical-align: top;
         }
+
         .payment-content-grid {
             display: grid;
-            grid-template-columns: 1fr; /* Mặc định 1 cột cho mobile */
+            grid-template-columns: 1fr;
+            /* Mặc định 1 cột cho mobile */
             gap: 2em;
             margin-top: 1.5em;
         }
+
         /* Bố cục 2 cột cho màn hình lớn hơn */
         @media (min-width: 768px) {
             .payment-content-grid {
                 grid-template-columns: 1fr 1fr;
             }
         }
+
         .payment-details-panel {
             display: flex;
-            flex-direction: column; 
+            flex-direction: column;
             width: 100%;
         }
+
         .payment-right-panel {
             background-color: var(--bg-main);
             border-radius: var(--border-radius-md);
             padding: 2em;
-            border: 1px solid var(--border-color); 
+            border: 1px solid var(--border-color);
             min-height: 420px;
             display: flex;
             align-items: center;
@@ -190,6 +252,7 @@
             flex-direction: column;
             text-align: center;
         }
+
         .payment-right-panel.placeholder {
             color: var(--text-secondary);
             font-size: 1.1rem;
@@ -203,23 +266,35 @@
             gap: 1em;
             margin-bottom: 1.5em;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1.5em; 
+            padding-bottom: 1.5em;
         }
+
         .method-btn {
-            padding: 12px; border-radius: var(--border-radius-md); 
+            padding: 12px;
+            border-radius: var(--border-radius-md);
             border: 1px solid var(--border-color);
-            background: #f5f5f5; color: var(--text-primary); 
-            font-weight: 600; cursor: pointer; transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            background: #f5f5f5;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             font-size: 1rem;
-        } 
-        .method-btn.active { 
-            background: var(--primary-accent); color: white; border-color: var(--primary-accent); 
         }
+
+        .method-btn.active {
+            background: var(--primary-accent);
+            color: white;
+            border-color: var(--primary-accent);
+        }
+
         .qr-code-display {
             padding: 15px;
             background: #fff;
-            border: 1px solid var(--border-color); 
+            border: 1px solid var(--border-color);
             border-radius: var(--border-radius-md);
             max-width: 280px;
             margin: 0 auto;
@@ -227,27 +302,34 @@
             opacity: 1;
             transform: translateY(0);
         }
-        .qr-code-display img { 
+
+        .qr-code-display img {
             width: 100%;
             height: auto;
             display: block;
         }
+
         .qr-code-display p {
             font-size: 0.9rem;
             color: var(--text-secondary);
             margin-top: 10px;
             word-break: break-all;
         }
+
         .qr-code-display strong {
             font-family: monospace;
             color: var(--text-primary);
         }
+
         .qr-code-display.hidden {
             opacity: 0;
             transform: translateY(10px);
             height: 0;
-            padding: 0; margin: 0; overflow: hidden;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
         }
+
         /* MỚI: Bố cục hiển thị thông tin chính */
         .main-info-display {
             background: var(--bg-main);
@@ -255,7 +337,8 @@
             border-radius: var(--border-radius-md);
             padding: 1.5em;
             margin-bottom: 1.5em;
-        } 
+        }
+
         .main-info-display .plate-display {
             font-size: 3rem;
             font-weight: 700;
@@ -263,44 +346,60 @@
             font-family: monospace, sans-serif;
             line-height: 1.1;
         }
+
         .main-info-display .time-in-display {
             font-size: 1.1rem;
             color: var(--text-secondary);
             margin-top: 0.5em;
         }
+
         /* --- NÚT HÀNH ĐỘNG --- */
-        .receipt-footer { /* Thiết kế lại khu vực chân biên lai */
+        .receipt-footer {
+            /* Thiết kế lại khu vực chân biên lai */
             margin-top: 1.5em;
             padding-top: 1.5em;
             border-top: 1px dashed var(--border-color);
             display: flex;
             justify-content: center;
-        } 
-        .btn-cancel {
-            background: none; border: none; color: var(--primary-accent);
-            font-weight: 600; cursor: pointer; text-decoration: underline;
-            font-size: 1rem; transition: color 0.2s;
         }
-        .btn-cancel:hover { color: var(--danger-color); }
+
+        .btn-cancel {
+            background: none;
+            border: none;
+            color: var(--primary-accent);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+
+        .btn-cancel:hover {
+            color: var(--danger-color);
+        }
 
         .auto-close-note {
-            margin-top: 1.5em; font-size: 0.9rem; color: var(--text-secondary);
+            margin-top: 1.5em;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
         }
-        
+
         /* --- MỚI: Header phụ cho trang --- */
         .aux-header {
             display: flex;
-            align-items: center; 
+            align-items: center;
             justify-content: space-between;
             gap: 18px;
             margin-bottom: 2em;
             padding-bottom: 1.5em;
             border-bottom: 1px dashed var(--border-color);
-        } 
-        .aux-header .logo { 
+        }
+
+        .aux-header .logo {
             width: 50px;
             height: 50px;
         }
+
         .aux-header .org-name {
             font-size: 1rem;
             font-weight: 600;
@@ -309,21 +408,25 @@
             line-height: 1.4;
             text-align: left;
         }
+
         /* Nhóm các phần tử bên trái */
         .header-left {
             display: flex;
-            align-items: center; 
-            gap: 18px; 
+            align-items: center;
+            gap: 18px;
         }
+
         /* MỚI: Phần thông tin điểm trực bên phải */
         .location-info {
             text-align: right;
         }
+
         .location-info .label {
             font-size: 0.9rem;
             color: var(--text-secondary);
             display: block;
         }
+
         .location-info .value {
             font-size: 1.1rem;
             font-weight: 600;
@@ -333,20 +436,24 @@
         /* ================================================== */
         /* --- REDESIGN: GIAO DIỆN THÀNH CÔNG - TOP 1 --- */
         /* ================================================== */
-        #success-view .card-title { animation: fadeInDown 0.5s 1s backwards; }
-        
-        .success-main-content { 
+        #success-view .card-title {
+            animation: fadeInDown 0.5s 1s backwards;
+        }
+
+        .success-main-content {
             animation: fadeIn 0.5s 1.2s backwards;
         }
-        
+
         .success-amount-display {
-            margin: 0.5em 0; 
+            margin: 0.5em 0;
         }
+
         .success-amount-display .label {
             font-size: 1.2rem;
             color: var(--text-secondary);
             animation: fadeInUp 0.5s 1.4s backwards;
-        } 
+        }
+
         .success-amount-display .amount {
             font-size: 3.8rem;
             font-weight: 700;
@@ -354,18 +461,19 @@
             line-height: 1.1;
             animation: popInAmount 0.6s 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
         }
+
         .success-amount-display .amount sup {
             font-size: 2rem;
             font-weight: 600;
         }
-        
+
         .success-plate-display {
             font-size: 2.5rem;
             font-weight: 600;
             font-family: monospace;
             color: var(--text-primary);
             background: var(--bg-main);
-            padding: 10px 25px; 
+            padding: 10px 25px;
             border-radius: var(--border-radius-md);
             display: inline-block;
             border: 1px solid var(--border-color);
@@ -378,9 +486,10 @@
         /* ================================================== */
         .success-details-grid {
             display: grid;
-            grid-template-columns: 1fr; /* Mặc định 1 cột */
+            grid-template-columns: 1fr;
+            /* Mặc định 1 cột */
             gap: 0.8em 2.5em;
-            margin-top: 1.5em; 
+            margin-top: 1.5em;
             padding: 1.2em 1.8em;
             background: #f9f9f9;
             border-radius: 0;
@@ -388,9 +497,11 @@
             text-align: left;
             animation: fadeInUp 0.5s 2s backwards;
         }
-        .success-details-grid .detail-item { 
+
+        .success-details-grid .detail-item {
             font-size: 1.1rem;
-        } 
+        }
+
         .success-details-grid .detail-item .label {
             display: flex;
             align-items: center;
@@ -398,30 +509,42 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
         }
+
         .success-details-grid .detail-item .label svg {
-            width: 16px; height: 16px;
+            width: 16px;
+            height: 16px;
         }
+
         .success-details-grid .detail-item .value {
             font-weight: 600;
             color: var(--text-primary);
             font-size: 1.2rem;
             font-weight: 700;
-            padding-left: 24px; /* Căn lề với label */
+            padding-left: 24px;
+            /* Căn lề với label */
         }
+
         /* Bố cục 2 cột cho màn hình lớn hơn */
         @media (min-width: 500px) {
-            .success-details-grid { grid-template-columns: 1fr 1fr; }
+            .success-details-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
+
         .success-duration-highlight {
             grid-column: 1 / -1;
-            margin-top: 0.8em; 
+            margin-top: 0.8em;
             padding-top: 0.8em;
             border-top: 1px dashed var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .success-duration-highlight .label { font-size: 1rem; }
+
+        .success-duration-highlight .label {
+            font-size: 1rem;
+        }
+
         .success-duration-highlight .value {
             font-weight: 700;
             color: var(--primary-accent);
@@ -440,9 +563,11 @@
         /* ================================================== */
         .success-grid-new {
             display: grid;
-            grid-template-columns: 350px 1fr; /* Cột trái cố định, cột phải co giãn */
+            grid-template-columns: 350px 1fr;
+            /* Cột trái cố định, cột phải co giãn */
             min-height: 600px;
         }
+
         .success-left-panel {
             background-color: #f0f9ff;
             padding: 3em;
@@ -452,6 +577,7 @@
             justify-content: center;
             text-align: center;
         }
+
         .success-title-new {
             font-size: 2rem;
             font-weight: 700;
@@ -459,18 +585,22 @@
             margin-top: 1em;
             margin-bottom: 0.5em;
         }
+
         .success-subtitle-new {
             font-size: 1.1rem;
             color: var(--text-secondary);
             line-height: 1.6;
             max-width: 30ch;
         }
+
         .success-footer-actions {
-            margin-top: auto; /* Đẩy xuống cuối */
+            margin-top: auto;
+            /* Đẩy xuống cuối */
             padding-top: 2em;
             font-size: 0.9rem;
             color: var(--text-secondary);
         }
+
         #feedback-qr-code {
             width: 100px;
             height: 100px;
@@ -485,6 +615,7 @@
             display: flex;
             flex-direction: column;
         }
+
         .receipt-header-new {
             display: flex;
             align-items: center;
@@ -492,27 +623,33 @@
             padding-bottom: 1.5em;
             border-bottom: 2px solid var(--border-color);
         }
+
         .receipt-header-new img {
             width: 50px;
             height: 50px;
         }
+
         .receipt-header-new .org-details {
             display: flex;
             flex-direction: column;
         }
+
         .receipt-header-new .org-name {
             font-weight: 700;
             font-size: 1.1rem;
             color: var(--text-primary);
         }
+
         .receipt-header-new .org-location {
             font-size: 0.9rem;
             color: var(--text-secondary);
         }
+
         .receipt-body-new {
             padding: 2em 0;
             flex-grow: 1;
         }
+
         .receipt-body-new .receipt-title {
             font-size: 1.5rem;
             font-weight: 600;
@@ -520,28 +657,34 @@
             margin-bottom: 1.5em;
             color: var(--text-primary);
         }
+
         .receipt-details-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5em 2em;
         }
+
         .receipt-details-grid .detail-item {
             font-size: 1rem;
         }
+
         .receipt-details-grid .detail-item .label {
             color: var(--text-secondary);
             margin-bottom: 0.25em;
             display: block;
         }
+
         .receipt-details-grid .detail-item .value {
             font-weight: 700;
             font-size: 1.1rem;
             color: var(--text-primary);
         }
+
         .receipt-details-grid .detail-item.total .value {
             font-size: 1.8rem;
             color: var(--danger-color);
         }
+
         .receipt-footer-new {
             text-align: center;
             padding-top: 2em;
@@ -552,8 +695,10 @@
         /* --- MỚI: GIAO DIỆN MÀN HÌNH CHỜ (IDLE) --- */
         /* ================================================== */
         #idle-view .confirmation-card::after {
-            background: var(--primary-accent); /* Giữ lại để phân biệt */
-        } 
+            background: var(--primary-accent);
+            /* Giữ lại để phân biệt */
+        }
+
         .idle-content-horizontal {
             display: flex;
             flex-direction: column;
@@ -561,12 +706,20 @@
             justify-content: center;
             text-align: center;
         }
+
         .idle-header {
             width: 100%;
             text-align: center;
             margin-bottom: 2em;
         }
-        .idle-header .idle-org-name { font-size: 1.1rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 1.5em; }
+
+        .idle-header .idle-org-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1.5em;
+        }
+
         /* CSS cho tên điểm trực ở màn hình chờ */
         .idle-location-name {
             font-size: 1.1rem;
@@ -575,9 +728,11 @@
             margin-top: -1em;
             margin-bottom: 1.5em;
         }
+
         .idle-location-name strong {
             color: var(--primary-accent);
         }
+
         .idle-header .idle-logo {
             width: 80px;
             height: 80px;
@@ -586,23 +741,25 @@
 
         /* NÂNG CẤP: Bố cục 2 cột cho phần chính */
         .idle-main {
-            display: grid; 
+            display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 2.5em;
             width: 100%;
             align-items: start;
         }
+
         .idle-left-panel {
             display: flex;
             flex-direction: column;
             height: 100%;
         }
+
         .idle-right-panel {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        
+
         /* NÂNG CẤP: CSS cho bàn phím ảo T9 */
         .virtual-keyboard {
             display: grid;
@@ -611,8 +768,10 @@
             width: 100%;
             max-width: 380px;
         }
-        .kb-btn { 
-            aspect-ratio: 1 / 0.8; /* Giữ tỷ lệ nút */
+
+        .kb-btn {
+            aspect-ratio: 1 / 0.8;
+            /* Giữ tỷ lệ nút */
             border: 1px solid var(--border-color);
             background-color: #f5f5f5;
             border-radius: var(--border-radius-md);
@@ -624,21 +783,25 @@
             justify-content: center;
             box-shadow: var(--shadow-sm);
         }
-        .kb-btn:hover { 
+
+        .kb-btn:hover {
             background-color: #e9e9e9;
             box-shadow: var(--shadow-md);
             border-color: #adadad;
         }
-        .kb-btn:active { 
+
+        .kb-btn:active {
             transform: translateY(1px);
             background-color: var(--bg-main);
         }
+
         .kb-btn .num {
             font-size: 2.2rem;
             font-weight: 600;
             color: var(--text-primary);
             line-height: 1;
         }
+
         .kb-btn .chars {
             font-size: 0.8rem;
             font-weight: 600;
@@ -646,16 +809,20 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
         .kb-btn.special {
             background-color: var(--bg-main);
         }
+
         .kb-btn.special .num {
             font-size: 1.5rem;
         }
+
         .kb-btn.danger {
             background-color: #f2dede;
             border-color: #ebccd1;
         }
+
         .kb-btn.danger .num {
             color: var(--danger-color);
         }
@@ -672,18 +839,26 @@
             flex-direction: column;
             height: 100%;
         }
+
         #kiosk-plate-input {
-            flex-grow: 1; /* Cho phép input co giãn */
+            flex-grow: 1;
+            /* Cho phép input co giãn */
             margin-bottom: 1em;
         }
+
         /* CSS cho widget thời tiết & đồng hồ */
         .idle-widgets {
             display: flex;
             gap: 20px;
-            margin-top: 2.5em; 
+            margin-top: 2.5em;
         }
-        .clock-widget, .weather-widget { /* Làm to rõ hơn */
-            display: flex; align-items: center; gap: 8px;
+
+        .clock-widget,
+        .weather-widget {
+            /* Làm to rõ hơn */
+            display: flex;
+            align-items: center;
+            gap: 8px;
             background: var(--bg-main);
             padding: 12px 18px;
             border-radius: var(--border-radius-md);
@@ -691,10 +866,30 @@
             font-size: 1.2rem;
             color: var(--text-secondary);
         }
-        .clock-widget .icon, #weather-icon { color: var(--primary-accent); width: 28px; height: 28px; }
-        #clock-display { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); }
-        #weather-temp { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); }
-        #weather-icon { height: 28px; width: auto; }
+
+        .clock-widget .icon,
+        #weather-icon {
+            color: var(--primary-accent);
+            width: 28px;
+            height: 28px;
+        }
+
+        #clock-display {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        #weather-temp {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        #weather-icon {
+            height: 28px;
+            width: auto;
+        }
 
         /* ================================================== */
         /* --- MỚI: DÒNG CHỮ CHẠY & ĐỒNG HỒ GÓC PHẢI --- */
@@ -703,47 +898,58 @@
             position: absolute;
             bottom: 0;
             left: 0;
-            right: 0; 
+            right: 0;
             height: 80px;
-            background: rgba(0, 0, 0, 0.4); 
-            display: flex; 
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
             align-items: center;
             overflow: hidden;
             z-index: 2;
         }
+
         .marquee-text {
             display: flex;
             align-items: center;
             gap: 1em;
             font-size: 1.8rem;
             font-weight: 600;
-            color: white; 
+            color: white;
             white-space: nowrap;
             padding-left: 100%;
             animation: marquee 40s linear infinite;
         }
+
         .marquee-text img {
             height: 60px;
             width: auto;
             vertical-align: middle;
             margin: 0 0.2em;
-            background: white; /* Thêm nền trắng cho logo SVG/PNG trong suốt */
+            background: white;
+            /* Thêm nền trắng cho logo SVG/PNG trong suốt */
             border-radius: 4px;
         }
+
         @keyframes marquee {
-            from { transform: translateX(0); }
-            to { transform: translateX(-100%); }
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-100%);
+            }
         }
+
         .corner-clock {
             position: absolute;
             bottom: 15px;
             right: 20px;
             background: black;
             color: white;
-            padding: 8px 15px; 
+            padding: 8px 15px;
             border-radius: var(--border-radius-md);
-            font-family: monospace; 
-            font-size: 1.5rem; /* Tăng kích thước chữ */
+            font-family: monospace;
+            font-size: 1.5rem;
+            /* Tăng kích thước chữ */
             font-weight: 700;
             z-index: 3;
         }
@@ -753,23 +959,35 @@
         /* ================================================== */
         #ad-view {
             position: fixed;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
-            background: black; 
+            background: black;
             z-index: 200;
         }
+
         #ad-view .idle-video-background {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
+
         #ad-view #ad-video {
-            width: 100%; height: 100%; object-fit: cover;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
+
         #ad-view .video-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.3); 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
         }
 
         /* MỚI: Header cho màn hình quảng cáo */
@@ -781,14 +999,17 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            background: rgba(0, 0, 0, 0.3); 
+            background: rgba(0, 0, 0, 0.3);
             padding: 10px 15px;
             border-radius: var(--border-radius-lg);
             backdrop-filter: blur(5px);
         }
+
         .ad-header .logo {
-            width: 45px; height: 45px;
+            width: 45px;
+            height: 45px;
         }
+
         .ad-header .org-name {
             font-size: 1rem;
             font-weight: 700;
@@ -800,11 +1021,12 @@
         /* --- MỚI: GIAO DIỆN TỰ PHỤC VỤ (KIOSK MODE) --- */
         /* ================================================== */
         .self-service-kiosk {
-            display: none; /* Ẩn trên thiết bị di động theo mặc định */
+            display: none;
+            /* Ẩn trên thiết bị di động theo mặc định */
             margin-top: 2.5em;
             padding-top: 2em;
             border-top: 1px dashed var(--border-color);
-            width: 100%; 
+            width: 100%;
             max-width: 600px;
             animation: fadeInUp 0.5s 1s backwards;
         }
@@ -815,13 +1037,14 @@
                 display: block;
             }
         }
- 
+
         #kiosk-plate-input {
             width: 100%;
             padding: 20px;
             font-size: 2.5rem;
             font-weight: 700;
-            text-align: center; box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+            text-align: center;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
             border: 2px solid var(--border-color);
             border-radius: var(--border-radius-lg);
             font-family: monospace;
@@ -829,40 +1052,47 @@
             margin-bottom: 1em;
             transition: all 0.2s;
         }
+
         #kiosk-plate-input:focus {
             outline: none;
-            border-color: var(--primary-accent); 
+            border-color: var(--primary-accent);
             box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.2);
-        } 
- 
+        }
+
         .kiosk-actions {
             display: grid;
-            grid-template-columns: 1fr; /* Sửa thành 1 cột */
+            grid-template-columns: 1fr;
+            /* Sửa thành 1 cột */
             gap: 1em;
         }
+
         .kiosk-btn {
             padding: 18px;
             font-size: 1.2rem;
             font-weight: 700;
             border-radius: var(--border-radius-lg);
-            cursor: pointer; 
+            cursor: pointer;
             border: 1px solid transparent;
             transition: all 0.2s;
         }
+
         .kiosk-btn.check-in {
             background-color: var(--primary-accent);
             border-color: var(--primary-accent-light);
             color: white;
         }
+
         .kiosk-btn.check-out {
             background-color: var(--danger-color);
             border-color: #d43f3a;
-            color: white; 
-        } 
+            color: white;
+        }
+
         .kiosk-btn:hover:not(:disabled) {
             transform: none;
             filter: brightness(1.1);
         }
+
         .kiosk-btn:disabled {
             background-color: #e9ecef;
             color: #adb5bd;
@@ -877,17 +1107,18 @@
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0; 
+            bottom: 0;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(4px);
             z-index: 10;
             display: flex;
             flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
+            align-items: center;
+            justify-content: center;
             border-radius: var(--border-radius-lg);
             animation: fadeIn 0.3s;
         }
+
         .kiosk-overlay .spinner {
             width: 40px;
             height: 40px;
@@ -896,34 +1127,84 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+
         .kiosk-overlay p {
             margin-top: 1em;
             font-weight: 600;
             color: var(--text-primary);
         }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        @keyframes popInAmount { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        @keyframes popInAmount {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            80% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
     </style>
     <!-- MỚI: CSS cho hiệu ứng tiền mặt -->
-    <style>  
+    <style>
         .cash-payment-animation {
             position: relative;
             width: 150px;
             height: 150px;
             margin: 0 auto 1.5em auto;
         }
+
         .cash-payment-animation .wallet-icon {
             width: 100px;
             height: 100px;
             position: absolute;
-            bottom: 0; 
+            bottom: 0;
             left: 50%;
             transform: translateX(-50%);
             color: var(--primary-accent);
             z-index: 2;
         }
+
         .cash-payment-animation .coin {
             position: absolute;
             left: 50%;
@@ -937,24 +1218,51 @@
             opacity: 0;
             z-index: 1;
         }
+
         .cash-payment-animation .coin::before {
             content: '$';
             position: absolute;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
             font-weight: 700;
             color: #b45309;
         }
-        .cash-payment-animation .coin:nth-child(2) { animation-delay: 0.5s; left: 40%; width: 22px; height: 22px; }
-        .cash-payment-animation .coin:nth-child(3) { animation-delay: 1s; left: 60%; width: 28px; height: 28px; }
-        .cash-payment-animation .coin:nth-child(4) { animation-delay: 1.5s; left: 55%; }
+
+        .cash-payment-animation .coin:nth-child(2) {
+            animation-delay: 0.5s;
+            left: 40%;
+            width: 22px;
+            height: 22px;
+        }
+
+        .cash-payment-animation .coin:nth-child(3) {
+            animation-delay: 1s;
+            left: 60%;
+            width: 28px;
+            height: 28px;
+        }
+
+        .cash-payment-animation .coin:nth-child(4) {
+            animation-delay: 1.5s;
+            left: 55%;
+        }
 
         @keyframes drop {
-            0% { transform: translateY(-20px) scale(1); opacity: 1; }
-            100% { transform: translateY(80px) scale(0.5); opacity: 0; }
-        }  
+            0% {
+                transform: translateY(-20px) scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(80px) scale(0.5);
+                opacity: 0;
+            }
+        }
     </style>
+    <script src="security.js"></script> <!-- BẢO MẬT -->
 </head>
+
 <body>
     <!-- 
         LƯU Ý: File này cần có config.js và locations.js trong cùng thư mục để hoạt động.
@@ -964,7 +1272,8 @@
     <div id="payment-selection-view" class="confirmation-card hidden">
         <div class="aux-header">
             <div class="header-left">
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="logo">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                    alt="Huy hiệu Đoàn" class="logo">
                 <div class="org-name">Đoàn TNCS Hồ Chí Minh<br>Phường Ba Đình</div>
             </div>
             <div class="location-info">
@@ -974,9 +1283,13 @@
         </div>
         <h1 class="card-title">
             <!-- THAY ĐỔI: Thay thế biểu tượng đô la ($) bằng biểu tượng tiền tệ chung (tờ tiền & đồng xu) cho phù hợp hơn -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
             THANH TOÁN PHÍ GỬI XE
-        </h1> 
+        </h1>
 
         <!-- ================================================== -->
         <!-- --- BỐ CỤC NGANG MỚI --- -->
@@ -991,11 +1304,18 @@
                     </div>
                     <!-- NÂNG CẤP: Thêm tổng thời gian gửi -->
                     <div class="time-in-display" style="margin-top: 0.5em;">
-                        Tổng thời gian gửi: <strong id="payment-duration" style="color: var(--text-primary);">--</strong>
+                        Tổng thời gian gửi: <strong id="payment-duration"
+                            style="color: var(--text-primary);">--</strong>
                     </div>
                 </div>
                 <div class="total-fee-container" style="border-color: var(--danger-color);">
-                    <div class="label"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Tổng phí thanh toán</div>
+                    <div class="label"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                        </svg>Tổng phí thanh toán</div>
                     <div class="amount">
                         <span id="payment-total-amount">0</span><sup>đ</sup>
                     </div>
@@ -1005,8 +1325,21 @@
                 <!-- --- SỬA LỖI: KHÔI PHỤC NÚT CHỌN PHƯƠNG THỨC THANH TOÁN --- -->
                 <!-- ================================================== -->
                 <div class="payment-method-selector">
-                    <button id="select-qr-btn" class="method-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Thanh toán QR</button>
-                    <button id="select-cash-btn" class="method-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Tiền mặt</button>
+                    <button id="select-qr-btn" class="method-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24"
+                            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>Thanh toán QR</button>
+                    <button id="select-cash-btn" class="method-btn"><svg xmlns="http://www.w3.org/2000/svg" width="24"
+                            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                        </svg>Tiền mặt</button>
                 </div>
 
             </div>
@@ -1030,12 +1363,13 @@
             <div class="success-left-panel">
                 <div class="success-icon-wrapper">
                     <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                        <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-                        <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                        <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
                     </svg>
                 </div>
                 <h1 class="success-title-new">Thanh toán thành công!</h1>
-                <p class="success-subtitle-new">Cảm ơn Quý khách đã sử dụng dịch vụ. Chúc Quý khách một chuyến đi an toàn!</p>
+                <p class="success-subtitle-new">Cảm ơn Quý khách đã sử dụng dịch vụ. Chúc Quý khách một chuyến đi an
+                    toàn!</p>
                 <div class="success-footer-actions">
                     <p>Quét mã để đánh giá dịch vụ</p>
                     <div id="feedback-qr-code"></div>
@@ -1045,7 +1379,8 @@
             <!-- CỘT PHẢI: BIÊN LAI -->
             <div class="success-receipt-panel">
                 <div class="receipt-header-new">
-                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                        alt="Logo">
                     <div class="org-details">
                         <span class="org-name">ĐOÀN TNCS HỒ CHÍ MINH</span>
                         <span class="org-location" id="receipt-location-name">PHƯỜNG BA ĐÌNH</span>
@@ -1056,13 +1391,19 @@
                     <div class="receipt-details-grid">
                         <div class="detail-item" style="grid-column: 1 / -1;">
                             <span class="label">Biển số xe</span>
-                            <span class="value" id="success-plate" style="font-family: monospace; font-size: 1.5rem;">--</span>
+                            <span class="value" id="success-plate"
+                                style="font-family: monospace; font-size: 1.5rem;">--</span>
                         </div>
-                        <div class="detail-item"><span class="label">Giờ vào</span><span class="value" id="success-time-in">--</span></div>
-                        <div class="detail-item"><span class="label">Giờ ra</span><span class="value" id="success-time-out">--</span></div>
-                        <div class="detail-item"><span class="label">Tổng thời gian</span><span class="value" id="success-duration">--</span></div>
-                        <div class="detail-item"><span class="label">Phương thức</span><span class="value" id="success-payment-method">--</span></div>
-                        <div class="detail-item total" style="grid-column: 1 / -1; text-align: right; margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--border-color);">
+                        <div class="detail-item"><span class="label">Giờ vào</span><span class="value"
+                                id="success-time-in">--</span></div>
+                        <div class="detail-item"><span class="label">Giờ ra</span><span class="value"
+                                id="success-time-out">--</span></div>
+                        <div class="detail-item"><span class="label">Tổng thời gian</span><span class="value"
+                                id="success-duration">--</span></div>
+                        <div class="detail-item"><span class="label">Phương thức</span><span class="value"
+                                id="success-payment-method">--</span></div>
+                        <div class="detail-item total"
+                            style="grid-column: 1 / -1; text-align: right; margin-top: 1em; padding-top: 1em; border-top: 1px solid var(--border-color);">
                             <span class="label" style="text-align: right;">TỔNG CỘNG</span>
                             <span class="value" id="success-total-amount">0đ</span>
                         </div>
@@ -1074,42 +1415,52 @@
                 </div>
             </div>
         </div>
-        <div id="confetti-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;"></div>
+        <div id="confetti-container"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;">
+        </div>
     </div>
 
     <!-- MỚI: View 4 - Gửi xe thành công -->
     <div id="checkin-success-view" class="confirmation-card hidden">
         <div class="success-icon-wrapper">
             <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-                <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none" />
+                <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
             </svg>
         </div>
         <h1 class="card-title success" style="margin-bottom: 0.5em;">ĐÃ GỬI XE THÀNH CÔNG</h1>
-        <p class="thank-you-message" style="margin-top: 0; margin-bottom: 1.5em;">Vui lòng nhận vé và bảo quản cẩn thận.</p>
+        <p class="thank-you-message" style="margin-top: 0; margin-bottom: 1.5em;">Vui lòng nhận vé và bảo quản cẩn thận.
+        </p>
 
         <!-- ================================================== -->
         <!-- --- MỚI: GIAO DIỆN VÉ XE KHI GỬI THÀNH CÔNG --- -->
         <!-- ================================================== -->
         <div class="success-main-content" style="max-width: 380px; margin: 0 auto;">
-            <div id="checkin-qrcode-canvas-wrapper" style="padding: 15px; background-color: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); margin: 0 auto 20px auto; width: 250px; height: 250px;">
+            <div id="checkin-qrcode-canvas-wrapper"
+                style="padding: 15px; background-color: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); margin: 0 auto 20px auto; width: 250px; height: 250px;">
                 <canvas id="checkin-qrcode-canvas" aria-label="Mã QR của vé xe"></canvas>
             </div>
 
             <div class="ticket-info-new" style="text-align: left; margin-bottom: 25px;">
-                <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                <div class="info-row"
+                    style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
                     <span class="info-label" style="font-weight: 500; color: var(--text-secondary);">Biển số xe:</span>
-                    <span class="info-value" id="checkin-success-plate" style="font-weight: 700; color: var(--text-primary); font-family: monospace; font-size: 1.1rem;">--</span>
+                    <span class="info-value" id="checkin-success-plate"
+                        style="font-weight: 700; color: var(--text-primary); font-family: monospace; font-size: 1.1rem;">--</span>
                 </div>
                 <div class="info-row" style="display: flex; justify-content: space-between; padding: 10px 0;">
-                    <span class="info-label" style="font-weight: 500; color: var(--text-secondary);">Thời gian vào:</span>
-                    <span class="info-value" id="checkin-success-time-in" style="font-weight: 700; color: var(--text-primary);">--</span>
+                    <span class="info-label" style="font-weight: 500; color: var(--text-secondary);">Thời gian
+                        vào:</span>
+                    <span class="info-value" id="checkin-success-time-in"
+                        style="font-weight: 700; color: var(--text-primary);">--</span>
                 </div>
             </div>
         </div>
 
         <p class="auto-close-note" style="margin-top: 2em;">Sẽ tự động chuyển sang màn hình chờ sau 10 giây.</p>
-        <div id="checkin-confetti-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;"></div>
+        <div id="checkin-confetti-container"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden;">
+        </div>
     </div>
 
     <!-- MỚI: View 3 - Màn hình chờ -->
@@ -1118,7 +1469,8 @@
         <div class="idle-content-horizontal">
             <div class="idle-header">
                 <p class="idle-org-name">ĐOÀN TNCS HỒ CHÍ MINH - PHƯỜNG BA ĐÌNH</p>
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="idle-logo">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                    alt="Huy hiệu Đoàn" class="idle-logo">
                 <p class="idle-location-name">Bãi đỗ xe: <strong id="idle-location-display">--</strong></p>
             </div>
 
@@ -1132,17 +1484,23 @@
                             <p>Đang xử lý, vui lòng chờ...</p>
                         </div>
                         <!-- NÂNG CẤP: Thêm tiêu đề -->
-                        <h3 style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 1em; font-weight: 600;">KIOSK TỰ PHỤC VỤ</h3>
+                        <h3
+                            style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 1em; font-weight: 600;">
+                            KIOSK TỰ PHỤC VỤ</h3>
                         <input type="text" id="kiosk-plate-input" placeholder="NHẬP BIỂN SỐ XE" readonly>
                         <!-- MỚI: Ô nhập số điện thoại, ẩn mặc định -->
-                        <div id="kiosk-phone-wrapper" class="hidden" style="margin-bottom: 1em; animation: fadeInUp 0.3s;">
-                            <input type="tel" id="kiosk-phone-input" placeholder="Số điện thoại (không bắt buộc)" style="width: 100%; padding: 20px; font-size: 1.5rem; text-align: center; border: 2px solid var(--border-color); border-radius: var(--border-radius-lg); font-family: 'Be Vietnam Pro', sans-serif;">
+                        <div id="kiosk-phone-wrapper" class="hidden"
+                            style="margin-bottom: 1em; animation: fadeInUp 0.3s;">
+                            <input type="tel" id="kiosk-phone-input" placeholder="Số điện thoại (không bắt buộc)"
+                                style="width: 100%; padding: 20px; font-size: 1.5rem; text-align: center; border: 2px solid var(--border-color); border-radius: var(--border-radius-lg); font-family: 'Be Vietnam Pro', sans-serif;">
                         </div>
 
                         <div class="kiosk-actions">
                             <!-- THAY ĐỔI: Gộp thành một nút duy nhất với hiệu ứng chuyển đổi -->
-                            <button id="kiosk-action-btn" class="kiosk-btn" disabled style="position: relative; overflow: hidden; background: #e9ecef; color: #adb5bd;">
-                                <span class="btn-text-wrapper" style="display: block; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);">
+                            <button id="kiosk-action-btn" class="kiosk-btn" disabled
+                                style="position: relative; overflow: hidden; background: #e9ecef; color: #adb5bd;">
+                                <span class="btn-text-wrapper"
+                                    style="display: block; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);">
                                     <span class="btn-text">NHẬP BIỂN SỐ</span>
                                 </span>
                             </button>
@@ -1153,23 +1511,39 @@
                 <!-- CỘT PHẢI: BÀN PHÍM ẢO -->
                 <div class="idle-right-panel">
                     <div class="virtual-keyboard">
-                        <button class="kb-btn" data-key="1"><span class="num">1</span><span class="chars"></span></button>
-                        <button class="kb-btn" data-key="2"><span class="num">2</span><span class="chars">ABC</span></button>
-                        <button class="kb-btn" data-key="3"><span class="num">3</span><span class="chars">DEF</span></button>
-                        <button class="kb-btn" data-key="4"><span class="num">4</span><span class="chars">GHI</span></button>
-                        <button class="kb-btn" data-key="5"><span class="num">5</span><span class="chars">JKL</span></button>
-                        <button class="kb-btn" data-key="6"><span class="num">6</span><span class="chars">MNO</span></button>
-                        <button class="kb-btn" data-key="7"><span class="num">7</span><span class="chars">PQRS</span></button>
-                        <button class="kb-btn" data-key="8"><span class="num">8</span><span class="chars">TUV</span></button>
-                        <button class="kb-btn" data-key="9"><span class="num">9</span><span class="chars">WXYZ</span></button>
+                        <button class="kb-btn" data-key="1"><span class="num">1</span><span
+                                class="chars"></span></button>
+                        <button class="kb-btn" data-key="2"><span class="num">2</span><span
+                                class="chars">ABC</span></button>
+                        <button class="kb-btn" data-key="3"><span class="num">3</span><span
+                                class="chars">DEF</span></button>
+                        <button class="kb-btn" data-key="4"><span class="num">4</span><span
+                                class="chars">GHI</span></button>
+                        <button class="kb-btn" data-key="5"><span class="num">5</span><span
+                                class="chars">JKL</span></button>
+                        <button class="kb-btn" data-key="6"><span class="num">6</span><span
+                                class="chars">MNO</span></button>
+                        <button class="kb-btn" data-key="7"><span class="num">7</span><span
+                                class="chars">PQRS</span></button>
+                        <button class="kb-btn" data-key="8"><span class="num">8</span><span
+                                class="chars">TUV</span></button>
+                        <button class="kb-btn" data-key="9"><span class="num">9</span><span
+                                class="chars">WXYZ</span></button>
                         <button class="kb-btn special danger" data-key="clear">
                             <span class="num">CE</span>
                             <span class="chars">Xóa hết</span>
                         </button>
-                        <button class="kb-btn" data-key="0"><span class="num">0</span><span class="chars"></span></button>
+                        <button class="kb-btn" data-key="0"><span class="num">0</span><span
+                                class="chars"></span></button>
                         <button class="kb-btn special" data-key="backspace">
                             <span class="num">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path><line x1="18" y1="9" x2="12" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+                                    <line x1="18" y1="9" x2="12" y2="15"></line>
+                                    <line x1="12" y1="9" x2="18" y2="15"></line>
+                                </svg>
                             </span>
                             <span class="chars">Xóa</span>
                         </button>
@@ -1180,7 +1554,12 @@
             <!-- MỚI: Thêm widget đồng hồ và thời tiết -->
             <div class="idle-widgets">
                 <div id="clock-widget" class="clock-widget" title="Thời gian thực">
-                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
                     <span id="clock-display">--:--:--</span>
                 </div>
                 <div id="weather-widget" class="weather-widget" title="Thời tiết tại điểm trực"></div>
@@ -1192,7 +1571,8 @@
     <div id="ad-view" class="hidden">
         <!-- Header cho màn hình quảng cáo -->
         <div class="ad-header">
-            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Huy hiệu Đoàn" class="logo"> 
+            <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                alt="Huy hiệu Đoàn" class="logo">
             <div class="org-name">
                 ĐOÀN TNCS HỒ CHÍ MINH<br>PHƯỜNG BA ĐÌNH
             </div>
@@ -1206,11 +1586,14 @@
             <!-- Dòng chữ chạy với nội dung và logo đầy đủ -->
             <div class="marquee-text">
                 <span>Chương trình Bãi đỗ xe Thanh niên do Đoàn TNCS Hồ Chí Minh Phường Ba Đình</span>
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png" alt="Logo Đoàn Thanh Niên">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                    alt="Logo Đoàn Thanh Niên">
                 <span>tổ chức, với sự đồng hành của các nhà tài trợ: Vietcombank Ba Đình</span>
-                <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/02/Logo-Vietcombank.png" alt="Logo Vietcombank">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/02/Logo-Vietcombank.png"
+                    alt="Logo Vietcombank">
                 <span>và Vinamilk</span>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_Vinamilk_%282023%29.png" alt="Logo Vinamilk">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/eb/Logo_Vinamilk_%282023%29.png"
+                    alt="Logo Vinamilk">
                 <span>. Kính chúc Quý khách một ngày tốt lành!</span>
             </div>
         </div>
@@ -1232,8 +1615,8 @@
             // --- 1. MODULE QUẢN LÝ GIAO DIỆN (UI) ---
             const UI = {
                 elements: {
-                    paymentView: document.getElementById('payment-selection-view'), 
-                    successView: document.getElementById('success-view'), 
+                    paymentView: document.getElementById('payment-selection-view'),
+                    successView: document.getElementById('success-view'),
                     checkinSuccessView: document.getElementById('checkin-success-view'),
                     idleView: document.getElementById('idle-view'),
                     adView: document.getElementById('ad-view'),
@@ -1304,12 +1687,12 @@
                     let content = '';
                     switch (state) {
                         case 'qr': /"animation: fadeInUp 0.5s ease; position: relative; min-height: 280px; display: flex; align-items: center; justify-content: center;">
-                                           <div class="spinner"></div>
-                                           <p style="position: absolute; bottom: 15px; left: 15px; right: 15px; margin:0;">Nội dung: <strong id="qr-memo">Đang tạo...</strong></p></div>`;
-                            content = `<div style="text-align: center; animation: fadeInUp 0.5s ease;"><div class="cash-payment-animation"><div class="coin"></div><div class="coin"></div><div class="coin"></div><div class="coin"></div><svg class="wallet-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><h3 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5em; font-weight: 700;">Thanh toán bằng Tiền mặt</h3><p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p></div>`; 
+                            < div class="spinner" ></div >
+                                <p style="position: absolute; bottom: 15px; left: 15px; right: 15px; margin:0;">Nội dung: <strong id="qr-memo">Đang tạo...</strong></p></div > `;
+                            content = `< div style = "text-align: center; animation: fadeInUp 0.5s ease;" ><div class="cash-payment-animation"><div class="coin"></div><div class="coin"></div><div class="coin"></div><div class="coin"></div><svg class="wallet-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><h3 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5em; font-weight: 700;">Thanh toán bằng Tiền mặt</h3><p style="font-size: 1.1rem; color: var(--text-secondary);">Vui lòng đưa tiền cho nhân viên tại quầy.</p></div > `; 
                             break;
                         default:
-                            content = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1em; opacity: 0.5;"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12a10 10 0 0 0 10 10V12z"/></svg>Vui lòng chọn phương thức thanh toán`;
+                            content = `< svg xmlns = "http://www.w3.org/2000/svg" width = "48" height = "48" viewBox = "0 0 24 24" fill = "none" stroke = "currentColor" stroke - width="1.5" stroke - linecap="round" stroke - linejoin="round" style = "margin-bottom: 1em; opacity: 0.5;" ><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12a10 10 0 0 0 10 10V12z"/></svg > Vui lòng chọn phương thức thanh toán`;
                     }
                     this.elements.rightPanel.innerHTML = content;
                 },
@@ -1343,11 +1726,11 @@
                     while (container.firstChild) container.removeChild(container.firstChild);
                     for (let i = 0; i < confettiCount; i++) {
                         const confetti = document.createElement('div'); 
-                        confetti.style.cssText = `position: absolute; width: ${Math.random()*10+5}px; height: ${Math.random()*6+4}px; background-color: ${colors[Math.floor(Math.random()*colors.length)]}; top: -10%; left: ${Math.random()*100}%; opacity: 1; transform: rotate(${Math.random()*360}deg);`;
+                        confetti.style.cssText = `position: absolute; width: ${ Math.random() * 10 + 5 } px; height: ${ Math.random() * 6 + 4 } px; background - color: ${ colors[Math.floor(Math.random() * colors.length)] }; top: -10 %; left: ${ Math.random() * 100 }%; opacity: 1; transform: rotate(${ Math.random() * 360 }deg); `;
                         container.appendChild(confetti);
                         const angle = Math.random() * 360, radius = Math.random() * 300 + 150;
                         const endX = radius * Math.cos(angle * Math.PI / 180), endY = radius * Math.sin(angle * Math.PI / 180);
-                        confetti.animate([ { transform: `translate(0, 0) rotate(${Math.random()*360}deg)`, opacity: 1 }, { transform: `translate(${endX}px, ${endY}px) rotate(${Math.random()*720}deg)`, opacity: 0 } ], { duration: 1500 + Math.random() * 1000, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'forwards' });
+                        confetti.animate([ { transform: `translate(0, 0) rotate(${ Math.random() * 360 }deg)`, opacity: 1 }, { transform: `translate(${ endX }px, ${ endY }px) rotate(${ Math.random() * 720 }deg)`, opacity: 0 } ], { duration: 1500 + Math.random() * 1000, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)', fill: 'forwards' });
                         setTimeout(() => confetti.remove(), 2500);
                     }
                 } 
@@ -1453,7 +1836,7 @@
                                 if (qrContainer && spinner && lastMessage) {
                                     const fee = lastMessage.totalAmount.replace(/\D/g, '');
                                     const encodedMemo = encodeURIComponent(lastMessage.paymentMemo);
-                                    const qrImageUrl = `${APP_CONFIG.payment.imageUrlBase}&amount=${fee}&addInfo=${encodedMemo}`;
+                                    const qrImageUrl = `${ APP_CONFIG.payment.imageUrlBase }& amount=${ fee }& addInfo=${ encodedMemo } `;
                                     
                                     // HOÀN CHỈNH: Tải ảnh QR trong bộ nhớ trước khi hiển thị để tránh giật lag
                                     const tempImage = new Image();
@@ -1578,7 +1961,7 @@
                     }
 
                     try {
-                        const response = await fetch(`${APP_CONFIG.googleScriptUrl}?action=getVehicleStatus&plate=${plate}&v=${new Date().getTime()}`);
+                        const response = await fetch(`${ APP_CONFIG.googleScriptUrl }?action = getVehicleStatus & plate=${ plate }& v=${ new Date().getTime() } `);
                         const result = await response.json();
 
                         const textWrapper = actionBtn.querySelector('.btn-text-wrapper');
@@ -1655,15 +2038,15 @@
                     const apiKey = APP_CONFIG.weather.apiKey;
 
                     if (!apiKey || apiKey === "YOUR_OPENWEATHERMAP_API_KEY" || !lat || !lon) {
-                        weatherWidget.innerHTML = `<span>Thời tiết không khả dụng</span>`;
+                        weatherWidget.innerHTML = `< span > Thời tiết không khả dụng</span > `;
                         return; 
                     }
                     try {
                         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric&lang=vi`;
-                        const response = await fetch(url);
-                        if (!response.ok) throw new Error(`Lỗi HTTP: ${response.status}`);
-                        const data = await response.json();
-                        weatherWidget.innerHTML = `<img id="weather-icon" src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Thời tiết" style="display: inline;"><span id="weather-temp">${Math.round(data.main.temp)}°C</span><span id="weather-desc">${data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)}</span>`;
+                            const response = await fetch(url);
+                            if (!response.ok) throw new Error(`Lỗi HTTP: ${response.status}`);
+                            const data = await response.json();
+                            weatherWidget.innerHTML = `<img id="weather-icon" src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Thời tiết" style="display: inline;"><span id="weather-temp">${Math.round(data.main.temp)}°C</span><span id="weather-desc">${data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1)}</span>`;
                     } catch (error) {
                         console.error("Lỗi tải thời tiết:", error);
                         weatherWidget.innerHTML = `<span>Lỗi thời tiết</span>`;
@@ -1677,4 +2060,5 @@
         });
     </script>
 </body>
+
 </html>

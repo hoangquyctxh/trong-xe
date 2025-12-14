@@ -1275,11 +1275,21 @@ document.addEventListener('DOMContentLoaded', () => {
         setupRealtimeListeners();
 
         // Đồng bộ thời gian (Non-blocking ideally, but needed for Duration)
+        // Đồng bộ thời gian (Multi-source Fallback)
         try {
-            const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+            const response = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
+            if (!response.ok) throw new Error('TimeAPI failed');
             const data = await response.json();
-            serverTimeOffset = new Date(data.utc_datetime).getTime() - Date.now();
-        } catch (error) { console.error('Lỗi đồng bộ thời gian', error); }
+            serverTimeOffset = new Date(data.dateTime).getTime() - Date.now();
+        } catch (e1) {
+            try {
+                const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                const data = await response.json();
+                serverTimeOffset = new Date(data.utc_datetime).getTime() - Date.now();
+            } catch (e2) {
+                console.error('Lỗi đồng bộ thời gian (cả 2 nguồn), dùng giờ máy:', e2);
+            }
+        }
 
         // Wait for locations before checking URL params
         await locationsPromise;

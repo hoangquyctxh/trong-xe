@@ -3190,14 +3190,26 @@ const App = {
     // NÂNG CẤP: Đồng bộ thời gian từ API quốc tế
     async syncTime() {
         try {
-            const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+            // Nguon 1: TimeAPI.io (On dinh hon)
+            const response = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
+            if (!response.ok) throw new Error('TimeAPI failed');
             const data = await response.json();
-            const serverTime = new Date(data.utc_datetime).getTime();
+            const serverTime = new Date(data.dateTime).getTime();
             state.serverTimeOffset = serverTime - Date.now();
-            console.log('✅ Đã đồng bộ thời gian. Offset:', state.serverTimeOffset, 'ms');
-        } catch (error) {
-            console.warn('⚠️ Lỗi đồng bộ thời gian, sử dụng giờ thiết bị:', error);
-            state.serverTimeOffset = 0;
+            console.log('✅ Đã đồng bộ thời gian (TimeAPI). Offset:', state.serverTimeOffset);
+        } catch (err1) {
+            try {
+                // Nguon 2: WorldTimeAPI (Fallback)
+                const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                if (!response.ok) throw new Error('WorldTimeAPI failed');
+                const data = await response.json();
+                const serverTime = new Date(data.utc_datetime).getTime();
+                state.serverTimeOffset = serverTime - Date.now();
+                console.log('✅ Đã đồng bộ thời gian (WorldTimeAPI). Offset:', state.serverTimeOffset);
+            } catch (err2) {
+                console.warn('⚠️ Không thể đồng bộ thời gian từ cả 2 nguồn. Sử dụng giờ thiết bị.');
+                state.serverTimeOffset = 0;
+            }
         }
     },
 
