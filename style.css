@@ -11548,3 +11548,104 @@ body[data-theme="dark"] .youth-pass__footer::before {
         box-shadow: 0 0 0 0 rgba(255, 75, 43, 0);
     }
 }
+
+/* ==========================================================================
+   4. TỐI ƯU HÓA MOBILE (THEO YÊU CẦU NGƯỜI DÙNG)
+   - Ẩn các phần không cần thiết: Menu, Footer, Thống kê, Danh sách xe
+   - Chỉ hiện: Action Hub (Gửi/Lấy), QR, Modal
+   ========================================================================= */
+@media (max-width: 768px) {
+
+    /* 1. Ẩn các thành phần phụ */
+    .main-navigation,
+    .app-footer,
+    #dashboard-column,
+    .header-controls,
+    .app-header .logo,
+    .app-header .subtitle,
+    .app-header .title-group svg,
+    .nav-extra {
+        display: none !important;
+    }
+
+    /* 2. Tinh chỉnh Header gọn gàng */
+    .app-header {
+        padding: 0.75rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .header-container {
+        justify-content: center;
+    }
+
+    .header-title h1 {
+        font-size: 1.2rem;
+        margin: 0;
+        text-align: center;
+    }
+
+    /* 3. Mở rộng Action Column full màn hình */
+    .main-grid {
+        display: block;
+        /* Bỏ grid 2 cột */
+        margin-top: 1rem;
+        padding: 0 1rem;
+    }
+
+    .main-column {
+        width: 100%;
+    }
+
+    /* 4. Tối ưu thẻ Card hành động */
+    .card {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .card__header {
+        display: none;
+        /* Ẩn tiêu đề "Xử lý xe" vì đã rõ ràng */
+    }
+
+    .card__body {
+        padding: 0;
+    }
+
+    /* 5. Tối ưu nút bấm & Input to hơn cho ngón tay */
+    .input-wrapper input,
+    .action-button {
+        height: 56px;
+        /* Chuẩn touch target */
+        font-size: 1.1rem;
+    }
+
+    .icon-btn {
+        width: 56px;
+        height: 56px;
+    }
+
+    /* 6. Đảm bảo Modal luôn full màn hình dễ thao tác */
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+    }
+
+    .modal-body {
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    /* 7. Khoảng trống phía dưới để scroll thoải mái */
+    #app-container {
+        padding-bottom: 2rem;
+    }
+}
