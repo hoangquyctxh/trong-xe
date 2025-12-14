@@ -225,7 +225,7 @@ const Api = {
             return this.addToSyncQueue('checkIn', { plate, phone, isVIP, notes, prePayment, providedUniqueID, staffUsername });
         }
 
-        const uniqueID = providedUniqueID || ('_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
+        const uniqueID = providedUniqueID || Utils.generateSecureID();
         const entryTime = Utils.getSyncedTime(); // SỬA LỖI: Dùng giờ chuẩn
 
         // NÂNG CẤP: Tạo bản sao chính sách phí tại thời điểm vào bãi (Snapshot)
@@ -290,7 +290,7 @@ const Api = {
 
         if (action === 'checkIn') {
             const { plate, phone, isVIP, notes, prePayment, providedUniqueID, staffUsername } = payload;
-            const uniqueID = providedUniqueID || ('_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36));
+            const uniqueID = providedUniqueID || Utils.generateSecureID();
             const newVehicle = {
                 plate, phone, is_vip: isVIP, notes,
                 unique_id: uniqueID,
@@ -1727,6 +1727,18 @@ const Templates = {
 };
 
 const Utils = {
+    // START: Map global Utils if available, or define local fallback
+    // NÂNG CẤP: Tạo mã ID chuẩn UUID v4 Quốc tế (An toàn tuyệt đối)
+    // Đảm bảo không bao giờ bị trùng lặp và không thể đoán trước.
+    generateSecureID: () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+    },
+
     formatDateTime: (d) => d ? new Date(d).toLocaleString('vi-VN') : '--',
     // NÂNG CẤP: Hàm kiểm tra thiết bị di động
     isMobile: () => window.innerWidth <= 768,
@@ -3216,36 +3228,44 @@ const App = {
     async init() {
         console.log("Khởi động ứng dụng...");
 
-        // SỬA LỖI: Đồng bộ thời gian ngay khi khởi động
-        await this.syncTime();
+        // TỐI ƯU HÓA HIỆU NĂNG: Chạy song song các tác vụ khởi tạo
+        // Thay vì chờ tuần tự time -> config -> logic
+        // TỐI ƯU HÓA TỐI ĐA: Không chờ Time Sync (Fire & Forget)
+        // Ứng dụng sẽ khởi động NGAY LẬP TỨC với giờ thiết bị.
+        // Khi Time Sync xong, offset sẽ tự động cập nhật sau.
+        this.syncTime();
 
-        configPromise.then(() => {
-            this.setupEventListeners();
-            this.applySavedTheme();
-            this.updateClock();
+        try {
+            await configPromise; // Chỉ chờ cấu hình (thường rất nhanh vì Supabase CDN tốt)
+        } catch (e) {
+            console.warn("Lỗi tải cấu hình:", e);
+        }
 
-            // Khởi tạo các vòng lặp cập nhật
-            setInterval(() => this.updateClock(), 1000); // Đồng hồ
-            setInterval(() => this.updateLiveDurationsAndFees(), 1000); // Live update
-            setInterval(() => Api.processSyncQueue(), 30000); // Sync queue mỗi 30s
+        this.setupEventListeners();
+        this.applySavedTheme();
+        this.updateClock();
 
-            window.addEventListener('online', () => this.handleConnectionChange && this.handleConnectionChange(true));
-            window.addEventListener('offline', () => this.handleConnectionChange && this.handleConnectionChange(false));
+        // Khởi tạo các vòng lặp cập nhật
+        setInterval(() => this.updateClock(), 1000); // Đồng hồ
+        setInterval(() => this.updateLiveDurationsAndFees(), 1000); // Live update
+        setInterval(() => Api.processSyncQueue(), 30000); // Sync queue mỗi 30s
 
-            // KHÔI PHỤC & CẢI TIẾN: Tự động đồng bộ dữ liệu theo chu kỳ
-            const refreshIntervalMs = (APP_CONFIG.autoRefreshInterval || 30000);
-            setInterval(async () => {
-                if (!state.isOnline || isBackgroundRefreshing) return;
-                try {
-                    isBackgroundRefreshing = true;
-                    await this.fetchData(true);
-                } finally {
-                    isBackgroundRefreshing = false;
-                }
-            }, refreshIntervalMs);
+        window.addEventListener('online', () => this.handleConnectionChange && this.handleConnectionChange(true));
+        window.addEventListener('offline', () => this.handleConnectionChange && this.handleConnectionChange(false));
 
-            this.startApp();
-        });
+        // KHÔI PHỤC & CẢI TIẾN: Tự động đồng bộ dữ liệu theo chu kỳ
+        const refreshIntervalMs = (APP_CONFIG.autoRefreshInterval || 30000);
+        setInterval(async () => {
+            if (!state.isOnline || isBackgroundRefreshing) return;
+            try {
+                isBackgroundRefreshing = true;
+                await this.fetchData(true);
+            } finally {
+                isBackgroundRefreshing = false;
+            }
+        }, refreshIntervalMs);
+
+        this.startApp();
     }
 };
 

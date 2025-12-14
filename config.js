@@ -21,7 +21,7 @@ const STATIC_CONFIG = {
     },
     organizationName: "ĐOÀN TNCS HỒ CHÍ MINH P.BA ĐÌNH",
     weatherApiKey: "c9b24c823032912293817419cb0cd2dc",
-    autoRefreshInterval: 5000,
+    autoRefreshInterval: 30000,
 
     // URL Google Apps Script (Sẽ được người dùng cập nhật sau)
     googleScriptUrl: "https://script.google.com/macros/s/AKfycbw8Oqb2Z2UiXWIbHvswC5nm8uZvtQdWvse6J-1Qr_zNtvKHCOUS9k_ecYic-dREU5Zb/exec",

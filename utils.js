@@ -261,3 +261,40 @@ const compareIds = (a, b) => {
     if (a === null || a === undefined || b === null || b === undefined) return false;
     return String(a).trim().toUpperCase() === String(b).trim().toUpperCase();
 };
+
+/**
+ * Tạo mã định danh duy nhất (UUID v4) chuẩn quốc tế.
+ * - An toàn: Sử dụng crypto.getRandomValues
+ * - Không thể đoán trước
+ * - Không thể làm giả
+ */
+const generateSecureID = () => {
+    // 1. Sử dụng API chuẩn nếu có
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // 2. Fallback sử dụng crypto.getRandomValues cho các trình duyệt cũ hơn
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+};
+
+// EXPORT TO GLOBAL WINDOW.UTILS
+window.Utils = window.Utils || {};
+window.Utils = {
+    ...window.Utils,
+    formatDateTime: formatDateTimeForDisplay, // Map tên hàm cũ
+    formatDateTimeForDisplay,
+    formatCurrency,
+    calculateDurationBetween,
+    calculateDuration: (start) => calculateDurationBetween(start, new Date()), // Helper alias
+    showToast,
+    printElement,
+    detectVehicleType,
+    formatPlate,
+    readMoneyToText,
+    compareIds,
+    generateSecureID,
+    // Helper lấy giờ chuẩn (nếu chưa có thì dùng Date.now)
+    getSyncedTime: () => new Date(Date.now() + (typeof state !== 'undefined' ? state.serverTimeOffset : 0))
+};

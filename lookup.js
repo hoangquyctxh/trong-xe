@@ -1263,36 +1263,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialization ---
     const init = async () => {
-        // 1. Start fetching locations IMMEDIATELY (Critical for Fee Calculation)
+        // 1. Start fetching locations IMMEDIATELY
         locationsPromise = db.from('locations').select('*').then(({ data }) => {
             LOCATIONS_DATA = data || [];
-            console.log("Locations loaded:", LOCATIONS_DATA.length);
             return data;
         });
 
-        try { await configPromise; } catch (e) { }
-
         setupRealtimeListeners();
 
-        // Đồng bộ thời gian (Non-blocking ideally, but needed for Duration)
-        // Đồng bộ thời gian (Multi-source Fallback)
-        try {
-            const response = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
-            if (!response.ok) throw new Error('TimeAPI failed');
-            const data = await response.json();
-            serverTimeOffset = new Date(data.dateTime).getTime() - Date.now();
-        } catch (e1) {
+        // 2. Parallelize Time Sync & Config Wait
+        // Wrap time sync in a promise
+        const timeSyncPromise = (async () => {
+            // Đồng bộ thời gian (Multi-source Fallback)
             try {
-                const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                const response = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh');
+                if (!response.ok) throw new Error('TimeAPI failed');
                 const data = await response.json();
-                serverTimeOffset = new Date(data.utc_datetime).getTime() - Date.now();
-            } catch (e2) {
-                console.error('Lỗi đồng bộ thời gian (cả 2 nguồn), dùng giờ máy:', e2);
+                serverTimeOffset = new Date(data.dateTime).getTime() - Date.now();
+            } catch (e1) {
+                try {
+                    const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
+                    const data = await response.json();
+                    serverTimeOffset = new Date(data.utc_datetime).getTime() - Date.now();
+                } catch (e2) {
+                    serverTimeOffset = 0;
+                }
             }
-        }
+        })();
 
-        // Wait for locations before checking URL params
-        await locationsPromise;
+        // TỐI ƯU HÓA TỐI ĐA: Chạy Time Sync ngầm, không chờ.
+        // Chấp nhận sai số vài giây đầu (dùng giờ máy) đổi lấy tốc độ tải trang tức thì.
+        timeSyncPromise.catch(e => console.warn(e));
+
+        // Chỉ chờ Locations (từ DB, nhanh) và Config
+        await Promise.all([locationsPromise, configPromise]);
 
         // Xử lý tham số URL để tìm kiếm trực tiếp
         const urlParams = new URLSearchParams(window.location.search);
