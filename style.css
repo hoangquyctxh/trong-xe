@@ -11556,17 +11556,14 @@ body[data-theme="dark"] .youth-pass__footer::before {
    ========================================================================= */
 @media (max-width: 768px) {
 
-    /* 1. Ẩn các thành phần phụ */
+    /* 1. Ẩn các thành phần phụ (Menu, Footer, Controls, Widgets) */
     .main-navigation,
     .app-footer,
-    #dashboard-column,
     .header-controls,
-    .app-header .logo,
-    .app-header .subtitle,
-    .app-header .title-group svg,
     .nav-extra {
         display: none !important;
     }
+
 
     /* 2. Tinh chỉnh Header gọn gàng */
     .app-header {
