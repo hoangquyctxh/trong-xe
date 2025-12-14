@@ -58,8 +58,13 @@ const FeeCalculator = {
                 snapshot = JSON.parse(snapshot);
             } catch (e) {
                 console.error('Error parsing fee_policy_snapshot:', e);
-                snapshot = null;
             }
+        }
+
+        // BẢO VỆ NGHIÊM NGẶT: Kiểm tra binding cấu hình địa điểm
+        // Nếu có locationConfig nhưng thiếu các trường quan trọng, cảnh báo ngay lập tức.
+        if (locationConfig && locationConfig.fee_policy_type === undefined) {
+            console.warn(`⚠️ CẢNH BÁO QUAN TRỌNG: Đang tính phí cho địa điểm ID=${locationConfig.id} nhưng thiếu 'fee_policy_type'. Hệ thống sẽ dùng giá mặc định (5000đ). Điều này có thể GÂY SAI SỐ. Vui lòng kiểm tra trang Admin.`);
         }
 
         // =================================================================================
@@ -80,10 +85,10 @@ const FeeCalculator = {
         } : {
             type: locationConfig?.fee_policy_type || 'free',
             collection: locationConfig?.fee_collection_policy || 'post_paid',
-            per_entry: locationConfig?.fee_per_entry ?? this.config.per_entry,
-            daily: locationConfig?.fee_daily ?? this.config.daily,
-            hourly_day: locationConfig?.fee_hourly_day ?? this.config.hourly_day,
-            hourly_night: locationConfig?.fee_hourly_night ?? this.config.hourly_night,
+            per_entry: Number(locationConfig?.fee_per_entry ?? this.config.per_entry),
+            daily: Number(locationConfig?.fee_daily ?? this.config.daily),
+            hourly_day: Number(locationConfig?.fee_hourly_day ?? this.config.hourly_day),
+            hourly_night: Number(locationConfig?.fee_hourly_night ?? this.config.hourly_night),
         };
 
         const policyType = policy.type;
@@ -170,3 +175,5 @@ const FeeCalculator = {
         }
     }
 };
+
+window.FeeCalculator = FeeCalculator;

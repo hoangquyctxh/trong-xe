@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // SỬA LỖI: Đã xóa dòng `let db;` không cần thiết.
     // Giờ đây, tệp này sẽ sử dụng biến `db` toàn cục được cung cấp bởi `config.js`.
+    const db = window.SUPABASE_DB; // Ensure explicit reference
 
     // =================================================================
     // KHU VỰC 1: THAM CHIẾU DOM
@@ -111,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const { data: txData } = await db.from('transactions').select('*').eq('unique_id', ticketId).single();
                 if (!txData) throw new Error('Không tìm thấy dữ liệu vé.');
 
-                const locationConfig = LOCATIONS_DATA.find(loc => loc.id === txData.location_id) || {};
+                const locationConfig = LOCATIONS_DATA.find(loc => loc.id == txData.location_id || (loc.id && String(loc.id).toUpperCase() === String(txData.location_id).toUpperCase())) || {};
                 const fee = FeeCalculator.calculate(txData, getSyncedTime(), locationConfig);
                 const duration = calculateDuration(txData.entry_time, txData.exit_time || getSyncedTime());
 
@@ -143,9 +144,71 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (policy.type === 'free') feeDetailsText = "Miễn phí (Chính sách bãi xe)";
                     else if (txData.status !== 'Đang gửi' && durationMinutes <= freeMinutes) feeDetailsText = `Miễn phí (Gửi dưới ${freeMinutes} phút)`;
                     else {
-                        // Logic text đơn giản hóa để tránh lỗi syntax
-                        if (policy.type === 'per_entry') feeDetailsText = `Phí lượt: ${(policy.per_entry || 0).toLocaleString()}đ`;
-                        else feeDetailsText = "Xem chi tiết trong file đính kèm.";
+                        // --- LOGIC CHI TIẾT CAO CẤP (CHỐNG TRANH CHẤP) ---
+                        // Tái sử dụng logic diễn giải từ Web View để email có độ chi tiết tương đương
+                        let lines = [];
+
+                        // 1. Phần tính toán toán học (Cũ)
+                        switch (policy.type) {
+                            case 'per_entry':
+                                lines.push(`- Loại hình: Vé lượt`);
+                                lines.push(`- Đơn giá: ${(policy.per_entry || 0).toLocaleString('vi-VN')}đ / lượt`);
+                                break;
+                            case 'daily':
+                                const totalDays = Math.ceil(Math.max(0, durationMinutes - freeMinutes) / (60 * 24));
+                                lines.push(`- Loại hình: Vé ngày`);
+                                lines.push(`- Đơn giá: ${(policy.daily || 0).toLocaleString('vi-VN')}đ / ngày`);
+                                lines.push(`- Số ngày tính phí: ${Math.max(1, totalDays)} ngày`);
+                                break;
+                            case 'hourly':
+                                const chargeableStartTime = startTime.add(freeMinutes, 'minute');
+                                let dayMinutes = 0; let nightMinutes = 0;
+                                let cursor = chargeableStartTime.clone();
+                                while (cursor.isBefore(endTime)) {
+                                    const hour = cursor.hour();
+                                    if (hour >= FeeCalculator.config.nightStartHour || hour < FeeCalculator.config.nightEndHour) nightMinutes++;
+                                    else dayMinutes++;
+                                    cursor = cursor.add(1, 'minute');
+                                }
+                                const dayFee = Math.floor(dayMinutes / 60) * (policy.hourly_day || 0);
+                                const nightFee = Math.floor(nightMinutes / 60) * (policy.hourly_night || 0);
+
+                                lines.push(`CHI TIẾT GIỜ GỬI:`);
+                                if (dayMinutes > 0) lines.push(`- Ban ngày: ${Math.floor(dayMinutes / 60)}h${dayMinutes % 60}p (Đơn giá: ${(policy.hourly_day || 0).toLocaleString()}đ/h) => Thành tiền: ${dayFee.toLocaleString()}đ`);
+                                if (nightMinutes > 0) lines.push(`- Ban đêm: ${Math.floor(nightMinutes / 60)}h${nightMinutes % 60}p (Đơn giá: ${(policy.hourly_night || 0).toLocaleString()}đ/h) => Thành tiền: ${nightFee.toLocaleString()}đ`);
+
+                                // 2. Phần diễn giải quy định (Mới - Rất quan trọng để dân không cãi)
+                                const totalMin = Math.ceil(durationMinutes);
+                                const hours = Math.floor(totalMin / 60);
+                                const mins = totalMin % 60;
+                                const timeString = hours > 0 ? `${hours} giờ ${mins} phút` : `${mins} phút`;
+
+                                let specificExample = "";
+                                if (totalMin > 60) {
+                                    const extraHours = Math.ceil((totalMin - 60) / 60);
+                                    specificExample = `được quy đổi thành 02 block 30 phút (cho giờ đầu tiên) và ${extraHours.toString().padStart(2, '0')} block 01 giờ (cho các giờ tiếp theo)`;
+                                } else {
+                                    const blocks = Math.ceil(totalMin / 30);
+                                    specificExample = `được quy đổi thành ${blocks.toString().padStart(2, '0')} block 30 phút`;
+                                }
+
+                                lines.push(``);
+                                lines.push(`CĂN CỨ TÍNH PHÍ (QUY ĐỊNH):`);
+                                lines.push(`- Theo quy định, nhà xe miễn phí hoàn toàn cho ${freeMinutes} phút gửi đầu tiên.`);
+                                lines.push(`- Đối với giờ đầu tiên (từ phút thứ 16 đến phút 75), phí được tính chi tiết theo từng block 30 phút (mỗi block bằng 50% giá giờ).`);
+                                lines.push(`- Từ giờ thứ hai trở đi, phí được tính tròn theo từng block 01 giờ.`);
+                                lines.push(`- Lưu ý: Khung giờ Ban đêm (từ ${FeeCalculator.config.nightStartHour}h00 đến ${FeeCalculator.config.nightEndHour}h00 sáng hôm sau) sẽ áp dụng mức đơn giá riêng biệt khác với ban ngày.`);
+
+                                lines.push(``);
+                                lines.push(`ÁP DỤNG CHO XE HIỆN TẠI:`);
+                                lines.push(`- Tổng thời gian quý khách đã gửi xe là ${timeString} (tương đương ${totalMin} phút).`);
+                                lines.push(`- Dựa trên quy định trên, thời gian này ${specificExample}.`);
+                                lines.push(`=> Tổng số tiền cước phí cuối cùng quý khách cần thanh toán là: ${(fee || 0).toLocaleString('vi-VN')}đ.`);
+                                break;
+                            default:
+                                lines.push("Xem chi tiết tại bảng giá niêm yết tại bãi xe.");
+                        }
+                        feeDetailsText = lines.join('\n');
                     }
                 } catch (e) { }
 
@@ -333,16 +396,16 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // Hiển thị trạng thái đang tải
+    // Hiển thị trạng thái đang tải (PREMIUM UI)
     const showLoading = () => {
         elements.resultsSection.style.display = 'none';
         elements.messageBox.style.display = 'block';
         elements.messageBox.innerHTML = `
-            <div class="loading-box">
-                <div class="loading-spinner"></div>
-                <p>Đang tìm kiếm, vui lòng chờ...</p>
-            </div>
-        `;
+        <div class="premium-loading-overlay">
+            <div class="premium-loader"></div>
+            <span class="premium-loading-text">Đang truy xuất dữ liệu...</span>
+        </div>
+    `;
     };
 
     const formatDateTime = (dateStr) => dateStr ? new Date(dateStr).toLocaleString('vi-VN') : '--';
@@ -380,15 +443,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const policyType = policy.type;
         const isVIP = transaction.is_vip;
         // FIX: Nếu xe phương tiện đang gửi (chưa checkout), fee sẽ là null -> Cần tính toán lại để hiển thị
-        let displayFee = transaction.fee;
-        if (transaction.status === 'Đang gửi') {
-            displayFee = FeeCalculator.calculate(transaction, getSyncedTime(), locationConfig);
+        const isOngoing = transaction.status === 'Đang gửi';
+        const searchTime = isOngoing ? getSyncedTime() : new Date(transaction.exit_time || Date.now());
+
+        // CHỮA CHÁY: Phát hiện lỗi tràn số Integer (2.147.483.647) do Database
+        // Nếu phí trong DB bị max, ta sẽ tính lại bằng JS để hiển thị đúng.
+        let displayFee = isOngoing ? FeeCalculator.calculate({ ...transaction, fee_policy_snapshot: snapshot }, searchTime, locationConfig) : (transaction.fee || 0);
+
+        if (!isOngoing && displayFee === 2147483647) {
+            console.warn("⚠️ Phát hiện phí bị giới hạn bởi Int32 DB. Đang tính toán lại...");
+            // Force recalculate using the snapshot and times
+            const reconstructedTx = {
+                ...transaction,
+                fee_policy_snapshot: snapshot
+            };
+            displayFee = FeeCalculator.calculate(reconstructedTx, new Date(transaction.exit_time), locationConfig);
         }
 
+        const freeMinutes = FeeCalculator.config.freeMinutes;
         const startTime = dayjs(transaction.entry_time);
-        const endTime = transaction.exit_time ? dayjs(transaction.exit_time) : dayjs(getSyncedTime());
-        const durationMinutes = dayjs.duration(endTime.diff(startTime)).asMinutes();
-        const freeMinutes = FeeCalculator.config.freeMinutes || 15;
+        const endTime = dayjs(searchTime);
+        const durationMinutes = Math.max(0, endTime.diff(startTime, 'minute', true));
 
         // Helper: Generate Text breakdown for Email/Receipt
         const generateFeeBreakdownText = () => {
@@ -411,11 +486,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     let dayMinutes = 0; let nightMinutes = 0;
                     let cursor = chargeableStartTime.clone();
                     // Re-calculate minutes breakdown (duplicated logic for safety)
+                    // TỐI ƯU HÓA: Thay vòng lặp 1 phút bằng vòng lặp step lớn (30/60p)
+                    // 1. Tính số ngày trọn vẹn (nhanh)
+                    const diffDays = Math.floor(durationMinutes / (60 * 24));
+                    if (diffDays > 0) {
+                        // Mỗi ngày có 12 tiếng ngày (6-18) và 12 tiếng đêm
+                        // Giả định nightStart=18, nightEnd=6 -> Day=12h, Night=12h
+                        // TODO: Nếu config thay đổi giờ đêm, logic này cần chỉnh. Tạm tính theo default 18-6.
+                        dayMinutes += diffDays * 12 * 60;
+                        nightMinutes += diffDays * 12 * 60;
+
+                        // Dời cursor lên
+                        cursor = cursor.add(diffDays, 'day');
+                    }
+
+                    // 2. Tính phần dư còn lại bằng vòng lặp (nhưng step lớn)
                     while (cursor.isBefore(endTime)) {
                         const hour = cursor.hour();
-                        if (hour >= FeeCalculator.config.nightStartHour || hour < FeeCalculator.config.nightEndHour) nightMinutes++;
-                        else dayMinutes++;
-                        cursor = cursor.add(1, 'minute');
+                        // Logic block 30/60 giống FeeCalculator
+                        let step = 60;
+                        // Nếu là giờ đầu tiên (tính từ chargeableStartTime gốc), check logic 30p
+                        // Nhưng ở đây chỉ cần đếm phút thôi.
+                        // Đếm chính xác từng phút sẽ an toàn nhất cho việc hiển thị "số phút",
+                        // NHƯNG để tránh treo, ta jump từng giờ.
+
+                        // CÁCH AN TOÀN NHẤT: Jump 60p, nếu còn ít hơn 60p thì jump phần dư.
+                        const minutesLeft = endTime.diff(cursor, 'minute');
+                        const jump = Math.min(60, Math.max(1, minutesLeft)); // Jump tối đa 60p
+
+                        if (hour >= FeeCalculator.config.nightStartHour || hour < FeeCalculator.config.nightEndHour) {
+                            nightMinutes += jump;
+                        } else {
+                            dayMinutes += jump;
+                        }
+                        cursor = cursor.add(jump, 'minute');
                     }
                     const dayFee = Math.floor(dayMinutes / 60) * (policy.hourly_day || 0);
                     const nightFee = Math.floor(nightMinutes / 60) * (policy.hourly_night || 0);
@@ -427,7 +531,40 @@ document.addEventListener('DOMContentLoaded', () => {
             return lines.join('\n');
         };
 
+        let regulationText = '';
         let breakdownHTML = '';
+
+        // Helper: Format minutes into Y M D H M S
+        const formatTimeVerbose = (totalMinutes) => {
+            const totalSeconds = Math.floor(totalMinutes * 60);
+            if (totalSeconds < 60) return `${totalSeconds} giây`;
+
+            let remaining = totalSeconds;
+            const years = Math.floor(remaining / (365 * 24 * 60 * 60));
+            remaining %= (365 * 24 * 60 * 60);
+
+            const months = Math.floor(remaining / (30 * 24 * 60 * 60));
+            remaining %= (30 * 24 * 60 * 60);
+
+            const days = Math.floor(remaining / (24 * 60 * 60));
+            remaining %= (24 * 60 * 60);
+
+            const hours = Math.floor(remaining / (60 * 60));
+            remaining %= (60 * 60);
+
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+
+            let parts = [];
+            if (years > 0) parts.push(`<strong>${years}</strong> năm`);
+            if (months > 0) parts.push(`<strong>${months}</strong> tháng`);
+            if (days > 0) parts.push(`<strong>${days}</strong> ngày`);
+            if (hours > 0) parts.push(`<strong>${hours}</strong> giờ`);
+            if (minutes > 0) parts.push(`<strong>${minutes}</strong> phút`);
+            if (seconds > 0 || parts.length === 0) parts.push(`<strong>${seconds}</strong> giây`);
+
+            return parts.join(' ');
+        };
         if (isVIP) {
             breakdownHTML += `<p>✅ Miễn phí do là <strong>Khách VIP/Khách mời</strong>.</p>`;
         } else if (policyType === 'free') {
@@ -457,17 +594,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (policyType === 'hourly') {
             let specificExample = '';
             const totalMin = Math.ceil(durationMinutes);
-
-            // Format duration nicely
-            const hours = Math.floor(totalMin / 60);
-            const mins = totalMin % 60;
-            const timeString = hours > 0
-                ? `${hours} giờ ${mins} phút`
-                : `${mins} phút`;
+            const timeString = formatTimeVerbose(durationMinutes);
 
             if (totalMin > 60) {
                 const extraHours = Math.ceil((totalMin - 60) / 60);
-                specificExample = `Tổng thời gian gửi <strong>${timeString} (${totalMin} phút)</strong> được quy đổi thành: <strong>02 đơn vị 30 phút</strong> (giờ đầu) + <strong>${extraHours.toString().padStart(2, '0')} đơn vị 01 giờ</strong> (thời gian tiếp theo).`;
+                specificExample = `Tổng thời gian gửi <strong>${timeString}</strong> được quy đổi thành: <strong>02 đơn vị 30 phút</strong> (giờ đầu) + <strong>${extraHours.toString().padStart(2, '0')} đơn vị 01 giờ</strong> (thời gian tiếp theo).`;
             } else {
                 const blocks = Math.ceil(totalMin / 30);
                 specificExample = `Tổng thời gian gửi <strong>${totalMin} phút</strong> được quy đổi thành: <strong>${blocks.toString().padStart(2, '0')} đơn vị 30 phút</strong>.`;
@@ -479,7 +610,8 @@ document.addEventListener('DOMContentLoaded', () => {
             - <strong>Cơ chế các giờ tiếp theo:</strong> Tính tròn theo <strong>đơn vị 01 giờ</strong>.<br><br>
             <strong>ÁP DỤNG THỰC TẾ VỚI XE CỦA QUÝ KHÁCH:</strong><br>
             - ${specificExample}<br>
-            - Tổng cước phí tạm tính: <strong>${(displayFee || 0).toLocaleString('vi-VN')}đ</strong>.<br><br>
+            - Tổng cước phí tạm tính: <strong>${(displayFee || 0).toLocaleString('vi-VN')}đ</strong><br>
+            <span style="font-style: italic; color: #64748b; margin-left: 10px;">(${readMoneyToText(displayFee || 0)})</span>.<br><br>
             <strong>Lưu ý bắt buộc:</strong> Khung giờ Ban đêm (từ ${FeeCalculator.config.nightStartHour}h00 đến ${FeeCalculator.config.nightEndHour}h00 sáng hôm sau) áp dụng đơn giá riêng biệt theo quy định niêm yết.<br>
             Đề nghị Quý khách kiểm tra kỹ <strong>chi tiết thời gian và số tiền</strong> trước khi thực hiện thanh toán.`;
         } else {
@@ -489,85 +621,131 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ensure breakdownHTML is constructed correctly for hourly/others if not already
         if (!breakdownHTML) {
             breakdownHTML = '<div class="fee-receipt">';
-            // Header Row
+            // Header Row: 2 Columns Only
             breakdownHTML += `
-                <div class="fee-row header">
-                    <span class="fee-label">Diễn giải</span>
-                    <span class="fee-time" style="text-align: center;">Thời gian</span>
-                    <span class="fee-amount">Thành tiền</span>
+                <div class="fee-row header" style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 12px;">
+                    <span class="fee-label" style="font-weight: 700; color: #64748b;">KHOẢN PHÍ</span>
+                    <span class="fee-amount" style="font-weight: 700; color: #64748b;">THÀNH TIỀN</span>
                 </div>
             `;
+
+
+
+            const rowStyle = 'display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px dashed #f1f5f9;';
+            const labelColStyle = 'display: flex; flex-direction: column; gap: 6px; flex: 1; padding-right: 16px; min-width: 0;';
+            const labelStyle = 'font-weight: 600; font-size: 1rem; line-height: 1.5; color: #334155;';
+            const amountStyle = 'font-weight: 700; color: #0f172a; white-space: nowrap; font-size: 1.05rem; line-height: 1.5;';
+            const timeStyle = 'font-size: 0.9em; color: #64748b; display: flex; align-items: center; gap: 6px; line-height: 1.4;';
+
+            // Helper: Format minutes into Y M D H M S
+            // (Defined at top of function)
 
             switch (policyType) {
                 case 'per_entry':
                     breakdownHTML += `
-                        <div class="fee-row">
-                            <span class="fee-label">Phí theo lượt</span>
-                            <span class="fee-time">-</span>
-                            <span class="fee-amount">${(policy.per_entry || 0).toLocaleString('vi-VN')}đ</span>
+                        <div style="${rowStyle}">
+                            <div style="${labelColStyle}">
+                                <span style="${labelStyle}">Phí theo lượt</span>
+                            </div>
+                            <span style="${amountStyle}">${(policy.per_entry || 0).toLocaleString('vi-VN')}đ</span>
                         </div>`;
                     break;
                 case 'daily':
                     const totalDays = Math.ceil(Math.max(0, durationMinutes - freeMinutes) / (60 * 24));
                     breakdownHTML += `
-                        <div class="fee-row">
-                            <span class="fee-label">Đơn giá ngày</span>
-                            <span class="fee-time">1 ngày</span>
-                            <span class="fee-amount">${(policy.daily || 0).toLocaleString('vi-VN')}đ</span>
+                        <div style="${rowStyle}">
+                            <div style="${labelColStyle}">
+                                <span style="${labelStyle}">Đơn giá ngày</span>
+                                <span style="${timeStyle}">Thời gian: 1 ngày</span>
+                            </div>
+                            <span style="${amountStyle}">${(policy.daily || 0).toLocaleString('vi-VN')}đ</span>
                         </div>
-                        <div class="fee-row">
-                            <span class="fee-label">Số ngày tính phí</span>
-                            <span class="fee-time">${Math.max(1, totalDays)} ngày</span>
-                            <span class="fee-amount">-</span>
+                        <div style="${rowStyle}">
+                            <div style="${labelColStyle}">
+                                <span style="${labelStyle}">Số ngày tính phí</span>
+                                <span style="${timeStyle}">Số lượng: ${Math.max(1, totalDays)} ngày</span>
+                            </div>
+                            <span style="${amountStyle}">-</span>
                         </div>`;
                     break;
                 case 'hourly':
                     const chargeableStartTime = startTime.add(freeMinutes, 'minute');
                     let dayMinutes = 0; let nightMinutes = 0;
                     let cursor = chargeableStartTime.clone();
+                    // TỐI ƯU HÓA (Lặp lại logic trên cho phần HTML generation)
+                    const diffDays2 = Math.floor(durationMinutes / (60 * 24));
+                    if (diffDays2 > 0) {
+                        dayMinutes += diffDays2 * 12 * 60;
+                        nightMinutes += diffDays2 * 12 * 60;
+                        cursor = cursor.add(diffDays2, 'day');
+                    }
+
                     while (cursor.isBefore(endTime)) {
                         const hour = cursor.hour();
-                        if (hour >= FeeCalculator.config.nightStartHour || hour < FeeCalculator.config.nightEndHour) nightMinutes++;
-                        else dayMinutes++;
-                        cursor = cursor.add(1, 'minute');
+                        const minutesLeft = endTime.diff(cursor, 'minute');
+                        const jump = Math.min(60, Math.max(1, minutesLeft));
+
+                        if (hour >= FeeCalculator.config.nightStartHour || hour < FeeCalculator.config.nightEndHour) {
+                            nightMinutes += jump;
+                        } else {
+                            dayMinutes += jump;
+                        }
+                        cursor = cursor.add(jump, 'minute');
                     }
+                    // Helper: Format minutes into Y M D H M
+                    // REMOVED DUPLICATE DEFINITION
+
                     const dayFee = Math.floor(dayMinutes / 60) * (policy.hourly_day || 0);
                     const nightFee = Math.floor(nightMinutes / 60) * (policy.hourly_night || 0);
 
                     if (dayMinutes > 0) {
                         breakdownHTML += `
-                            <div class="fee-row">
-                                <span class="fee-label">Ban ngày (${(policy.hourly_day || 0).toLocaleString('vi-VN')}đ/h)</span>
-                                <span class="fee-time">${Math.floor(dayMinutes / 60)} giờ</span>
-                                <span class="fee-amount">${dayFee.toLocaleString('vi-VN')}đ</span>
+                            <div style="${rowStyle}">
+                                <div style="${labelColStyle}">
+                                    <span style="${labelStyle}">Ban ngày (${(policy.hourly_day || 0).toLocaleString('vi-VN')}đ/h)</span>
+                                    <div style="${timeStyle}">
+                                        <span style="opacity: 0.7;">⏱</span> ${formatTimeVerbose(dayMinutes)}
+                                    </div>
+                                </div>
+                                <span style="${amountStyle}">${dayFee.toLocaleString('vi-VN')}đ</span>
                             </div>`;
                     }
                     if (nightMinutes > 0) {
                         breakdownHTML += `
-                            <div class="fee-row">
-                                <span class="fee-label">Ban đêm (${(policy.hourly_night || 0).toLocaleString('vi-VN')}đ/h)</span>
-                                <span class="fee-time">${Math.floor(nightMinutes / 60)} giờ</span>
-                                <span class="fee-amount">${nightFee.toLocaleString('vi-VN')}đ</span>
+                            <div style="${rowStyle}">
+                                <div style="${labelColStyle}">
+                                    <span style="${labelStyle}">Ban đêm (${(policy.hourly_night || 0).toLocaleString('vi-VN')}đ/h)</span>
+                                    <div style="${timeStyle}">
+                                        <span style="opacity: 0.7;">🌑</span> ${formatTimeVerbose(nightMinutes)}
+                                    </div>
+                                </div>
+                                <span style="${amountStyle}">${nightFee.toLocaleString('vi-VN')}đ</span>
                             </div>`;
                     }
                     break;
                 default:
-                    breakdownHTML += `<div class="fee-row"><span class="fee-label">Không có thông tin chi tiết.</span></div>`;
+                    breakdownHTML += `<div style="${rowStyle}"><span class="fee-label">Không có thông tin chi tiết.</span></div>`;
             }
 
             if (transaction.status !== 'Đang gửi') {
                 breakdownHTML += `
-                    <div class="fee-total-row">
-                        <span>Tổng cộng</span>
-                        <span>${(displayFee || 0).toLocaleString('vi-VN')}đ</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 2px solid #e2e8f0;">
+                        <span style="font-weight: 700; color: #64748b;">TỔNG CỘNG</span>
+                        <div style="text-align: right;">
+                            <span style="font-weight: 800; font-size: 1.25rem; color: #0f172a; display: block;">${(displayFee || 0).toLocaleString('vi-VN')}đ</span>
+                            <span style="font-size: 0.9rem; font-style: italic; color: #64748b;">${readMoneyToText(displayFee || 0)}</span>
+                        </div>
                     </div>
                 `;
             } else {
                 // For ongoing transactions, show total estimated fee
                 breakdownHTML += `
-                    <div class="fee-total-row">
-                        <span>Tạm tính</span>
-                        <span>${(displayFee || 0).toLocaleString('vi-VN')}đ</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 2px solid #e2e8f0;">
+                        <span style="font-weight: 700; color: #64748b;">TẠM TÍNH</span>
+                        <div style="text-align: right;">
+                            <span style="font-weight: 800; font-size: 1.25rem; color: #0f172a; display: block;">${(displayFee || 0).toLocaleString('vi-VN')}đ</span>
+                            <span style="font-size: 0.9rem; font-style: italic; color: #64748b;">${readMoneyToText(displayFee || 0)}</span>
+                        </div>
                     </div>
                 `;
             }
@@ -585,7 +763,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getLocationName = (locationId) => {
         if (!locationId) return 'Không xác định';
-        const location = LOCATIONS_DATA.find(loc => loc.id === locationId);
+        const location = LOCATIONS_DATA.find(loc => loc.id == locationId || (loc.id && String(loc.id).toUpperCase() === String(locationId).toUpperCase()));
         return location ? location.name : 'Không xác định';
     };
 
@@ -598,7 +776,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update active context for realtime listeners
         activePlate = history[0]?.plate || searchTerm.toUpperCase();
 
-        history.sort((a, b) => new Date(b.entry_time) - new Date(a.entry_time));
+        // 1. Sắp xếp: Đang gửi lên đầu (Active), sau đó đến Mới nhất
+        history.sort((a, b) => {
+            const isDepartedA = a.status !== 'Đang gửi';
+            const isDepartedB = b.status !== 'Đang gửi';
+            if (isDepartedA !== isDepartedB) return isDepartedA ? 1 : -1; // Active first
+            return new Date(b.entry_time) - new Date(a.entry_time); // Newest first
+        });
 
         if (durationInterval) {
             clearInterval(durationInterval);
@@ -607,24 +791,62 @@ document.addEventListener('DOMContentLoaded', () => {
         const elementsToUpdate = [];
 
         const plateToDisplay = history[0]?.plate || searchTerm.toUpperCase();
-        elements.plateDisplay.textContent = plateToDisplay;
+        // NÂNG CẤP: Hiển thị biển số đẹp và Loại xe
+        const vehicleType = detectVehicleType(plateToDisplay);
+        const formattedPlate = formatPlate(plateToDisplay);
+
+        if (elements.resultLabel) {
+            elements.resultLabel.textContent = vehicleType.type === 'custom' ? 'Thông tin khách hàng' : 'Kết quả cho biển số';
+        }
+
+        elements.plateDisplay.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <span style="font-size:2rem; font-weight:800; color:#ffffff; letter-spacing:1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">${formattedPlate}</span>
+                <span style="font-size:0.9rem; font-weight:600; color:rgba(255,255,255,0.9); text-transform:uppercase; margin-top:4px;">${vehicleType.label}</span>
+            </div>
+        `;
         elements.historyContainer.innerHTML = '';
         elements.messageBox.style.display = 'none';
         elements.resultsSection.style.display = 'block';
 
-        history.forEach(tx => {
+        history.forEach((tx, index) => {
+            // Unified Card Creation
             const card = document.createElement('div');
-            card.className = 'history-card';
+            const isLatest = index === 0;
+            // Use 'latest-card' class for the first item to give it special Hero styling
+            card.className = isLatest ? 'history-card latest-card' : 'history-card';
+
+            // Expand ONLY the latest item by default
+            const isExpanded = isLatest;
+
             const isDeparted = tx.status !== 'Đang gửi';
             const statusClass = isDeparted ? 'departed' : 'parking';
             const locationName = getLocationName(tx.location_id);
-            const locationConfig = LOCATIONS_DATA.find(loc => loc.id === tx.location_id) || {};
+            const locationConfig = LOCATIONS_DATA.find(loc => loc.id == tx.location_id || (loc.id && String(loc.id).toUpperCase() === String(tx.location_id).toUpperCase())) || {};
+
+            // Layout Logic
+            // NEW REQUIREMENT: "Thông tin mới nhất sẽ được xếp trước" -> Handled by sort above
+            // "Có hiệu ứng" -> Handled by .latest-highlight CSS
+            // isExpanded is already defined above
 
             let durationDisplay = '--';
             let feeDisplay = '--';
+            let finalFee = tx.fee;
+
             if (isDeparted) {
                 durationDisplay = calculateDuration(tx.entry_time, tx.exit_time);
-                feeDisplay = (tx.fee || 0).toLocaleString('vi-VN') + 'đ';
+
+                // CHỮA CHÁY: Phát hiện lỗi tràn số Int32 ở list view
+                if (finalFee === 2147483647) {
+                    const snapshot = typeof tx.fee_policy_snapshot === 'string'
+                        ? JSON.parse(tx.fee_policy_snapshot)
+                        : (tx.fee_policy_snapshot || {});
+
+                    const reconstructedTx = { ...tx, fee_policy_snapshot: snapshot };
+                    finalFee = FeeCalculator.calculate(reconstructedTx, new Date(tx.exit_time), locationConfig);
+                }
+
+                feeDisplay = (finalFee || 0).toLocaleString('vi-VN') + 'đ';
             }
 
             const feeBreakdownHTML = generateFeeBreakdownHTML(tx, locationConfig);
@@ -640,12 +862,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 directionsButtonHTML = `<a href="${directionsUrl}" class="directions-btn" target="_blank" rel="noopener noreferrer" title="Chỉ đường đến bãi xe này"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg></a>`;
             }
 
-            card.innerHTML = `
-                <div class="history-card-body">
-                    <div class="detail-item">
-                        <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5a2.5 2.5 0 0 1 2.5 2.5V6h-5V5A2.5 2.5 0 0 1 12 2.5z"/><path d="M12 15.1a6.6 6.6 0 0 1-6.6-6.6C5.4 5.1 8.3 2 12 2s6.6 3.1 6.6 6.5a6.6 6.6 0 0 1-6.6 6.6z"/><path d="M15.5 8.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zM12 7.1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zM8.5 8.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path d="M12 22a8 8 0 0 1-8-8c0-4.4 3.6-8 8-8s8 3.6 8 8a8 8 0 0 1-8 8z"/></svg>Trạng thái</span>
-                        <span class="value"><span class="status-badge ${statusClass}">${tx.status}</span></span>
+            // Header Content
+            // ADD 'active' class if expanded
+            // Header Content - "Icon Box" Design (Refined)
+            const latestLabel = isLatest ? `<span class="latest-text">Mới nhất</span>` : '';
+            const statusIcon = isDeparted
+                ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><path d="M9 16v-8h4a2 2 0 0 1 0 4h-4"></path></svg>`;
+
+            const headerHTML = `
+                <div class="history-card-header ${isExpanded ? 'active' : ''}" onclick="this.nextElementSibling.classList.toggle('collapsed'); this.classList.toggle('active')">
+                    <div class="header-icon-box ${statusClass}">
+                        ${statusIcon}
                     </div>
+                    <div class="header-info-col">
+                        <div class="header-title-row">
+                            <span class="status-text-refined">${tx.status}</span>
+                            ${latestLabel}
+                        </div>
+                        <div class="header-time-row">
+                            ${formatDateTime(tx.entry_time)}
+                        </div>
+                    </div>
+                    <div class="header-arrow-col">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                </div>
+            `;
+
+            card.innerHTML = `
+                ${headerHTML}
+                <div class="history-card-body ${isExpanded ? '' : 'collapsed'}">
                     <div class="detail-item">
                         <span class="label"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Giờ vào</span>
                         <span class="value">${formatDateTime(tx.entry_time)}</span>
@@ -721,7 +968,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (e) { return ''; }
                 })() : ''}
                     
-
                 </div>
             `;
             elements.historyContainer.appendChild(card);
@@ -852,42 +1098,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!phone || !plate) return;
 
         // Verify phone matches plate in DB
-        const { data, error } = await db
+        // Chúng ta kiểm tra lịch sử xem có bất kỳ giao dịch nào khớp cặp Biển số + SĐT này không
+        const { data: verifyData } = await db
             .from('transactions')
-            .select('*')
-            .eq('plate', plate)
-            // .eq('phone', phone) // CÁCH 1: Verify chính xác 100%
-            .limit(1);
-
-        // CÁCH 2: Lấy list theo plate rồi check phone trong JS để linh hoạt hơn (ví dụ check 4 số cuối)
-        // Hiện tại dùng cách query DB trực tiếp để bảo mật tối đa
-
-        // Tuy nhiên, vì người dùng có thể nhập số điện thoại khác nhau ở các lượt gửi khác nhau
-        // Nên ta cần kiểm tra xem CÓ BẤT KỲ transaction nào của biển số này khớp với SĐT này không.
-        const { data: verifyData, error: verifyError } = await db
-            .from('transactions')
-            .select('*')
+            .select('unique_id')
             .eq('plate', plate)
             .eq('phone', phone)
             .limit(1);
 
         if (verifyData && verifyData.length > 0) {
-            // Xác thực thành công -> Tiến hành hiển thị kết quả
-            closeVerifyModal(false); // Đóng modal nhưng KHÔNG reset UI
-            // Gọi lại search nhưng "bypass" bước verify bằng cách dùng function nội bộ hoặc
-            // gọi lại searchByTerm nhưng ta cần refactor searchByTerm một chút để hỗ trợ "đã verify".
-            // Đơn giản nhất: Thực hiện query lấy full history cho plate này và render luôn.
+            // Xác thực thành công
+            closeVerifyModal(false); // Đóng modal
 
-            showLoading();
-            const { data: fullHistory, error: historyError } = await db
-                .from('transactions')
-                .select('*')
-                .eq('plate', plate);
-
-            if (fullHistory) {
-                const uniqueResults = Array.from(new Map(fullHistory.map(item => [item.unique_id, item])).values());
-                renderHistory(uniqueResults, plate);
-            }
+            // Gọi lại searchByTerm với cờ isVerified = true
+            // Hàm này sẽ thực hiện lại query (đã tối ưu limit 20) và hiển thị kết quả ngay
+            searchByTerm(plate, true);
         } else {
             alert("Số điện thoại không đúng hoặc không khớp với biển số xe này. Vui lòng kiểm tra lại.");
         }
@@ -897,6 +1122,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchByTerm = async (term, isVerified = false) => {
         showLoading();
         if (navigator.vibrate) navigator.vibrate(50);
+
+        // Ensure locations are loaded before calculating fees
+        if (locationsPromise) {
+            try { await locationsPromise; } catch (e) { console.error("Wait for locations failed", e); }
+        }
 
         const cleanedTerm = term.trim();
         const upperCaseTerm = cleanedTerm.toUpperCase();
@@ -913,74 +1143,87 @@ document.addEventListener('DOMContentLoaded', () => {
         const isPhone = /^\d{10,12}$/.test(cleanedTerm);
 
         try {
-            // NẾU LÀ SĐT: Tìm trực tiếp, không cần xác thực
+            // NẾU LÀ SĐT: Tìm trực tiếp
             if (isPhone) {
-                const { data, error } = await db.from('transactions').select('*').eq('phone', cleanedTerm);
+                const { data, error } = await db.from('transactions')
+                    .select('*')
+                    .eq('phone', cleanedTerm)
+                    .order('entry_time', { ascending: false })
+                    .limit(20); // TỐI ƯU: Chỉ lấy 20 bản ghi gần nhất
+
                 if (data && data.length > 0) {
                     const uniqueResults = Array.from(new Map(data.map(item => [item.unique_id, item])).values());
                     renderHistory(uniqueResults, cleanedTerm);
-                    return;
                 } else {
                     showMessage(`Không tìm thấy xe nào đăng ký với SĐT "${cleanedTerm}".`, true);
-                    return;
                 }
+                return;
             }
 
             // NẾU KHÔNG PHẢI SĐT (Có thể là Biển số hoặc TicketId)
 
-            // 1. Thử tìm theo Unique ID (Ticket ID) trước - Đây là trường hợp quét QR hoặc nhập Mã vé
-            // Mã vé thường là UUID hoặc chuỗi ngẫu nhiên dài, khó đoán.
-            // Nếu khớp TicketID -> Cho phép xem luôn (coi như người cầm vé là chủ xe).
-            const { data: ticketData } = await db.from('transactions').select('*').eq('unique_id', cleanedTerm);
+            // TỐI ƯU HÓA: Phân loại dựa trên dữ liệu nhập vào để tránh query thừa
+            const isLikelyPlate = !cleanedTerm.startsWith('_') && cleanedTerm.length <= 15;
 
-            if (ticketData && ticketData.length > 0) {
-                const uniqueResults = Array.from(new Map(ticketData.map(item => [item.unique_id, item])).values());
-                renderHistory(uniqueResults, cleanedTerm);
+            if (isLikelyPlate) {
+                // 1. Ưu tiên tìm theo Biển số (Case phổ biến nhất)
+                const query = db.from('transactions')
+                    .select('*')
+                    .eq('plate', upperCaseTerm)
+                    .order('entry_time', { ascending: false })
+                    .limit(5); // TỐI ƯU: Chỉ lấy 5 bản ghi gần nhất (Giảm tải load data)
+
+                const { data: plateHistory } = await query;
+
+                if (plateHistory && plateHistory.length > 0) {
+                    const latestRecord = plateHistory[0];
+                    if (isVerified || !latestRecord.phone || latestRecord.phone.trim() === '') {
+                        const uniqueResults = Array.from(new Map(plateHistory.map(item => [item.unique_id, item])).values());
+                        renderHistory(uniqueResults, upperCaseTerm);
+                    } else {
+                        elements.messageBox.style.display = 'none';
+                        openVerifyModal(upperCaseTerm);
+                    }
+                    return; // TÌM THẤY -> KẾT THÚC NGAY
+                }
+            }
+
+            // 2. Nếu không tìm thấy biển số (hoặc input giống ID), thử tìm theo Ticket ID
+            const { data: ticketData } = await db.from('transactions')
+                .select('*')
+                .eq('unique_id', cleanedTerm)
+                .single();
+
+            if (ticketData) {
+                renderHistory([ticketData], cleanedTerm);
                 return;
             }
 
-            // 2. Nếu không phải TicketID, coi là Biển số.
-            // Tìm xem biển số có tồn tại không
-            const { data: plateData } = await db.from('transactions').select('*').eq('plate', upperCaseTerm).limit(1);
+            // Không tìm thấy gì cả
+            showMessage(`Không tìm thấy thông tin cho "${term}".`, true);
 
-            if (plateData && plateData.length > 0) {
-                // Biển số tồn tại.
-                const record = plateData[0];
-
-                // YÊU CẦU: Nếu xe không có SĐT đăng ký -> Bỏ qua xác thực, hiển thị luôn.
-                if (!record.phone || record.phone.trim() === '') {
-                    // Tìm tất cả lịch sử của biển này
-                    const { data: fullHistory } = await db.from('transactions').select('*').eq('plate', upperCaseTerm);
-                    if (fullHistory) {
-                        const uniqueResults = Array.from(new Map(fullHistory.map(item => [item.unique_id, item])).values());
-                        renderHistory(uniqueResults, upperCaseTerm);
-                    }
-                } else {
-                    // Xe có SĐT -> Yêu cầu xác thực
-                    elements.messageBox.style.display = 'none'; // Ẩn loading
-                    openVerifyModal(upperCaseTerm);
-                }
+        } catch (error) {
+            // Ignored some errors like .single() returning null handled above logic implicitly or explicit checks
+            if (error.code !== 'PGRST116') { // PGRST116 is JSON result none, handled by checks
+                showMessage(`Đã xảy ra lỗi: ${error.message}`, true);
+                console.error(error);
             } else {
                 showMessage(`Không tìm thấy thông tin cho "${term}".`, true);
             }
-
-        } catch (error) {
-            showMessage(`Đã xảy ra lỗi: ${error.message}`, true);
-            console.error(error);
         }
     };
 
     // --- REALTIME UPDATES ---
     const setupRealtimeListeners = () => {
-        const channel = db.channel('public:transactions')
+        // 1. Transactions Listener
+        db.channel('public:transactions')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'transactions' },
                 async (payload) => {
                     const record = payload.new || payload.old;
                     if (activePlate && record && record.plate === activePlate) {
-                        // Silent refresh
-                        const { data: fullHistory } = await db.from('transactions').select('*').eq('plate', activePlate);
+                        const { data: fullHistory } = await db.from('transactions').select('*').eq('plate', activePlate).order('entry_time', { ascending: false }).limit(5);
                         if (fullHistory) {
                             const uniqueResults = Array.from(new Map(fullHistory.map(item => [item.unique_id, item])).values());
                             renderHistory(uniqueResults, activePlate);
@@ -989,25 +1232,83 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             )
             .subscribe();
+
+        // 2. Locations Listener (Update prices dynamically)
+        db.channel('public:locations')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'locations' },
+                async () => {
+                    console.log('Location updated, refreshing data...');
+                    const { data } = await db.from('locations').select('*');
+                    if (data) LOCATIONS_DATA = data;
+                    // If viewing a result, re-render to show new prices immediately
+                    if (activePlate) {
+                        // Re-trigger search silent
+                        const { data: fullHistory } = await db.from('transactions')
+                            .select('*')
+                            .eq('plate', activePlate)
+                            .order('entry_time', { ascending: false })
+                            .limit(5);
+                        if (fullHistory) {
+                            renderHistory(fullHistory, activePlate);
+                        }
+                    }
+                }
+            )
+            .subscribe();
     };
+
+    let locationsPromise = null;
 
     // --- Initialization ---
     const init = async () => {
+        // 1. Start fetching locations IMMEDIATELY (Critical for Fee Calculation)
+        locationsPromise = db.from('locations').select('*').then(({ data }) => {
+            LOCATIONS_DATA = data || [];
+            console.log("Locations loaded:", LOCATIONS_DATA.length);
+            return data;
+        });
+
         try { await configPromise; } catch (e) { }
 
         setupRealtimeListeners();
 
-        // Đồng bộ thời gian
+        // Đồng bộ thời gian (Non-blocking ideally, but needed for Duration)
         try {
             const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh');
             const data = await response.json();
             serverTimeOffset = new Date(data.utc_datetime).getTime() - Date.now();
         } catch (error) { console.error('Lỗi đồng bộ thời gian', error); }
 
-        try {
-            const { data, error } = await db.from('locations').select('*');
-            LOCATIONS_DATA = data || [];
-        } catch (e) { }
+        // Wait for locations before checking URL params
+        await locationsPromise;
+
+        // Xử lý tham số URL để tìm kiếm trực tiếp
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketIdParam = urlParams.get('ticketId');
+        const plateParam = urlParams.get('plate');
+
+        if (ticketIdParam) {
+            elements.plateInput.value = ticketIdParam;
+            // NÂNG CẤP: Chế độ Xem Vé (Reader Mode / Locked Mode)
+            elements.plateInput.disabled = true; // Khóa input
+            elements.plateInput.style.backgroundColor = '#e2e8f0'; // Gray out
+            elements.scanQrBtn.style.display = 'none'; // Ẩn nút quét QR
+
+            // Ẩn nút tìm kiếm trong form để chặn user submit cái khác
+            const searchBtn = elements.plateSearchForm.querySelector('button');
+            if (searchBtn) searchBtn.style.display = 'none';
+
+            // Thay đổi tiêu đề section để báo hiệu đang ở chế độ xem chi tiết
+            const sectionTitle = elements.searchSection.querySelector('.section-title');
+            if (sectionTitle) sectionTitle.textContent = "Chi tiết Vé xe";
+
+            searchByTerm(ticketIdParam);
+        } else if (plateParam) {
+            elements.plateInput.value = plateParam;
+            searchByTerm(plateParam);
+        }
 
         // --- SMART FEATURE HTML ELEMENTS ---
         const voiceBtn = document.getElementById('voice-search-btn');
@@ -1088,6 +1389,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (searchTerm) searchByTerm(searchTerm);
         });
 
+        // NÂNG CẤP: Chặn ký tự đặc biệt ngay khi nhập (Hỗ trợ Tiếng Việt)
+        elements.plateInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^a-zA-Z0-9\u00C0-\u1EF9 ]/g, '');
+        });
+
         // Event listener cho toggle chi tiết phí
         elements.historyContainer.addEventListener('click', (e) => {
             const toggleButton = e.target.closest('.fee-details-toggle');
@@ -1104,36 +1410,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.scanQrBtn.addEventListener('click', openQrScanner);
         elements.closeScannerBtn.addEventListener('click', closeQrScanner);
 
-        // XỬ LÝ URL & KHÓA TÌM KIẾM
-        const urlParams = new URLSearchParams(window.location.search);
-        const ticketId = urlParams.get('ticketId');
-
-        if (ticketId) {
-            // NÂNG CẤP: Chế độ Xem Vé (Reader Mode / Locked Mode)
-            elements.plateInput.value = ticketId;
-            elements.plateInput.disabled = true; // Khóa input
-            elements.plateInput.style.backgroundColor = '#e2e8f0'; // Gray out
-            elements.scanQrBtn.style.display = 'none'; // Ẩn nút quét QR
-
-            // Ẩn nút tìm kiếm trong form để chặn user submit cái khác
-            const searchBtn = elements.plateSearchForm.querySelector('button');
-            if (searchBtn) searchBtn.style.display = 'none';
-
-            // Thay đổi tiêu đề section để báo hiệu đang ở chế độ xem chi tiết
-            const sectionTitle = elements.searchSection.querySelector('.section-title');
-            if (sectionTitle) sectionTitle.textContent = "Chi tiết Vé xe";
-
-            setTimeout(() => {
-                searchByTerm(ticketId);
-            }, 100);
-        } else {
-            // Logic cũ cho tham số 'plate' (nếu có check debug)
-            const plateFromUrl = urlParams.get('plate');
-            if (plateFromUrl) {
-                elements.plateInput.value = plateFromUrl;
-                setTimeout(() => searchByTerm(plateFromUrl), 100);
-            }
-        }
     };
 
     init();

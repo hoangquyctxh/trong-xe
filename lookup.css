@@ -357,6 +357,61 @@ body {
     border-color: #cbd5e1;
 }
 
+/* HIỆU ỨNG CHO MỤC MỚI NHẤT */
+.history-card.latest-highlight {
+    border: 2px solid var(--brand-blue);
+    background: #f8fbff;
+    position: relative;
+    box-shadow: 0 0 0 4px rgba(0, 101, 189, 0.1);
+    animation: highlightPulse 2s infinite;
+}
+
+@keyframes highlightPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 101, 189, 0.2);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(0, 101, 189, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 101, 189, 0);
+    }
+}
+
+.latest-badge {
+    background: linear-gradient(135deg, #FF6B6B, #EE5253);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    margin-left: 8px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(238, 82, 83, 0.3);
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-3px);
+    }
+
+    60% {
+        transform: translateY(-1.5px);
+    }
+}
+
 .detail-item {
     display: flex;
     justify-content: space-between;
@@ -991,4 +1046,164 @@ body {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* LIST VIEW EXPANSION STYLES */
+.history-card-body.collapsed {
+    display: none;
+}
+
+.history-card-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-card-header.active .header-action svg {
+    transform: rotate(180deg);
+}
+
+.header-action svg {
+    transition: transform 0.3s ease;
+}
+
+
+
+
+/* MODERN CARD DESIGN */
+.history-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    /* Minimal shadow */
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.history-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Latest Card Accent */
+.history-card.latest-card {
+    border: 1px solid var(--brand-blue);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+
+
+
+
+.history-card-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    cursor: pointer;
+    gap: 16px;
+    position: relative;
+    transition: background-color 0.2s;
+}
+
+.history-card-header:hover {
+    background-color: #f8fafc;
+}
+
+/* Add separation line and spacing only when body is visible */
+.history-card-body {
+    padding: 24px 20px 20px;
+    border-top: 1px dashed #e2e8f0;
+    background: #fff;
+}
+
+
+/* 1. Icon Box */
+.header-icon-box {
+    width: 52px;
+    /* Balanced size */
+    height: 52px;
+    border-radius: 16px;
+    /* Softer roundness */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.header-icon-box.parking {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.header-icon-box.departed {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* 2. Info Column */
+.header-info-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Center vertically */
+    gap: 8px;
+    /* Balanced gap */
+}
+
+.header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-text-refined {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Latest Text */
+.latest-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--brand-blue);
+    background: rgba(14, 165, 233, 0.1);
+    padding: 2px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.header-time-row {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 400;
+}
+
+/* 3. Arrow Column */
+.header-arrow-col {
+    color: #94a3b8;
+    transition: transform 0.3s ease;
+}
+
+.history-card-header.active .header-arrow-col svg {
+    transform: rotate(180deg);
+}
+
+/* End of Card Header Styles */
+
+/* Ensure body respects collapsed state even in latest card */
+.history-card-body.collapsed {
+    display: none;
+}
+
+.history-card.latest-card .history-card-body {
+    background: white;
 }

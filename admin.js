@@ -1071,10 +1071,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 event_name: dom.locationEventName.value,
                 fee_policy_type: dom.locationFeePolicyType.value,
                 fee_collection_policy: dom.locationFeeCollectionPolicy.value,
-                fee_hourly_day: parseInt(dom.locationFeeHourlyDay.value) || null,
-                fee_hourly_night: parseInt(dom.locationFeeHourlyNight.value) || null,
-                fee_per_entry: parseInt(dom.locationFeePerEntry.value) || null,
-                fee_daily: parseInt(dom.locationFeeDaily.value) || null,
+                fee_hourly_day: parseInt(dom.locationFeeHourlyDay.value.replace(/\D/g, '')) || 0,
+                fee_hourly_night: parseInt(dom.locationFeeHourlyNight.value.replace(/\D/g, '')) || 0,
+                fee_per_entry: parseInt(dom.locationFeePerEntry.value.replace(/\D/g, '')) || 0,
+                fee_daily: parseInt(dom.locationFeeDaily.value.replace(/\D/g, '')) || 0,
             };
 
             try {

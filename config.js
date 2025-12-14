@@ -24,7 +24,7 @@ const STATIC_CONFIG = {
     autoRefreshInterval: 5000,
 
     // URL Google Apps Script (Sẽ được người dùng cập nhật sau)
-    googleScriptUrl: "https://script.google.com/macros/s/AKfycbw8qXAs6iyZ-MGK3jTO475p6fzCiu-sgq6OGzVzhFdt9-7deI8pWyAD48_5R6RQ7-v9/exec",
+    googleScriptUrl: "https://script.google.com/macros/s/AKfycbw8Oqb2Z2UiXWIbHvswC5nm8uZvtQdWvse6J-1Qr_zNtvKHCOUS9k_ecYic-dREU5Zb/exec",
 
     payment: {
         imageUrlBase: "https://qr.sepay.vn/img?bank=MSB&acc=968866975500&template=qronly&amount=0&des=0",

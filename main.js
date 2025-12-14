@@ -230,13 +230,14 @@ const Api = {
 
         // NÂNG CẤP: Tạo bản sao chính sách phí tại thời điểm vào bãi (Snapshot)
         // Việc này đảm bảo khi Admin đổi giá, các xe cũ vẫn giữ giá cũ.
+        // CẬP NHẬT: Đảm bảo các giá trị phí luôn là Số (Number) để tránh lỗi logic tính toán
         const policySnapshot = {
             type: state.currentLocation.fee_policy_type || 'free',
             collection: state.currentLocation.fee_collection_policy || 'post_paid',
-            per_entry: state.currentLocation.fee_per_entry,
-            daily: state.currentLocation.fee_daily,
-            hourly_day: state.currentLocation.fee_hourly_day,
-            hourly_night: state.currentLocation.fee_hourly_night,
+            per_entry: Number(state.currentLocation.fee_per_entry || 0),
+            daily: Number(state.currentLocation.fee_daily || 0),
+            hourly_day: Number(state.currentLocation.fee_hourly_day || 0),
+            hourly_night: Number(state.currentLocation.fee_hourly_night || 0),
         };
 
         const transactionData = {
@@ -266,10 +267,16 @@ const Api = {
         const { error } = await db.from('transactions').update({
             exit_time: Utils.getSyncedTime().toISOString(), // SỬA LỖI: Dùng giờ chuẩn
             status: 'Đã rời bãi',
-            fee, payment_method: paymentMethod,
+            fee: Math.min(Number(fee), 2147483647), // SAFETY CAP: Max Integer for Postgres
+            payment_method: paymentMethod,
             staff_username: staffUsername,
         }).eq('unique_id', uniqueID);
-        if (error) throw new Error(`Lỗi check-out: ${error.message}. Giao dịch có thể đã được xử lý.`);
+
+        if (error) {
+            console.error('CheckOut DB Error:', error, { uniqueID, fee, paymentMethod });
+            // Should not happen with the cap, but good to keep
+            throw new Error(`Lỗi check-out: ${error.message} (ID: ${uniqueID}, Fee: ${fee})`);
+        }
         // THÔNG BÁO cho admin & client khác biết giao dịch đã cập nhật
         UI.notifyDataChangedFromIndex('transaction_updated', { unique_id: uniqueID });
         return true;
@@ -511,6 +518,88 @@ const UI = {
 
         dom.plateSuggestions.innerHTML = Array.from(suggestions).map(v => `<div class="suggestion-item" data-plate="${v.plate}">${v.plate} ${v.is_vip ? '<span class="vip-star">⭐</span>' : ''}</div>`).join('');
         dom.plateSuggestions.classList.toggle('visible', suggestions.size > 0 || Array.from(suggestions).length > 0);
+    },
+
+    // NÂNG CẤP: Render Inline Payment
+    renderInlinePayment(vehicle, fee) {
+        if (!dom.ticketViewContainer || !dom.actionColumn) return;
+
+        dom.ticketViewContainer.innerHTML = Templates.inlinePayment({ vehicle, fee });
+
+        dom.actionColumn.classList.add('is-hidden');
+        dom.ticketViewContainer.classList.remove('is-hidden');
+    },
+
+    // NÂNG CẤP: Logic Inline Payment Result (Thay thế getPaymentResult)
+    async getInlinePaymentResult(fee, vehicle) {
+        return new Promise((resolve) => {
+            this.renderInlinePayment(vehicle, fee);
+
+            // Setup QR & Method Logic (Giống modal cũ nhưng inline)
+            const container = dom.ticketViewContainer;
+            const qrImg = container.querySelector('#payment-qr-img');
+            const memo = `TTGX ${vehicle.plate} ${vehicle.unique_id}`;
+            const qrUrl = APP_CONFIG.payment.getQrUrl(fee, memo);
+
+            if (qrImg) qrImg.src = qrUrl;
+
+            let selectedMethod = null; // Default: No method selected
+
+            // TỐI ƯU HÓA: Disable nút xác nhận ban đầu
+            const confirmBtn = container.querySelector('[data-action="confirm-payment"]');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.5';
+                confirmBtn.style.cursor = 'not-allowed';
+            }
+
+            const handleClick = (e) => {
+                const target = e.target.closest('[data-action], [data-method]');
+                if (!target) return;
+
+                // Handle Method Selection
+                if (target.dataset.method) {
+                    const method = target.dataset.method;
+                    selectedMethod = method === 'qr' ? 'Chuyển khoản QR' : 'Tiền mặt';
+
+                    container.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                    target.classList.add('active');
+
+                    // Trigger expansion animation
+                    container.querySelector('.payment-content-premium').classList.add('expanded');
+
+                    container.querySelectorAll('.payment-area-premium').forEach(a => a.classList.remove('active'));
+                    const areaId = method === 'qr' ? 'inline-qr-area' : 'inline-cash-area';
+                    container.querySelector(`#${areaId}`).classList.add('active');
+
+                    // Enable confirm button
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.style.opacity = '1';
+                        confirmBtn.style.cursor = 'pointer';
+                    }
+                    return;
+                }
+
+                const action = target.dataset.action;
+                if (action === 'confirm-payment') {
+                    if (!selectedMethod) return;
+                    // Cleanup & Resolve
+                    container.removeEventListener('click', handleClick);
+                    resolve({ fee, method: selectedMethod });
+                } else if (action === 'cancel-payment') {
+                    container.removeEventListener('click', handleClick);
+                    // Hide view
+                    if (dom.ticketViewContainer && dom.actionColumn) {
+                        dom.ticketViewContainer.classList.add('is-hidden');
+                        dom.actionColumn.classList.remove('is-hidden');
+                    }
+                    resolve(null);
+                }
+            };
+
+            container.addEventListener('click', handleClick);
+        });
     },
 
     renderActionButtons() {
@@ -790,6 +879,49 @@ const UI = {
         this.renderPagination(totalPages, state.currentPage);
     },
 
+    renderInlineTicket(vehicle) {
+        if (!dom.ticketViewContainer || !dom.actionColumn) return;
+
+        // 1. Render Template
+        dom.ticketViewContainer.innerHTML = Templates.inlineTicket(vehicle);
+
+        // 2. Generate QR Code
+        // Sử dụng requestAnimationFrame để đảm bảo DOM đã được cập nhật
+        requestAnimationFrame(() => {
+            const qrContainer = document.getElementById('ticket-qr-target');
+            if (qrContainer && window.QRCode) {
+                // Tạo canvas tạm thời
+                const canvas = document.createElement('canvas');
+                QRCode.toCanvas(canvas, vehicle.unique_id, {
+                    width: 160,
+                    margin: 2,
+                    color: {
+                        dark: "#000000",
+                        light: "#ffffff"
+                    }
+                }, function (error) {
+                    if (error) console.error('Lỗi tạo QR:', error);
+                    else {
+                        qrContainer.innerHTML = ''; // Xóa placeholder
+
+                        // NÂNG CẤP: Bọc QR code trong thẻ a để mở lookup (User Request)
+                        const link = document.createElement('a');
+                        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                        link.href = `${baseUrl}lookup.html?ticketId=${vehicle.unique_id}`;
+                        link.target = '_blank';
+                        link.appendChild(canvas);
+
+                        qrContainer.appendChild(link);
+                    }
+                });
+            }
+        });
+
+        // 3. Switch View Info
+        dom.actionColumn.classList.add('is-hidden');
+        dom.ticketViewContainer.classList.remove('is-hidden');
+    },
+
     renderPagination(totalPages, currentPage) {
         if (totalPages <= 1) {
             dom.paginationControls.innerHTML = '';
@@ -990,6 +1122,7 @@ const Templates = {
 
         let html = `
                 ${Templates.infoDisplayItem('Trạng thái', `<span class="status-badge ${isParking ? 'parking' : 'departed'}">${vehicle.is_vip ? `VIP` : vehicle.status}</span>`)}
+                ${Templates.infoDisplayItem('Loại xe', Utils.detectVehicleType(vehicle.plate).label)}
                 ${Templates.infoDisplayItem('Tỉnh', Utils.decodePlate(vehicle.plate))}
                 ${Templates.infoDisplayItem('Giờ vào', `<strong>${Utils.formatDateTime(vehicle.entry_time)}</strong>`)}
                 ${isParking ? '' : Templates.infoDisplayItem('Giờ ra', Utils.formatDateTime(vehicle.exit_time))}
@@ -1065,7 +1198,7 @@ const Templates = {
         return `
                 <div class="vehicle-item-v5 ${!isParking ? 'departed' : ''} ${alertClass}" data-plate="${v.plate}" data-id="${v.unique_id}">
                     <div class="vehicle-v5__cell vehicle-v5__plate">
-                        <div class="vehicle-v5__plate-text">${v.plate}</div>
+                        <div class="vehicle-v5__plate-text">${Utils.formatPlate(v.plate)}</div>
                         <div class="vehicle-v5__icons">${alertIcon}${vipIcon}</div>
                     </div>
                     <div class="vehicle-v5__cell vehicle-v5__status">
@@ -1095,7 +1228,7 @@ const Templates = {
         return `
                 <div class="vehicle-item-v7 ${!isParking ? 'departed' : ''}" data-plate="${v.plate}" data-id="${v.unique_id}">
                     <div class="v7-main">
-                        <div class="v7-plate">${v.plate}</div>
+                        <div class="v7-plate">${Utils.formatPlate(v.plate)}</div>
                         <div class="v7-status-icons">
                             ${alertIcon}
                             ${vipIcon}
@@ -1138,7 +1271,7 @@ const Templates = {
     globalAlertModal(title, plate, reason, level) {
         const content = `
                 <div class="global-alert-wrapper">
-                    <div class="global-alert-plate-box alert-bg-${level}"><div class="global-alert-plate">${plate}</div></div>
+                    <div class="global-alert-plate-box alert-bg-${level}"><div class="global-alert-plate">${Utils.formatPlate(plate)}</div></div>
                     <p class="global-alert-reason">${reason || 'Không có lý do cụ thể.'}</p>
                 </div>`;
         return this.modal(title, content, '<button class="action-button btn--secondary" data-action="close-modal">Đã hiểu</button>', '450px');
@@ -1169,8 +1302,8 @@ const Templates = {
                     
                     <div class="ticket-info-grid">
                         <div class="ticket-info-item">
-                            <span class="info-label">Biển số</span>
-                            <span class="info-value plate">${vehicle.plate || '--'}</span>
+                            <span class="info-label">${Utils.detectVehicleType(vehicle.plate).label}</span>
+                            <span class="info-value plate">${Utils.formatPlate(vehicle.plate || '--')}</span>
                         </div>
                         <div class="ticket-info-item">
                             <span class="info-label">Giờ vào</span>
@@ -1250,7 +1383,7 @@ const Templates = {
                         <h3 class="confirm-card__title">${passTitle}</h3>
                     </div>
                     <div class="confirm-card__body">
-                        <div class="confirm-card__plate">${plate}</div>
+                        <div class="confirm-card__plate">${Utils.formatPlate(plate)}</div>
                         <p class="confirm-card__reason">Lý do: <strong>${reason}</strong></p>
                     </div>
                     <div class="confirm-card__success-overlay">
@@ -1268,7 +1401,7 @@ const Templates = {
                         </div>
                         <div class="success-v6__divider"></div>
                         <ul class="success-v6__details-list">
-                            <li><span>Biển số xe</span><strong>${vehicle.plate}</strong></li>
+                            <li><span>${Utils.detectVehicleType(vehicle.plate).label}</span><strong>${Utils.formatPlate(vehicle.plate)}</strong></li>
                             <li><span>Thời gian vào</span><strong>${Utils.formatDateTime(vehicle.entry_time)}</strong></li>
                             <li><span>Thời gian ra</span><strong>${Utils.formatDateTime(vehicle.exit_time || new Date())}</strong></li>
                             <li><span>Tổng thời gian</span><strong>${Utils.calculateDuration(vehicle.entry_time, vehicle.exit_time)}</strong></li>
@@ -1306,8 +1439,8 @@ const Templates = {
 
                 <div class="ticket-v2__body">
                     <div class="ticket-v2__plate-box">
-                        <span class="ticket-v2__plate-label">Biển số xe</span>
-                        <div class="ticket-v2__plate-number">${data.plate}</div>
+                        <span class="ticket-v2__plate-label">${Utils.detectVehicleType(data.plate).label.toUpperCase()}</span>
+                        <div class="ticket-v2__plate-number">${Utils.formatPlate(data.plate)}</div>
                     </div>
 
                     <div class="ticket-v2__qr-box">
@@ -1403,8 +1536,8 @@ const Templates = {
 
                         <div class="success-v6-details">
                             <div class="success-v6-row">
-                                <span class="label">Biển số:</span>
-                                <span class="value plate-badge">${plate}</span>
+                                <span class="label">${Utils.detectVehicleType(plate).label}:</span>
+                                <span class="value plate-badge">${Utils.formatPlate(plate)}</span>
                             </div>
                             <div class="success-v6-row">
                                 <span class="label">Thời gian:</span>
@@ -1412,15 +1545,182 @@ const Templates = {
                             </div>
                             <div class="success-v6-row total">
                                 <span class="label">${fee > 0 ? 'Thanh toán:' : 'Trạng thái:'}</span>
-                                ${paymentDisplay}
-                            </div>
-                        </div>
+        `;
+    },
+    /* DEPRECATED: Old Modal - User requested removal
+    checkInReceiptModal(data) {
+        // ... (Code removed/commented out)
+    },
+    */
+    // ===================================================================
+    // TEMPLATE: VÉ ONLINE (VI STYLE & DIGITAL WALLET)
+    // ===================================================================
+    inlineTicket: (vehicle) => {
+        const isVip = !!vehicle.is_vip;
+        const typeClass = isVip ? 'ticket-card--vip' : 'ticket-card--standard';
+        const badgeClass = isVip ? 'ticket-badge--vip' : 'ticket-badge--standard';
+        const badgeText = isVip ? 'VIP ACCESS' : 'STANDARD';
 
-                        <button class="btn--success-v6" data-action="close-modal">Hoàn tất</button>
+        // Logo (Assuming logo_doan.jpg or similar exists or use placeholder)
+        const logoUrl = 'https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png';
+
+        // Logic lấy tên bãi xe
+        const locationName = Utils.getLocationNameById(vehicle.location_id || state.currentLocation?.id) || 'Bãi xe Ba Đình';
+
+        // Logic tạo URL tra cứu (Dynamic)
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        const lookupUrl = `${baseUrl}lookup.html?plate=${vehicle.plate}`;
+
+        const entryTime = new Date(vehicle.entry_time);
+        const dateStr = entryTime.toLocaleDateString('vi-VN');
+        const timeStr = entryTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+            <div class="ticket-card ${typeClass} ticket-card--animate">
+                <div class="ticket-card__top">
+                    <div class="ticket-header">
+                        <div class="ticket-brand">
+                            <img src="${logoUrl}" alt="Logo">
+                            <span>VÉ GỬI XE</span>
+                        </div>
+                        <div class="ticket-badge ${badgeClass}">${badgeText}</div>
+                    </div>
+                    
+                    <div class="ticket-plate">
+                        <div class="ticket-plate__number">${Utils.formatPlate(vehicle.plate)}</div>
+                        <div class="ticket-plate__label">${Utils.detectVehicleType(vehicle.plate).label.toUpperCase()}</div>
+                    </div>
+
+                    <div class="ticket-info-grid">
+                        <div class="ticket-info-item">
+                            <span class="ticket-info-label">Ngày vào</span>
+                            <span class="ticket-info-value">${dateStr}</span>
+                        </div>
+                        <div class="ticket-info-item">
+                            <span class="ticket-info-label">Giờ vào</span>
+                            <span class="ticket-info-value">${timeStr}</span>
+                        </div>
+                        <div class="ticket-info-item">
+                            <span class="ticket-info-label">Địa điểm</span>
+                            <span class="ticket-info-value">${locationName}</span>
+                        </div>
+                        <div class="ticket-info-item">
+                            <span class="ticket-info-label">ID Vé</span>
+                            <span class="ticket-info-value">${vehicle.unique_id}</span>
+                        </div>
                     </div>
                 </div>
-                <!-- Confetti -->
-                <div id="checkout-success-confetti"></div>
+
+                <div class="ticket-card__bottom">
+                    <div class="ticket-qr-container" id="ticket-qr-target">
+                        <!-- Canvas will be injected here -->
+                    </div>
+                    <div class="ticket-footer-text">
+                        Quét mã này tại máy quét để lấy xe
+                    </div>
+                    
+                    <div class="ticket-lookup-link">
+                         Tra cứu xe tại: <a href="${lookupUrl}" target="_blank">lookup.html</a>
+                    </div>
+
+                    <div class="ticket-actions">
+                         <button class="btn-close-ticket" data-action="back-to-form">
+                            Đóng Vé
+                         </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // ===================================================================
+    // TEMPLATE: THANH TOÁN PREMIUM (INLINE VIEW)
+    // ===================================================================
+    inlinePayment: ({ vehicle, fee }) => {
+        const isVip = !!vehicle.is_vip;
+        const typeClass = isVip ? 'payment-card--vip' : 'payment-card--standard';
+        const formattedFee = new Intl.NumberFormat('vi-VN').format(fee || 0);
+
+        const logoUrl = 'https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png';
+
+        const entryTime = new Date(vehicle.entry_time);
+        const duration = Utils.calculateDuration(vehicle.entry_time);
+        const dateStr = entryTime.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        const timeStr = entryTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+            <div class="payment-card-premium ${typeClass} ticket-card--animate">
+                <div class="payment-header">
+                    <div class="brand-pill">
+                        <img src="${logoUrl}" alt="Logo">
+                        <span>THANH TOÁN</span>
+                    </div>
+                    <div class="status-pill status-pill--pending">CHƯA THANH TOÁN</div>
+                </div>
+
+                <div class="payment-hero-section">
+                    <div class="plate-number-large">${Utils.formatPlate(vehicle.plate)}</div>
+                    <div class="plate-label">${Utils.detectVehicleType(vehicle.plate).label.toUpperCase()}</div>
+                    
+                    <div class="info-row">
+                        <div class="info-col">
+                            <span class="label">VÀO LÚC</span>
+                            <span class="value">${timeStr} <small>(${dateStr})</small></span>
+                        </div>
+                        <div class="info-col">
+                            <span class="label">THỜI GIAN</span>
+                            <span class="value">${duration}</span>
+                        </div>
+                    </div>
+
+                    <div class="price-display-large">
+                        <sup class="currency">đ</sup>${formattedFee}
+                    </div>
+                </div>
+
+                <div class="payment-methods-segmented">
+                    <div class="segmented-control">
+                        <button class="segment-btn" data-method="qr">
+                            <span class="segment-icon">📱</span> Chuyển khoản
+                        </button>
+                        <button class="segment-btn" data-method="cash">
+                            <span class="segment-icon">💵</span> Tiền mặt
+                        </button>
+                        <div class="segment-glider"></div>
+                    </div>
+                </div>
+
+                <div class="payment-content-premium">
+                    <!-- QR Area -->
+                    <div id="inline-qr-area" class="payment-area-premium">
+                        <div class="qr-scanner-frame">
+                            <div class="scan-line"></div>
+                            <img id="payment-qr-img" src="" alt="QR">
+                        </div>
+                        <div class="instruction-text">
+                            Quét mã để thanh toán
+                        </div>
+                    </div>
+
+                    <!-- Cash Area -->
+                    <div id="inline-cash-area" class="payment-area-premium">
+                        <div class="cash-animation-wrapper">
+                            <div class="cash-icon-premium">💵</div>
+                        </div>
+                        <div class="instruction-text">
+                            Thu tiền mặt từ khách
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="payment-actions-premium">
+                     <button class="action-btn-outline" data-action="cancel-payment">
+                        HỦY
+                     </button>
+                     <button class="action-btn-primary" data-action="confirm-payment">
+                        XÁC NHẬN
+                     </button>
+                </div>
             </div>
         `;
     }
@@ -1451,6 +1751,119 @@ const Utils = {
         const province = PLATE_DATA.provinces.find(p => p.codes.includes(cleaned.substring(0, 2)));
         return province ? province.name : 'Không xác định';
     },
+
+    // NÂNG CẤP: Logic nhận diện loại xe thông minh V4 (Comprehensive)
+    detectVehicleType: (plate) => {
+        if (!plate) return { type: 'unknown', label: 'Khách hàng' };
+
+        const cleaned = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+        // 0. ƯU TIÊN CAO NHẤT: CHECK TÊN NGƯỜI (KHÔNG CÓ SỐ)
+        // Để tránh nhận diện nhầm "HOÀNG QUÝ" (Có NG) thành xe ngoại giao
+        if (!/\d/.test(cleaned)) {
+            return { type: 'custom', label: 'Người gửi' };
+        }
+
+        // 1. XE QUÂN ĐỘI (Army)
+        // Biển đỏ, bắt đầu bằng 2 chữ cái (VD: AA, TM, TH, TC, TT...)
+        // Regex: 2 chữ cái + dãy số
+        // Lưu ý: Cần loại trừ trường hợp biển xe máy 4 số cũ dạng 2 chữ (VD: 29AA-1234) -> Khó phân biệt nếu không có màu.
+        // Tuy nhiên, xe quân đội thường có format đặc thù AA-12-34.
+        // Tạm thời ưu tiên nhận diện là Quân đội nếu bắt đầu bằng các mã quân đội phổ biến.
+        const armyPrefixes = ['QA', 'QB', 'QC', 'QD', 'QE', 'QF', 'QG', 'QH', 'QK', 'QL', 'QM', 'QN', 'QP', 'QQ', 'QR', 'QS', 'QT', 'QU', 'QV', 'QW', 'QX', 'QY', 'QZ', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AK', 'AL', 'AM', 'AN', 'AP', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ', 'TM', 'TC', 'TT', 'TK', 'TH', 'KP', 'KK', 'PP', 'LD', 'BH', 'HH', 'PK', 'KB', 'CB', 'KC', 'HC'];
+        // *Lưu ý: LD, KT, HC có thể trùng với biển liên doanh/dân sự đặc biệt.
+        // Để an toàn, Quân đội check mẫu: [2 Chữ][Số]
+        if (/^[A-Z]{2}\d{2,6}$/.test(cleaned)) {
+            const prefix = cleaned.substring(0, 2);
+            // Các mã đặc biệt quân đội (tham khảo Wiki)
+            if (['AA', 'TM', 'TC', 'TT', 'TK', 'TH', 'KP', 'KK', 'PP', 'PK', 'KB', 'CB', 'KC', 'BB', 'BP', 'HH'].includes(prefix)) {
+                return { type: 'army', label: 'Xe Quân đội' };
+            }
+        }
+
+        // 2. XE CÔNG VỤ / TRUNG ƯƠNG (Central/Police)
+        // Biển xanh 80 + Chữ (A, B, E...)
+        // VD: 80A-12345
+        if (/^80[A-B-E]\d{4,5}$/.test(cleaned)) {
+            return { type: 'police', label: 'Xe Công vụ / CSGT' };
+        }
+
+        // 3. XE NGOẠI GIAO / NƯỚC NGOÀI
+        // NG: Ngoại giao, NN: Nước ngoài, QT: Quốc tế
+        if (cleaned.includes('NG')) return { type: 'diplomatic', label: 'Xe Ngoại giao' };
+        if (cleaned.includes('QT')) return { type: 'diplomatic', label: 'Xe Quốc tế' };
+        if (cleaned.includes('NN')) return { type: 'foreign', label: 'Xe Nước ngoài' };
+
+        // 4. XE ĐẶC BIỆT DÂN SỰ
+        // LD: Liên doanh, KT: Quân đội làm kinh tế (có thể trùng, check lại), DA: Dự án
+        if (cleaned.includes('LD')) return { type: 'car', label: 'Xe Liên doanh' };
+        if (cleaned.includes('KT')) return { type: 'car', label: 'Xe KT Quân đội' };
+        if (cleaned.includes('DA')) return { type: 'car', label: 'Xe Dự án' };
+        if (cleaned.includes('MĐ')) return { type: 'motorbike', label: 'Xe Máy điện' }; // Máy điện 29MĐ...
+        if (cleaned.includes('TĐ')) return { type: 'car', label: 'Xe Thí điểm' };
+
+        // 5. XE HƠI DÂN SỰ CHUẨN (Cập nhật pattern chặt)
+        // [2 số][1 Chữ][4-5 số] -> 30A12345
+        if (/^\d{2}[A-Z]\d{4,5}$/.test(cleaned)) {
+            return { type: 'car', label: 'Ô tô' };
+        }
+
+        // 6. TẤT CẢ CÁC TRƯỜNG HỢP alphanumeric CÒN LẠI -> XE MÁY (Fallback)
+        // Bao gồm: 1111V2, 29B1..., 29M1...
+        // ĐIỀU KIỆN QUAN TRỌNG: PHẢI CÓ SỐ (DIGITS) VÀ CHỮ CÁI
+        if (/\d/.test(cleaned) && /[A-Z]/.test(cleaned)) {
+            return { type: 'motorbike', label: 'Xe máy' };
+        }
+
+        return { type: 'custom', label: 'Khách hàng' };
+    },
+
+    // NÂNG CẤP: Logic format biển số đẹp V5 (Comprehensive)
+    formatPlate: (plate) => {
+        if (!plate) return '';
+        const cleaned = plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+        // 0. Nếu là tên người (không có số) -> Trả về NGUYÊN GỐC (có dấu)
+        if (!/\d/.test(cleaned)) {
+            // Trả về plate gốc (có thể trim) để giữ dấu tiếng Việt
+            // VD: "Nguyễn Văn A" -> "Nguyễn Văn A"
+            return plate.trim();
+        }
+
+        // 1. Xe hơi chuẩn (30A-123.45)
+        const carMatch = cleaned.match(/^(\d{2})([A-Z])(\d{3})(\d{2})$/);
+        if (carMatch) return `${carMatch[1]}${carMatch[2]}-${carMatch[3]}.${carMatch[4]}`;
+
+        const carMatch4 = cleaned.match(/^(\d{2})([A-Z])(\d{4})$/);
+        if (carMatch4) return `${carMatch4[1]}${carMatch4[2]}-${carMatch4[3]}`;
+
+        // 2. Xe đặc biệt / Công vụ (80A-123.45, 29LD-123.45)
+        const specialMatch = cleaned.match(/^(\d{2})([A-Z]{2})(\d{3})(\d{2})$/);
+        if (specialMatch) return `${specialMatch[1]}${specialMatch[2]}-${specialMatch[3]}.${specialMatch[4]}`;
+
+        // 3. Xe Quân đội (AA-12-34 hoặc AA-1234)
+        // Format quân đội thường tách 2 số một: AA-12-34
+        if (/^[A-Z]{2}\d{4}$/.test(cleaned)) {
+            return cleaned.replace(/^([A-Z]{2})(\d{2})(\d{2})$/, '$1-$2-$3');
+        }
+
+        // 4. Xe máy quy chuẩn 5 số (29-B1 123.45)
+        const motorbikeMatch = cleaned.match(/^(\d{2})([A-Z0-9]{2,3})(\d{3})(\d{2})$/);
+        if (motorbikeMatch) {
+            return `${motorbikeMatch[1]}-${motorbikeMatch[2]} ${motorbikeMatch[3]}.${motorbikeMatch[4]}`;
+        }
+        const motorbikeMatch4 = cleaned.match(/^(\d{2})([A-Z0-9]{2,3})(\d{4})$/);
+        if (motorbikeMatch4) {
+            return `${motorbikeMatch4[1]}-${motorbikeMatch4[2]} ${motorbikeMatch4[3]}`;
+        }
+
+        // 5. Biển cổ / Lạ (1111V2) -> 1111-V2 or 123-A1
+        if (/^\d{4}[A-Z0-9]{1,3}$/.test(cleaned)) return cleaned.replace(/^(\d{4})([A-Z0-9]+)$/, '$1-$2');
+        if (/^\d{3}[A-Z0-9]{1,3}$/.test(cleaned)) return cleaned.replace(/^(\d{3})([A-Z0-9]+)$/, '$1-$2');
+
+        return plate; // Giữ nguyên
+    },
+
     getLocationNameById: (id) => {
         if (!id) return 'Không rõ';
         const location = state.locations.find(l => l.id === id);
@@ -1615,8 +2028,16 @@ const Handlers = {
     },
 
     handleSearchTermChange(e) {
+        // NÂNG CẤP: Chặn ký tự đặc biệt nhưng CÓ hỗ trợ Tiếng Việt (Unicode)
+        // Regex này cho phép: A-Z, a-z, 0-9, khoảng trắng và các ký tự tiếng Việt có dấu
+        e.target.value = e.target.value.replace(/[^a-zA-Z0-9\u00C0-\u1EF9 ]/g, '');
+
         const searchTerm = e.target.value.trim();
-        const cleanedPlate = searchTerm.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        // NÂNG CẤP: Logic thông minh cho CleanedPlate
+        // 1. Nếu tìm thấy số -> Đây là BIỂN SỐ -> Clean chặt (A-Z0-9)
+        // 2. Nếu không có số -> Đây là TÊN -> Giữ nguyên (Trim + Upper) để hiện dấu Tiếng Việt
+        const isName = !/\d/.test(searchTerm);
+        const cleanedPlate = isName ? searchTerm.toUpperCase() : searchTerm.toUpperCase().replace(/[^A-Z0-9]/g, '');
         state.selectedPlate = cleanedPlate;
 
         // Bước 1: Reset và cập nhật giao diện ngay lập tức
@@ -1672,6 +2093,12 @@ const Handlers = {
     handleVehicleItemClick(item) {
         const plate = item.dataset.plate;
         if (plate) {
+            // NÂNG CẤP: Nếu đang xem vé mà bấm vào danh sách thì quay lại form ngay
+            if (dom.ticketViewContainer && !dom.ticketViewContainer.classList.contains('is-hidden')) {
+                dom.ticketViewContainer.classList.add('is-hidden');
+                dom.actionColumn.classList.remove('is-hidden');
+            }
+
             dom.searchTermInput.value = plate;
             dom.searchTermInput.dispatchEvent(new Event('input', { bubbles: true }));
             if (window.innerWidth < 768) {
@@ -1690,11 +2117,15 @@ const Handlers = {
 
     async handleActionClick(e, button) {
         const action = button.dataset.action;
-        if (!['check-in', 'check-out'].includes(action)) return;
+        if (!['check-in', 'check-out', 'view-ticket'].includes(action)) return;
 
         if (state.isProcessing) return;
 
-        const plate = dom.searchTermInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        // NÂNG CẤP: Logic lấy biển số khi nhấn nút Action
+        // Cũng áp dụng logic thông minh: Tên thì giữ dấu, Biển thì clean chặt
+        const rawInput = dom.searchTermInput.value.trim();
+        const isName = !/\d/.test(rawInput);
+        const plate = isName ? rawInput.toUpperCase() : rawInput.toUpperCase().replace(/[^A-Z0-9]/g, '');
         if (!plate) {
             UI.showToast('Vui lòng nhập biển số xe!', 'error');
             return;
@@ -1711,6 +2142,15 @@ const Handlers = {
 
             if (action === 'check-in') await this.processCheckIn(plate);
             if (action === 'check-out') await this.processCheckOut(plate);
+            if (action === 'view-ticket') {
+                // Logic xem vé mới
+                const vehicle = state.vehicles.find(v => v.plate === plate && v.status === 'Đang gửi');
+                if (vehicle) {
+                    UI.renderInlineTicket(vehicle);
+                } else {
+                    UI.showToast('Không tìm thấy thông tin vé xe!', 'error');
+                }
+            }
 
         } catch (error) {
             UI.showToast(error.message, 'error');
@@ -1728,6 +2168,11 @@ const Handlers = {
 
         const action = button.dataset.action;
         if (action === 'back-to-form') {
+            // NÂNG CẤP: Ẩn vé inline và hiện lại form
+            if (dom.ticketViewContainer && dom.actionColumn) {
+                dom.ticketViewContainer.classList.add('is-hidden');
+                dom.actionColumn.classList.remove('is-hidden');
+            }
             App.resetFormAndFetchData();
         }
     },
@@ -1775,17 +2220,26 @@ const Handlers = {
             newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { /*snapshot: feePolicySnapshot*/ }, null, staffUsername);
         }
 
+        // NÂNG CẤP: Cập nhật State nội bộ ngay lập tức để tránh độ trễ server
+        state.vehicles.unshift(newTransaction);
+        state.vehicleMap.set(newTransaction.plate, newTransaction);
+
         // NÂNG CẤP: Hiển thị vé theo thiết bị
         if (Utils.isMobile()) {
-            UI.showModal('checkInReceipt', { ...newTransaction, isNew: true });
-            await App.resetFormAndFetchData(); // Reset form ngay trên mobile
+            UI.renderInlineTicket(newTransaction);
+            UI.showToast('Gửi xe thành công!', 'success');
+            // Mobile: Reset form ngầm nhưng không fetch lại để tránh mất state vừa cập nhật
+            dom.searchTermInput.value = '';
+            dom.phoneInput.value = '';
+            dom.isVipCheckbox.checked = false;
         } else {
-            UI.showModal('checkInReceipt', { ...newTransaction, isNew: true });
-            // SỬA LỖI: Cập nhật trạng thái của xe đang được chọn ngay lập tức.
-            // Điều này đảm bảo khi fetchData render lại UI, nó sẽ sử dụng trạng thái 'parking' mới.
+            UI.renderInlineTicket(newTransaction);
+            UI.showToast('Gửi xe thành công!', 'success');
+
+            // Desktop: Cập nhật trạng thái xe đang chọn thành 'parking' dựa trên dữ liệu vừa có
             state.selectedVehicle = { data: newTransaction, status: 'parking' };
-            // Tải lại dữ liệu nền để đồng bộ và render lại UI với trạng thái đúng.
-            await App.fetchData(true);
+            // Không gọi fetchData(true) ngay để tránh race condition (server chưa index kịp)
+            // Realtime sẽ tự lo việc update sau, hoặc gọi ngầm.
         }
     },
 
@@ -1889,13 +2343,28 @@ const Handlers = {
             if (!state.isOnline) {
                 throw new Error("Không thể xử lý thanh toán khi đang offline.");
             }
-            const paymentResult = await this.getPaymentResult(fee, vehicle);
+
+            // NÂNG CẤP: Sử dụng Inline Payment View (Thay vì Modal)
+            const paymentResult = await UI.getInlinePaymentResult(fee, vehicle);
+
             if (paymentResult) {
-                await this.processPayment(paymentResult.method); // Chờ thanh toán hoàn tất
+                // Logic xử lý thanh toán thành công inline
+                await Api.checkOut(vehicle.unique_id, fee, paymentResult.method, staffUsername);
+
+                UI.showToast(`Thanh toán thành công qua ${paymentResult.method}!`, 'success');
+
+                // Ẩn view thanh toán
+                if (dom.ticketViewContainer && dom.actionColumn) {
+                    dom.ticketViewContainer.classList.add('is-hidden');
+                    dom.actionColumn.classList.remove('is-hidden');
+                }
+
+                await App.resetFormAndFetchData();
                 return;
             }
             // Chỉ throw lỗi khi paymentResult là null (người dùng đã hủy)
-            throw new Error('Đã hủy thanh toán.');
+            UI.showToast('Đã hủy thanh toán.', 'info');
+            return;
         }
     },
 
@@ -1905,8 +2374,8 @@ const Handlers = {
             UI.showToast('Không có thông tin xe để xem vé.', 'error');
             return;
         }
-        // NÂNG CẤP: Luôn hiển thị modal xem vé cho thống nhất trải nghiệm
-        UI.showModal('checkInReceipt', { ...vehicle, isNew: false });
+        // NÂNG CẤP: Sử dụng Inline Ticket View (User Request)
+        UI.renderInlineTicket(vehicle);
     },
 
     handleModalClick(e) {
@@ -2115,16 +2584,31 @@ const Handlers = {
                 }
 
                 if (!state.isOnline) throw new Error("Không thể xử lý thanh toán khi đang offline.");
-                const paymentResult = await this.getPaymentResult(fee, vehicle);
-                if (!paymentResult) throw new Error('Đã hủy thanh toán.');
+
+                // NÂNG CẤP: Sử dụng Inline Payment View (Thay vì Modal)
+                const paymentResult = await UI.getInlinePaymentResult(fee, vehicle);
+
+                if (!paymentResult) {
+                    // User cancelled logic handled in getInlinePaymentResult (view hidden)
+                    // Just log or minor toast
+                    UI.showToast('Đã hủy thanh toán.', 'info');
+                    return;
+                }
 
                 await Api.checkOut(vehicle.unique_id, paymentResult.fee, paymentResult.method, staffUsername);
 
                 setTimeout(async () => {
-                    UI.closeModal();
-                    UI.showModal('checkoutSuccess', { plate: vehicle.plate, fee: paymentResult.fee, method: paymentResult.method });
+                    // NÂNG CẤP: Hiển thị lại vé với trạng thái đã thanh toán hoặc reset form
+                    UI.showToast(`Thanh toán thành công qua ${paymentResult.method}!`, 'success');
+
+                    // Ẩn view thanh toán
+                    if (dom.ticketViewContainer && dom.actionColumn) {
+                        dom.ticketViewContainer.classList.add('is-hidden');
+                        dom.actionColumn.classList.remove('is-hidden');
+                    }
+
                     await App.resetFormAndFetchData();
-                }, 1500);
+                }, 500);
             }
         } catch (error) {
             UI.showToast(error.message, 'error');
@@ -2374,6 +2858,12 @@ const App = {
                 }
             }
 
+            // SỬA LỖI: Chạy migration để fix giá cho các xe cũ
+            if (state.vehicles.length > 0) {
+                // Không await để tránh block UI loading
+                setTimeout(() => App.migrateLegacyTransactions(), 1000);
+            }
+
             if (state.isOnline) this.saveStateToLocalStorage();
         } catch (error) {
             UI.showToast(error.message, 'error');
@@ -2556,10 +3046,28 @@ const App = {
                                 // Cập nhật state
                                 Object.assign(state.vehicles[index], record);
                                 state.vehicleMap.set(record.plate, state.vehicles[index]); // Cập nhật Map
-                                // "PHẪU THUẬT" DOM, KHÔNG RENDER LẠI TOÀN BỘ
-                                // SỬA LỖI: Gọi hàm cập nhật giao diện cho xe đã rời bãi
+
+                                // Cập nhật list item
                                 const nodeToUpdate = dom.vehicleListContainer.querySelector(`[data-id="${record.unique_id}"]`);
                                 if (nodeToUpdate) UI.updateVehicleItemDOM(nodeToUpdate, record);
+
+                                // NÂNG CẤP: Cập nhật UI chi tiết nếu xe đang được chọn
+                                if (state.selectedVehicle && state.selectedVehicle.data && state.selectedVehicle.data.unique_id === record.unique_id) {
+                                    state.selectedVehicle.data = state.vehicles[index]; // Sync reference
+
+                                    // Nếu biển số hoặc tên thay đổi -> Cập nhật input tìm kiếm
+                                    if (state.selectedPlate !== record.plate) {
+                                        state.selectedPlate = record.plate;
+                                        if (dom.searchTermInput) dom.searchTermInput.value = record.plate;
+                                    }
+
+                                    UI.updateMainFormUI();
+
+                                    // Nếu đang xem vé -> Render lại vé
+                                    if (dom.ticketViewContainer && !dom.ticketViewContainer.classList.contains('is-hidden')) {
+                                        UI.renderInlineTicket(state.vehicles[index]);
+                                    }
+                                }
                             }
                         } else if (payload.eventType === 'DELETE') {
                             if (index > -1) {
@@ -2613,7 +3121,7 @@ const App = {
                     Api.fetchLocations().then(locations => {
                         state.locations = locations;
                         if (state.currentLocation?.id) {
-                            const updatedLoc = locations.find(l => l.id === state.currentLocation.id);
+                            const updatedLoc = locations.find(l => l.id == state.currentLocation.id || (l.id && String(l.id).toUpperCase() === String(state.currentLocation.id).toUpperCase()));
                             if (updatedLoc) {
                                 state.currentLocation = updatedLoc;
                             }
@@ -2743,13 +3251,16 @@ App.migrateLegacyTransactions = async function () {
 
         // Tạo bảng giá mặc định (Theo giờ) cho các xe đời cũ này
         // Giả định: Trước khi đổi sang Free, bãi xe dùng chế độ tính giờ.
+        // SỬA LỖI: Sử dụng cấu hình hiện tại của bãi xe thay vì hardcode default
+        // Điều này đảm bảo giá đúng với Admin Panel
+        const loc = state.currentLocation || {};
         const defaultLegacyPolicy = {
-            type: 'hourly',
-            collection: 'post_paid',
-            per_entry: 10000,
-            daily: 30000,
-            hourly_day: 5000,
-            hourly_night: 8000
+            type: loc.fee_policy_type || 'hourly',
+            collection: loc.fee_collection_policy || 'post_paid',
+            per_entry: Number(loc.fee_per_entry || 10000),
+            daily: Number(loc.fee_daily || 30000),
+            hourly_day: Number(loc.fee_hourly_day || 5000),
+            hourly_night: Number(loc.fee_hourly_night || 8000)
         };
 
         const updates = legacyVehicles.map(v => ({

@@ -1,4 +1,4 @@
-/*
+﻿/*
 
  * =========================================================================
 
@@ -23,135 +23,97 @@
    ========================================================================== */
 
 :root {
-
-    /* Bảng màu "Aetherial Light" */
-
-    --bg-main: #f8fafc;
-
-    --bg-card: #ffffff;
-
+    /* --- BẢNG MÀU "AETHERIAL GLOW" (PREMIUM) --- */
+    --bg-main: #f0f4f8;
+    /* Xanh xám rất nhạt, sang trọng hơn trắng thuần */
+    --bg-card: rgba(255, 255, 255, 0.95);
+    /* Hiệu ứng kính mờ nhẹ */
     --bg-header: rgba(255, 255, 255, 0.85);
-
     --bg-input: #ffffff;
-
     --bg-hover: #f1f5f9;
 
     --border-color: #e2e8f0;
-
     --border-color-light: #f1f5f9;
 
-    --text-primary: #1e293b;
-
+    --text-primary: #0f172a;
+    /* Đậm hơn, rõ nét hơn */
     --text-secondary: #64748b;
-
     --text-placeholder: #94a3b8;
 
-
-
-    /* Màu sắc thương hiệu & nhấn */
-
-    --primary-accent: #2563eb;
-
-    --primary-accent-light: #dbeafe;
-
+    /* Màu thương hiệu & Nhấn */
+    --primary-accent: #3b82f6;
+    /* Xanh dương hiện đại (Tailwind Blue 500) */
+    --primary-accent-hover: #2563eb;
+    --primary-accent-light: #eff6ff;
     --youth-union-blue: #1488DB;
 
-
-
-    /* Màu trạng thái */
-
-    --danger-color: #dc2626;
-
-    --danger-light: #fee2e2;
-
-    --success-color: #16a34a;
-
-    --success-light: #dcfce7;
-
+    /* Trạng thái */
+    --danger-color: #ef4444;
+    --danger-light: #fef2f2;
+    --success-color: #22c55e;
+    --success-light: #f0fdf4;
     --warning-color: #f59e0b;
+    --warning-light: #fffbeb;
 
-    --warning-light: #fef3c7;
+    /* VIP & Premium */
+    --vip-gold: #d97706;
+    --vip-grad-1: #fcd34d;
+    --vip-grad-2: #f59e0b;
+    --vip-grad-3: #b45309;
 
-    --vip-gold: #ca8a04;
-
-    --vip-gold-light: #fef9c3;
-
-
-
-    /* Font & Typography */
-
+    /* Typography */
     --font-main: 'Be Vietnam Pro', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    /* Font code xịn hơn */
 
-    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
-
-
-
-    /* Shadows & Effects */
-
+    /* Shadows & Effects (Depth System) */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-glance: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    /* Focus ring */
 
-    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Mượt mà hơn */
+    --backdrop-blur: blur(12px);
 
-
-
-    /* Sizing & Radius */
-
-    --radius-md: 0.5rem;
-
-    --radius-lg: 0.75rem;
-
-    --header-height: 85px;
-
+    /* Sizing */
+    --radius-md: 0.75rem;
+    /* Bo tròn nhiều hơn (Apple style) */
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --header-height: 80px;
 }
 
-
-
 body[data-theme="dark"] {
-
-    /* Bảng màu "Midnight Slate" */
-
+    /* --- BẢNG MÀU "MIDNIGHT NEON" --- */
     --bg-main: #0f172a;
-
+    /* Slate 900 */
     --bg-card: #1e293b;
-
-    --bg-header: rgba(30, 41, 59, 0.85);
-
+    /* Slate 800 */
+    --bg-header: rgba(15, 23, 42, 0.85);
     --bg-input: #334155;
-
     --bg-hover: #334155;
 
     --border-color: #334155;
+    --border-color-light: #1e293b;
 
-    --border-color-light: #293548;
-
-    --text-primary: #f1f5f9;
-
+    --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-
     --text-placeholder: #64748b;
 
-
-
     --primary-accent: #38bdf8;
+    /* Sky 400 - Sáng hơn trên nền tối */
+    --primary-accent-hover: #0ea5e9;
+    --primary-accent-light: rgba(56, 189, 248, 0.1);
 
-    --primary-accent-light: #1e293b;
+    --danger-color: #f87171;
+    --danger-light: rgba(239, 68, 68, 0.1);
+    --success-color: #4ade80;
+    --success-light: rgba(74, 222, 128, 0.1);
 
-
-
-    --danger-light: #450a0a;
-
-    --success-light: #14532d;
-
-    --warning-light: #422006;
-
-    --vip-gold: #facc15;
-
-    --vip-gold-light: #423b13;
-
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
 }
 
 
@@ -10544,4 +10506,1045 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 .btn--success-v6:hover {
     background: #0d6efd;
+}
+
+/* =========================================================================
+   NÂNG CẤP: DIGITAL TICKET SYSTEMS (VÍ ĐIỆN TỬ STYLE)
+   ========================================================================= */
+
+/* --- Container for Inline View --- */
+#ticket-view-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 2rem;
+    background: transparent;
+}
+
+/* --- Base Ticket Card --- */
+.ticket-card {
+    width: 100%;
+    max-width: 380px;
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    position: relative;
+    font-family: var(--font-main);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: ticketSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.ticket-card:hover {
+    transform: translateY(-5px) scale(1.02);
+}
+
+@keyframes ticketSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* --- Top Section (Brand & Info) --- */
+.ticket-card__top {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-bottom: 2px dashed #cbd5e1;
+    position: relative;
+}
+
+/* Perforation Circles */
+.ticket-card__top::before,
+.ticket-card__top::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    width: 20px;
+    height: 20px;
+    background: var(--bg-main);
+    /* Match main bg */
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.ticket-card__top::before {
+    left: -10px;
+}
+
+.ticket-card__top::after {
+    right: -10px;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.ticket-brand {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ticket-brand img {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.ticket-badge {
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ticket-badge--standard {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.ticket-plate {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.ticket-plate__number {
+    font-size: 3rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.ticket-plate__label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+/* --- Middle Info Grid --- */
+.ticket-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.ticket-info-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.ticket-info-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.ticket-info-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* --- Bottom Section (QR) --- */
+.ticket-card__bottom {
+    padding: 1.5rem;
+    background: white;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ticket-qr-container {
+    padding: 1rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.ticket-qr-container canvas {
+    display: block;
+    width: 100%;
+    max-width: 160px;
+}
+
+.ticket-footer-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    max-width: 80%;
+}
+
+/* =========================================================================
+   VARIANT: VIP TICKET (BLACK & GOLD PREMIUM)
+   ========================================================================= */
+.ticket-card--vip {
+    background: #0f172a;
+    /* Dark base */
+    color: white;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 215, 0, 0.1);
+}
+
+.ticket-card--vip .ticket-card__top {
+    background: radial-gradient(circle at top right, #3d2b05 0%, #0f172a 100%);
+    border-bottom: 2px dashed rgba(255, 215, 0, 0.3);
+}
+
+.ticket-card--vip .ticket-card__top::before,
+.ticket-card--vip .ticket-card__top::after {
+    background: var(--bg-main);
+    /* Match main bg */
+}
+
+.ticket-card--vip .ticket-brand {
+    color: #94a3b8;
+}
+
+.ticket-card--vip .ticket-badge--vip {
+    background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+    color: #451a03;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Holographic Shine Effect */
+.ticket-card--vip .ticket-badge--vip::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+
+    20% {
+        left: 100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+.ticket-card--vip .ticket-plate__number {
+    background: linear-gradient(to bottom, #fcd34d, #d97706);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 10px rgba(217, 119, 6, 0.2);
+}
+
+.ticket-card--vip .ticket-plate__label {
+    color: #94a3b8;
+}
+
+.ticket-card--vip .ticket-info-label {
+    color: #64748b;
+}
+
+.ticket-card--vip .ticket-info-value {
+    color: #f1f5f9;
+}
+
+.ticket-card--vip .ticket-card__bottom {
+    background: #0f172a;
+}
+
+.ticket-card--vip .ticket-qr-container {
+    background: white;
+    /* QR vẫn cần nền trắng để dễ quét */
+    border: 4px solid #d97706;
+    /* Viền vàng */
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.3);
+}
+
+.ticket-card--vip .ticket-footer-text {
+    color: #64748b;
+}
+
+/* Nút đóng/quay lại trong Ticket View */
+.ticket-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.btn-close-ticket {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--primary-accent), var(--youth-union-blue));
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ticket-card--vip .btn-close-ticket {
+    background: linear-gradient(135deg, #FFD700, #DAA520);
+    color: #1a1a1a;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+}
+
+.ticket-card--vip .btn-close-ticket::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: 0.5s;
+}
+
+.btn-close-ticket:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+    filter: brightness(1.1);
+}
+
+.ticket-card--vip .btn-close-ticket:hover {
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+    transform: translateY(-2px) scale(1.02);
+}
+
+.ticket-card--vip .btn-close-ticket:hover::before {
+    left: 100%;
+}
+
+/* =========================================================================
+   NEW: TICKET ANIMATIONS & LOOKUP LINK
+   ========================================================================= */
+@keyframes fadeInUpTicket {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.ticket-card--animate {
+    animation: fadeInUpTicket 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ticket-lookup-link {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 1rem 0;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+}
+
+.ticket-lookup-link a {
+    color: var(--primary-accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.ticket-lookup-link a:hover {
+    text-decoration: underline;
+}
+
+.ticket-card--vip .ticket-lookup-link a {
+    color: #FCD34D;
+}
+
+/* =========================================================================
+   NEW: PREMIUM PAYMENT STYLES
+   ========================================================================= */
+
+/* --- Card Container --- */
+.payment-card-premium {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    box-shadow:
+        0 20px 40px -10px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+    padding: 0;
+    overflow: hidden;
+    color: #1e293b;
+    /* font-family: 'Outfit', sans-serif; REMOVED to match index page */
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    backdrop-filter: blur(10px);
+}
+
+.payment-card-premium.payment-card--vip {
+    background: linear-gradient(165deg, #1c1c1e, #2c2c2e);
+    color: #ffffff;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow:
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(255, 215, 0, 0.15);
+}
+
+/* --- Header --- */
+.payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.brand-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.brand-pill img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.status-pill {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-pill--pending {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.payment-card--vip .brand-pill {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- Hero Section --- */
+.payment-hero-section {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.plate-number-large {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #0f172a;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+}
+
+.plate-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2rem;
+}
+
+.payment-card--vip .plate-number-large {
+    background: linear-gradient(135deg, #fff, #cbd5e1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.payment-card--vip .plate-label {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Info Grid */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding: 0 1rem;
+}
+
+.info-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.info-col .label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.info-col .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #334155;
+    font-variant-numeric: tabular-nums;
+}
+
+.payment-card--vip .info-col .value {
+    color: #f1f5f9;
+}
+
+/* Price */
+.price-display-large {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #3b82f6;
+    letter-spacing: -2px;
+    line-height: 1;
+    text-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+    margin-bottom: 1rem;
+}
+
+.price-display-large .currency {
+    font-size: 1.5rem;
+    vertical-align: super;
+    font-weight: 700;
+    color: #93c5fd;
+    margin-right: 4px;
+}
+
+.payment-card--vip .price-display-large {
+    background: linear-gradient(135deg, #fbbf24, #d97706);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+}
+
+/* --- Segmented Control --- */
+.payment-methods-segmented {
+    padding: 0 1.5rem 1.5rem;
+}
+
+.segmented-control {
+    background: #f1f5f9;
+    padding: 6px;
+    border-radius: 16px;
+    display: flex;
+    position: relative;
+    user-select: none;
+}
+
+.payment-card--vip .segmented-control {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.segment-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.3s;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.segment-btn.active {
+    color: #0f172a;
+    background: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.payment-card--vip .segment-btn {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.payment-card--vip .segment-btn.active {
+    color: #1a1a1a;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+/* --- Content Areas --- */
+/* --- Content Areas --- */
+.payment-content-premium {
+    /* Grid trick for smooth height animation */
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.5s cubic-bezier(0.4, 0, 0.2, 1), margin-bottom 0.5s ease;
+
+    background: rgba(255, 255, 255, 0.5);
+    margin: 0 1.5rem 0;
+    /* Initially 0 bottom margin */
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.payment-content-premium.expanded {
+    grid-template-rows: 1fr;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1px;
+    /* Prevent margin collapse */
+}
+
+.payment-card--vip .payment-content-premium {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* The inner wrapper that gets animated */
+.payment-content-premium>.payment-area-premium {
+    min-height: 0;
+    transition: opacity 0.4s ease 0.1s;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.payment-content-premium.expanded>.payment-area-premium.active {
+    opacity: 1;
+}
+
+.payment-area-premium {
+    display: none;
+    width: 100%;
+    text-align: center;
+    padding: 1.5rem 0;
+    /* Padding moved inside for better height calc */
+}
+
+.payment-area-premium.active {
+    display: block;
+}
+
+/* QR Styles */
+.qr-scanner-frame {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 12px;
+    border-radius: 16px;
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    padding: 8px;
+    position: relative;
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.qr-scanner-frame img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    display: block;
+}
+
+/* Scanline Animation */
+.scan-line {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(to right, transparent, #3b82f6, transparent);
+    top: 0;
+    left: 0;
+    animation: scanMove 2.5s infinite linear;
+    z-index: 10;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.payment-card--vip .scan-line {
+    background: linear-gradient(to right, transparent, #fbbf24, transparent);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+@keyframes scanMove {
+    0% {
+        top: 0;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        top: 100%;
+        opacity: 0;
+    }
+}
+
+/* Cash Animation */
+.cash-animation-wrapper {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cash-icon-premium {
+    font-size: 5rem;
+    animation: cashBounce 2s infinite ease-in-out;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
+}
+
+@keyframes cashBounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(5deg);
+    }
+}
+
+.instruction-text {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.payment-card--vip .instruction-text {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* --- Actions --- */
+.payment-actions-premium {
+    display: flex;
+    gap: 1rem;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.action-btn-outline {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid #e2e8f0;
+    background: transparent;
+    border-radius: 12px;
+    font-weight: 700;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn-outline:hover {
+    border-color: #cbd5e1;
+    color: #334155;
+    background: #f8fafc;
+}
+
+.action-btn-primary {
+    flex: 2;
+    padding: 14px;
+    border: none;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-radius: 12px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+    transition: all 0.2s;
+}
+
+.action-btn-primary:active {
+    transform: scale(0.98);
+}
+
+.payment-card--vip .action-btn-primary {
+    background: linear-gradient(135deg, #fbbf24, #d97706);
+    color: #1a1a1a;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.payment-fee-large {
+    font-size: 2.5rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 1rem 0;
+    color: var(--primary-accent);
+    letter-spacing: -1px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    line-height: 1;
+}
+
+.payment-fee-large .currency {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-right: 4px;
+    margin-top: 6px;
+    color: var(--text-secondary);
+}
+
+.ticket-card--vip .payment-fee-large {
+    background: linear-gradient(135deg, #FFD700, #DAA520);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+
+.payment-methods-inline {
+    display: flex;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 1rem;
+}
+
+.ticket-card--vip .payment-methods-inline {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.method-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.ticket-card--vip .method-btn {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.method-btn.active {
+    background: white;
+    color: var(--primary-accent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ticket-card--vip .method-btn.active {
+    background: linear-gradient(135deg, #FFD700, #DAA520);
+    color: #1a1a1a;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.payment-content-area {
+    min-height: 200px;
+    position: relative;
+    overflow: hidden;
+}
+
+.payment-area {
+    display: none;
+    animation: fadeInScale 0.4s ease forwards;
+}
+
+.payment-area.active {
+    display: block;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.ticket-card--payment .ticket-badge--red {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* =================================================================
+   PREMIUM LOADING COMPONENT (REPLACEMENT)
+   ================================================================= */
+.premium-loading-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    /* Center in parent/message-box */
+    margin: 2rem auto;
+    max-width: 300px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color-light);
+}
+
+.premium-loader {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--youth-union-blue);
+    /* Branding Blue */
+    border-right-color: var(--danger-color);
+    /* Branding Red */
+    animation: spin-premium 0.8s linear infinite;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 15px rgba(20, 136, 219, 0.2);
+}
+
+.premium-loading-text {
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--youth-union-blue), var(--danger-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+@keyframes spin-premium {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =================================================================
+   HISTORY CARD EXPANSION STYLES
+   ================================================================= */
+.history-card-header {
+    background-color: var(--bg-hover);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color-light);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.history-card-header:hover {
+    background-color: var(--primary-accent-light);
+}
+
+.history-card-header .header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.history-card-header .header-time {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.history-card-header .header-status {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.history-card-body.collapsed {
+    display: none;
+}
+
+.history-card-body {
+    padding: 1.25rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Latest Badge Pulse */
+.latest-badge {
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    animation: pulse-red 2s infinite;
+    margin-left: 8px;
+    box-shadow: 0 2px 4px rgba(255, 75, 43, 0.3);
+}
+
+@keyframes pulse-red {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.4);
+    }
+
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 6px rgba(255, 75, 43, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 75, 43, 0);
+    }
 }
