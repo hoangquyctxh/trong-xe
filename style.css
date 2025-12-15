@@ -455,13 +455,12 @@ a:hover {
 
 
 .view-content.is-hidden {
-
     opacity: 0;
-
     transform: scale(0.95);
-
     pointer-events: none;
-
+    height: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden;
 }
 
 
@@ -927,7 +926,18 @@ a:hover {
     opacity: 1;
 
     transform: translateY(0) scale(1);
+}
 
+/* NÂNG CẤP: Nút Xem vé màu Xanh (Info) để phân biệt với Lấy xe (Đỏ) */
+.btn--view-ticket {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4), 0 2px 4px -1px rgba(59, 130, 246, 0.2);
+}
+
+.btn--view-ticket:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5), 0 4px 6px -2px rgba(59, 130, 246, 0.3);
 }
 
 
@@ -10762,6 +10772,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 .ticket-card--vip .ticket-plate__number {
     background: linear-gradient(to bottom, #fcd34d, #d97706);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 2px 10px rgba(217, 119, 6, 0.2);
 }
@@ -10997,6 +11008,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 .payment-card--vip .plate-number-large {
     background: linear-gradient(135deg, #fff, #cbd5e1);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -11059,6 +11071,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 .payment-card--vip .price-display-large {
     background: linear-gradient(135deg, #fbbf24, #d97706);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
 }
@@ -11332,6 +11345,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
 .ticket-card--vip .payment-fee-large {
     background: linear-gradient(135deg, #FFD700, #DAA520);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
 }
@@ -11450,6 +11464,7 @@ body[data-theme="dark"] .youth-pass__footer::before {
     font-weight: 600;
     background: linear-gradient(90deg, var(--youth-union-blue), var(--danger-color));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     font-size: 1rem;
     letter-spacing: 0.5px;
@@ -11551,27 +11566,30 @@ body[data-theme="dark"] .youth-pass__footer::before {
 
 /* ==========================================================================
    4. TỐI ƯU HÓA MOBILE (THEO YÊU CẦU NGƯỜI DÙNG)
-   - Ẩn các phần không cần thiết: Menu, Footer, Thống kê, Danh sách xe
-   - Chỉ hiện: Action Hub (Gửi/Lấy), QR, Modal
+   - Tối giản hóa: Ẩn bớt Widget thống kê, chỉ giữ lại Danh sách xe.
+   - Xử lý khoảng trắng: Tighten spacing, remove gaps.
    ========================================================================= */
 @media (max-width: 768px) {
 
-    /* 1. Ẩn các thành phần phụ (Menu, Footer, Controls, Widgets) */
+    /* 1. Ẩn thành phần phụ: Menu, Footer, Controls, Widgets bổ sung */
     .main-navigation,
     .app-footer,
     .header-controls,
-    .nav-extra {
+    .nav-extra,
+    #dashboard-column .card:first-child {
+        /* Ẩn Card Thống kê (Bảng tin nhanh) */
         display: none !important;
     }
 
-
     /* 2. Tinh chỉnh Header gọn gàng */
     .app-header {
-        padding: 0.75rem 0;
+        padding: 0.5rem 0;
         position: sticky;
         top: 0;
         z-index: 100;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        background-color: var(--bg-header);
+        /* Đảm bảo nền không trong suốt khi scroll */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .header-container {
@@ -11579,70 +11597,140 @@ body[data-theme="dark"] .youth-pass__footer::before {
     }
 
     .header-title h1 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         margin: 0;
         text-align: center;
+        /* Ẩn subtitle trên mobile để tiết kiệm diện tích dọc nếu cần */
     }
 
-    /* 3. Mở rộng Action Column full màn hình */
+    .header-title .subtitle {
+        display: none;
+    }
+
+    /* 3. Layout Full Width */
     .main-grid {
-        display: block;
-        /* Bỏ grid 2 cột */
-        margin-top: 1rem;
-        padding: 0 1rem;
+        display: flex;
+        flex-direction: column;
+        margin-top: 0.5rem;
+        padding: 0 0.75rem;
+        gap: 1rem;
+        /* Khoảng cách giữa Action và List */
     }
 
     .main-column {
         width: 100%;
+        gap: 0;
     }
 
-    /* 4. Tối ưu thẻ Card hành động */
+    /* 4. Tối ưu Card */
     .card {
         border: none;
         box-shadow: none;
         background: transparent;
+        margin-bottom: 0;
     }
 
+    /* Ẩn Header của Card Action để liền mạch, nhưng GIỮ lại Header của List nếu muốn (hoặc ẩn cả) */
+    /* Theo yêu cầu tối giản: Ẩn hết header card, chỉ hiện nội dung */
     .card__header {
         display: none;
-        /* Ẩn tiêu đề "Xử lý xe" vì đã rõ ràng */
     }
 
     .card__body {
         padding: 0;
     }
 
-    /* 5. Tối ưu nút bấm & Input to hơn cho ngón tay */
+    /* RIÊNG: Card Danh sách xe cần chút không gian hoặc nền để tách biệt? */
+    #dashboard-column .card {
+        margin-top: 0;
+    }
+
+    /* 5. Tối ưu Touch Target */
     .input-wrapper input,
     .action-button {
-        height: 56px;
-        /* Chuẩn touch target */
-        font-size: 1.1rem;
+        height: 52px;
+        font-size: 1rem;
     }
 
     .icon-btn {
-        width: 56px;
-        height: 56px;
+        width: 52px;
+        height: 52px;
     }
 
-    /* 6. Đảm bảo Modal luôn full màn hình dễ thao tác */
+    /* 6. Modal Fullscreen */
     .modal-content {
         width: 100% !important;
         max-width: 100% !important;
-        height: 100% !important;
-        border-radius: 0;
+        height: auto !important;
+        /* FIX: Auto height for compact look */
+        max-height: 90vh;
+        /* Prevent overflow */
+        border-radius: 12px 12px 0 0;
+        /* Bottom sheet style */
         display: flex;
         flex-direction: column;
-        margin: 0;
+        margin: auto 0 0 0;
+        /* Align bottom */
     }
 
     .modal-body {
         flex-grow: 1;
         overflow-y: auto;
+        padding: 1rem;
     }
 
-    /* 7. Khoảng trống phía dưới để scroll thoải mái */
+    /* 7. Xử lý khoảng trắng thừa (Aggressive Fix) */
+    .action-hub-wrapper,
+    .action-hub-details,
+    .action-zone,
+    .view-switcher-container,
+    .view-content,
+    .card__body {
+        min-height: 0 !important;
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    /* Đảm bảo trạng thái rỗng không chiếm quá nhiều chỗ */
+    .action-zone-empty-state {
+        padding: 0.5rem !important;
+        min-height: 0 !important;
+        display: none !important;
+        /* Ẩn luôn hướng dẫn nếu muốn SIÊU gọn */
+    }
+
     #app-container {
-        padding-bottom: 2rem;
+        padding-bottom: 4rem;
+        min-height: 100vh;
+    }
+
+    /* 8. Tối ưu Giao diện Vé trên Mobile (Full Width, No Whitespace) */
+    #ticket-view-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .ticket-v2 {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        /* Vuông vức full màn hình */
+        border: none !important;
+        box-shadow: none !important;
+        /* Bỏ bóng để liền mạch */
+    }
+
+    .ticket-v2__body {
+        padding: 1rem !important;
+    }
+
+    /* 9. Ẩn Toast Notification trên Mobile (Theo yêu cầu) */
+    /* 9. Ẩn Toast Notification trên Mobile (Theo yêu cầu) */
+    #toast-container {
+        display: none !important;
     }
 }

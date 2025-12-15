@@ -1545,6 +1545,16 @@ const Templates = {
                             </div>
                             <div class="success-v6-row total">
                                 <span class="label">${fee > 0 ? 'Thanh toán:' : 'Trạng thái:'}</span>
+                                <span class="value money">${paymentDisplay}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="success-v6-footer">
+                        <button class="action-button btn--secondary" data-action="close-modal" style="width: 100%;">Đóng</button>
+                    </div>
+                </div>
+            </div>
         `;
     },
     /* DEPRECATED: Old Modal - User requested removal
@@ -1674,7 +1684,7 @@ const Templates = {
                     </div>
 
                     <div class="price-display-large">
-                        <sup class="currency">đ</sup>${formattedFee}
+                        ${formattedFee}<sup class="currency">đ</sup>
                     </div>
                 </div>
 
@@ -1747,6 +1757,43 @@ const Utils = {
     formatPhone: (p) => p || 'Chưa có',
     getSyncedTime: () => new Date(Date.now() + state.serverTimeOffset),
 
+    playSystemVoice: (text) => {
+        if (!text) return;
+
+        // YÊU CẦU NGƯỜI DÙNG: Chỉ dùng Link Google TTS (Không dùng giọng offline/local)
+        // Chúng ta sẽ thử tuần tự các endpoint phổ biến để đảm bảo load đường tiếng.
+        const endpoints = [
+            // 1. Endpoint phổ biến nhất (thường được gọi là "Link Google")
+            `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q=${encodeURIComponent(text)}`,
+            // 2. Endpoint thay thế (Googleapis - thường ổn định hơn)
+            `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=vi&q=${encodeURIComponent(text)}`,
+            // 3. Endpoint dự phòng (Google VN)
+            `https://translate.google.com.vn/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q=${encodeURIComponent(text)}`
+        ];
+
+        let playAttempt = 0;
+
+        const playAudio = (index) => {
+            if (index >= endpoints.length) {
+                console.error("All Google TTS links failed.");
+                return;
+            }
+
+            const audio = new Audio(endpoints[index]);
+            // NÂNG CẤP: Tăng tốc độ đọc lên 1.25 lần theo yêu cầu
+            audio.playbackRate = 1.25;
+
+            // catch() giúp bắt lỗi 403/Network và tự động chuyển sang link dự phòng
+            audio.play().catch(e => {
+                console.warn(`Link ${index + 1} failed, trying next...`, e);
+                playAudio(index + 1);
+            });
+        };
+
+        // Bắt đầu thử từ link đầu tiên
+        playAudio(0);
+    },
+
     calculateDuration: (start, end = Utils.getSyncedTime()) => { // SỬA LỖI: Mặc định là giờ chuẩn
         if (!start) return '--';
         let diff = Math.floor((new Date(end) - new Date(start)) / 1000);
@@ -1755,6 +1802,45 @@ const Utils = {
         const h = Math.floor(diff / 3600); diff %= 3600;
         const m = Math.floor(diff / 60);
         return [d > 0 ? `${d}d` : '', h > 0 ? `${h}h` : '', `${m}m`].filter(Boolean).join(' ') || '0m';
+    },
+
+    // NÂNG CẤP: Hàm format biển số để đọc (Tách từng số cuối)
+    getSpokenPlate: (plate) => {
+        if (!plate) return '';
+        // 1. Format chuẩn trước (VD: 30A-123.45)
+        let formatted = Utils.formatPlate(plate);
+
+        // 2. Tách Prefix (Phần chữ+số đầu) và Suffix (Dãy số cuối)
+        // Regex: Tìm dấu gạch ngang hoặc khoảng trắng cuối cùng phân tách prefix và suffix
+        // VD: 30A-123.45 -> Prefix: 30A, Suffix: 123.45
+        // VD: 29-B1 123.45 -> Prefix: 29-B1, Suffix: 123.45
+
+        // Pattern: (Mọi thứ trừ số cuối cùng)(Dãy số và dấu chấm cuối cùng)
+        const match = formatted.match(/^(.*?)(\d[\d\.]*)$/);
+
+        if (match) {
+            const prefix = match[1]; // VD: "30A-" hoặc "29-B1 "
+            let suffix = match[2]; // VD: "123.45"
+
+            // Xử lý Suffix: Xóa dấu chấm, tách từng số bằng khoảng trắng
+            suffix = suffix.replace(/[^0-9]/g, '').split('').join(' ');
+
+            // Hợp nhất lại (Thay dấu câu trong prefix bằng dấu phẩy để ngắt nghỉ)
+            let spokenPrefix = prefix.replace(/[-.]/g, ', ').trim();
+
+            return `${spokenPrefix}, ${suffix}`;
+        }
+
+        // Fallback: Nếu không khớp pattern (VD biển quân đội lạ), đọc nguyên gốc nhưng tách số
+        return formatted.replace(/(\d)/g, '$1 ').replace(/[-.]/g, ' ');
+    },
+
+    // NÂNG CẤP: Hàm xác định Prefix đọc (Xe vs Xe của chủ xe)
+    getVoicePrefix: (plate) => {
+        const type = Utils.detectVehicleType(plate);
+        // Nếu là "Người gửi" (Tên riêng, không có số), đọc là "Xe của chủ xe"
+        if (type.type === 'custom') return 'Xe của chủ xe';
+        return 'Xe';
     },
 
     decodePlate: (plate) => {
@@ -2201,6 +2287,7 @@ const Handlers = {
     async processCheckIn(plate) {
         const isAlreadyParking = state.vehicles.some(v => v.plate === plate && v.status === 'Đang gửi');
         if (isAlreadyParking) {
+            Utils.playSystemVoice(`Cảnh báo. ${Utils.getVoicePrefix(plate)} ${Utils.getSpokenPlate(plate)} đã có trong bãi.`);
             throw new Error(`Xe ${plate} đã có trong bãi. Vui lòng kiểm tra lại.`);
         }
 
@@ -2226,8 +2313,15 @@ const Handlers = {
             const uniqueID = '_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
             const paymentResult = await this.getPaymentResult(calculatedFee, { plate, entry_time: new Date().toISOString(), unique_id: uniqueID });
             if (!paymentResult) throw new Error('Đã hủy thao tác gửi xe.');
+
+            // TỐI ƯU HÓA: Đọc giọng nói ngay sau khi thanh toán xong (không chờ Server lưu)
+            Utils.playSystemVoice(`${Utils.getVoicePrefix(plate)} ${Utils.getSpokenPlate(plate)} đã vào bãi`);
+
             newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { ...paymentResult /*, snapshot: feePolicySnapshot*/ }, uniqueID, staffUsername);
         } else {
+            // TỐI ƯU HÓA: Đọc giọng nói ngay lập tức (không chờ Server) để tránh delay
+            Utils.playSystemVoice(`${Utils.getVoicePrefix(plate)} ${Utils.getSpokenPlate(plate)} đã vào bãi`);
+
             // Gửi xe không thu phí trước, vẫn lưu snapshot
             newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { /*snapshot: feePolicySnapshot*/ }, null, staffUsername);
         }
@@ -2240,6 +2334,7 @@ const Handlers = {
         if (Utils.isMobile()) {
             UI.renderInlineTicket(newTransaction);
             UI.showToast('Gửi xe thành công!', 'success');
+            // Utils.playSystemVoice đã gọi ở trên
             // Mobile: Reset form ngầm nhưng không fetch lại để tránh mất state vừa cập nhật
             dom.searchTermInput.value = '';
             dom.phoneInput.value = '';
@@ -2247,6 +2342,7 @@ const Handlers = {
         } else {
             UI.renderInlineTicket(newTransaction);
             UI.showToast('Gửi xe thành công!', 'success');
+            // Utils.playSystemVoice đã gọi ở trên
 
             // Desktop: Cập nhật trạng thái xe đang chọn thành 'parking' dựa trên dữ liệu vừa có
             state.selectedVehicle = { data: newTransaction, status: 'parking' };
@@ -2311,19 +2407,26 @@ const Handlers = {
         const staffUsername = staffInfo?.username || 'unknown';
         Api.addToSyncQueue('checkOut', { uniqueID: vehicle.unique_id, fee, paymentMethod, staffUsername });
         UI.showToast(`Đã ghi nhận lấy xe (offline) cho ${vehicle.plate}.`, 'success');
+        Utils.playSystemVoice(`Xe ${Utils.getSpokenPlate(vehicle.plate)} đã ra. Ghi nhận ngoại tuyến.`);
         await App.resetFormAndFetchData();
     },
 
     async processCheckOut(plate) {
         const vehicle = state.vehicles.find(v => v.plate === plate && v.status === 'Đang gửi');
 
-        if (!vehicle) throw new Error('Không có thông tin xe để lấy ra.');
+        if (!vehicle) {
+            Utils.playSystemVoice('Không tìm thấy thông tin xe.');
+            throw new Error('Không có thông tin xe để lấy ra.');
+        }
 
         // Cập nhật state để các hàm khác có thể sử dụng
         state.selectedVehicle = { data: vehicle, status: 'parking' };
 
         const alert = state.alerts[vehicle.plate];
-        if (alert?.level === 'block') throw new Error(`XE BỊ CHẶN: ${alert.reason}`);
+        if (alert?.level === 'block') {
+            Utils.playSystemVoice(`Cảnh báo nguy hiểm. ${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)} đang bị chặn.`);
+            throw new Error(`XE BỊ CHẶN: ${alert.reason}`);
+        }
 
         const staffInfo = JSON.parse(localStorage.getItem('staffInfo'));
         const staffUsername = staffInfo?.username || 'unknown';
@@ -2334,6 +2437,7 @@ const Handlers = {
             // Tự động cho ra luôn
             await Api.checkOut(vehicle.unique_id, vehicle.fee, vehicle.payment_method, staffUsername);
             UI.showModal('checkoutSuccess', { vehicle: vehicle, fee: 0, method: 'Đã thanh toán trước' });
+            Utils.playSystemVoice(`${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)} đã ra. Đã thanh toán trước.`);
             await App.resetFormAndFetchData();
             return;
         }
@@ -2346,6 +2450,7 @@ const Handlers = {
             const reason = vehicle.is_vip ? 'Khách VIP' : 'Miễn phí';
             await Api.checkOut(vehicle.unique_id, 0, reason, staffUsername);
             UI.showModal('checkoutSuccess', { vehicle: vehicle, fee: 0, method: reason });
+            Utils.playSystemVoice(`${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)} đã ra. ${reason}.`);
             await App.resetFormAndFetchData();
             return;
         }
@@ -2357,13 +2462,19 @@ const Handlers = {
             }
 
             // NÂNG CẤP: Sử dụng Inline Payment View (Thay vì Modal)
+            // THÊM: Đọc thông báo phí (Lịch sự)
+            Utils.playSystemVoice(`${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)}, vui lòng thanh toán ${fee} đồng.`);
             const paymentResult = await UI.getInlinePaymentResult(fee, vehicle);
 
             if (paymentResult) {
                 // Logic xử lý thanh toán thành công inline
                 await Api.checkOut(vehicle.unique_id, fee, paymentResult.method, staffUsername);
 
+                // NÂNG CẤP: Hiện modal thành công cho cả xe tính phí (theo yêu cầu)
+                UI.showModal('checkoutSuccess', { vehicle: vehicle, fee: fee, method: paymentResult.method });
+
                 UI.showToast(`Thanh toán thành công qua ${paymentResult.method}!`, 'success');
+                Utils.playSystemVoice(`Thanh toán thành công. ${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)} đã ra.`);
 
                 // Ẩn view thanh toán
                 if (dom.ticketViewContainer && dom.actionColumn) {
@@ -2444,6 +2555,7 @@ const Handlers = {
         try {
             await Api.checkOut(vehicle.unique_id, 0, reason, staffUsername);
             this.showConfirmationSuccess();
+            Utils.playSystemVoice(`Đã xác nhận cho xe ${Utils.getSpokenPlate(vehicle.plate)} ra.`);
             // SỬA LỖI: Không tự động reset form nữa, để người dùng tự đóng modal
             // App.resetFormAndFetchData();
         } catch (error) {
@@ -2470,6 +2582,7 @@ const Handlers = {
             // Gọi closeModal() sẽ kích hoạt timeout cleanup DOM, làm mất modal success mới.
             // Chỉ cần gọi showModal đè lên là được.
             UI.showModal('checkoutSuccess', { vehicle: vehicle, fee: fee, method: paymentMethod });
+            Utils.playSystemVoice(`Thanh toán thành công. Cảm ơn.`);
 
             // Xóa dữ liệu xe đã chọn khỏi state để tránh lỗi logic, nhưng chưa reset UI
             state.selectedVehicle = null;
@@ -2571,10 +2684,16 @@ const Handlers = {
             } catch (e) { /* Not a URL, proceed with raw data */ }
 
             const vehicle = state.vehicles.find(v => v.unique_id === uniqueID && v.status === 'Đang gửi');
-            if (!vehicle) throw new Error('Mã QR không hợp lệ hoặc xe đã rời bãi.');
+            if (!vehicle) {
+                Utils.playSystemVoice('Mã Quyên Rờ không hợp lệ hoặc xe đã rời bãi.');
+                throw new Error('Mã QR không hợp lệ hoặc xe đã rời bãi.');
+            }
 
             const alert = state.alerts[vehicle.plate];
-            if (alert?.level === 'block') throw new Error(`XE BỊ CHẶN: ${alert.reason}`);
+            if (alert?.level === 'block') {
+                Utils.playSystemVoice(`Cảnh báo nguy hiểm. Xe ${Utils.getSpokenPlate(vehicle.plate)} đang bị chặn.`);
+                throw new Error(`XE BỊ CHẶN: ${alert.reason}`);
+            }
 
             const staffInfo = JSON.parse(localStorage.getItem('staffInfo'));
             const staffUsername = staffInfo?.username || 'unknown';
@@ -2582,7 +2701,9 @@ const Handlers = {
             // NÂNG CẤP: Tự động cho xe đã thanh toán trước ra khỏi bãi
             if (vehicle.fee !== null && vehicle.payment_method) {
                 await Api.checkOut(vehicle.unique_id, vehicle.fee, vehicle.payment_method, staffUsername);
+                await Api.checkOut(vehicle.unique_id, vehicle.fee, vehicle.payment_method, staffUsername);
                 UI.showToast(`Đã cho xe ${vehicle.plate} ra (đã thanh toán trước).`, 'success');
+                Utils.playSystemVoice(`Xe ${Utils.getSpokenPlate(vehicle.plate)} đã ra. Đã thanh toán trước.`);
                 await App.resetFormAndFetchData();
             } else {
                 // Xử lý cho xe chưa thanh toán như bình thường
@@ -2590,7 +2711,9 @@ const Handlers = {
                 if (fee <= 0) { // Bao gồm cả xe miễn phí và VIP
                     const reason = vehicle.is_vip ? 'Khách VIP' : 'Miễn phí';
                     await Api.checkOut(vehicle.unique_id, 0, reason, staffUsername);
+                    await Api.checkOut(vehicle.unique_id, 0, reason, staffUsername);
                     UI.showToast(`Đã cho xe ${vehicle.plate} ra (${reason}).`, 'success');
+                    Utils.playSystemVoice(`${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)} đã ra. ${reason}.`);
                     await App.resetFormAndFetchData();
                     return;
                 }
@@ -2598,6 +2721,8 @@ const Handlers = {
                 if (!state.isOnline) throw new Error("Không thể xử lý thanh toán khi đang offline.");
 
                 // NÂNG CẤP: Sử dụng Inline Payment View (Thay vì Modal)
+                // THÊM: Đọc thông báo phí QR (Lịch sự)
+                Utils.playSystemVoice(`${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)}, vui lòng thanh toán ${fee} đồng.`);
                 const paymentResult = await UI.getInlinePaymentResult(fee, vehicle);
 
                 if (!paymentResult) {
@@ -2608,6 +2733,12 @@ const Handlers = {
                 }
 
                 await Api.checkOut(vehicle.unique_id, paymentResult.fee, paymentResult.method, staffUsername);
+
+                // NÂNG CẤP: Hiện modal thành công cho cả xe tính phí QR (theo yêu cầu)
+                UI.showModal('checkoutSuccess', { vehicle: vehicle, fee: paymentResult.fee, method: paymentResult.method });
+
+                UI.showToast(`Thanh toán thành công qua ${paymentResult.method}!`, 'success');
+                Utils.playSystemVoice(`Thanh toán thành công. ${Utils.getVoicePrefix(vehicle.plate)} ${Utils.getSpokenPlate(vehicle.plate)} đã ra.`);
 
                 setTimeout(async () => {
                     // NÂNG CẤP: Hiển thị lại vé với trạng thái đã thanh toán hoặc reset form

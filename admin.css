@@ -39,7 +39,7 @@
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
-    --font-stack: 'Plus Jakarta Sans', sans-serif;
+    --font-stack: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
 }
 
 /* --- RESET & BASIC --- */
@@ -1478,4 +1478,97 @@ select {
     80% {
         transform: translateX(5px);
     }
+}
+
+/* =========================================================================
+   BATCH ACTIONS & CHECKBOXES
+   ========================================================================= */
+.batch-actions-toolbar {
+    display: none;
+    /* Default hidden */
+    align-items: center;
+    gap: 12px;
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    padding: 6px 12px;
+    border-radius: 8px;
+    height: 38px;
+    /* Removed opacity/visibility transitions for stability */
+}
+
+/* When visible, JS changes display to flex */
+.batch-actions-toolbar.visible {
+    display: flex !important;
+}
+
+.batch-info {
+    font-size: 0.85rem;
+    color: #1E40AF;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 12px;
+    border-right: 1px solid #BFDBFE;
+    white-space: nowrap;
+}
+
+.batch-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.batch-controls button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    height: 28px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.batch-controls .btn-secondary {
+    background: white;
+    border: 1px solid #CBD5E1;
+    color: #475569;
+}
+
+.batch-controls .btn-secondary:hover {
+    background: #F1F5F9;
+    color: #1E293B;
+}
+
+.batch-controls .btn-danger {
+    background: #FEF2F2;
+    color: #EF4444;
+    border: 1px solid #FCA5A5;
+}
+
+.batch-controls .btn-danger:hover {
+    background: #EF4444;
+    color: white;
+}
+
+/* SELECTED ROW HIGHLIGHT */
+.table-wrapper tr.selected-row td {
+    background-color: #EFF6FF !important;
+    /* Gentle Blue Highlight */
+}
+
+.table-wrapper tr.selected-row:hover td {
+    background-color: #DBEAFE !important;
+}
+
+/* CHECKBOX STYLING */
+input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 2px solid #CBD5E1;
 }

@@ -59,6 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelTransactionBtn: document.getElementById('cancel-transaction-btn'),
         saveTransactionBtn: document.getElementById('save-transaction-btn'),
         deleteTransactionBtn: document.getElementById('delete-transaction-btn'),
+        // Batch Actions
+        batchActionsToolbar: document.getElementById('batch-actions-toolbar'),
+        selectAllTransactions: document.getElementById('select-all-transactions'),
+        batchDeleteBtn: document.getElementById('batch-delete-btn'),
+        batchExportBtn: document.getElementById('batch-export-btn'),
+        selectedCount: document.getElementById('selected-count'),
+
         transactionForm: document.getElementById('transaction-form'),
         transactionUniqueId: document.getElementById('transaction-unique-id'),
         transactionPlate: document.getElementById('transaction-plate'),
@@ -138,7 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
         charts: {},
         realtimeChannel: null,
         map: null,
+        map: null,
         mapMarkers: [],
+        selectedIds: new Set(), // NÂNG CẤP: Lưu danh sách ID đã chọn
     };
 
     // Tái sử dụng Supabase client chung được tạo trong config.js để tránh cảnh báo nhiều GoTrueClient
@@ -413,10 +422,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.closeAdminScannerBtn.addEventListener('click', Handlers.closeAdminQrScanner);
             }
             dom.transactionLogBody.addEventListener('click', Handlers.handleTransactionAction);
+            dom.transactionLogBody.addEventListener('change', Handlers.handleTransactionChange);
             dom.closeTransactionModalBtn.addEventListener('click', () => dom.transactionModal.style.display = 'none');
             dom.cancelTransactionBtn.addEventListener('click', () => dom.transactionModal.style.display = 'none');
             dom.saveTransactionBtn.addEventListener('click', Handlers.handleSaveTransaction);
             dom.deleteTransactionBtn.addEventListener('click', Handlers.handleDeleteTransaction);
+
+            // Batch Select
+            if (dom.selectAllTransactions) {
+                dom.selectAllTransactions.addEventListener('change', Handlers.handleSelectAll);
+            }
+            if (dom.batchDeleteBtn) {
+                dom.batchDeleteBtn.addEventListener('click', Handlers.handleBatchDelete);
+            }
+            if (dom.batchExportBtn) {
+                dom.batchExportBtn.addEventListener('click', Handlers.handleBatchExport);
+            }
 
             // Locations
             dom.addLocationBtn.addEventListener('click', Handlers.handleAddLocation);
@@ -524,7 +545,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const paginated = filtered.slice(startIndex, startIndex + state.itemsPerPage);
 
             dom.transactionLogBody.innerHTML = paginated.map(t => `
-                <tr data-id="${t.unique_id}">
+                <tr data-id="${t.unique_id}" class="${state.selectedIds.has(t.unique_id) ? 'selected-row' : ''}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="transaction-checkbox" value="${t.unique_id}" ${state.selectedIds.has(t.unique_id) ? 'checked' : ''}>
+                    </td>
                     <td><span class="plate">${t.plate}</span></td>
                     <td>${new Date(t.entry_time).toLocaleString('vi-VN')}</td>
                     <td>${t.exit_time ? new Date(t.exit_time).toLocaleString('vi-VN') : 'N/A'}</td>
@@ -555,9 +579,22 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.paginationControls.querySelectorAll('.pagination-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     state.currentPage = parseInt(e.target.dataset.page);
+                    // Reset selection on page change if desired, or keep it.
+                    // state.selectedIds.clear(); UI.updateBatchToolbar();
                     this.renderTransactions();
                 });
             });
+        },
+
+        updateBatchToolbar() {
+            const count = state.selectedIds.size;
+            dom.selectedCount.textContent = count;
+            if (count > 0) {
+                // Simply add the class, CSS handles display:flex via !important
+                dom.batchActionsToolbar.classList.add('visible');
+            } else {
+                dom.batchActionsToolbar.classList.remove('visible');
+            }
         },
 
         renderLocations() {
@@ -833,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         async handleLogout() {
-            await Api.signOut();
+            await db.auth.signOut();
             state.user = null;
             dom.mainContent.style.display = 'none';
             dom.loginScreen.style.display = 'flex';
@@ -841,22 +878,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
         handleNavClick(e) {
             const targetId = e.currentTarget.dataset.target;
-            if (!targetId) return; // Allow natural navigation for links without data-target (e.g. Home)
+            if (!targetId) return;
 
             e.preventDefault();
+            // Update URL Hash -> Triggers hashchange -> calling App.handleRouting
+            const hash = targetId.replace('page-', '');
+            window.location.hash = hash;
+        },
 
+        handleRouting() {
+            // Default to dashboard if no hash
+            const hash = window.location.hash.slice(1) || 'dashboard';
+            const targetId = 'page-' + hash;
+
+            const targetContent = document.getElementById(targetId);
+            if (!targetContent) return; // Invalid hash
+
+            // Logic from old handleNavClick
             dom.pages.forEach(page => page.classList.remove('active'));
-            document.getElementById(targetId).classList.add('active');
+            targetContent.classList.add('active');
 
-            dom.navLinks.forEach(link => link.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-
-            dom.pageTitle.textContent = e.currentTarget.querySelector('span').textContent;
-            dom.pageDescription.textContent = e.currentTarget.title || '';
+            dom.navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.target === targetId) {
+                    link.classList.add('active');
+                    dom.pageTitle.textContent = link.querySelector('span').textContent;
+                    dom.pageDescription.textContent = link.title || '';
+                }
+            });
 
             if (targetId === 'page-fraud-analytics') Handlers.handleRenderFraudAnalytics();
 
-            // Fix: Resize map when switching to locations tab
+            // Resize map
             if (targetId === 'page-locations' && state.map) {
                 setTimeout(() => {
                     state.map.invalidateSize();
@@ -869,14 +922,258 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        async handleDateChange() {
-            state.currentDate = new Date(dom.adminDatePicker.value);
-            await App.loadDataForCurrentDate();
+        async handleDateChange(e) {
+            state.currentDate = new Date(e.target.value);
+            state.selectedIds.clear(); // Clear selections on date change
+            UI.updateBatchToolbar();
+            App.saveStateToLocalStorage();
+            await App.fetchData();
+        },
+
+        // BATCH ACTIONS HANDLERS
+        handleSelectAll(e) {
+            const isChecked = e.target.checked;
+            const visibleRows = Array.from(dom.transactionLogBody.querySelectorAll('.transaction-checkbox'));
+
+            visibleRows.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                const id = checkbox.value;
+                if (isChecked) {
+                    state.selectedIds.add(id);
+                    checkbox.closest('tr').classList.add('selected-row');
+                } else {
+                    state.selectedIds.delete(id);
+                    checkbox.closest('tr').classList.remove('selected-row');
+                }
+            });
+            UI.updateBatchToolbar();
+        },
+
+        handleTransactionChange(e) {
+            // Handle Checkbox Change
+            if (e.target.classList.contains('transaction-checkbox')) {
+                const id = e.target.value;
+                if (e.target.checked) {
+                    state.selectedIds.add(id);
+                    e.target.closest('tr').classList.add('selected-row');
+                } else {
+                    state.selectedIds.delete(id);
+                    e.target.closest('tr').classList.remove('selected-row');
+                }
+                const allVisible = Array.from(dom.transactionLogBody.querySelectorAll('.transaction-checkbox'));
+                dom.selectAllTransactions.checked = allVisible.every(cb => cb.checked);
+                UI.updateBatchToolbar();
+            }
+        },
+
+        handleTransactionAction(e) {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const action = btn.dataset.action;
+            const tr = btn.closest('tr');
+            const id = tr.dataset.id;
+
+            if (action === 'edit-transaction') {
+                Handlers.openTransactionModal(id);
+            }
+        },
+
+        async handleBatchDelete() {
+            if (state.selectedIds.size === 0) return;
+            if (!confirm(`Bạn có chắc chắn muốn xóa ${state.selectedIds.size} giao dịch đã chọn?`)) return;
+
+            dom.batchDeleteBtn.disabled = true;
+            dom.batchDeleteBtn.textContent = 'Đang xóa...';
+
+            try {
+                // Delete sequentially or parallel
+                const promises = Array.from(state.selectedIds).map(id => Api.deleteTransaction(id));
+                await Promise.all(promises);
+
+                Utils.showToast(`Đã xóa ${state.selectedIds.size} giao dịch.`, 'toast--success');
+                state.selectedIds.clear();
+                dom.selectAllTransactions.checked = false;
+                UI.updateBatchToolbar();
+                await App.fetchData(); // Reload table
+            } catch (error) {
+                Utils.showToast(`Lỗi xóa: ${error.message}`, 'toast--error');
+            } finally {
+                dom.batchDeleteBtn.disabled = false;
+                dom.batchDeleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Xóa`;
+            }
+        },
+
+        handleBatchExport() {
+            if (state.selectedIds.size === 0) return;
+
+            // 1. Filter selected transactions
+            const selectedTransactions = state.transactions.filter(t => state.selectedIds.has(t.unique_id));
+            const now = new Date();
+            const dateStr = `Ngày ${now.getDate()} tháng ${now.getMonth() + 1} năm ${now.getFullYear()}`;
+
+            // Stats
+            const totalFee = selectedTransactions.reduce((sum, t) => sum + (t.fee || 0), 0);
+            const totalFeeStr = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalFee);
+
+            // 2. Build HTML Table for Excel
+            let tableHtml = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <!--[if gte mso 9]>
+                    <xml>
+                    <x:ExcelWorkbook>
+                        <x:ExcelWorksheets>
+                            <x:ExcelWorksheet>
+                                <x:Name>Báo Cáo Giao Dịch</x:Name>
+                                <x:WorksheetOptions>
+                                    <x:DisplayGridlines/>
+                                    <x:Print>
+                                        <x:ValidPrinterInfo/>
+                                        <x:PaperSizeIndex>9</x:PaperSizeIndex>
+                                        <x:HorizontalResolution>600</x:HorizontalResolution>
+                                        <x:VerticalResolution>600</x:VerticalResolution>
+                                    </x:Print>
+                                    <x:Selected/>
+                                    <x:Panes>
+                                        <x:Pane>
+                                            <x:Number>3</x:Number>
+                                            <x:ActiveRow>10</x:ActiveRow>
+                                            <x:ActiveCol>0</x:ActiveCol>
+                                        </x:Pane>
+                                    </x:Panes>
+                                </x:WorksheetOptions>
+                            </x:ExcelWorksheet>
+                        </x:ExcelWorksheets>
+                    </x:ExcelWorkbook>
+                    </xml>
+                    <![endif]-->
+                    <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+                    <style>
+                        table { border-collapse: collapse; font-family: 'Times New Roman', serif; }
+                        td { vertical-align: middle; }
+                        .text-bold { font-weight: bold; }
+                        .text-italic { font-style: italic; }
+                        .text-center { text-align: center; }
+                        .text-right { text-align: right; }
+                        .text-left { text-align: left; }
+                        .text-red { color: #FF0000; }
+                        .text-green { color: #008000; }
+                        
+                        /* Borders for Data Table */
+                        .data-table th, .data-table td { border: 1px solid thin; padding: 5px; }
+                        .data-header { background-color: #CCFFFF; font-weight: bold; text-align: center; }
+                        
+                        /* Layout Specifics */
+                        .org-header { font-size: 11pt; font-weight: bold; }
+                        .national-header { font-size: 11pt; font-weight: bold; }
+                        .motto-header { font-size: 11pt; font-style: italic; }
+                        .report-title { font-size: 16pt; font-weight: bold; text-align: center; color: #000080; height: 40px; }
+                        .report-meta { font-size: 11pt; margin-bottom: 20px; }
+                        
+                        .footer-sign { font-size: 11pt; font-weight: bold; text-align: center; }
+                        .footer-role { font-size: 11pt; font-style: italic; text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <table>
+                        <!-- HEADER SECTION -->
+                        <tr>
+                            <td colspan="3" class="text-center org-header">
+                                ĐOÀN TNCS HỒ CHÍ MINH<br>
+                                BCH PHƯỜNG BA ĐÌNH
+                            </td>
+                            <td colspan="4" class="text-center">
+                                <span class="national-header">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</span><br>
+                                <span class="motto-header">Độc lập - Tự do - Hạnh phúc</span><br>
+                                <span class="text-italic" style="font-size: 10pt;">-------------------</span>
+                            </td>
+                        </tr>
+                        <tr><td colspan="7" style="height: 20px;"></td></tr> <!-- Spacer -->
+                        
+                        <!-- TITLE SECTION -->
+                        <tr>
+                            <td colspan="7" class="report-title">BÁO CÁO DANH SÁCH GIAO DỊCH</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="text-center text-italic">${dateStr}</td>
+                        </tr>
+                        <tr><td colspan="7" style="height: 20px;"></td></tr> <!-- Spacer -->
+
+                        <!-- SUMMARY SECTION -->
+                        <tr>
+                            <td colspan="7" style="font-size: 11pt;">
+                                <strong>Tổng số xe:</strong> ${selectedTransactions.length} xe &nbsp;&nbsp;|&nbsp;&nbsp; 
+                                <strong>Tổng doanh thu:</strong> <span class="text-red">${totalFeeStr}</span><br>
+                                <strong>Người xuất báo cáo:</strong> ${state.user?.email || 'Quản trị viên'}
+                            </td>
+                        </tr>
+                        <tr><td colspan="7" style="height: 10px;"></td></tr>
+
+                        <!-- DATA TABLE -->
+                        <tr class="data-table">
+                            <th class="data-header" style="width: 50px;">STT</th>
+                            <th class="data-header" style="width: 120px;">Biển số</th>
+                            <th class="data-header" style="width: 150px;">Giờ vào</th>
+                            <th class="data-header" style="width: 150px;">Giờ ra</th>
+                            <th class="data-header" style="width: 100px;">Phí</th>
+                            <th class="data-header" style="width: 120px;">PTTT</th>
+                            <th class="data-header" style="width: 150px;">Ghi chú</th>
+                        </tr>
+            `;
+
+            selectedTransactions.forEach((t, index) => {
+                const entryTime = t.entry_time ? new Date(t.entry_time).toLocaleString('vi-VN') : '';
+                const exitTime = t.exit_time ? new Date(t.exit_time).toLocaleString('vi-VN') : '';
+                const feeFormatted = t.fee ? new Intl.NumberFormat('vi-VN', { style: 'decimal' }).format(t.fee) : '0';
+
+                tableHtml += `
+                    <tr class="data-table">
+                        <td class="text-center">${index + 1}</td>
+                        <td class="text-bold text-center">${t.plate}</td>
+                        <td class="text-center">${entryTime}</td>
+                        <td class="text-center">${exitTime}</td>
+                        <td class="text-right ${t.fee > 0 ? 'text-bold' : ''}">${feeFormatted}</td>
+                        <td class="text-center">${t.payment_method || '-'}</td>
+                        <td>${t.status}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                        <!-- FOOTER SECTION -->
+                        <tr><td colspan="7" style="height: 30px;"></td></tr>
+                        <tr>
+                            <td colspan="3" class="footer-sign">
+                                NGƯỜI LẬP BIỂU<br>
+                                <span class="footer-role">(Ký, họ tên)</span>
+                            </td>
+                            <td colspan="4" class="footer-sign">
+                                XÁC NHẬN CỦA ĐƠN VỊ<br>
+                                <span class="footer-role">(Ký, đóng dấu)</span>
+                            </td>
+                        </tr>
+                        <tr><td colspan="7" style="height: 80px;"></td></tr> <!-- Space for signature -->
+                    </table>
+                </body>
+                </html>
+            `;
+
+            // 3. Download Blob
+            const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            const fileName = `BaoCaoGiaoDich_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.xls`;
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            Utils.showToast(`Đã xuất báo cáo thành công.`, 'toast--success');
         },
 
         handleTransactionSearch(e) {
             state.searchTerm = e.target.value;
-            state.currentPage = 1;
             UI.renderTransactions();
         },
 
@@ -1294,6 +1591,10 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.adminDatePicker.value = localDate.toISOString().slice(0, 10);
 
             await this.loadInitialData();
+
+            // Start Routing Listeners
+            window.addEventListener('hashchange', Handlers.handleRouting);
+            Handlers.handleRouting();
 
             if (dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
         },

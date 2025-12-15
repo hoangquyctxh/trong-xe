@@ -9,7 +9,8 @@
     <!-- Fonts & Libraries -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
         rel="stylesheet">
 
     <!-- Thư viện JS bên thứ ba -->
@@ -325,30 +326,66 @@
                     <div class="glass-card table-panel">
                         <div class="card-header">
                             <h3>Quản lý Giao dịch</h3>
-                            <div id="transaction-search-wrapper" class="modern-search">
-                                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                </svg>
-                                <input type="text" id="transaction-search-input" placeholder="Tìm kiếm biển số, ID...">
-                                <button id="transaction-scan-qr-btn" class="icon-btn-small" title="Quét QR">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <rect x="3" y="3" width="7" height="7"></rect>
-                                        <rect x="14" y="3" width="7" height="7"></rect>
-                                        <rect x="14" y="14" width="7" height="7"></rect>
-                                        <rect x="3" y="14" width="7" height="7" />
+                            <div class="header-controls-wrapper" style="display: flex; align-items: center; gap: 16px;">
+                                <div id="batch-actions-toolbar" class="batch-actions-toolbar inline-header"
+                                    style="display: none;">
+                                    <div class="batch-info">
+                                        <span id="selected-count"
+                                            style="font-weight: 800; color: var(--primary);">0</span>
+                                    </div>
+                                    <div class="batch-controls">
+                                        <button id="batch-export-btn" class="btn-secondary btn-sm" title="Xuất dữ liệu">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                <polyline points="7 10 12 15 17 10"></polyline>
+                                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                                            </svg>
+                                            Export
+                                        </button>
+                                        <button id="batch-delete-btn" class="btn-danger btn-sm" title="Xóa">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path
+                                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                </path>
+                                            </svg>
+                                            Xóa
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="transaction-search-wrapper" class="modern-search">
+                                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                     </svg>
-                                </button>
+                                    <input type="text" id="transaction-search-input"
+                                        placeholder="Tìm kiếm biển số, ID...">
+                                    <button id="transaction-scan-qr-btn" class="icon-btn-small" title="Quét QR">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="7" height="7"></rect>
+                                            <rect x="14" y="3" width="7" height="7"></rect>
+                                            <rect x="14" y="14" width="7" height="7"></rect>
+                                            <rect x="3" y="14" width="7" height="7" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="table-wrapper custom-scrollbar">
                             <table>
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px; text-align: center;">
+                                            <input type="checkbox" id="select-all-transactions">
+                                        </th>
                                         <th>Biển số</th>
                                         <th>Giờ vào</th>
                                         <th>Giờ ra</th>
