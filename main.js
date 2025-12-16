@@ -2322,32 +2322,65 @@ const Handlers = {
             // TỐI ƯU HÓA: Đọc giọng nói ngay lập tức (không chờ Server) để tránh delay
             Utils.playSystemVoice(`${Utils.getVoicePrefix(plate)} ${Utils.getSpokenPlate(plate)} đã vào bãi`);
 
-            // Gửi xe không thu phí trước, vẫn lưu snapshot
-            newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { /*snapshot: feePolicySnapshot*/ }, null, staffUsername);
-        }
+            // Gửi xe không thu phí trước
+            // OPTIMISTIC UPDATE: Tạo dữ liệu giả định để hiển thị ngay
+            const tempId = 'temp_' + Date.now();
+            const optimisticTransaction = {
+                unique_id: tempId,
+                plate: plate,
+                entry_time: new Date().toISOString(), // Dùng ISO String cho đồng bộ
+                status: 'Đang gửi',
+                is_vip: isVIP,
+                notes: notes,
+                phone: phone,
+                fee: null,
+                payment_method: null,
+                vehicle_type: Utils.detectVehicleType(plate).type, // Cần logic này nếu có
+                ... (isPrePaid ? paymentResult : {})
+            };
 
-        // NÂNG CẤP: Cập nhật State nội bộ ngay lập tức để tránh độ trễ server
-        state.vehicles.unshift(newTransaction);
-        state.vehicleMap.set(newTransaction.plate, newTransaction);
+            // 1. CẬP NHẬT STATE & UI NGAY LẬP TỨC
+            state.vehicles.unshift(optimisticTransaction);
+            state.vehicleMap.set(plate, optimisticTransaction);
+            UI.renderVehicleList();
 
-        // NÂNG CẤP: Hiển thị vé theo thiết bị
-        if (Utils.isMobile()) {
-            UI.renderInlineTicket(newTransaction);
-            UI.showToast('Gửi xe thành công!', 'success');
-            // Utils.playSystemVoice đã gọi ở trên
-            // Mobile: Reset form ngầm nhưng không fetch lại để tránh mất state vừa cập nhật
-            dom.searchTermInput.value = '';
-            dom.phoneInput.value = '';
-            dom.isVipCheckbox.checked = false;
-        } else {
-            UI.renderInlineTicket(newTransaction);
-            UI.showToast('Gửi xe thành công!', 'success');
-            // Utils.playSystemVoice đã gọi ở trên
+            // Xử lý mobile view ngay lập tức
+            if (Utils.isMobile()) {
+                UI.renderInlineTicket(optimisticTransaction);
+                UI.showToast('Gửi xe thành công!', 'success');
+                dom.searchTermInput.value = '';
+                dom.phoneInput.value = '';
+                dom.isVipCheckbox.checked = false;
+            } else {
+                UI.renderInlineTicket(optimisticTransaction);
+                state.selectedVehicle = { data: optimisticTransaction, status: 'parking' };
+                UI.showToast('Gửi xe thành công!', 'success');
+            }
 
-            // Desktop: Cập nhật trạng thái xe đang chọn thành 'parking' dựa trên dữ liệu vừa có
-            state.selectedVehicle = { data: newTransaction, status: 'parking' };
-            // Không gọi fetchData(true) ngay để tránh race condition (server chưa index kịp)
-            // Realtime sẽ tự lo việc update sau, hoặc gọi ngầm.
+            // 2. GỌI API MÀ KHÔNG CHẶN (HOẶC CHỜ ĐỂ CẬP NHẬT ID)
+            try {
+                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { /*snapshot: feePolicySnapshot*/ }, null, staffUsername);
+
+                // 3. THAY THẾ DỮ LIỆU TẠM BẰNG DỮ LIỆU THẬT (Đã có ID từ server)
+                const index = state.vehicles.findIndex(v => v.unique_id === tempId);
+                if (index !== -1) {
+                    state.vehicles[index] = newTransaction;
+                    state.vehicleMap.set(plate, newTransaction);
+                    // Render lại để cập nhật ID thật (cho vé)
+                    if (state.selectedVehicle?.data?.unique_id === tempId) {
+                        state.selectedVehicle.data = newTransaction;
+                        UI.renderInlineTicket(newTransaction);
+                    }
+                    // UI list không cần render lại vì thông tin hiển thị (biển số, giờ vào) không đổi, chỉ ID đổi ngầm
+                }
+            } catch (err) {
+                // ROLLBACK NẾU LỖI
+                state.vehicles = state.vehicles.filter(v => v.unique_id !== tempId);
+                state.vehicleMap.delete(plate);
+                UI.renderVehicleList();
+                UI.showToast('Lỗi lưu dữ liệu: ' + err.message, 'error');
+                throw err;
+            }
         }
     },
 
@@ -2421,6 +2454,9 @@ const Handlers = {
 
         // Cập nhật state để các hàm khác có thể sử dụng
         state.selectedVehicle = { data: vehicle, status: 'parking' };
+
+        // CẬP NHẬT GIAO DIỆN NGAY LẬP TỨC (Khi mở modal/view lấy xe)
+        UI.renderVehicleList();
 
         const alert = state.alerts[vehicle.plate];
         if (alert?.level === 'block') {

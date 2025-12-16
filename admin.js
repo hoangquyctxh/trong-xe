@@ -170,12 +170,35 @@ document.addEventListener('DOMContentLoaded', () => {
         formatCurrency(n) {
             return new Intl.NumberFormat('vi-VN').format(n || 0);
         },
+        async logAction(action, detail) {
+            try {
+                let email = state.user?.email;
+                if (!email) {
+                    const { data } = await db.auth.getSession();
+                    email = data?.session?.user?.email;
+                }
+                if (!email) {
+                    const stored = JSON.parse(localStorage.getItem('admin_user') || '{}');
+                    email = stored.email;
+                }
+
+                await db.from('audit_logs').insert({
+                    action: action,
+                    detail: detail,
+                    user_email: email || 'unknown',
+                    created_at: new Date().toISOString()
+                });
+            } catch (err) {
+                console.error('Lỗi ghi log:', err);
+            }
+        },
+
         /**
          * Hiển thị thông báo toast.
          * @param {string} message Nội dung thông báo.
          * @param {string} type   Tên class kiểu toast, ví dụ: 'toast--success', 'toast--error', 'toast--info'.
          */
-        showToast(message, type = 'toast--success') {
+        showToast(message, type = 'success') {
             const toast = document.createElement('div');
             // NÂNG CẤP: Truyền trực tiếp class kiểu 'toast--success' thay vì nối chuỗi sai.
             toast.className = `toast ${type}`;
@@ -329,6 +352,27 @@ document.addEventListener('DOMContentLoaded', () => {
         init() {
             this.setupEventListeners();
             this.initRealtime();
+            this.restorePreferences();
+        },
+
+        restorePreferences() {
+            // Restore Sidebar
+            const isCollapsed = localStorage.getItem('admin_sidebar_collapsed') === 'true';
+            if (isCollapsed && window.innerWidth > 768) {
+                dom.sidebar.classList.add('collapsed');
+            }
+
+            // Restore Theme
+            const savedTheme = localStorage.getItem('admin_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                const sun = document.getElementById('theme-icon-sun');
+                const moon = document.getElementById('theme-icon-moon');
+                if (sun && moon) {
+                    sun.style.display = 'block';
+                    moon.style.display = 'none';
+                }
+            }
         },
 
         initRealtime() {
@@ -339,10 +383,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 config: {
                     broadcast: { self: false } // Không cần nhận lại tin của chính mình
                 }
-            });
-
-            state.realtimeChannel
-                // 1. Nghe thay đổi giao dịch từ Supabase (check-in/check-out ở mọi client)
+            })
+                // 1. Nghe thay đổi giao dịch từ Supabase
                 .on(
                     'postgres_changes',
                     { event: '*', schema: 'public', table: 'transactions' },
@@ -383,7 +425,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 )
-                // 4. Nhận tín hiệu broadcast tổng quát từ các client khác (vd: index.html)
+                // 4. Nghe thay đổi audit logs (Nhật ký)
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'audit_logs' },
+                    (payload) => {
+                        console.log('Admin Realtime: Nhật ký mới.', payload);
+                        // Chỉ reload nếu đang ở trang nhật ký
+                        if (window.location.hash === '#page-audit-logs' || window.location.hash === '#audit-logs') {
+                            Handlers.handleRenderAuditLogs();
+                        }
+                    }
+                )
+                // 4. Nhận tín hiệu broadcast tổng quát từ các client khác
                 .on(
                     'broadcast',
                     { event: 'data_changed' },
@@ -405,15 +459,51 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.adminDatePicker.addEventListener('change', Handlers.handleDateChange);
 
             // Navigation
+            // Navigation & Sidebar
             dom.navLinks.forEach(link => link.addEventListener('click', Handlers.handleNavClick));
+
+            // SIDEBAR TOGGLE LOGIC (SMART)
             dom.menuToggleBtn.addEventListener('click', () => {
-                dom.sidebar.classList.toggle('open');
-                dom.sidebarOverlay.classList.toggle('open');
+                const isMobile = window.innerWidth <= 768;
+                if (isMobile) {
+                    dom.sidebar.classList.toggle('open');
+                    dom.sidebarOverlay.classList.toggle('open');
+                } else {
+                    dom.sidebar.classList.toggle('collapsed');
+                    // Persist state
+                    const isCollapsed = dom.sidebar.classList.contains('collapsed');
+                    localStorage.setItem('admin_sidebar_collapsed', isCollapsed);
+                    // Resize map if needed after transition
+                    setTimeout(() => state.map && state.map.invalidateSize(), 300);
+                }
             });
+
             dom.sidebarOverlay.addEventListener('click', () => {
                 dom.sidebar.classList.remove('open');
                 dom.sidebarOverlay.classList.remove('open');
             });
+
+            // THEME TOGGLE LOGIC
+            const themeBtn = document.getElementById('theme-toggle-btn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('admin_theme', newTheme);
+
+                    // Update Icons
+                    const sun = document.getElementById('theme-icon-sun');
+                    const moon = document.getElementById('theme-icon-moon');
+                    if (newTheme === 'dark') {
+                        sun.style.display = 'block';
+                        moon.style.display = 'none';
+                    } else {
+                        sun.style.display = 'none';
+                        moon.style.display = 'block';
+                    }
+                });
+            }
 
             // Transactions
             dom.transactionSearchInput.addEventListener('input', Handlers.handleTransactionSearch);
@@ -421,6 +511,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.transactionScanQrBtn.addEventListener('click', Handlers.openAdminQrScanner);
                 dom.closeAdminScannerBtn.addEventListener('click', Handlers.closeAdminQrScanner);
             }
+            // Filter Panel Events
+            const toggleFilterBtn = document.getElementById('toggle-filter-btn');
+            if (toggleFilterBtn) {
+                toggleFilterBtn.addEventListener('click', () => {
+                    const panel = document.getElementById('advanced-filter-panel');
+                    if (panel) {
+                        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                    }
+                });
+            }
+            const applyFilterBtn = document.getElementById('apply-filter-btn');
+            if (applyFilterBtn) applyFilterBtn.addEventListener('click', () => {
+                state.filters = {
+                    status: document.getElementById('filter-status').value,
+                    payment: document.getElementById('filter-payment').value,
+                    dateStart: document.getElementById('filter-date-start').value,
+                    dateEnd: document.getElementById('filter-date-end').value,
+                    minFee: document.getElementById('filter-fee-min').value,
+                    maxFee: document.getElementById('filter-fee-max').value
+                };
+                state.currentPage = 1;
+                UI.renderTransactions();
+            });
+            const resetFilterBtn = document.getElementById('reset-filter-btn');
+            if (resetFilterBtn) resetFilterBtn.addEventListener('click', () => {
+                state.filters = {};
+                // Reset inputs
+                document.getElementById('filter-status').value = '';
+                document.getElementById('filter-payment').value = '';
+                document.getElementById('filter-date-start').value = '';
+                document.getElementById('filter-date-end').value = '';
+                document.getElementById('filter-fee-min').value = '';
+                document.getElementById('filter-fee-max').value = '';
+
+                state.currentPage = 1;
+                UI.renderTransactions();
+                document.getElementById('advanced-filter-panel').style.display = 'none';
+            });
+
+            const refreshAuditBtn = document.getElementById('refresh-audit-btn');
+            if (refreshAuditBtn) {
+                refreshAuditBtn.addEventListener('click', () => Handlers.handleRenderAuditLogs());
+            }
+
             dom.transactionLogBody.addEventListener('click', Handlers.handleTransactionAction);
             dom.transactionLogBody.addEventListener('change', Handlers.handleTransactionChange);
             dom.closeTransactionModalBtn.addEventListener('click', () => dom.transactionModal.style.display = 'none');
@@ -535,29 +669,58 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         renderTransactions() {
-            const filtered = state.transactions.filter(t =>
-                t.plate.includes(state.searchTerm.toUpperCase()) ||
-                t.unique_id.includes(state.searchTerm) ||
-                (t.phone && t.phone.includes(state.searchTerm))
-            );
+            const filtered = state.transactions.filter(t => {
+                // 1. Text Search
+                const matchSearch = t.plate.includes(state.searchTerm.toUpperCase()) ||
+                    t.unique_id.includes(state.searchTerm) ||
+                    (t.phone && t.phone.includes(state.searchTerm));
+
+                if (!matchSearch) return false;
+
+                // 2. Advanced Filters
+                const f = state.filters || {};
+
+                // Status
+                if (f.status && t.status !== f.status) return false;
+
+                // Payment Method
+                if (f.payment && t.payment_method !== f.payment) return false;
+
+                // Fee Range
+                if (f.minFee && t.fee < f.minFee) return false;
+                if (f.maxFee && t.fee > f.maxFee) return false;
+
+                // Date Range (Entry Time)
+                if (f.dateStart) {
+                    const start = new Date(f.dateStart).setHours(0, 0, 0, 0);
+                    const entry = new Date(t.entry_time).setHours(0, 0, 0, 0);
+                    if (entry < start) return false;
+                }
+                if (f.dateEnd) {
+                    const end = new Date(f.dateEnd).setHours(23, 59, 59, 999);
+                    const entry = new Date(t.entry_time).setHours(0, 0, 0, 0);
+                    if (entry > end) return false;
+                }
+
+                return true;
+            });
 
             const startIndex = (state.currentPage - 1) * state.itemsPerPage;
             const paginated = filtered.slice(startIndex, startIndex + state.itemsPerPage);
 
             dom.transactionLogBody.innerHTML = paginated.map(t => `
                 <tr data-id="${t.unique_id}" class="${state.selectedIds.has(t.unique_id) ? 'selected-row' : ''}">
-                    <td style="text-align: center;">
+                    <td data-label="Chọn" style="text-align: center;">
                         <input type="checkbox" class="transaction-checkbox" value="${t.unique_id}" ${state.selectedIds.has(t.unique_id) ? 'checked' : ''}>
                     </td>
-                    <td><span class="plate">${t.plate}</span></td>
-                    <td>${new Date(t.entry_time).toLocaleString('vi-VN')}</td>
-                    <td>${t.exit_time ? new Date(t.exit_time).toLocaleString('vi-VN') : 'N/A'}</td>
-                    <td><span class="fee">${Utils.formatCurrency(t.fee)}</span></td>
-                    <td>${t.payment_method || 'N/A'}</td>
-                    <td>${state.locations.find(l => l.id === t.location_id)?.name || 'Không xác định'}</td>
-                    <td style="text-align: center;"><span class="status-badge ${t.status === 'Đang gửi' ? 'parking' : 'departed'}">${t.status}</span></td>
-                    <td style="text-align: center;">
-
+                    <td data-label="Biển số"><span class="plate">${t.plate}</span></td>
+                    <td data-label="Giờ vào">${new Date(t.entry_time).toLocaleString('vi-VN')}</td>
+                    <td data-label="Giờ ra">${t.exit_time ? new Date(t.exit_time).toLocaleString('vi-VN') : 'N/A'}</td>
+                    <td data-label="Phí"><span class="fee">${Utils.formatCurrency(t.fee)}</span></td>
+                    <td data-label="PTTT">${t.payment_method || 'N/A'}</td>
+                    <td data-label="Bãi đỗ">${state.locations.find(l => l.id === t.location_id)?.name || 'Không xác định'}</td>
+                    <td data-label="Trạng thái" style="text-align: center;"><span class="status-badge ${t.status === 'Đang gửi' ? 'parking' : 'departed'}">${t.status}</span></td>
+                    <td data-label="Hành động" style="text-align: center;">
                         <button class="action-button btn-secondary btn-small" data-action="edit-transaction">Sửa</button>
                     </td>
                 </tr>
@@ -692,8 +855,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.map || !dom.mapContainer) return;
             const center = state.locations.length > 0 ? [state.locations[0].lat, state.locations[0].lng] : [21.0285, 105.8542];
             state.map = L.map(dom.mapContainer).setView(center, 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
             }).addTo(state.map);
 
             // Right-click to add location
@@ -862,6 +1027,8 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const user = await Api.signIn(email, password);
                 state.user = user;
+                localStorage.setItem('admin_user', JSON.stringify(user)); // Save user info for logging
+                await Utils.logAction('USER_LOGIN', `Đăng nhập thành công: ${email}`);
                 App.start();
             } catch (error) {
                 dom.loginError.textContent = 'Email hoặc mật khẩu không đúng.';
@@ -870,6 +1037,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         async handleLogout() {
+            if (state.user) await Utils.logAction('USER_LOGOUT', `Đăng xuất: ${state.user.email}`);
             await db.auth.signOut();
             state.user = null;
             dom.mainContent.style.display = 'none';
@@ -908,6 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (targetId === 'page-fraud-analytics') Handlers.handleRenderFraudAnalytics();
+            if (targetId === 'page-audit-logs') Handlers.handleRenderAuditLogs();
 
             // Resize map
             if (targetId === 'page-locations' && state.map) {
@@ -991,6 +1160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await Promise.all(promises);
 
                 Utils.showToast(`Đã xóa ${state.selectedIds.size} giao dịch.`, 'toast--success');
+                await Utils.logAction('BATCH_DELETE_TRANSACTIONS', `Đã xóa ${state.selectedIds.size} giao dịch. IDs: ${Array.from(state.selectedIds).join(', ')}`);
                 state.selectedIds.clear();
                 dom.selectAllTransactions.checked = false;
                 UI.updateBatchToolbar();
@@ -1324,14 +1494,24 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         handleLocationAction(e) {
-            const button = e.target.closest('[data-action="edit-location"]');
-            if (!button) return;
+            // Find closest button first
+            const btn = e.target.closest('button');
+            if (!btn) return;
 
-            const card = button.closest('.location-card');
-            const id = card.dataset.id;
+            const action = btn.dataset.action;
+            const id = btn.dataset.id;
+
+            if (!action || !id) return;
+
             const location = state.locations.find(l => l.id == id);
 
-            if (location) {
+            if (action === 'delete-location') {
+                dom.locationId.value = id; // Set ID for delete
+                Handlers.handleDeleteLocation();
+                return;
+            }
+
+            if (location && action === 'edit-location') {
                 dom.locationId.value = location.id;
                 dom.locationName.value = location.name;
                 dom.locationLat.value = location.lat;
@@ -1387,6 +1567,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.locationModal.style.display = 'none';
                 await App.loadInitialData();
                 Utils.notifyDataChanged('settings_changed', { type: 'locations' });
+                await Utils.logAction(isUpdate ? 'UPDATE_LOCATION' : 'CREATE_LOCATION', `Tên bãi: ${locationData.name}`);
             } catch (error) {
                 Utils.showStatusModal('error', 'Lỗi lưu dữ liệu', error.message);
             }
@@ -1401,6 +1582,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     dom.locationModal.style.display = 'none';
                     await App.loadInitialData();
                     Utils.notifyDataChanged('settings_changed', { type: 'locations' }); // THÔNG BÁO THAY ĐỔI CÀI ĐẶT
+                    await Utils.logAction('DELETE_LOCATION', `Đã xóa bãi đỗ ID: ${id}`);
                 } catch (error) {
                     Utils.showToast(`Lỗi: ${error.message}`, 'toast--error');
                 }
@@ -1423,6 +1605,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.securityAlertReason.value = '';
                 await App.loadInitialData();
                 Utils.notifyDataChanged('settings_changed', { type: 'alerts' }); // THÔNG BÁO THAY ĐỔI CÀI ĐẶT
+                await Utils.logAction('SEND_ALERT', `Gửi cảnh báo xe ${plate}: ${reason}`);
             } catch (error) {
                 Utils.showToast(`Lỗi: ${error.message}`, 'toast--error');
             }
@@ -1440,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.securityAlertReason.value = '';
                 await App.loadInitialData();
                 Utils.notifyDataChanged('settings_changed', { type: 'alerts' }); // THÔNG BÁO THAY ĐỔI CÀI ĐẶT
+                await Utils.logAction('REMOVE_ALERT', `Gỡ cảnh báo xe ${plate}`);
             } catch (error) {
                 Utils.showToast(`Lỗi: ${error.message}`, 'toast--error');
             }
@@ -1489,7 +1673,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 UI.renderSqlResults(results);
                 Utils.showToast('Thực thi lệnh SQL thành công!');
                 // Thông báo cho các client khác nếu có khả năng dữ liệu đã thay đổi
-                if (!isSelect) Utils.notifyDataChanged('database_manual_change');
+                // Thông báo cho các client khác nếu có khả năng dữ liệu đã thay đổi
+                if (!isSelect) {
+                    Utils.notifyDataChanged('database_manual_change');
+                    await Utils.logAction('EXECUTE_SQL', `Thực thi lệnh SQL: ${query}`);
+                }
             } catch (error) {
                 Utils.showToast(`Lỗi SQL: ${error.message}`, 'toast--error');
                 dom.sqlResultsContainer.innerHTML = `<div class="sql-error">${error.message}</div>`;
@@ -1497,6 +1685,69 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.executeSqlBtn.disabled = false;
                 dom.executeSqlBtn.textContent = 'Thực thi Lệnh';
             }
+        },
+
+        handleRenderAuditLogs() {
+            const tbody = document.getElementById('audit-log-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Đang tải...</td></tr>';
+
+            db.from('audit_logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50)
+                .then(({ data, error }) => {
+                    if (error) {
+                        if (error.code === '42P01') { // Undefined table
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="4" class="text-center text-danger">
+                                        Chưa có bảng Audit Logs. Vui lòng chạy SQL:<br>
+                                        <code>CREATE TABLE audit_logs (id uuid default gen_random_uuid() primary key, created_at timestamptz default now(), action text, detail text, user_email text);</code>
+                                    </td>
+                                </tr>
+                            `;
+                        } else {
+                            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Lỗi: ${error.message}</td></tr>`;
+                        }
+                        return;
+                    }
+
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Chưa có nhật ký nào.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map((log, index) => {
+                        let badgeClass = 'badge-indigo';
+                        const action = log.action || '';
+
+                        // Color Mapping
+                        if (action.includes('DELETE') || action.includes('REMOVE') || action.includes('BLOCK')) badgeClass = 'badge-red';
+                        else if (action.includes('ALERT') || action.includes('WARNING')) badgeClass = 'badge-yellow';
+                        else if (action.includes('UPDATE') || action.includes('EDIT')) badgeClass = 'badge-blue';
+                        else if (action.includes('CREATE') || action.includes('ADD') || action.includes('LOGIN')) badgeClass = 'badge-green';
+
+                        // Stagger animation delay
+                        const delay = index * 0.05;
+
+                        return `
+                        <tr class="row-enter" style="animation-delay: ${delay}s">
+                            <td style="font-family: monospace; color: #64748B;">
+                                ${new Date(log.created_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit' })}
+                            </td>
+                            <td><span class="badge ${badgeClass}">${log.action}</span></td>
+                            <td style="font-weight: 500; color: #334155;">${log.detail || '-'}</td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="width: 24px; height: 24px; background: #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #64748B;">👤</span>
+                                    ${log.user_email || 'System'}
+                                </div>
+                            </td>
+                        </tr>
+                    `}).join('');
+                });
         },
 
         handleRenderFraudAnalytics() {
