@@ -891,27 +891,58 @@ const UI = {
             const qrContainer = document.getElementById('ticket-qr-target');
             if (qrContainer && window.QRCode) {
                 // Tạo canvas tạm thời
+                // Tạo canvas tạm thời
                 const canvas = document.createElement('canvas');
-                QRCode.toCanvas(canvas, vehicle.unique_id, {
-                    width: 160,
+
+                // NÂNG CẤP: Bảo mật hơn bằng cách encode Base64 (ẩn ID thật)
+                // Sử dụng tham số 't' thay vì 'ticketId'
+                const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                try {
+                    var encodedId = encodeURIComponent(btoa(vehicle.unique_id));
+                } catch (e) {
+                    var encodedId = vehicle.unique_id; // Fallback
+                }
+                const lookupUrl = `${baseUrl}lookup.html?t=${encodedId}`;
+
+                QRCode.toCanvas(canvas, lookupUrl, {
+                    width: 200, // Tăng size để sắc nét
                     margin: 2,
+                    errorCorrectionLevel: 'H', // Mức sửa lỗi cao để chèn logo không hỏng
                     color: {
-                        dark: "#000000",
+                        dark: "#000000", // Quay về màu đen theo yêu cầu
                         light: "#ffffff"
                     }
                 }, function (error) {
                     if (error) console.error('Lỗi tạo QR:', error);
                     else {
-                        qrContainer.innerHTML = ''; // Xóa placeholder
+                        qrContainer.innerHTML = '';
+                        qrContainer.style.position = 'relative';
+                        qrContainer.style.display = 'inline-block';
 
-                        // NÂNG CẤP: Bọc QR code trong thẻ a để mở lookup (User Request)
                         const link = document.createElement('a');
-                        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-                        link.href = `${baseUrl}lookup.html?ticketId=${vehicle.unique_id}`;
+                        link.href = lookupUrl;
                         link.target = '_blank';
+                        link.title = "Quét để tra cứu (Bảo mật)";
+                        link.style.display = 'block';
                         link.appendChild(canvas);
 
+                        // NÂNG CẤP: CSS Overlay Logo
+                        const logoImg = document.createElement('img');
+                        logoImg.src = 'https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png';
+                        logoImg.style.position = 'absolute';
+                        logoImg.style.top = '50%';
+                        logoImg.style.left = '50%';
+                        logoImg.style.transform = 'translate(-50%, -50%)';
+                        logoImg.style.width = '34px'; // Nhỏ lại để vừa vặn hơn
+                        logoImg.style.height = '34px';
+                        logoImg.style.backgroundColor = 'white';
+                        logoImg.style.borderRadius = '50%';
+                        logoImg.style.padding = '2px';
+                        logoImg.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+                        logoImg.style.pointerEvents = 'none';
+
                         qrContainer.appendChild(link);
+                        qrContainer.appendChild(logoImg);
                     }
                 });
             }
@@ -1463,6 +1494,9 @@ const Templates = {
                 </div>
 
                 <div class="ticket-v2__footer">
+                    <div id="modal-qr-target" style="margin-top: 15px; margin-bottom: 5px; text-align: center; min-height: 200px; display: flex; justify-content: center; align-items: center;">
+                        <!-- QR Code will be injected here -->
+                    </div>
                     <span class="ticket-v2__id">ID: ${data.unique_id}</span>
                 </div>
             </div>
@@ -1625,12 +1659,10 @@ const Templates = {
                     <div class="ticket-qr-container" id="ticket-qr-target">
                         <!-- Canvas will be injected here -->
                     </div>
-                    <div class="ticket-footer-text">
-                        Quét mã này tại máy quét để lấy xe
-                    </div>
+
                     
-                    <div class="ticket-lookup-link">
-                         Tra cứu xe tại: <a href="${lookupUrl}" target="_blank">lookup.html</a>
+                    <div class="ticket-lookup-link" style="margin-top: 2px; margin-bottom: 2px; font-size: 0.85em; color: #666;">
+                         Hãy quét mã để tra cứu tình trạng xe
                     </div>
 
                     <div class="ticket-actions">
@@ -2307,26 +2339,28 @@ const Handlers = {
         // Tạo một đối tượng giao dịch giả để tính phí trả trước
         const tempTransaction = { entry_time: new Date(), is_vip: isVIP };
 
+        // NÂNG CẤP: Tạo ID chuẩn ngay từ đầu để đồng bộ giữa Ticket và Database
+        const secureID = Utils.generateSecureID();
+
         if (isPrePaid && FeeCalculator.calculate(tempTransaction, null, state.currentLocation) > 0) {
             // Xử lý thu phí trước
             const calculatedFee = FeeCalculator.calculate(tempTransaction, null, state.currentLocation);
-            const uniqueID = '_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-            const paymentResult = await this.getPaymentResult(calculatedFee, { plate, entry_time: new Date().toISOString(), unique_id: uniqueID });
+            const paymentResult = await this.getPaymentResult(calculatedFee, { plate, entry_time: new Date().toISOString(), unique_id: secureID });
             if (!paymentResult) throw new Error('Đã hủy thao tác gửi xe.');
 
             // TỐI ƯU HÓA: Đọc giọng nói ngay sau khi thanh toán xong (không chờ Server lưu)
             Utils.playSystemVoice(`${Utils.getVoicePrefix(plate)} ${Utils.getSpokenPlate(plate)} đã vào bãi`);
 
-            newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { ...paymentResult /*, snapshot: feePolicySnapshot*/ }, uniqueID, staffUsername);
+            // Check-in với thông tin thanh toán (Pass ID chuẩn vào)
+            newTransaction = await Api.checkIn(plate, phone, isVIP, notes, paymentResult, secureID, staffUsername);
         } else {
             // TỐI ƯU HÓA: Đọc giọng nói ngay lập tức (không chờ Server) để tránh delay
             Utils.playSystemVoice(`${Utils.getVoicePrefix(plate)} ${Utils.getSpokenPlate(plate)} đã vào bãi`);
 
             // Gửi xe không thu phí trước
             // OPTIMISTIC UPDATE: Tạo dữ liệu giả định để hiển thị ngay
-            const tempId = 'temp_' + Date.now();
             const optimisticTransaction = {
-                unique_id: tempId,
+                unique_id: secureID, // Sử dụng secureID thay vì tempId
                 plate: plate,
                 entry_time: new Date().toISOString(), // Dùng ISO String cho đồng bộ
                 status: 'Đang gửi',
@@ -2358,24 +2392,27 @@ const Handlers = {
             }
 
             // 2. GỌI API MÀ KHÔNG CHẶN (HOẶC CHỜ ĐỂ CẬP NHẬT ID)
+            // 2. GỌI API MÀ KHÔNG CHẶN (HOẶC CHỜ ĐỂ CẬP NHẬT ID)
             try {
-                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { /*snapshot: feePolicySnapshot*/ }, null, staffUsername);
+                // Pass secureID vào Api.checkIn để đảm bảo ID trong DB khớp với ID đã in trên vé
+                newTransaction = await Api.checkIn(plate, phone, isVIP, notes, { /*snapshot: feePolicySnapshot*/ }, secureID, staffUsername);
 
                 // 3. THAY THẾ DỮ LIỆU TẠM BẰNG DỮ LIỆU THẬT (Đã có ID từ server)
-                const index = state.vehicles.findIndex(v => v.unique_id === tempId);
+                // Thực tế vì ta đã pass secureID, nên ID trả về cũng sẽ là secureID.
+                // Logic dưới đây chủ yếu để cập nhật các trường khác (VD: fee_policy_snapshot, ...) từ server về.
+                const index = state.vehicles.findIndex(v => v.unique_id === secureID);
                 if (index !== -1) {
                     state.vehicles[index] = newTransaction;
                     state.vehicleMap.set(plate, newTransaction);
-                    // Render lại để cập nhật ID thật (cho vé)
-                    if (state.selectedVehicle?.data?.unique_id === tempId) {
+                    // Render lại để cập nhật ID thật (cho vé) - Dù ID giống nhau nhưng cập nhật data mới nhất
+                    if (state.selectedVehicle?.data?.unique_id === secureID) {
                         state.selectedVehicle.data = newTransaction;
                         UI.renderInlineTicket(newTransaction);
                     }
-                    // UI list không cần render lại vì thông tin hiển thị (biển số, giờ vào) không đổi, chỉ ID đổi ngầm
                 }
             } catch (err) {
                 // ROLLBACK NẾU LỖI
-                state.vehicles = state.vehicles.filter(v => v.unique_id !== tempId);
+                state.vehicles = state.vehicles.filter(v => v.unique_id !== secureID);
                 state.vehicleMap.delete(plate);
                 UI.renderVehicleList();
                 UI.showToast('Lỗi lưu dữ liệu: ' + err.message, 'error');

@@ -1300,7 +1300,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Xử lý tham số URL để tìm kiếm trực tiếp
         const urlParams = new URLSearchParams(window.location.search);
-        const ticketIdParam = urlParams.get('ticketId');
+        let ticketIdParam = urlParams.get('ticketId');
+
+        // NÂNG CẤP: Hỗ trợ mã hóa Base64 (t param) để ẩn ID thật (Security)
+        const tokenParam = urlParams.get('t');
+        if (tokenParam && !ticketIdParam) {
+            try {
+                ticketIdParam = atob(tokenParam);
+            } catch (e) {
+                console.error("Invalid token:", e);
+            }
+        }
+
         const plateParam = urlParams.get('plate');
 
         if (ticketIdParam) {
@@ -1403,9 +1414,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (searchTerm) searchByTerm(searchTerm);
         });
 
-        // NÂNG CẤP: Chặn ký tự đặc biệt ngay khi nhập (Hỗ trợ Tiếng Việt)
+        // NÂNG CẤP: Chặn ký tự đặc biệt ngay khi nhập (Hỗ trợ Tiếng Việt & ID có dấu gạch ngang/gạch dưới)
         elements.plateInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/[^a-zA-Z0-9\u00C0-\u1EF9 ]/g, '');
+            e.target.value = e.target.value.replace(/[^a-zA-Z0-9\u00C0-\u1EF9 \-_]/g, '');
         });
 
         // Event listener cho toggle chi tiết phí
