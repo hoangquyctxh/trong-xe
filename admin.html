@@ -21,7 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" defer></script>
 
     <!-- Config & CSS -->
-    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin.css?v=3.6">
     <script src="config.js" defer></script>
 
     <script src="security.js"></script> <!-- BẢO MẬT -->
@@ -71,11 +71,17 @@
     <!-- ================================================================= -->
     <!-- LỚP PHỦ TẢI DỮ LIỆU -->
     <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-content">
-            <div class="spinner-box">
-                <div class="three-quarter-spinner"></div>
+        <div class="loading-container glass-panel">
+            <div class="loading-logo-wrapper">
+                <img src="https://cdn.haitrieu.com/wp-content/uploads/2021/11/Logo-Doan-Thanh-NIen-Cong-San-Ho-Chi-Minh-1.png"
+                    alt="Logo" class="loading-logo">
+                <div class="logo-pulse"></div>
             </div>
-            <p>Đang đồng bộ dữ liệu...</p>
+            <h3 class="loading-title">Hệ thống Quản trị</h3>
+            <p class="loading-text">Đang đồng bộ dữ liệu...</p>
+            <div class="loading-bar-container">
+                <div class="loading-bar-progress"></div>
+            </div>
         </div>
     </div>
 
@@ -249,6 +255,11 @@
                         </svg>
                     </button>
 
+                    <!-- User Profile Widget (New) -->
+                    <div id="user-profile-widget" class="user-profile-widget"
+                        style="display: flex; align-items: center; gap: 10px; margin-right: 12px; cursor: pointer;">
+                    </div>
+
                     <div class="date-picker-wrapper">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -345,7 +356,9 @@
                                 <h3 id="revenue-chart-title">Doanh thu / Bãi</h3>
                             </div>
                             <div class="card-body">
-                                <div class="chart-container"><canvas id="revenue-chart"></canvas></div>
+                                <div class="chart-container">
+                                    <canvas id="flow-chart"></canvas> <!-- ID changed to match admin.js -->
+                                </div>
                             </div>
                         </div>
                         <div class="chart-panel glass-card">
@@ -645,12 +658,43 @@
                                     </p>
                                 </div>
                             </div>
+                            <div class="batch-actions-toolbar" id="logs-batch-toolbar"
+                                style="display: none; margin-left: auto; margin-right: 1rem;">
+                                <div class="batch-info">
+                                    <span id="logs-selected-count">0</span> đã chọn
+                                </div>
+                                <div class="batch-controls">
+                                    <button class="btn-secondary" id="export-audit-btn" style="margin-right: 8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        Xuất Excel
+                                    </button>
+                                    <button class="btn-danger" id="logs-batch-delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path
+                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                            </path>
+                                        </svg>
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+
                             <button class="btn-secondary btn-small" id="refresh-audit-btn">Làm mới</button>
                         </div>
                         <div class="table-wrapper custom-scrollbar">
                             <table class="data-table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px;"><input type="checkbox" id="select-all-logs"></th>
                                         <th>Thời gian</th>
                                         <th>Hành động</th>
                                         <th>Chi tiết</th>
@@ -856,7 +900,7 @@
     <div id="toast-container"></div>
     <div id="fireworks-container"></div>
 
-    <script src="admin.js"></script>
+    <script src="admin.js?v=999"></script>
 
     <!-- STATUS NOTIFICATION MODAL -->
     <div id="status-modal" class="modal" style="z-index: 2000;">
@@ -867,6 +911,31 @@
             <button id="status-modal-btn" class="btn-primary">Đóng</button>
         </div>
     </div>
+    <!-- EMERGENCY FAILSAFE SCRIPT (INLINE) -->
+    <script>
+        (function () {
+            // This runs independently of admin.js
+            setTimeout(function () {
+                var overlay = document.getElementById('loading-overlay');
+                if (overlay) {
+                    console.warn('⚠️ Emergency Inline Failsafe: Removing loading overlay.');
+                    overlay.style.opacity = '0';
+                    overlay.style.visibility = 'hidden';
+                    overlay.style.pointerEvents = 'none'; // Ensure clicks pass through
+
+                    // Fallback: If style adjustment fails (specificity), add a class
+                    overlay.classList.add('hidden');
+
+                    // Double check backup: Hard remove if still present after 1s
+                    setTimeout(function () {
+                        if (getComputedStyle(overlay).opacity !== '0') {
+                            overlay.style.display = 'none'; // Nuclear option
+                        }
+                    }, 1000);
+                }
+            }, 3000); // Wait 3 seconds max for initial load, then force show
+        })();
+    </script>
 </body>
 
 </html>

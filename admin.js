@@ -131,7 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
         statusModalTitle: document.getElementById('status-modal-title'),
         statusModalMessage: document.getElementById('status-modal-message'),
         statusModalBtn: document.getElementById('status-modal-btn'),
+        userProfileWidget: document.getElementById('user-profile-widget'),
     };
+
+    // CẤU HÌNH: URL Google Apps Script (Do người dùng cung cấp)
+    const GOOGLE_SCRIPT_AUTH_URL = 'https://script.google.com/macros/s/AKfycbym25xZB_dSAqzlO7c-7CDF591pgWeNrL44kXprhZr4u1d3cs6-HILNThuytkCFPWuE5w/exec';
 
     const state = {
         user: null,
@@ -147,7 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
         map: null,
         map: null,
         mapMarkers: [],
-        selectedIds: new Set(), // NÂNG CẤP: Lưu danh sách ID đã chọn
+        selectedIds: new Set(), // NÂNG CẤP: Lưu danh sách ID đã chọn (Giao dịch)
+        logSelectedIds: new Set(), // NÂNG CẤP: Lưu danh sách ID đã chọn (Logs)
     };
 
     // Tái sử dụng Supabase client chung được tạo trong config.js để tránh cảnh báo nhiều GoTrueClient
@@ -254,21 +259,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
             dom.statusModal.style.display = 'flex';
             dom.statusModalBtn.onclick = () => dom.statusModal.style.display = 'none';
+        },
+
+        getGreetingTime() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Chào buổi sáng';
+            if (hour < 18) return 'Chào buổi chiều';
+            return 'Chào buổi tối';
+        },
+
+        getGreetingTime() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Chào buổi sáng';
+            if (hour < 18) return 'Chào buổi chiều';
+            return 'Chào buổi tối';
         }
     };
 
     const Api = {
         async signIn(email, password) {
+            // 1. Thử đăng nhập bằng Supabase (Ưu tiên)
             const { data, error } = await db.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            return data.user;
+            if (!error && data.user) {
+                return { ...data.user, source: 'supabase' };
+            }
+
+            // 2. Nếu Supabase thất bại, thử đăng nhập bằng Google Sheet
+            // Chỉ thử nếu URL đã được cấu hình và lỗi là do thông tin đăng nhập (hoặc user không tồn tại)
+            if (GOOGLE_SCRIPT_AUTH_URL && GOOGLE_SCRIPT_AUTH_URL.includes('script.google.com')) {
+                console.log('Supabase login failed, trying Google Sheet...');
+                try {
+                    // Gọi Google Apps Script Web App
+                    // Lưu ý: Mode 'no-cors' không đọc được response JSON chuẩn do chính sách browser,
+                    // nhưng Apps Script cần trả về JSONP hoặc dùng redirect trick.
+                    // Tuy nhiên, để đơn giản, ta dùng fetch POST thông thường. 
+                    // Yêu cầu Script phải được deploy 'Anyone' và trả về header CORS đúng (hoặc proxy).
+                    // Cách đơn giản nhất cho GAS: GET request với tham số
+
+                    const response = await fetch(`${GOOGLE_SCRIPT_AUTH_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        return result.user; // Trả về user object từ Sheet
+                    }
+                } catch (sheetErr) {
+                    console.error('Google Sheet login error:', sheetErr);
+                }
+            }
+
+            throw error || new Error('Đăng nhập thất bại (cả Supabase và Google Sheet)');
         },
         async signOut() {
             await db.auth.signOut();
+            localStorage.removeItem('admin_user'); // Xóa cả session local
         },
         async getUser() {
+            // 1. Ưu tiên Supabase Session
             const { data: { session } } = await db.auth.getSession();
-            return session?.user || null;
+            if (session?.user) return session.user;
+
+            // 2. Fallback: Lấy từ LocalStorage cho user Google Sheet
+            const stored = localStorage.getItem('admin_user');
+            if (stored) {
+                const user = JSON.parse(stored);
+                // Kiểm tra sơ bộ tính hợp lệ
+                if (user && user.email) return user;
+            }
+            return null;
         },
         /**
          * LẤY DỮ LIỆU GIAO DỊCH THEO NGÀY
@@ -353,6 +410,24 @@ document.addEventListener('DOMContentLoaded', () => {
             this.setupEventListeners();
             this.initRealtime();
             this.restorePreferences();
+        },
+
+        renderUserProfile() {
+            if (!dom.userProfileWidget) return;
+            const user = state.user || {};
+            // Get name from Supabase user_metadata or fallback to email
+            const displayName = user.user_metadata?.full_name || (user.email ? user.email.split('@')[0] : 'Admin');
+            const greeting = Utils.getGreetingTime();
+
+            dom.userProfileWidget.innerHTML = `
+                <div class="user-info" style="text-align: right; line-height: 1.2;">
+                    <span class="user-name" style="display: block; font-weight: 600; font-size: 0.9rem; color: var(--text-main);">${displayName}</span>
+                    <span class="user-role" style="display: block; font-size: 0.75rem; color: var(--text-muted);">${greeting}</span>
+                </div>
+                <div class="avatar-circle" style="width: 36px; height: 36px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 700; margin-left: 8px;">
+                    ${displayName.charAt(0).toUpperCase()}
+                </div>
+            `;
         },
 
         restorePreferences() {
@@ -624,16 +699,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     label: 'Lưu lượng xe vào',
                     data: trafficByHour,
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgb(54, 162, 235)',
-                    borderWidth: 1,
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)', // Lighter fill
+                    borderColor: '#3B82F6', // Blue 500
+                    borderWidth: 2,
                     tension: 0.4,
                     fill: true,
+                    pointRadius: 2,
+                    pointHoverRadius: 5
                 }]
             };
 
             if (state.charts.traffic) state.charts.traffic.destroy();
-            state.charts.traffic = new Chart(dom.trafficChartCanvas, { type: 'line', data: chartData });
+            state.charts.traffic = new Chart(dom.trafficChartCanvas, {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // ALLOTS CONTAINER FILL
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#F1F5F9' },
+                            ticks: { stepSize: 1 }
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
         },
 
         renderLocationCharts() {
@@ -657,14 +753,37 @@ document.addEventListener('DOMContentLoaded', () => {
             state.charts.revenue = new Chart(dom.revenueChartCanvas, {
                 type: 'doughnut',
                 data: { labels, datasets: [{ data: revenueData }] },
-                options: { plugins: { legend: { position: 'right' } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',      // Thinner, more modern look
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, boxWidth: 10 } }
+                    },
+                    layout: { padding: 30 } // Increase padding
+                }
             });
 
             if (state.charts.vehicles) state.charts.vehicles.destroy();
             state.charts.vehicles = new Chart(dom.vehiclesChartCanvas, {
                 type: 'doughnut',
-                data: { labels, datasets: [{ data: vehicleData }] },
-                options: { plugins: { legend: { position: 'right' } } }
+                data: {
+                    labels, datasets: [{
+                        data: vehicleData,
+                        backgroundColor: ['#3B82F6', '#EC4899', '#8B5CF6', '#10B981', '#F59E0B'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, boxWidth: 10 } }
+                    },
+                    layout: { padding: 30 }
+                }
             });
         },
 
@@ -763,33 +882,32 @@ document.addEventListener('DOMContentLoaded', () => {
         renderLocations() {
             if (!dom.locationsGrid) return;
             const html = state.locations.map(loc => `
-                <div class="location-card" data-id="${loc.id}">
-                    <div class="loc-card-left">
-                        <div class="loc-icon-box">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><polygon points="9 9 15 9 15 13 9 13 9 9"></polygon><path d="M9 13v3"></path></svg>
-                        </div>
-                        <div class="loc-info">
-                            <h4 class="loc-name">${loc.name}</h4>
-                            <p class="loc-address">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                ${loc.address || 'Chưa cập nhật địa chỉ'}
-                            </p>
-                            <div class="loc-badges">
-                                <span class="badge badge-indigo">
-                                    Capacity: <b>${loc.capacity || '-'}</b>
-                                </span>
-                                <span class="badge badge-gray">
-                                    ${loc.operating_hours || '24/7'}
-                                </span>
-                            </div>
+                <div class="location-row" data-id="${loc.id}">
+                    <div class="loc-row-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <div class="loc-row-info">
+                        <div class="loc-row-name">${loc.name}</div>
+                        <div class="loc-row-address">
+                            ${loc.address || 'Chưa cập nhật'}
                         </div>
                     </div>
-                    <div class="loc-actions">
-                        <button class="btn-icon-action edit" data-action="edit-location" title="Chỉnh sửa">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    <div class="loc-row-stats">
+                        <div class="loc-mini-stat">
+                            <span class="loc-mini-label">Sức chứa</span>
+                            <span class="loc-mini-val">${loc.capacity || '-'}</span>
+                        </div>
+                        <div class="loc-mini-stat">
+                            <span class="loc-mini-label">Hoạt động</span>
+                            <span class="loc-mini-val">${loc.operating_hours || '24/7'}</span>
+                        </div>
+                    </div>
+                    <div class="loc-row-actions">
+                        <button class="btn-icon-sm edit" data-action="edit-location" data-id="${loc.id}" title="Sửa">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
-                        <button class="btn-icon-action delete" data-action="delete-location" title="Xóa">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <button class="btn-icon-sm delete" data-action="delete-location" data-id="${loc.id}" title="Xóa">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -1021,18 +1139,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const Handlers = {
         async handleLogin(e) {
             e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalContent = btn ? btn.innerHTML : '';
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>Đang xử lý...</span>';
+            }
+
             const email = dom.loginEmailInput.value;
             const password = dom.loginPasswordInput.value;
             dom.loginError.textContent = '';
+
             try {
                 const user = await Api.signIn(email, password);
                 state.user = user;
-                localStorage.setItem('admin_user', JSON.stringify(user)); // Save user info for logging
+                localStorage.setItem('admin_user', JSON.stringify(user));
                 await Utils.logAction('USER_LOGIN', `Đăng nhập thành công: ${email}`);
                 App.start();
+                // Success: Button stays disabled as view switches
             } catch (error) {
                 dom.loginError.textContent = 'Email hoặc mật khẩu không đúng.';
                 console.error('Login failed:', error);
+
+                // Reset Button on Error
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
             }
         },
 
@@ -1054,10 +1188,37 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.hash = hash;
         },
 
+        checkAccessControl() {
+            // Check for admin role
+            // 1. Role explicitly set in metadata (Supabase) or property (Google Sheet)
+            // 2. OR source is 'supabase' (Implicit Admin for main system accounts)
+            const role = state.user?.user_metadata?.role || state.user?.role;
+            const isSupabaseUser = state.user?.source === 'supabase';
+
+            const isAdmin = role === 'admin' || isSupabaseUser;
+
+            // Toggle Logs Menu Item
+            const logsLink = document.querySelector('a[data-target="page-audit-logs"]');
+            if (logsLink) {
+                if (isAdmin) {
+                    logsLink.parentElement.style.display = 'block';
+                } else {
+                    logsLink.parentElement.style.display = 'none';
+                }
+            }
+        },
+
         handleRouting() {
             // Default to dashboard if no hash
             const hash = window.location.hash.slice(1) || 'dashboard';
             const targetId = 'page-' + hash;
+
+            // ACCESS CONTROL GUARD REMOVED - Handled in page render for better UX
+            /*
+            if (targetId === 'page-audit-logs') {
+                 // Logic moved to handleRenderAuditLogs
+            }
+            */
 
             const targetContent = document.getElementById(targetId);
             if (!targetContent) return; // Invalid hash
@@ -1687,67 +1848,311 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        handleRenderAuditLogs() {
+        async handleRenderAuditLogs() {
             const tbody = document.getElementById('audit-log-body');
             if (!tbody) return;
 
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Đang tải...</td></tr>';
+            // PERMISSION CHECK
+            const role = state.user?.user_metadata?.role || state.user?.role;
+            const isSupabaseUser = state.user?.source === 'supabase';
 
-            db.from('audit_logs')
+            if (role !== 'admin' && !isSupabaseUser) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 3rem;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                                <div style="width: 64px; height: 64px; background: #FEF2F2; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #EF4444;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                </div>
+                                <h3 style="color: #1E293B; font-weight: 600; margin: 0;">Truy cập bị từ chối</h3>
+                                <p style="color: #64748B; margin: 0;">Bạn không có quyền xem nhật ký hoạt động.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                // Hide toolbar
+                const toolbar = document.getElementById('logs-batch-toolbar');
+                if (toolbar) toolbar.style.display = 'none';
+                return;
+            }
+
+            // Reset selection on reload
+            state.logSelectedIds.clear();
+            Handlers.updateLogBatchToolbar();
+
+            // Bind Select All if not bound (check duplication or just re-bind)
+            const selectAll = document.getElementById('select-all-logs');
+            if (selectAll) {
+                selectAll.checked = false;
+                selectAll.onclick = Handlers.handleLogSelectAll;
+            }
+            // Bind Delete Button
+            const deleteBtn = document.getElementById('logs-batch-delete');
+            if (deleteBtn) {
+                deleteBtn.onclick = Handlers.handleLogBatchDelete;
+            }
+            // Bind Export Button
+            const exportBtn = document.getElementById('export-audit-btn');
+            if (exportBtn) {
+                exportBtn.onclick = Handlers.handleLogExport;
+            }
+
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Đang tải...</td></tr>';
+
+            const { data, error } = await db.from('audit_logs')
                 .select('*')
                 .order('created_at', { ascending: false })
-                .limit(50)
-                .then(({ data, error }) => {
-                    if (error) {
-                        if (error.code === '42P01') { // Undefined table
-                            tbody.innerHTML = `
-                                <tr>
-                                    <td colspan="4" class="text-center text-danger">
-                                        Chưa có bảng Audit Logs. Vui lòng chạy SQL:<br>
-                                        <code>CREATE TABLE audit_logs (id uuid default gen_random_uuid() primary key, created_at timestamptz default now(), action text, detail text, user_email text);</code>
-                                    </td>
-                                </tr>
-                            `;
-                        } else {
-                            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Lỗi: ${error.message}</td></tr>`;
-                        }
-                        return;
-                    }
+                .limit(50);
 
-                    if (!data || data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Chưa có nhật ký nào.</td></tr>';
-                        return;
-                    }
+            if (error) {
+                if (error.code === '42P01') {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Chưa có bảng Audit Logs.</td></tr>`;
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Lỗi: ${error.message}</td></tr>`;
+                }
+                return;
+            }
 
-                    tbody.innerHTML = data.map((log, index) => {
-                        let badgeClass = 'badge-indigo';
-                        const action = log.action || '';
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Chưa có nhật ký nào.</td></tr>';
+                return;
+            }
 
-                        // Color Mapping
-                        if (action.includes('DELETE') || action.includes('REMOVE') || action.includes('BLOCK')) badgeClass = 'badge-red';
-                        else if (action.includes('ALERT') || action.includes('WARNING')) badgeClass = 'badge-yellow';
-                        else if (action.includes('UPDATE') || action.includes('EDIT')) badgeClass = 'badge-blue';
-                        else if (action.includes('CREATE') || action.includes('ADD') || action.includes('LOGIN')) badgeClass = 'badge-green';
+            // Save recent logs to state for lookup if needed
+            state.currentLogs = data;
 
-                        // Stagger animation delay
-                        const delay = index * 0.05;
+            tbody.innerHTML = data.map((log, index) => {
+                let badgeClass = 'badge-indigo';
+                const action = log.action || '';
+                if (action.includes('DELETE') || action.includes('REMOVE') || action.includes('BLOCK')) badgeClass = 'badge-red';
+                else if (action.includes('ALERT') || action.includes('WARNING')) badgeClass = 'badge-yellow';
+                else if (action.includes('UPDATE') || action.includes('EDIT')) badgeClass = 'badge-blue';
+                else if (action.includes('CREATE') || action.includes('ADD') || action.includes('LOGIN')) badgeClass = 'badge-green';
 
-                        return `
-                        <tr class="row-enter" style="animation-delay: ${delay}s">
-                            <td style="font-family: monospace; color: #64748B;">
-                                ${new Date(log.created_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit' })}
+                const delay = index * 0.05;
+
+                return `
+                <tr class="row-enter" style="animation-delay: ${delay}s">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="log-checkbox" value="${log.id}" onchange="Handlers.handleLogCheckboxChange(this)">
+                    </td>
+                    <td style="font-family: monospace; color: #64748B;">
+                        ${new Date(log.created_at).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit' })}
+                    </td>
+                    <td><span class="badge ${badgeClass}">${log.action}</span></td>
+                    <td style="font-weight: 500; color: #334155;">${log.detail || '-'}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="width: 24px; height: 24px; background: #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #64748B;">👤</span>
+                            ${log.user_email || 'System'}
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        },
+
+        // --- LOG BATCH HANDLERS ---
+        handleLogSelectAll(e) {
+            const isChecked = e.target.checked;
+            const visibleRows = Array.from(document.querySelectorAll('.log-checkbox'));
+
+            visibleRows.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                if (isChecked) state.logSelectedIds.add(checkbox.value);
+                else state.logSelectedIds.delete(checkbox.value);
+            });
+            Handlers.updateLogBatchToolbar();
+        },
+
+        handleLogCheckboxChange(checkbox) {
+            if (checkbox.checked) state.logSelectedIds.add(checkbox.value);
+            else state.logSelectedIds.delete(checkbox.value);
+
+            const allVisible = Array.from(document.querySelectorAll('.log-checkbox'));
+            const selectAll = document.getElementById('select-all-logs');
+            if (selectAll) selectAll.checked = allVisible.every(cb => cb.checked);
+
+            Handlers.updateLogBatchToolbar();
+        },
+
+        updateLogBatchToolbar() {
+            const toolbar = document.getElementById('logs-batch-toolbar');
+            const countSpan = document.getElementById('logs-selected-count');
+            if (toolbar && countSpan) {
+                const count = state.logSelectedIds.size;
+                countSpan.textContent = count;
+                if (count > 0) {
+                    toolbar.style.display = 'flex';
+                } else {
+                    toolbar.style.display = 'none';
+                }
+            }
+        },
+
+        async handleLogBatchDelete() {
+            if (state.logSelectedIds.size === 0) return;
+            if (!confirm(`Bạn có chắc chắn muốn xóa ${state.logSelectedIds.size} nhật ký đã chọn?`)) return;
+
+            const btn = document.getElementById('logs-batch-delete');
+            if (btn) {
+                btn.dataset.originalText = btn.innerHTML;
+                btn.textContent = '...';
+                btn.disabled = true;
+            }
+
+            try {
+                // Delete logic
+                const ids = Array.from(state.logSelectedIds);
+                const { error } = await db.from('audit_logs').delete().in('id', ids);
+
+                if (error) throw error;
+
+                Utils.showToast(`Đã xóa ${ids.length} dòng nhật ký.`, 'toast--success');
+                state.logSelectedIds.clear();
+                Handlers.handleRenderAuditLogs();
+            } catch (error) {
+                Utils.showToast(`Lỗi xóa: ${error.message}`, 'toast--error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = btn.dataset.originalText || `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Xóa`;
+                }
+            }
+        },
+
+        handleLogExport() {
+            let logsToExport = [];
+
+            // Prioritize selection
+            if (state.logSelectedIds.size > 0 && state.currentLogs) {
+                logsToExport = state.currentLogs.filter(l => state.logSelectedIds.has(l.id));
+            } else {
+                logsToExport = state.currentLogs || [];
+            }
+
+            if (logsToExport.length === 0) {
+                return Utils.showToast('Không có dữ liệu để xuất.', 'toast--info');
+            }
+
+            const now = new Date();
+            const dateStr = `Ngày ${now.getDate()} tháng ${now.getMonth() + 1} năm ${now.getFullYear()}`;
+
+            let tableHtml = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <!--[if gte mso 9]>
+                    <xml>
+                    <x:ExcelWorkbook>
+                        <x:ExcelWorksheets>
+                            <x:ExcelWorksheet>
+                                <x:Name>Nhat Ky Hoat Dong</x:Name>
+                                <x:WorksheetOptions>
+                                    <x:DisplayGridlines/>
+                                    <x:Print>
+                                        <x:ValidPrinterInfo/>
+                                        <x:PaperSizeIndex>9</x:PaperSizeIndex>
+                                        <x:HorizontalResolution>600</x:HorizontalResolution>
+                                        <x:VerticalResolution>600</x:VerticalResolution>
+                                    </x:Print>
+                                    <x:Selected/>
+                                </x:WorksheetOptions>
+                            </x:ExcelWorksheet>
+                        </x:ExcelWorksheets>
+                    </x:ExcelWorkbook>
+                    </xml>
+                    <![endif]-->
+                    <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+                    <style>
+                        table { border-collapse: collapse; font-family: 'Times New Roman', serif; }
+                        td { vertical-align: middle; }
+                        .text-bold { font-weight: bold; }
+                        .text-italic { font-style: italic; }
+                        .text-center { text-align: center; }
+                        .text-right { text-align: right; }
+                        .text-left { text-align: left; }
+                        
+                        /* Borders for Data Table */
+                        .data-table th, .data-table td { border: 1px solid thin; padding: 5px; }
+                        .data-header { background-color: #CCFFFF; font-weight: bold; text-align: center; }
+                        
+                        /* Layout Specifics */
+                        .org-header { font-size: 11pt; font-weight: bold; }
+                        .national-header { font-size: 11pt; font-weight: bold; }
+                        .motto-header { font-size: 11pt; font-style: italic; }
+                        .report-title { font-size: 16pt; font-weight: bold; text-align: center; color: #000080; height: 40px; }
+                        .report-meta { font-size: 11pt; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <table>
+                        <!-- HEADER SECTION -->
+                        <tr>
+                            <td colspan="2" class="text-center org-header">
+                                ĐOÀN TNCS HỒ CHÍ MINH<br>
+                                BCH PHƯỜNG BA ĐÌNH
                             </td>
-                            <td><span class="badge ${badgeClass}">${log.action}</span></td>
-                            <td style="font-weight: 500; color: #334155;">${log.detail || '-'}</td>
-                            <td>
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span style="width: 24px; height: 24px; background: #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #64748B;">👤</span>
-                                    ${log.user_email || 'System'}
-                                </div>
+                            <td colspan="3" class="text-center">
+                                <span class="national-header">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</span><br>
+                                <span class="motto-header">Độc lập - Tự do - Hạnh phúc</span><br>
+                                <span class="text-italic" style="font-size: 10pt;">-------------------</span>
                             </td>
                         </tr>
-                    `}).join('');
-                });
+                        <tr><td colspan="5" style="height: 20px;"></td></tr>
+                        
+                        <!-- TITLE SECTION -->
+                        <tr>
+                            <td colspan="5" class="report-title">NHẬT KÝ HOẠT ĐỘNG HỆ THỐNG</td>
+                        </tr>
+                        <tr>
+                            <td colspan="5" class="text-center text-italic">${dateStr}</td>
+                        </tr>
+                        <tr><td colspan="5" style="height: 20px;"></td></tr>
+
+                        <!-- SUMMARY SECTION -->
+                        <tr>
+                            <td colspan="5" style="font-size: 11pt;">
+                                <strong>Tổng số dòng:</strong> ${logsToExport.length} &nbsp;&nbsp;|&nbsp;&nbsp; 
+                                <strong>Người xuất báo cáo:</strong> ${state.user?.email || 'Quản trị viên'}
+                            </td>
+                        </tr>
+                        <tr><td colspan="5" style="height: 10px;"></td></tr>
+
+                        <!-- DATA TABLE -->
+                        <tr class="data-table">
+                            <th class="data-header" style="width: 50px;">STT</th>
+                            <th class="data-header" style="width: 150px;">Thời gian</th>
+                            <th class="data-header" style="width: 150px;">Hành động</th>
+                            <th class="data-header" style="width: 300px;">Chi tiết</th>
+                            <th class="data-header" style="width: 200px;">Người dùng</th>
+                        </tr>
+            `;
+
+            logsToExport.forEach((log, index) => {
+                tableHtml += `
+                    <tr class="data-table">
+                        <td class="text-center">${index + 1}</td>
+                        <td class="text-center">${new Date(log.created_at).toLocaleString('vi-VN')}</td>
+                        <td class="text-center text-bold">${log.action}</td>
+                        <td class="text-left">${log.detail || ''}</td>
+                        <td class="text-center">${log.user_email || 'System'}</td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `NhatKyHoatDong_${now.toISOString().slice(0, 10)}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         },
 
         handleRenderFraudAnalytics() {
@@ -1822,35 +2227,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const App = {
         async init() {
             UI.init();
-            state.user = await Api.getUser();
-            if (state.user) {
-                this.start();
-            } else {
-                dom.loginScreen.style.display = 'flex';
+
+            // Safety Net: Force hide overlay after 15 seconds if something hangs
+            setTimeout(() => {
+                if (dom.loadingOverlay && !dom.loadingOverlay.classList.contains('hidden')) {
+                    console.warn('⚠️ Loading overlay forced hidden by safety timeout.');
+                    dom.loadingOverlay.classList.add('hidden');
+                }
+            }, 15000);
+
+            try {
+                state.user = await Api.getUser();
+                if (state.user) {
+                    await this.start();
+                } else {
+                    dom.loginScreen.style.display = 'flex';
+                    if (dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('App Init Error:', error);
+                // Even on error, hide loading and show login or error
                 if (dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
+                dom.loginScreen.style.display = 'flex';
             }
         },
 
         async start() {
             dom.loginScreen.style.display = 'none';
-            dom.mainContent.style.display = 'flex'; // Fix: Use flex to match CSS layout
+            dom.mainContent.style.display = 'flex';
+            UI.renderUserProfile();
+
+            // Run Access Control Check on Start
+            Handlers.checkAccessControl();
+
             if (dom.loadingOverlay) dom.loadingOverlay.classList.remove('hidden');
 
-            // SỬA: Lấy ngày hiện tại theo giờ địa phương (YYYY-MM-DD)
-            const offset = state.currentDate.getTimezoneOffset() * 60000;
-            const localDate = new Date(state.currentDate.getTime() - offset);
-            dom.adminDatePicker.value = localDate.toISOString().slice(0, 10);
+            try {
+                // SỬA: Lấy ngày hiện tại theo giờ địa phương (YYYY-MM-DD)
+                const offset = state.currentDate.getTimezoneOffset() * 60000;
+                const localDate = new Date(state.currentDate.getTime() - offset);
+                dom.adminDatePicker.value = localDate.toISOString().slice(0, 10);
 
-            await this.loadInitialData();
+                await this.loadInitialData();
 
-            // Start Routing Listeners
-            window.addEventListener('hashchange', Handlers.handleRouting);
-            Handlers.handleRouting();
-
-            if (dom.loadingOverlay) dom.loadingOverlay.classList.add('hidden');
+                // Start Routing Listeners
+                window.addEventListener('hashchange', Handlers.handleRouting);
+                Handlers.handleRouting();
+            } catch (error) {
+                console.error('App Start Error:', error);
+                Utils.showToast('Lỗi khởi động ứng dụng: ' + error.message, 'toast--error');
+            } finally {
+                // ALWAYS hide overlay
+                if (dom.loadingOverlay) {
+                    // Slight delay for smooth transition
+                    setTimeout(() => {
+                        dom.loadingOverlay.classList.add('hidden');
+                    }, 500);
+                }
+            }
         },
 
         async loadInitialData() {
+            // No changes needed here, assuming errors are caught or propagated to start()
             try {
                 const [locations, alerts] = await Promise.all([
                     Api.fetchAllLocations(),
@@ -1867,7 +2305,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 await this.loadDataForCurrentDate();
             } catch (error) {
+                console.error('Initial Data Load Error:', error);
                 Utils.showToast(`Lỗi tải dữ liệu ban đầu: ${error.message}`, 'toast--error');
+                // Don't rethrow if we want specific toast, but start() finally block handles cleanup
             }
         },
 
@@ -1878,10 +2318,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 UI.renderDashboard();
                 UI.renderTransactions();
             } catch (error) {
+                console.error('Day Data Load Error:', error);
                 Utils.showToast(`Lỗi tải dữ liệu ngày: ${error.message}`, 'toast--error');
             }
         }
     };
 
+    window.Handlers = Handlers;
     App.init();
 });
+
+// GLOBAL FAILSAFE: Ensure overlay is hidden even if critical JS errors occur
+setTimeout(() => {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay && !overlay.classList.contains('hidden')) {
+        console.warn('⚠️ Global safety timeout triggered: Hiding overlay.');
+        overlay.classList.add('hidden');
+
+        // Check if login screen is visible, if not and main content is hidden, show login
+        const login = document.getElementById('login-screen');
+        const main = document.getElementById('main-admin-content');
+        if (login && main && getComputedStyle(login).display === 'none' && getComputedStyle(main).display === 'none') {
+            login.style.display = 'flex';
+        }
+    }
+}, 10000);
